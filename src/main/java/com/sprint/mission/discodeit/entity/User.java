@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.entity;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class User {
@@ -13,21 +14,21 @@ public class User {
     //필드
     private String name;
     private String email;
-    private ArrayList<User> friends;
-    private ArrayList<Channel> channels;
-    private ArrayList<Message> messages;
+    private List<User> friends;
+    private List<Channel> channels;
+    private List<Message> messages;
 
     //ctor
-    public User(String name, String email, ArrayList<User> friends, ArrayList<Channel> channels, ArrayList<Message> messages) {
+    public User(String name, String email) {
         id = UUID.randomUUID();
         createdAt = System.currentTimeMillis();
         updatedAt = System.currentTimeMillis();
 
         this.name = name;
         this.email = email;
-        this.friends = friends;
-        this.channels = channels;
-        this.messages = messages;
+        friends = new ArrayList<>();
+        channels = new ArrayList<>();
+        messages = new ArrayList<>();
     }
 
     //getter
@@ -51,15 +52,15 @@ public class User {
         return email;
     }
 
-    public ArrayList<User> getFriends() {
+    public List<User> getFriends() {
         return friends;
     }
 
-    public ArrayList<Channel> getChannels() {
+    public List<Channel> getChannels() {
         return channels;
     }
 
-    public ArrayList<Message> getMessages() {
+    public List<Message> getMessages() {
         return messages;
     }
 
