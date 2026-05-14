@@ -10,7 +10,7 @@ public interface UserService {
     void printUserInfo(User user);
     void changeName(User user, String newName);
     void changeEmail(User user, String newEmail);
-    void deleteUser(User user);
+    User deleteUser(User user);
 
     Channel createChannel(User user, String channelName);
     void joinChannel(User user, Channel channel);
@@ -20,7 +20,7 @@ public interface UserService {
     Message createMessage(User user, Channel channel, String message);
     void printMessages(User user);
     void editMessage(User user, Message message, String newMessage);
-    void deleteMessage(User user, Message message);
+    Message deleteMessage(User user, Message message);
 
     /*
 - user 관련

@@ -9,7 +9,7 @@ public interface MessageService {
     Message createMessage(User user, Channel channel, String message);
     void printMessage(Message message);
     void editMessage(Message message, User user, String newMessage);
-    void deleteMessage(Message message, User user);
+    Message deleteMessage(Message message, User user);
 
     void printWriter(Message message);
 
