@@ -33,10 +33,10 @@ public class Message extends EntityRoot{
     }
 
     //update Method
-    public void updateMessage(Message message) {
-        if (message.message == null || message.message.isBlank())
+    public void updateMessage(String newMessage) {
+        if (newMessage == null || newMessage.isBlank())
             return;
-        this.message = message.message;
+        this.message = newMessage;
         updateUpdatedAt();
     }
 
