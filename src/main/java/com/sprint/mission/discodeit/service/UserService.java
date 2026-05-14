@@ -6,18 +6,18 @@ import com.sprint.mission.discodeit.entity.User;
 
 public interface UserService {
 
-    void createUser(String name, String email);
+    User createUser(String name, String email);
     void printUserInfo(User user);
     void changeName(User user, String newName);
     void changeEmail(User user, String newEmail);
     void deleteUser(User user);
 
-    void createChannel(User user, String channelName);
+    Channel createChannel(User user, String channelName);
     void joinChannel(User user, Channel channel);
     void printMyChannelsInfo(User user);
     void LeaveChannel(User user, Channel channel);
 
-    void createMessage(User user, Channel channel, String message);
+    Message createMessage(User user, Channel channel, String message);
     void printMessages(User user);
     void editMessage(User user, Message message, String newMessage);
     void deleteMessage(User user, Message message);
