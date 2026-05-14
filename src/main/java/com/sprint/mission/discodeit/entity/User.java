@@ -50,12 +50,14 @@ public class User extends EntityRoot{
             return;
 
         this.name = name;
+        updateUpdatedAt();
     }
     public void changeEmail(String email) {
         if (email == null || email.isBlank())
             return;
 
         this.email = email;
+        updateUpdatedAt();
     }
 
     //method
@@ -64,36 +66,42 @@ public class User extends EntityRoot{
             return;
 
         friends.add(friend);
+        updateUpdatedAt();
     }
     public void removeFriend(User friend) {
         if (!friends.contains(friend) || friend == null)
             return;
 
         friends.remove(friend);
+        updateUpdatedAt();
     }
     public void addChannel(Channel channel) {
         if (channels.contains(channel) || channel == null)
             return;
 
         channels.add(channel);
+        updateUpdatedAt();
     }
     public void removeChannel(Channel channel) {
         if (!channels.contains(channel) || channel == null)
             return;
 
         channels.remove(channel);
+        updateUpdatedAt();
     }
     public void addMessage(Message message) {
         if (messages.contains(message) || message == null)
             return;
 
         messages.add(message);
+        updateUpdatedAt();
     }
     public void removeMessage(Message message) {
         if (!messages.contains(message) || message == null)
             return;
 
         messages.remove(message);
+        updateUpdatedAt();
     }
 
 

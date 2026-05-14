@@ -45,9 +45,14 @@ public class Channel extends EntityRoot{
             return;
 
         this.name = name;
+        updateUpdatedAt();
     }
     public void changeChannelHost(User channelHost) {
+        if (channelHost == null || channelHost == this.channelHost)
+            return;
+
         this.channelHost = channelHost;
+        updateUpdatedAt();
     }
 
     //method
@@ -56,24 +61,28 @@ public class Channel extends EntityRoot{
             return;
 
         users.add(user);
+        updateUpdatedAt();
     }
     public void removeUser(User user) {
         if (!users.contains(user) || user == null)
             return;
 
         users.remove(user);
+        updateUpdatedAt();
     }
     public void addMessage(Message message) {
         if (messages.contains(message) || message == null)
             return;
 
         messages.add(message);
+        updateUpdatedAt();
     }
     public void removeMessage(Message message) {
         if (!messages.contains(message) || message == null)
             return;
 
         messages.remove(message);
+        updateUpdatedAt();
     }
 
 }

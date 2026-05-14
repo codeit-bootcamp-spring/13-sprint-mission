@@ -37,6 +37,7 @@ public class Message extends EntityRoot{
         if (message.message == null || message.message.isBlank())
             return;
         this.message = message.message;
+        updateUpdatedAt();
     }
 
 }
