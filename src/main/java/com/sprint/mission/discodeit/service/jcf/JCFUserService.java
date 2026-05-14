@@ -7,6 +7,8 @@ import com.sprint.mission.discodeit.service.UserService;
 
 public class JCFUserService implements UserService {
 
+    //ctor
+    public JCFUserService() {}
 
     //interface
     @Override
@@ -16,6 +18,7 @@ public class JCFUserService implements UserService {
 
         User user = new User(name, email);
 
+        System.out.println("유저: " + name + "가 생성됨." );
         return user;
     }
 
@@ -31,6 +34,7 @@ public class JCFUserService implements UserService {
         if (user == null) throw new RuntimeException("유저는 null이면 안됩니다.");
         if (newName == null || newName.isBlank()) throw new RuntimeException("새 이름은 공백일 수 없습니다.");
 
+        System.out.println("유저명: " + user.getName() + "가 수정됨.\n -> " + newName);
         user.changeName(newName);
     }
 
@@ -39,6 +43,7 @@ public class JCFUserService implements UserService {
         if (user == null) throw new RuntimeException("유저는 null이면 안됩니다.");
         if (newEmail == null || newEmail.isBlank()) throw new RuntimeException("새 이메일은 공백일 수 없습니다.");
 
+        System.out.println("유저 이메일: " + user.getName() + "가 수정됨.\n -> " + newEmail);
         user.changeEmail(newEmail);
     }
 
@@ -50,6 +55,7 @@ public class JCFUserService implements UserService {
             channel.removeUser(user);
         }
 
+        System.out.println("유저: " + user.getName() + "가 삭제됨." );
         return null;
     }
 
@@ -60,14 +66,17 @@ public class JCFUserService implements UserService {
 
         channel.addUser(user);
         user.addChannel(channel);
+
+        System.out.println("채널: " + channel.getName() + "에 " + user.getName() + "가 추가됨." );
     }
 
     @Override
     public void printMyChannelsInfo(User user) {
         if (user == null) throw new RuntimeException("유저는 null이면 안됩니다.");
 
+        System.out.println(user.getName() + "가 가입한 채널: ");
         for (Channel channel : user.getChannels()) {
-            System.out.println(channel);
+            System.out.println(channel.getName());
         }
     }
 
@@ -78,12 +87,14 @@ public class JCFUserService implements UserService {
 
         channel.removeUser(user);
         user.removeChannel(channel);
+        System.out.println(channel.getName() + "채널에서 " + user.getName() + "가 퇴장했습니다.");
     }
 
     @Override
     public void printMessages(User user) {
         if (user == null) throw new RuntimeException("유저는 null이면 안됩니다.");
 
+        System.out.println(user.getName() + "가 작성한 메세지들: ");
         for (Message message : user.getMessages()) {
             System.out.println(message);
         }

@@ -7,6 +7,8 @@ import com.sprint.mission.discodeit.service.ChannelService;
 
 public class JCFChannelService implements ChannelService {
 
+    //ctor
+    public JCFChannelService() {}
 
     //interface
     @Override
@@ -16,7 +18,10 @@ public class JCFChannelService implements ChannelService {
 
         Channel channel = new Channel(name, channelHost);
 
+        System.out.println("채널: " + name + "가 생성됨." );
+
         addUserToChannel(channel, channelHost);
+
         return channel;
     }
 
@@ -33,6 +38,7 @@ public class JCFChannelService implements ChannelService {
         if (channel == null || user == null) throw new RuntimeException("채널, 수정하려는 유저는 null이면 안됩니다.");
         if (channel.getChannelHost() != user) throw new RuntimeException("채널 이름을 수정하려는 유저는 이 채널 호스트여야 합니다.");
 
+        System.out.println("채널명: " + channel.getName() + "가 수정됨.\n -> " + newName);
         channel.changeName(newName);
     }
 
@@ -47,6 +53,7 @@ public class JCFChannelService implements ChannelService {
         for (Message messages : channel.getMessages()) {
             messages.getUser().removeMessage(messages);
         }
+        System.out.println("채널: " + channel.getName() + "가 삭제됨." );
         return null;
     }
 
@@ -56,15 +63,16 @@ public class JCFChannelService implements ChannelService {
 
         user.addChannel(channel);
         channel.addUser(user);
+        System.out.println("채널: " + channel.getName() + "에 " + user.getName() + "가 추가됨." );
     }
 
     @Override
     public void printUsersInfo(Channel channel) {
         if (channel == null) throw new RuntimeException("채널은 null이면 안됩니다.");
 
-        System.out.println(channel + ": \n");
+        System.out.println(channel + "채널 유저: \n");
         for (User user : channel.getUsers()) {
-            System.out.println(user);
+            System.out.println(user.getName());
         }
     }
 
@@ -80,6 +88,7 @@ public class JCFChannelService implements ChannelService {
     public void changeChannelHost(Channel channel, User user) {
         if (user == null || channel == null) throw new RuntimeException("채널, 유저는 null이면 안됩니다.");
 
+        System.out.println("채널 호스트가 " + channel.getChannelHost() + "에서 " + user.getName() + "으로 변경됨." );
         channel.changeChannelHost(user);
     }
 
@@ -90,13 +99,14 @@ public class JCFChannelService implements ChannelService {
 
         channel.removeUser(user);
         user.removeChannel(channel);
-
+        System.out.println(channel.getName() + "채널에서 " + user.getName() + "가 퇴장했습니다.");
     }
 
     @Override
     public void printMessages(Channel channel) {
         if (channel == null) throw new RuntimeException("채널은 null이면 안됩니다.");
 
+        System.out.println(channel + "채널 메세지: \n");
         for (Message message : channel.getMessages()) {
             System.out.println(message);
         }

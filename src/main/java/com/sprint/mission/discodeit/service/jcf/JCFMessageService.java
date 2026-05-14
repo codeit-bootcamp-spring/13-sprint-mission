@@ -7,6 +7,8 @@ import com.sprint.mission.discodeit.service.MessageService;
 
 public class JCFMessageService implements MessageService {
 
+    //ctor
+    public JCFMessageService() {}
 
     // interface
     @Override
@@ -19,6 +21,7 @@ public class JCFMessageService implements MessageService {
 
         user.addMessage(newMessage);
         channel.addMessage(newMessage);
+        System.out.println("메세지: " + message + " 가 생성됨." );
         return newMessage;
     }
 
@@ -36,6 +39,7 @@ public class JCFMessageService implements MessageService {
         if (user != message.getUser()) throw new RuntimeException("해당 메세지 작성자가 아니므로 수정 불가.");
 
         message.updateMessage(newMessage);
+        System.out.println("메세지: " + message + "가 수정됨.\n -> " + newMessage);
     }
 
     @Override
@@ -45,6 +49,7 @@ public class JCFMessageService implements MessageService {
 
         message.getUser().removeMessage(message);
         message.getChannel().removeMessage(message);
+        System.out.println("메세지: " + message + "가 삭제됨." );
         return null;
     }
 
