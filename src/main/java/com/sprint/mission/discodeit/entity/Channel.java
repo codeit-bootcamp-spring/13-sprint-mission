@@ -39,15 +39,14 @@ public class Channel extends EntityRoot{
         return messages;
     }
 
-    //setter
-    public void setName(String name) {
+    //update Method
+    public void changeName(String name) {
         if (name == null || name.isBlank())
             return;
 
         this.name = name;
     }
-
-    public void setChannelHost(User channelHost) {
+    public void changeChannelHost(User channelHost) {
         this.channelHost = channelHost;
     }
 

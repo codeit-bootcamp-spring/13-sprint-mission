@@ -32,7 +32,7 @@ public class Message extends EntityRoot{
         return channel;
     }
 
-    //method
+    //update Method
     public void updateMessage(Message message) {
         if (message.message == null || message.message.isBlank())
             return;

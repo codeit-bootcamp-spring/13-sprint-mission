@@ -44,14 +44,14 @@ public class User extends EntityRoot{
         return messages;
     }
 
-    //setter
-    public void setName(String name) {
+    //update Method
+    public void changeName(String name) {
         if (name == null || name.isBlank())
             return;
 
         this.name = name;
     }
-    public void setEmail(String email) {
+    public void changeEmail(String email) {
         if (email == null || email.isBlank())
             return;
 
