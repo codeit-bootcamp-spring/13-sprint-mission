@@ -7,7 +7,7 @@ import com.sprint.mission.discodeit.entity.User;
 public interface ChannelService {
 
     Channel createChannel(String name, User channelHost);
-    void printChannelInformation(Channel channel);
+    void printChannelInfo(Channel channel);
     void editChannelName(Channel channel, String newName);
     Channel deleteChannel(Channel channel, User user);
 
