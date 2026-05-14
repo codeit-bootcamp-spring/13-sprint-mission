@@ -11,7 +11,8 @@ public interface ChannelService {
     Channel create(Channel channel);
     Channel findById(UUID id);
     List<Channel> findAll();
+    void update(UUID id, String name, String description, Channel.ChannelType type);
     void delete(UUID id);
-    void update(Channel channel);
+
 
 }

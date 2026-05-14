@@ -55,4 +55,13 @@ public class Channel {
         this.type = type;
         this.updatedAt = System.currentTimeMillis();
     }
+
+    public String toString() {
+        return "Channel{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", type=" + type +
+                '}';
+    }
 }

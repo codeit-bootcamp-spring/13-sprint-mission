@@ -3,40 +3,46 @@ package com.sprint.mission.discodeit.service.jcf;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.service.MessageService;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class JCFMessageService implements MessageService {
 
-    private final Map<Long, Message> messages;
+    private final Map<UUID, Message> data;
 
     public JCFMessageService() {
-        this.messages = new HashMap<>();
+        this.data = new HashMap<>();
     }
 
     @Override
     public Message create(Message message) {
-        return null;
+        data.put(message.getId(), message);
+        return message;
     }
 
     @Override
-    public Message findById(Long id) {
-        return null;
+    public Message findById(UUID id) {
+        return data.get(id);
     }
 
     @Override
     public List<Message> findAll() {
-        return List.of();
+        return new ArrayList<>(data.values());
     }
 
     @Override
-    public void delete(Long id) {
+    public void update(UUID id, String content) {
+        Message message = data.get(id);
 
+        if (message == null) {
+            throw new IllegalArgumentException("Message not found");
+        }
+        message.updateContent(content);
     }
 
     @Override
-    public void update(Message message) {
-
+    public void delete(UUID id) {
+        data.remove(id);
     }
+
+
 }

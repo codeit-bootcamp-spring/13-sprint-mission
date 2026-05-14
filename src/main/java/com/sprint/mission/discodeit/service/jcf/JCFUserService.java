@@ -7,35 +7,40 @@ import java.util.*;
 
 public class JCFUserService implements UserService {
 
-    private final Map<UUID, User> users;
+    private final Map<UUID, User> data;
 
     public JCFUserService() {
-        this.users = new HashMap<>();
+        this.data = new HashMap<>();
     }
 
     @Override
     public User create(User user) {
-        users.put(user.getId(), user);
+        data.put(user.getId(), user);
         return user;
     }
 
     @Override
     public User findById(UUID id) {
-        return users.get(id);
+        return data.get(id);
     }
 
     @Override
     public List<User> findAll() {
-        return new ArrayList<>(users.values());
+        return new ArrayList<>(data.values());
     }
 
     @Override
-    public void update(User user) {
-        users.put(user.getId(), user);
+    public void update(UUID id, String newUsername) {
+        User user = data.get(id);
+
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+        user.updateProfile(newUsername);
     }
 
     @Override
     public void delete(UUID id) {
-        users.remove(id);
+        data.remove(id);
     }
 }

@@ -61,4 +61,13 @@ public class User {
         this.updatedAt = System.currentTimeMillis();
     }
 
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", email='" + email + '\'' +
+                ", username='" + username + '\'' +
+                ", status=" + status +
+                '}';
+    }
+
 }
