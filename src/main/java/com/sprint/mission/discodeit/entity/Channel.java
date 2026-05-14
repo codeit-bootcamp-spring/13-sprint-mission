@@ -8,14 +8,16 @@ public class Channel extends EntityRoot{
 
     //필드
     private String name;
+    private User channelHost;
     private List<User> users;
     private List<Message> messages;
 
     //ctor
-    public Channel(String name) {
+    public Channel(String name, User channelHost) {
         super();
 
         this.name = name;
+        this.channelHost = channelHost;
         users = new ArrayList<>();
         messages = new ArrayList<>();
     }
@@ -23,6 +25,10 @@ public class Channel extends EntityRoot{
     //getter
     public String getName() {
         return name;
+    }
+
+    public User getChannelHost() {
+        return channelHost;
     }
 
     public List<User> getUsers() {
@@ -39,6 +45,10 @@ public class Channel extends EntityRoot{
             return;
 
         this.name = name;
+    }
+
+    public void setChannelHost(User channelHost) {
+        this.channelHost = channelHost;
     }
 
     //method
