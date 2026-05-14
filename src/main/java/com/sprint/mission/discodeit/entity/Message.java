@@ -3,12 +3,7 @@ package com.sprint.mission.discodeit.entity;
 import java.util.List;
 import java.util.UUID;
 
-public class Message {
-
-    //공통 필드
-    private UUID id;
-    private Long createdAt;
-    private Long updatedAt;
+public class Message extends EntityRoot{
 
     //필드
     private String message;
@@ -17,9 +12,7 @@ public class Message {
 
     //ctor
     public Message(String message, User user, Channel channel) {
-        id = UUID.randomUUID();
-        createdAt = System.currentTimeMillis();
-        updatedAt = System.currentTimeMillis();
+        super();
 
         this.message = message;
         this.user = user;
@@ -27,18 +20,6 @@ public class Message {
     }
 
     //getter
-    public UUID getId() {
-        return id;
-    }
-
-    public Long getCreatedAt() {
-        return createdAt;
-    }
-
-    public Long getUpdatedAt() {
-        return updatedAt;
-    }
-
     public String getMessage() {
         return message;
     }

@@ -2,14 +2,8 @@ package com.sprint.mission.discodeit.entity;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
-public class User {
-
-    //공통 필드
-    private UUID id;
-    private Long createdAt;
-    private Long updatedAt;
+public class User extends EntityRoot{
 
     //필드
     private String name;
@@ -20,9 +14,7 @@ public class User {
 
     //ctor
     public User(String name, String email) {
-        id = UUID.randomUUID();
-        createdAt = System.currentTimeMillis();
-        updatedAt = System.currentTimeMillis();
+        super();
 
         this.name = name;
         this.email = email;
@@ -32,18 +24,6 @@ public class User {
     }
 
     //getter
-    public UUID getId() {
-        return id;
-    }
-
-    public Long getCreatedAt() {
-        return createdAt;
-    }
-
-    public Long getUpdatedAt() {
-        return updatedAt;
-    }
-
     public String getName() {
         return name;
     }

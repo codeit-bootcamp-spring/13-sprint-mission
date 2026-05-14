@@ -4,12 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class Channel {
-
-    //공통 필드
-    private UUID id;
-    private Long createdAt;
-    private Long updatedAt;
+public class Channel extends EntityRoot{
 
     //필드
     private String name;
@@ -18,9 +13,7 @@ public class Channel {
 
     //ctor
     public Channel(String name) {
-        id = UUID.randomUUID();
-        createdAt = System.currentTimeMillis();
-        updatedAt = System.currentTimeMillis();
+        super();
 
         this.name = name;
         users = new ArrayList<>();
@@ -28,18 +21,6 @@ public class Channel {
     }
 
     //getter
-    public UUID getId() {
-        return id;
-    }
-
-    public Long getCreatedAt() {
-        return createdAt;
-    }
-
-    public Long getUpdatedAt() {
-        return updatedAt;
-    }
-
     public String getName() {
         return name;
     }
