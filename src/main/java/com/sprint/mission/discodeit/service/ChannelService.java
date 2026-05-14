@@ -17,10 +17,10 @@ public interface ChannelService {
     void changeChannelHost(Channel channel, User user);
     void deleteUserFromChannel(Channel channel, User user);
 
-    Message createMessage(Channel channel, User user, String message);
+    //Message createMessage(Channel channel, User user, String message);
     void printMessages(Channel channel);
-    void editMessage(User user, Message message, String newMessage);
-    Message deleteMessage(User user, Message message);
+    //void editMessage(User user, Message message, String newMessage);
+    //Message deleteMessage(User user, Message message);
 
     /*
 - channel 관련

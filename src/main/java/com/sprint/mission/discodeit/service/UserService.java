@@ -12,15 +12,15 @@ public interface UserService {
     void changeEmail(User user, String newEmail);
     User deleteUser(User user);
 
-    Channel createChannel(User user, String channelName);
+    //Channel createChannel(User user, String channelName);
     void joinChannel(User user, Channel channel);
     void printMyChannelsInfo(User user);
     void LeaveChannel(User user, Channel channel);
 
-    Message createMessage(User user, Channel channel, String message);
+    //Message createMessage(User user, Channel channel, String message);
     void printMessages(User user);
-    void editMessage(User user, Message message, String newMessage);
-    Message deleteMessage(User user, Message message);
+    //void editMessage(User user, Message message, String newMessage);
+    //Message deleteMessage(User user, Message message);
 
     /*
 - user 관련
