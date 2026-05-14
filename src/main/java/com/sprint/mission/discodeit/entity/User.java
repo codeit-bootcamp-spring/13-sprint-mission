@@ -104,5 +104,9 @@ public class User extends EntityRoot{
         updateUpdatedAt();
     }
 
-
+    //method override
+    @Override
+    public String toString() {
+        return "[User: " + name + ", Email: " + email + "]";
+    }
 }

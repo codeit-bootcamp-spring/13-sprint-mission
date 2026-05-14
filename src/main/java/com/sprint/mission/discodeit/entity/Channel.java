@@ -85,4 +85,11 @@ public class Channel extends EntityRoot{
         updateUpdatedAt();
     }
 
+    //method override
+
+
+    @Override
+    public String toString() {
+        return "[Channel: " + name + ", Channel Host: " + users + "]";
+    }
 }

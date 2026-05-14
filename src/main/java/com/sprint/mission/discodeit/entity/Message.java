@@ -40,4 +40,9 @@ public class Message extends EntityRoot{
         updateUpdatedAt();
     }
 
+    //method override
+    @Override
+    public String toString() {
+        return "User: " + user + ", Channel: " + channel + "\n[Message: " + message + "]";
+    }
 }
