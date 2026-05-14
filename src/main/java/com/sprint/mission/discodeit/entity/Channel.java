@@ -8,14 +8,21 @@ public class Channel {
     private String name;
     private final long createdAt;
     private long updatedAt;
-    private boolean channelType;
+    private ChannelType channelType;
 
-    public Channel(String name, boolean ChannelType) {
+    public Channel(String name) {
         this.id = UUID.randomUUID();
         this.name = name;
         this.createdAt = System.currentTimeMillis();
         this.updatedAt = this.createdAt;
-        this.channelType = false;
+        this.channelType = channelType.PUBLIC;
+    }
+    public Channel(String name, ChannelType channelType) {
+        this.id = UUID.randomUUID();
+        this.name = name;
+        this.createdAt = System.currentTimeMillis();
+        this.updatedAt = this.createdAt;
+        this.channelType = channelType;
     }
 
     public UUID getId() {
@@ -34,7 +41,7 @@ public class Channel {
         return updatedAt;
     }
 
-    public boolean isChannelType() {
+    public ChannelType getChannelType() {
         return channelType;
     }
 
@@ -43,8 +50,19 @@ public class Channel {
         this.updatedAt = System.currentTimeMillis();
     }
 
-    public void updateIsChannelType(boolean ChannelType) {
+    public void updateIsChannelType(ChannelType ChannelType) {
         this.channelType = ChannelType;
         this.updatedAt = System.currentTimeMillis();
+    }
+
+    @Override
+    public String toString() {
+        return "Channel{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                ", channelType=" + channelType.getDisplayName() +
+                '}';
     }
 }
