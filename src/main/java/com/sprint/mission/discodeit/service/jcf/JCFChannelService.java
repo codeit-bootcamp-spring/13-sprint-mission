@@ -1,4 +1,104 @@
 package com.sprint.mission.discodeit.service.jcf;
 
-public class JCFChannelService {
+import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.service.ChannelService;
+
+public class JCFChannelService implements ChannelService {
+
+
+    //interface
+    @Override
+    public Channel createChannel(String name, User channelHost) {
+        if (name == null || name.isBlank()) throw new RuntimeException("채널명은 공백일 수 없습니다.");
+        if (channelHost == null) throw new RuntimeException("채널 호스트는 null이면 안됩니다.");
+
+        Channel channel = new Channel(name, channelHost);
+
+        addUserToChannel(channel, channelHost);
+        return channel;
+    }
+
+    @Override
+    public void printChannelInfo(Channel channel) {
+        if (channel == null) throw new RuntimeException("채널은 null이면 안됩니다.");
+
+        System.out.println(channel);
+    }
+
+    @Override
+    public void editChannelName(Channel channel, User user, String newName) {
+        if (newName == null || newName.isBlank()) throw new RuntimeException("새 채널명은 공백일 수 없습니다.");
+        if (channel == null || user == null) throw new RuntimeException("채널, 수정하려는 유저는 null이면 안됩니다.");
+        if (channel.getChannelHost() != user) throw new RuntimeException("채널 이름을 수정하려는 유저는 이 채널 호스트여야 합니다.");
+
+        channel.changeName(newName);
+    }
+
+    @Override
+    public Channel deleteChannel(Channel channel, User user) {
+        if (user == null || channel == null) throw new RuntimeException("채널, 유저는 null이면 안됩니다.");
+        if (channel.getChannelHost() != user) throw new RuntimeException("이 채널의 호스트가 아니므로 채널 삭제 불가.");
+
+        for (User users : channel.getUsers()) {
+            users.removeChannel(channel);
+        }
+        for (Message messages : channel.getMessages()) {
+            messages.getUser().removeMessage(messages);
+        }
+        return null;
+    }
+
+    @Override
+    public void addUserToChannel(Channel channel, User user) {
+        if (channel == null || user == null) throw new RuntimeException("채널, 유저는 null이면 안됩니다.");
+
+        user.addChannel(channel);
+        channel.addUser(user);
+    }
+
+    @Override
+    public void printUsersInfo(Channel channel) {
+        if (channel == null) throw new RuntimeException("채널은 null이면 안됩니다.");
+
+        System.out.println(channel + ": \n");
+        for (User user : channel.getUsers()) {
+            System.out.println(user);
+        }
+    }
+
+    @Override
+    public void printChannelHostInfo(Channel channel) {
+        if (channel == null) throw new RuntimeException("채널은 null이면 안됩니다.");
+
+        System.out.println("채널 호스트: " + channel.getChannelHost());
+
+    }
+
+    @Override
+    public void changeChannelHost(Channel channel, User user) {
+        if (user == null || channel == null) throw new RuntimeException("채널, 유저는 null이면 안됩니다.");
+
+        channel.changeChannelHost(user);
+    }
+
+    @Override
+    public void deleteUserFromChannel(Channel channel, User user) {
+        if (user == null || channel == null) throw new RuntimeException("채널, 유저는 null이면 안됩니다.");
+        if (!channel.getUsers().contains(user)) throw new RuntimeException("이 채널에는 이 유저가 존재하지 않습니다.");
+
+        channel.removeUser(user);
+        user.removeChannel(channel);
+
+    }
+
+    @Override
+    public void printMessages(Channel channel) {
+        if (channel == null) throw new RuntimeException("채널은 null이면 안됩니다.");
+
+        for (Message message : channel.getMessages()) {
+            System.out.println(message);
+        }
+    }
 }
