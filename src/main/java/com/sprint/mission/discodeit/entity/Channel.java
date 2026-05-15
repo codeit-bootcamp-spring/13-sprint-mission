@@ -90,6 +90,6 @@ public class Channel extends EntityRoot{
 
     @Override
     public String toString() {
-        return "[Channel: " + name + ", Channel Host: " + users + "]";
+        return "[Channel: " + name + ", Channel Host: " + channelHost.getName() + "]";
     }
 }
