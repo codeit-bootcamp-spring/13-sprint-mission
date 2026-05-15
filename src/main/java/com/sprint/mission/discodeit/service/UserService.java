@@ -15,7 +15,7 @@ public interface UserService {
     //Channel createChannel(User user, String channelName);
     void joinChannel(User user, Channel channel);
     void printMyChannelsInfo(User user);
-    void LeaveChannel(User user, Channel channel);
+    void leaveChannel(User user, Channel channel);
 
     //Message createMessage(User user, Channel channel, String message);
     void printMessages(User user);
