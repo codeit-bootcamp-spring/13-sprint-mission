@@ -43,6 +43,6 @@ public class Message extends EntityRoot{
     //method override
     @Override
     public String toString() {
-        return "User: " + user + ", Channel: " + channel + "\n[Message: " + message + "]";
+        return "User: " + user.getName() + ", Channel: " + channel.getName() + "\n[Message: " + message + "]";
     }
 }
