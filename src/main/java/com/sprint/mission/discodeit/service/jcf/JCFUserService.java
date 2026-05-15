@@ -5,10 +5,18 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.UserService;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class JCFUserService implements UserService {
 
+    //필드
+    private final List<User> users;
+
     //ctor
-    public JCFUserService() {}
+    public JCFUserService() {
+        users = new ArrayList<>();
+    }
 
     //interface
     @Override
@@ -17,6 +25,7 @@ public class JCFUserService implements UserService {
         if (email == null || email.isBlank()) throw new RuntimeException("에러: 이메일은 공백일 수 없습니다.");
 
         User user = new User(name, email);
+        users.add(user);
 
         System.out.println("유저: " + name + "가 생성됨.\n" );
         return user;
@@ -27,6 +36,13 @@ public class JCFUserService implements UserService {
         if (user == null) throw new RuntimeException("에러: 출력하려는 유저는 null이면 안됩니다.");
 
         System.out.println(user + "\n");
+    }
+
+    @Override
+    public void printAllUsersInfo() {
+        for (User user : users) {
+            System.out.println(user + "\n");
+        }
     }
 
     @Override
@@ -55,6 +71,7 @@ public class JCFUserService implements UserService {
             channel.removeUser(user);
         }
 
+        users.remove(user);
         System.out.println("유저: " + user.getName() + "가 삭제됨.\n" );
         return null;
     }

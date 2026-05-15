@@ -5,10 +5,18 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.ChannelService;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class JCFChannelService implements ChannelService {
 
+    //필드
+    private final List<Channel> channels;
+
     //ctor
-    public JCFChannelService() {}
+    public JCFChannelService() {
+        channels = new ArrayList<>();
+    }
 
     //interface
     @Override
@@ -17,6 +25,7 @@ public class JCFChannelService implements ChannelService {
         if (channelHost == null) throw new RuntimeException("에러: 채널 호스트는 null이면 안됩니다.");
 
         Channel channel = new Channel(name, channelHost);
+        channels.add(channel);
 
         System.out.println("채널: " + name + "가 생성됨.\n" );
 
@@ -30,6 +39,13 @@ public class JCFChannelService implements ChannelService {
         if (channel == null) throw new RuntimeException("에러: 채널은 null이면 안됩니다.");
 
         System.out.println(channel + "\n");
+    }
+
+    @Override
+    public void printAllChannelsInfo() {
+        for (Channel channel : channels) {
+            System.out.println(channel + "\n");
+        }
     }
 
     @Override
@@ -53,6 +69,7 @@ public class JCFChannelService implements ChannelService {
         for (Message messages : channel.getMessages()) {
             messages.getUser().removeMessage(messages);
         }
+        channels.remove(channel);
         System.out.println("채널: " + channel.getName() + "가 삭제됨.\n" );
         return null;
     }
