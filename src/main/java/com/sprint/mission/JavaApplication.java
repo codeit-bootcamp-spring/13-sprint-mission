@@ -31,19 +31,18 @@ public class JavaApplication {
         messageService.create(message1);
         messageService.create(message2);
 
+        System.out.println("=== 단건 조회 ===");
+
         Message errorMessage = new Message(
                 "에러 테스트 메시지",
                 UUID.randomUUID(),
                 UUID.randomUUID()
         );
-
         messageService.create(errorMessage);
 
-        System.out.println("=== 단건 조회 ===");
         System.out.println(userService.read(user1.getId()));
         System.out.println(channelService.read(channel1.getId()));
         System.out.println(messageService.read(message1.getId()));
-
 
         System.out.println();
         System.out.println(userService.read(user2.getId()));
