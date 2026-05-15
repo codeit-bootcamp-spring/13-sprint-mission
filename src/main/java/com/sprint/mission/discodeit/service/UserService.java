@@ -8,6 +8,7 @@ public interface UserService {
 
     User createUser(String name, String email);
     void printUserInfo(User user);
+    void printAllUsersInfo();
     void changeName(User user, String newName);
     void changeEmail(User user, String newEmail);
     User deleteUser(User user);

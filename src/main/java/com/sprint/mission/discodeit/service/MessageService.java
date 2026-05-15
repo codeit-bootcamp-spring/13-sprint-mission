@@ -8,6 +8,7 @@ public interface MessageService {
 
     Message createMessage(User user, Channel channel, String message);
     void printMessage(Message message);
+    void printAllMessages();
     void editMessage(Message message, User user, String newMessage);
     Message deleteMessage(Message message, User user);
 

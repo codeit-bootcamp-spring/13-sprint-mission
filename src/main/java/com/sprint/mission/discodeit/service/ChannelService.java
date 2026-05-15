@@ -8,6 +8,7 @@ public interface ChannelService {
 
     Channel createChannel(String name, User channelHost);
     void printChannelInfo(Channel channel);
+    void printAllChannelsInfo();
     void editChannelName(Channel channel, User user, String newName);
     Channel deleteChannel(Channel channel, User user);
 
