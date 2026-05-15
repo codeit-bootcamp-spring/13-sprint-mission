@@ -31,35 +31,24 @@ public class JavaApplication {
 
         //유저 객체들 생성
         System.out.println("유저 객체들 생성\n");
-        List<User> users = new ArrayList<>();
         User user1 = jcfUS.createUser("KimJH", "KJH@gmail.com");
         User user2 = jcfUS.createUser("ParkMJ", "PMJ@gmail.com");
         User user3 = jcfUS.createUser("YuuHJ", "YHJ@gmail.com");
         User user4 = jcfUS.createUser("LeeHB", "LHB@gmail.com");
         User user5 = jcfUS.createUser("JangHS", "JHS@gmail.com");
-        users.add(user1);
-        users.add(user2);
-        users.add(user3);
-        users.add(user4);
-        users.add(user5);
         System.out.println("============================\n");
 
 
         //채널 객체들 생성
         System.out.println("채널 객체들 생성\n");
-        List<Channel> channels = new ArrayList<>();
         Channel channel1 = jcfCS.createChannel("Java", user1);
         Channel channel2 = jcfCS.createChannel("Spring", user1);
         Channel channel3 = jcfCS.createChannel("IntelliJ", user2);
-        channels.add(channel1);
-        channels.add(channel2);
-        channels.add(channel3);
         System.out.println("============================\n");
 
 
         //메세지 객체들 생성
         System.out.println("메세지 객체들 생성\n");
-        List<Message> messages = new ArrayList<>();
         Message message_U1_1 = jcfMS.createMessage(user1, channel1, "Java is GOOD~");
         Message message_U1_2 = jcfMS.createMessage(user1, channel2, "Spring is GOOD~");
         try {
@@ -77,8 +66,6 @@ public class JavaApplication {
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-        messages.add(message_U1_1);
-        messages.add(message_U1_2);
         System.out.println("============================\n");
 
 
@@ -104,72 +91,64 @@ public class JavaApplication {
         Message message_U5_1 = jcfMS.createMessage(user5, channel3, "Yeah~ Maybe.");
         Message message_U3_2 = jcfMS.createMessage(user3, channel3, "I Think IntelliJ is God.");
         Message message_U4_2 = jcfMS.createMessage(user4, channel3, "That's What Im talking about!");
-        messages.add(message_U2_1);
-        messages.add(message_U3_1);
-        messages.add(message_U4_1);
-        messages.add(message_U5_1);
-        messages.add(message_U3_2);
-        messages.add(message_U4_2);
         System.out.println("============================\n");
 
 
         // 유저 정보 출력 테스트
         System.out.println("유저 정보 출력 테스트\n");
-        for (User user : users) {
-            jcfUS.printUserInfo(user);
-        }
+        // 단건
+        System.out.println("단건: \n");
+        jcfUS.printUserInfo(user2);
+        // 다건
+        System.out.println("다건: \n");
+        jcfUS.printAllUsersInfo();
         System.out.println("============================\n");
 
 
         // 채널 정보 출력 테스트
         System.out.println("채널 정보 출력 테스트\n");
-        for (Channel channel : channels) {
-            jcfCS.printChannelInfo(channel);
-        }
+        // 단건
+        System.out.println("단건: \n");
+        jcfCS.printChannelInfo(channel2);
+        // 다건
+        System.out.println("다건: \n");
+        jcfCS.printAllChannelsInfo();
         System.out.println("============================\n");
 
 
         //메세지 정보 출력 테스트
         System.out.println("메세지 정보 출력 테스트\n");
-        for (Message message : messages) {
-            jcfMS.printMessage(message);
-        }
+        // 단건
+        System.out.println("단건: \n");
+        jcfMS.printMessage(message_U2_1);
+        // 다건
+        System.out.println("다건: \n");
+        jcfMS.printAllMessages();
         System.out.println("============================\n");
 
 
         //특정 채널에 존재하는 메세지 읽기(출력) 테스트
         System.out.println("특정 채널에 존재하는 메세지 읽기(출력) 테스트\n");
-        for (Channel channel : channels) {
-            jcfCS.printMessages(channel);
-            System.out.println();
-        }
+
+        jcfCS.printMessages(channel1);
         System.out.println("============================\n");
 
 
         //특정 채널에 가입한 유저 정보 읽기(출력) 테스트
         System.out.println("특정 채널에 가입한 유저 정보 읽기(출력) 테스트\n");
-        for (Channel channel : channels) {
-            jcfCS.printUsersInfo(channel);
-            System.out.println();
-        }
+        jcfCS.printUsersInfo(channel1);
         System.out.println("============================\n");
 
 
         // 유저별 가입한 채널 읽기(출력) 테스트
         System.out.println("유저별 가입한 채널 읽기(출력) 테스트\n");
-        for (User user : users) {
-            jcfUS.printMyChannelsInfo(user);
-            System.out.println();
-        }
+        jcfUS.printMyChannelsInfo(user1);
         System.out.println("============================\n");
 
 
         //유저별 작성한 메세지 읽기(출력) 테스트
         System.out.println("유저별 작성한 메세지 읽기(출력) 테스트\n");
-        for (User user : users) {
-            jcfUS.printMessages(user);
-            System.out.println();
-        }
+        jcfUS.printMessages(user1);
         System.out.println("============================\n");
 
 
@@ -200,23 +179,7 @@ public class JavaApplication {
 
         //수정된 정보 확인용 출력
         System.out.println("수정된 정보 확인용 출력\n");
-        for (User user : users) {
-            jcfUS.printUserInfo(user);
-        }
-        System.out.println("============================\n");
-
-
-        // 유저 삭제 테스트
-        System.out.println("유저 삭제 테스트\n");
-        //임시 유저 생성 및 특정 채널에 해당 유저 참가 후 해당 채널 유저 정보 출력
-        System.out.println("임시 유저 생성 및 특정 채널에 해당 유저 참가 후 해당 채널 유저 정보 출력\n");
-        userTemp = jcfUS.createUser("TempUser", "temp@gmail.com");
-        jcfCS.addUserToChannel(channel1, userTemp);
-        jcfCS.printUsersInfo(channel1);
-        //임시 유저 삭제 및 채널 인원 출력
-        System.out.println("임시 유저 삭제 및 채널 인원 출력\n");
-        userTemp = jcfUS.deleteUser(userTemp);
-        jcfCS.printUsersInfo(channel1);
+        jcfUS.printAllUsersInfo();
         System.out.println("============================\n");
 
 
@@ -257,9 +220,7 @@ public class JavaApplication {
 
         //수정된 정보 확인용 출력
         System.out.println("수정된 정보 확인용 출력\n");
-        for (Channel channel : channels) {
-            jcfCS.printChannelInfo(channel);
-        }
+        jcfCS.printAllChannelsInfo();
         System.out.println("============================\n");
 
 
@@ -277,6 +238,12 @@ public class JavaApplication {
         System.out.println("============================\n");
 
 
+        //수정된 정보 확인용 출력
+        System.out.println("수정된 정보 확인용 출력\n");
+        jcfMS.printAllMessages();
+        System.out.println("============================\n");
+
+
         // 채널 탈퇴 테스트
         System.out.println("채널 탈퇴 테스트\n");
         //임시 유저 생성 및 특정 채널에 가입 후 해당 채널 인원들 정보 출력
@@ -287,6 +254,20 @@ public class JavaApplication {
         //임시 유저가 해당 채널 탈퇴 및 해당 채널 인원 출력
         System.out.println("임시 유저가 해당 채널 탈퇴 및 해당 채널 인원 출력\n");
         jcfUS.leaveChannel(userTemp, channel1);
+        jcfCS.printUsersInfo(channel1);
+        System.out.println("============================\n");
+
+
+        // 유저 삭제 테스트
+        System.out.println("유저 삭제 테스트\n");
+        //임시 유저 생성 및 특정 채널에 해당 유저 참가 후 해당 채널 유저 정보 출력
+        System.out.println("임시 유저 생성 및 특정 채널에 해당 유저 참가 후 해당 채널 유저 정보 출력\n");
+        userTemp = jcfUS.createUser("TempUser", "temp@gmail.com");
+        jcfCS.addUserToChannel(channel1, userTemp);
+        jcfCS.printUsersInfo(channel1);
+        //임시 유저 삭제 및 채널 인원 출력
+        System.out.println("임시 유저 삭제 및 채널 인원 출력\n");
+        userTemp = jcfUS.deleteUser(userTemp);
         jcfCS.printUsersInfo(channel1);
         System.out.println("============================\n");
 
