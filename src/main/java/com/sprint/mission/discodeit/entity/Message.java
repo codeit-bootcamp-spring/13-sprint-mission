@@ -4,9 +4,9 @@ public class Message extends AllApply {
 
 	String content;
 	User author;
-	channel channel;
+	Channel channel;
 	
-	public Message(String content,User author,channel channel) {
+	public Message(String content,User author,Channel channel) {
 		super();
 		this.content = content;
 		this.author = author;
@@ -20,7 +20,7 @@ public class Message extends AllApply {
 	public User getAuthor() {
 		return author;
 	}
-	public channel getChannel() {
+	public Channel getChannel() {
 		return channel;
 	}
 	
