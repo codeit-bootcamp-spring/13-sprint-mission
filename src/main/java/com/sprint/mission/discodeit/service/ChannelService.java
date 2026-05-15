@@ -12,7 +12,7 @@ public interface ChannelService {
 
     List<Channel> readAll();
 
-    void update(UUID id, Channel channel);
+    void update(UUID id, String name, String description);
 
     void delete(UUID id);
 

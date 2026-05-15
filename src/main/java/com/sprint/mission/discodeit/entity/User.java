@@ -1,7 +1,12 @@
 package com.sprint.mission.discodeit.entity;
 
-import java.util.UUID;
+//너무 내부 로직에 치우친 공부-> 메서드 호출 방향, 받은 값의 출처, 반환 값받을 누가 받는지 등을 더 참고.
 
+import java.util.UUID;
+//멘토님의 조언 듣기 전 공부 흔적.
+//신규 가입자 한정으로 즉, 새로운 유저 객체가 생성 될때만 유저가 입력한 값이 이 클레스로 오고,
+//이미 리스트에 올라가있는 즉, 객체가 이미 존재하는 유저가 필드 변수의 값을 변경할때는
+//유저가 입력한 값들이 반드시 JCFUserService를 먼저 지나서 이 클레스로 온다. 그 뒤에 필드변수 재할당.
 //어디서나 이용 가능한 클레스 선언.-> 유저 객체 생성시 사용해야하니까~
 //유저의 정보는 프라이빗으로 선언-> 캡슐화(getter,update로만 소통함)
 //필드 변수로 선언.--> 생성자에서 객체에 할당 할거임
@@ -49,9 +54,10 @@ public class User {//
     public String getEmail() {return email;}
 
     //필드를 수정하는 업데이트 함수
+    //맨 아래 update메서드를 통해서 변경된 값을 받는다.
     //String newName은 객체를 생성하지 않고 기존 객체를 추적해서 업데이트 메서드에서
     //나온 값을 기존 객체의 필드 내부 변수와 교체한다.
-    // 현제 업데이트 메서드는 변경된 이름과 변경 시간을 기존 객체의 네임 변수와 업데이트 변수에 재 할당한다.
+    // 현제 업데이트 메서드는 변경된 이름과 변경 시간을 기존 객체의 네임 변수와 updateAt변수에 재 할당한다.
     public void updateName(String newName){
         this.userName = newName;
         this.updatedAt = System.currentTimeMillis();
@@ -65,5 +71,12 @@ public class User {//
         this.updatedAt = System.currentTimeMillis();
     }
 
+    //update 메서드는 구현체인 JCFUserService에게 매개변수를 할당 받는다.
+    public void update(String name, String email, String password) {
+        this.updateName(name);       //각각 위에있는
+        this.updateEmail(email);     //updateName,updateEmail,updatePassword 메서드에
+        this.updatePassword(password);  // 값을 할당한다.
 
+
+    }
 }
