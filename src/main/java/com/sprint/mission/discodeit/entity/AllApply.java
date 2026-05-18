@@ -27,6 +27,7 @@ public abstract class AllApply {
 	
 	public void updateTime() {
 		this.updateAt = System.currentTimeMillis();
-	} // 현재시간 갱신
+	}
+	
 	
 }

@@ -33,7 +33,13 @@ public class Message extends AllApply {
 		updateTime();
 	}
 	
-	
+	@Override
+	public String toString() {
+		return "[Channel: " + getChannel().getName() + "] " + "\n" +
+				"Author: " + getAuthor().getName() + "\n" +
+				"Content: " + getContent() + "\n" +
+				"Time: " + getUpdateAt()+ "\n";
+	}
 	
 }
 

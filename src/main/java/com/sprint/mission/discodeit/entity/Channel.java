@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.entity;
 
+import java.util.UUID;
+
 public class Channel extends AllApply {
 
 	String name;
@@ -38,7 +40,7 @@ public class Channel extends AllApply {
 		updateTime();
 	}
 	
-	enum channelType{
+	public enum channelType{
 		TEXT,
 		VOICE,
 		DIRECT_MESSAGE;

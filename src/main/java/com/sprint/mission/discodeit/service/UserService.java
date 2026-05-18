@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.UUID;
 
 public interface UserService {
-	void  create(User user);
+	void create(User user);
 	User findById(UUID id);
 	Collection<User> findAll();
 	void update(UUID id, String name, String email);

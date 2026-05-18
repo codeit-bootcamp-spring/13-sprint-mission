@@ -27,13 +27,6 @@ public class JCFChannelService implements ChannelService {
 		return this.channels.get(id);
 	}
 	
-	/**
-	@Override
-	public User findUserById(UUID id) {
-		return null;
-	}
-	*/
-	
 	@Override
 	public Collection<Channel> findAll() {
 		return channels.values();
