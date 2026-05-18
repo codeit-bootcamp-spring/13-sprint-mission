@@ -5,23 +5,28 @@ import java.util.UUID;
 public class Channel {
 
     private final UUID id; // [요구사항] id는 생성자에서 초기화 // [요구사항] 내부에서 초기화
-    private String channelName; // 이름은 밖에서 받아옴
+    private String channelTitles; // 이름은 밖에서 받아옴
     private final Long createdAt; // [요구사항] createdAt은 생성자에서 초기화 // [요구사항] 내부에서 초기화
     private Long updatedAt; // 처음 생성 시엔 수정 시간도 생성 시간과 같음
 
-    public Channel(String channelName) {
+    public Channel(String channelTitles) {
         this.id = UUID.randomUUID();
-        this.channelName = channelName;
+        this.channelTitles = channelTitles;
         this.createdAt = System.currentTimeMillis();
         this.updatedAt = this.createdAt;
+    }
+
+    public void updateTitles(Channel channel) {
+        this.channelTitles = channel.getChannelTitles();
+        this.updatedAt = System.currentTimeMillis();
     }
 
     public UUID getId() {
         return id;
     }
 
-    public String getChannelName() {
-        return channelName;
+    public String getChannelTitles() {
+        return channelTitles;
     }
 
     public Long getCreatedAt() {

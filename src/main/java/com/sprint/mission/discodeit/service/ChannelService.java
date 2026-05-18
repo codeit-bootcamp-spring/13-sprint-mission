@@ -1,6 +1,16 @@
 package com.sprint.mission.discodeit.service;
 
+import com.sprint.mission.discodeit.entity.Channel;
+
+import java.util.List;
+import java.util.UUID;
+
 public interface ChannelService {
+    Channel create (Channel channel);
+    Channel findById(UUID id);
+    List<Channel> findAll();
+    void update(Channel channel);
+    void delete(UUID id);
 }
 
 // [ ] 도메인 모델 별 CRUD(생성, 읽기, 모두 읽기, 수정, 삭제) 기능을 인터페이스로 선언하세요
