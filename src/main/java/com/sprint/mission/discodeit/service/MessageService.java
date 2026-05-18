@@ -7,10 +7,10 @@ import java.util.UUID;
 
 public interface MessageService {
     Message create (Message message);
-    Message findById(UUID id);
+    Message findByContent(String content);
     List<Message> findAll();
     void update(Message message);
-    void delete(UUID id);
+    void delete(String content);
 }
 
 // [ ] 도메인 모델 별 CRUD(생성, 읽기, 모두 읽기, 수정, 삭제) 기능을 인터페이스로 선언하세요

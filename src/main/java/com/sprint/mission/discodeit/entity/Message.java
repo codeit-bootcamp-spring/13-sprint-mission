@@ -10,18 +10,21 @@ public class Message {
     private Long updatedAt; // 처음 생성 시엔 수정 시간도 생성 시간과 같음
     private final UUID authorId;
     private final UUID channelId;
-    private final String messageTitles;
-    private final String updateTitles;
+    private final String updateContent;
 
-    public Message(String content, UUID authorId, UUID channelId, String messageTitles, String updateTitles) {
+    public Message(String content) {
         this.id = UUID.randomUUID();
         this.content = content;
         this.createdAt = System.currentTimeMillis();
         this.updatedAt = this.createdAt;
-        this.authorId = authorId;
-        this.channelId = channelId;
-        this.messageTitles = messageTitles;
-        this.updateTitles = updateTitles;
+        this.authorId = null;
+        this.channelId = null;
+        this.updateContent = null;
+    }
+
+    public void updateContent(Message requestMessage) {
+        this.content = requestMessage.getContent();
+        this.updatedAt = System.currentTimeMillis();
     }
 
     public UUID getId() {
@@ -48,13 +51,10 @@ public class Message {
         return authorId;
     }
 
-    public String getMessageTitles() {
-        return messageTitles;
+    public String getUpdateContent() {
+        return updateContent;
     }
 
-    public String getUpdateTitles() {
-        return updateTitles;
-    }
 
 }
 

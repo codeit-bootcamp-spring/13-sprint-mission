@@ -8,14 +8,7 @@ import java.util.UUID;
 
 public class ChannelMode {
 
-    private final static ChannelService channelService;
-    private final static Scanner scanner;
-
-    public ChannelMode(ChannelService channelService, Scanner scanner) {
-        this.channelService = channelService;
-        this.scanner = scanner;
-    }
-    private static void run() {
+    public static void run(ChannelService channelService, Scanner scanner) {
 
         // Channel
 

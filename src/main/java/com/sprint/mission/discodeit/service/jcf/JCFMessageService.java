@@ -1,12 +1,10 @@
 package com.sprint.mission.discodeit.service.jcf;
 
-import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.service.MessageService;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class JCFMessageService implements MessageService {
 
@@ -21,9 +19,9 @@ public class JCFMessageService implements MessageService {
         return message;
     }
 
-    public Message findById(UUID id) { // 단건 조회
+    public Message findByContent(String content) { // 단건 조회
         for (Message foundMessage : data) {
-            if (foundMessage.getId().equals(id)) {
+            if (foundMessage.getContent().equals(content)) {
                 return foundMessage;
             }
         }
@@ -35,14 +33,14 @@ public class JCFMessageService implements MessageService {
     }
 
     public void update(Message requestMessage) {
-        Message foundMessage = findById(requestMessage.getId());
+        Message foundMessage = findByContent(requestMessage.getContent());
         if (foundMessage != null) {
-            foundMessage.updateTitles(requestMessage);
+            foundMessage.updateContent(requestMessage);
         }
     }
 
-    public void delete(UUID id) {
-        Message foundMessage = findById(id);
+    public void delete(String content) {
+        Message foundMessage = findByContent(content);
         if (foundMessage != null) {
             data.remove(foundMessage);
         }

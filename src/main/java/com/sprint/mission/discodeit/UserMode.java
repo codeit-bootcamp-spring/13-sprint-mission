@@ -8,15 +8,7 @@ import java.util.UUID;
 
 public class UserMode {
 
-    private static final UserService userService;
-    private static final Scanner scanner;
-
-    public UserMode(UserService userService, Scanner scanner) {
-        this.userService = userService;
-        this.scanner = scanner;
-    }
-
-    private static void run() {
+    public static void run(UserService userService, Scanner scanner) {
 
         // User
 
