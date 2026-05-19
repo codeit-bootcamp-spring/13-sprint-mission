@@ -1,6 +1,10 @@
 package com.sprint.mission.discodeit.service.file;
 
-public class FileMessageService {
+import java.io.Serializable;
+
+public class FileMessageService implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 }
 /*
 기본 요구사항
