@@ -8,8 +8,8 @@ private String content;
 private UUID authorId;
 private UUID channelId;
 
-    public Message(UUID id, Long createdAt, Long updatedAt) {
-        super(id, createdAt, updatedAt);
+    public Message() {
+        super();
     }
 
     public String getContent() {

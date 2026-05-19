@@ -1,29 +1,30 @@
 package com.sprint.mission.discodeit.entity;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class Channel extends BaseEntity {
 
-    private static int channelCount = 0;
 
     private String channelName;
     private String description;
     private ChannelType channelType;
 
+    private User ownerUser;
+    private List<User> members = new ArrayList<>();
 
-    // 채널을 새롭게 생성할 때 기본 채널 이름+숫자가 들어가게 하기 위해 channelCount 넣음
-    public Channel(UUID id, Long createdAt, Long updatedAt,
-                   String channelName, String description, ChannelType channelType) {
-        super(id, createdAt, updatedAt);
-        channelCount++;
-        this.channelName = channelName + channelCount;
+
+    public Channel(String channelName, String description,
+                   ChannelType channelType,  User ownerUser) {
+        super();
+        this.channelName = channelName;
         this.description = description;
         this.channelType = channelType;
+        this.ownerUser = ownerUser;
+        this.members.add(ownerUser);
     }
 
-    public static int getChannelCount() {
-        return channelCount;
-    }
 
     public String getChannelName() {
         return channelName;
@@ -48,6 +49,14 @@ public class Channel extends BaseEntity {
         }
     }
 
+    @Override
+    public String toString() {
+        return  "| Channel Name : " + channelName + '\n' +
+                "| Channel Type : " + channelType + '\n' +
+                "| OwnerUser : " + ownerUser.getUsername() + '\n' +
+                "| Members : " + '\n' +
+                "| description : " + description + '\n';
+    }
 
 
 

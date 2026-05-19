@@ -1,17 +1,24 @@
 package com.sprint.mission.discodeit.service.jcf;
 
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.service.UserService;
 
 import java.util.*;
 
 public class JCFUserService implements UserService {
 
-    private final Map<UUID, User> userMap = new HashMap<>();
+    private final Map<UUID, User> userMap = new LinkedHashMap<>();
 
     // userMap 에 put(키와 값을 추가)을 사용함
     @Override
-    public User create(User user) {
+    public User create(String username, String email, String password, UserStatus userStatus) {
+        User user = new User(
+                username,
+                email,
+                password,
+                userStatus
+        );
         userMap.put(user.getId(), user);
         return user;
     }
@@ -30,10 +37,43 @@ public class JCFUserService implements UserService {
     }
 
     @Override
-    public User update(UUID id, User user) {
-        userMap.get(id).updateUsername(user.getUsername());
-        return userMap.get(id); // 수정된 유저 정보를 리턴
+    public User update(UUID id,
+                       String username,
+                       String password,
+                       UserStatus userStatus) {
+        User user = userMap.get(id);
+        user.updateUsername(username);
+        user.updatePassword(password);
+        user.updateUserStatus(userStatus);
+        return user; // 수정된 유저 정보를 리턴
     }
+
+    public User updateUsername(UUID id, String username) {
+        User user = userMap.get(id);
+        if (user == null) {
+            throw new IllegalArgumentException("존재하지 않는 유저입니다.");
+        }
+        user.updateUsername(username);
+        return user;
+    }
+
+    public User updatePassword(UUID id, String password) {
+        User user = userMap.get(id);
+        if (user == null) {
+            throw new IllegalArgumentException("존재하지 않는 유저입니다.");
+        }
+        user.updatePassword(password);
+        return user;
+    }
+    public User updateUserStatus(UUID id, UserStatus userStatus) {
+        User user = userMap.get(id);
+        if (user == null) {
+            throw new IllegalArgumentException("존재하지 않는 유저입니다.");
+        }
+        user.updateUserStatus(userStatus);
+        return user;
+    }
+
 
     @Override
     public void delete(UUID id) {
