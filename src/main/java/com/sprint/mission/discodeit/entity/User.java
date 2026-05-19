@@ -1,11 +1,11 @@
 package com.sprint.mission.discodeit.entity;
 
+
+
 public class User extends BaseEntity {
     private String name;
     private String userId;
     private String userPw;
-
-    //private ArrayList<UUID> joinedChannel;
 
     // 기타 사용자 프로필 정보.
     public User(String name, String userId, String userPw) {
@@ -15,7 +15,6 @@ public class User extends BaseEntity {
         this.userPw = userPw;
 
         //this.joinedChannel = new ArrayList<>()
-
     }
 
     // temp ToString

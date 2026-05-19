@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit;
 
 
 
-import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 
@@ -41,18 +40,8 @@ public class ConsoleInterface {
 
 
 
-    public void channelPrintOut(ArrayList<Channel> in){
-        for (Channel i : in){
-            System.out.println(i);
-        }
-    }
-    public void messagePrintOut(ArrayList<Message> in){
-        for (Message i : in){
-            System.out.println(i);
-        }
-    }
-    public void userPrintOut(ArrayList<User> in){
-        for (User i : in){
+    public <T> void PrintOut(ArrayList<T> in){
+        for (T i : in){
             System.out.println(i);
         }
     }

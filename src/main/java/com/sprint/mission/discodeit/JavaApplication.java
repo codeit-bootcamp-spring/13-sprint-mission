@@ -19,30 +19,33 @@ public class JavaApplication {
     static Boolean flag = true;
     public static void main(String[] args) {
         Scanner in = new Scanner(System.in);
-        JCFChannelService chn = new JCFChannelService();
-        JCFMessageService msg =  new JCFMessageService();
-        JCFUserService usr = new JCFUserService();
         ConsoleInterface console = new ConsoleInterface(in);
-        User user;
 
-        while (flag) {
-            console.initMsg();
-            switch (console.getFlag()) {
-                case MAIN:
-                    mainService(console);
-                    break;
-                case CHANNEL:
-                    channelService(console, chn);
-                    break;
-                case MESSAGE:
-                    messageService(console, msg);
-                    break;
-                case USER:
-                    userService(console, usr);
-                    break;
-                default:
-                    flag = false;
+        UUID curUserID;
+        UUID curChannelID;
+        try {
+            while (flag) {
+                console.initMsg();
+                switch (console.getFlag()) {
+                    case MAIN:
+                        mainService(console);
+                        break;
+                    case CHANNEL:
+                        channelService(console);
+                        break;
+                    case MESSAGE:
+                        messageService(console);
+                        break;
+                    case USER:
+                        userService(console);
+                        break;
+                    default:
+                        flag = false;
+                }
             }
+        }
+        catch (Exception e) {
+            System.out.println(e);
         }
     }
 
@@ -69,13 +72,14 @@ public class JavaApplication {
         }
     }
 
-    static void channelService(ConsoleInterface console, JCFChannelService chn){
+    static void channelService(ConsoleInterface console){
         final String[] newName = new String[1];
         final String[] newDec = new String[1];
         final String[] newType = new String[1];
         ChannelType type;
         UUID id;
         ArrayList<Channel> channel;
+        JCFChannelService chn = JCFChannelService.getInstance();
 
         class channelFunction {
             void getChannelInfo(){
@@ -106,14 +110,14 @@ public class JavaApplication {
             case "2": // get list
                 System.out.println(" === List of channels === ");
                 ArrayList<Channel> channels = chn.readChannelAll();
-                console.channelPrintOut(channels);
+                console.PrintOut(channels);
                 console.inputMsg();
                 break;
             case "3": // get obj by id
                 System.out.println(" === Get channel === ");
                 id = UUID.fromString(console.inputMsg());
                 channel = chn.readChannel(id);
-                console.channelPrintOut(channel);
+                console.PrintOut(channel);
                 console.inputMsg();
                 break;
             case "4": // update
@@ -122,7 +126,7 @@ public class JavaApplication {
                 System.out.print("type target id");
                 id = UUID.fromString(console.inputMsg());
                 channel = chn.readChannel(id);
-                console.channelPrintOut(channel);
+                console.PrintOut(channel);
                 console.inputMsg();
                 // mod info
                 innerClass.getChannelInfo();
@@ -145,12 +149,14 @@ public class JavaApplication {
         }
     }
 
-    static void messageService(ConsoleInterface console, JCFMessageService msg) {
+    static void messageService(ConsoleInterface console) {
         final UUID[] newUser = new UUID[1];
         final UUID[] newChannel = new UUID[1];
         final String[] newData = new String[1];
         UUID id;
         ArrayList<Message> message;
+
+        JCFMessageService msg = JCFMessageService.getInstance();
 
 
         class msgFunction {
@@ -162,6 +168,19 @@ public class JavaApplication {
                 System.out.println("type user new Message");
                 newData[0] = console.inputMsg();
             }
+
+            boolean check(UUID userID, UUID channelID) {
+                JCFChannelService chn = JCFChannelService.getInstance();
+                JCFUserService user = JCFUserService.getInstance();
+                try {
+                    user.readUser(newUser[0]);
+                    chn.readChannel(newChannel[0]);
+                    return true;
+                }
+                catch (Exception e) {
+                    return false;
+                }
+            }
         }
 
         String input = console.inputMsg();
@@ -171,35 +190,43 @@ public class JavaApplication {
             case "1": // create
                 System.out.println(" === Create message Start === ");
                 innerClass.getMessageInfo();
+                if(!innerClass.check(newUser[0], newChannel[0])){
+                    System.out.println("invalid creation msg.");
+                    break;
+                };
                 msg.createMessage(newUser[0], newChannel[0], newData[0]);
                 System.out.printf("%s message created successfully\n", newUser[0]);
                 break;
+
             case "2": // get list
                 System.out.println(" === List of messages === ");
                 ArrayList<Message> messages = msg.readMessageAll();
-                console.messagePrintOut(messages);
+                console.PrintOut(messages);
                 console.inputMsg();
                 break;
+
             case "3": // get obj by id
-                System.out.println(" === Get channel === ");
+                System.out.println(" === Get message === ");
                 id = UUID.fromString(console.inputMsg());
                 message = msg.readMessage(id);
-                console.messagePrintOut(message);
+                console.PrintOut(message);
                 console.inputMsg();
                 break;
+
             case "4": // update
                 System.out.println(" === Update message === ");
                 // select target
                 System.out.print("type target id");
                 id = UUID.fromString(console.inputMsg());
                 message = msg.readMessage(id);
-                console.messagePrintOut(message);
+                console.PrintOut(message);
                 //console.inputMsg();
                 System.out.println("change info type in");
                 // mod info
                 innerClass.getMessageInfo();
                 msg.updateMessage(id, newData[0]);
                 break;
+
             case "5": // remove
                 System.out.println(" === Delete channel === ");
                 System.out.print("type target id : ");
@@ -208,18 +235,23 @@ public class JavaApplication {
                 msg.deleteMessage(id);
                 System.out.println("channel deleted successfully");
                 break;
+
             case "exit": // return to menu
                 console.setFlag(ServiceType.MAIN);
                 break;
+
             default:
                 System.out.println("invalid input");
         }
     }
 
-    static void userService(ConsoleInterface console, JCFUserService usr) {
+    static void userService(
+            ConsoleInterface console
+    ) {
         final String[] newName = new String[1];
         final String[] newId = new String[1];
         final String[] newPassword = new String[1];
+        JCFUserService usr = JCFUserService.getInstance();
         UUID id;
         ArrayList<User> user;
 
@@ -248,14 +280,14 @@ public class JavaApplication {
             case "2": // get list
                 System.out.println(" === List of Users === ");
                 ArrayList<User> users = usr.readUserAll();
-                console.userPrintOut(users);
+                console.PrintOut(users);
                 console.inputMsg();
                 break;
             case "3": // get obj by id
                 System.out.println(" === Get user === ");
                 id = UUID.fromString(console.inputMsg());
                 user = usr.readUser(id);
-                console.userPrintOut(user);
+                console.PrintOut(user);
                 console.inputMsg();
                 break;
             case "4": // update
@@ -264,7 +296,7 @@ public class JavaApplication {
                 System.out.print("type target id");
                 id = UUID.fromString(console.inputMsg());
                 user = usr.readUser(id);
-                console.userPrintOut(user);
+                console.PrintOut(user);
                 console.inputMsg();
                 // mod info
                 innerClass.getUserInfo();

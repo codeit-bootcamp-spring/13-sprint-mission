@@ -12,9 +12,17 @@ import java.util.UUID;
 public class JCFMessageService implements MessageService {
     private final HashMap<UUID, Message> data;
 
-    public JCFMessageService(){
+    private static class UserInstance{
+        private static final JCFMessageService INSTANCE = new JCFMessageService();
+    }
+
+    private JCFMessageService(){
         data = new HashMap<>();
     }
+    public static JCFMessageService getInstance(){
+        return UserInstance.INSTANCE;
+    }
+
 
     @Override
     public void createMessage(UUID user, UUID channel, String data){
@@ -35,8 +43,7 @@ public class JCFMessageService implements MessageService {
 
     @Override
     public ArrayList<Message> readMessageAll(){
-        ArrayList<Message> res = new ArrayList<>(data.values());
-        return res;
+        return new ArrayList<>(data.values());
     }
 
     @Override
