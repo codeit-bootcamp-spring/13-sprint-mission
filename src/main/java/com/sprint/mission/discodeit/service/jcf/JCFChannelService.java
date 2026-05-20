@@ -85,6 +85,9 @@ public class JCFChannelService implements ChannelService {
         if (channel == null) {
             throw new IllegalArgumentException("존재하지 않는 채널입니다.");
         }
+        if (channel.getMembers().contains(user)) {
+            throw new IllegalArgumentException("이미 채널에 추가된 유저입니다.");
+        }
         channel.addMember(user);
         return channel;
     }

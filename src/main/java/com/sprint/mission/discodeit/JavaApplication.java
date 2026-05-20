@@ -5,7 +5,6 @@ import com.sprint.mission.discodeit.service.jcf.JCFChannelService;
 import com.sprint.mission.discodeit.service.jcf.JCFMessageService;
 import com.sprint.mission.discodeit.service.jcf.JCFUserService;
 
-import java.util.UUID;
 
 public class JavaApplication {
 
@@ -87,7 +86,6 @@ public class JavaApplication {
         jcfChannelService.addMember(channel1.getId(), user3);
         jcfChannelService.addMember(channel1.getId(), user4);
         jcfChannelService.addMember(channel1.getId(), user5);
-        jcfChannelService.addMember(channel1.getId(), user6);
         jcfChannelService.addMember(channel2.getId(), user1);
         jcfChannelService.addMember(channel2.getId(), user3);
         jcfChannelService.addMember(channel2.getId(), user4);
@@ -161,6 +159,8 @@ public class JavaApplication {
         jcfMessageService.create(message9);
         System.out.println(message9);
         Message message10 = new Message("엣취~~~~~!!", user5, channel2);
+        jcfMessageService.create(message10);
+        System.out.println(message10);
 
 
         System.out.println("===== 메세지 단건 조회 =====");
