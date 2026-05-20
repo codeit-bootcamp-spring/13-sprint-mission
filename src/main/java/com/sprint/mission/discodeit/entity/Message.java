@@ -11,14 +11,15 @@ public class Message {
     private UUID channelId;
     private UUID authorId;
 
-    public Message(String content, Channel channel, User author) {
+    public Message(UUID authorId, UUID channelId, String content) {
         this.id = UUID.randomUUID();
         this.createdAt = System.currentTimeMillis();
         this.updatedAt = System.currentTimeMillis();
         this.content = content;
-        this.channelId = channel.getId();
-        this.authorId = author.getId();
+        this.channelId = channelId;
+        this.authorId = authorId;
     }
+
 
     public UUID getId() {
         return id;
@@ -45,6 +46,7 @@ public class Message {
         this.updatedAt = System.currentTimeMillis();
     }
 
+    @Override
     public String toString() {
         return "Message{" +
                 "id=" + id +

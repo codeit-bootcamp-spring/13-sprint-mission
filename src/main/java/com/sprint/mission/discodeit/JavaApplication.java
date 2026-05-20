@@ -10,13 +10,15 @@ import com.sprint.mission.discodeit.service.jcf.JCFChannelService;
 import com.sprint.mission.discodeit.service.jcf.JCFMessageService;
 import com.sprint.mission.discodeit.service.jcf.JCFUserService;
 
+import java.util.UUID;
+
 public class JavaApplication {
 
     public static void main(String[] args) {
 
         UserService userService = new JCFUserService();
         ChannelService channelService = new JCFChannelService();
-        MessageService messageService = new JCFMessageService();
+        MessageService messageService = new JCFMessageService(userService, channelService);
 
         // 유저 생성
         User user = new User("최성웅", "test@test.com", "123456");
@@ -35,8 +37,7 @@ public class JavaApplication {
         System.out.println("==================================================");
 
         // 메세지 생성
-        Message message = new Message("testMessage", channel, user);
-        messageService.create(message);
+        Message message = messageService.create(user.getId(), channel.getId(), "test message");
 
         System.out.println(messageService.findAll());
 
@@ -62,19 +63,6 @@ public class JavaApplication {
         System.out.println(channelService.findAll());
         System.out.println(messageService.findAll());
 
-
-
-
-
-
-
-
-
-
-
-
     }
-
-
 
 }

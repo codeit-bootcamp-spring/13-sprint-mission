@@ -56,6 +56,7 @@ public class Channel {
         this.updatedAt = System.currentTimeMillis();
     }
 
+    @Override
     public String toString() {
         return "Channel{" +
                 "id=" + id +
