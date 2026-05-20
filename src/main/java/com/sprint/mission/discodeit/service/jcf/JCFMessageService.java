@@ -7,7 +7,7 @@ import java.util.*;
 
 public class JCFMessageService implements MessageService {
 
-    Map<UUID, Message> messageMap = new HashMap<UUID, Message>();
+    Map<UUID, Message> messageMap = new LinkedHashMap<>();
 
 
     @Override
@@ -27,8 +27,8 @@ public class JCFMessageService implements MessageService {
     }
 
     @Override
-    public Message update(UUID id, Message message) {
-        messageMap.get(id).updateContent(message.getContent());
+    public Message update(UUID id, String content) {
+        messageMap.get(id).updateContent(content);
         return messageMap.get(id);
     }
 

@@ -10,6 +10,6 @@ public interface MessageService {
     Message create(Message message);
     Message read(UUID id);
     List<Message> readAll();
-    Message update(UUID id, Message message);
+    Message update(UUID id, String content);
     void delete(Message message);
 }

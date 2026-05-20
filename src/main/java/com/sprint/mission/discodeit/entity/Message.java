@@ -5,21 +5,24 @@ import java.util.UUID;
 public class Message extends BaseEntity{
 
 private String content;
-private UUID authorId;
-private UUID channelId;
+private User author;
+private Channel channel;
 
-    public Message() {
+    public Message(String content, User author, Channel channel) {
         super();
+        this.content = content;
+        this.author = author;
+        this.channel = channel;
     }
 
     public String getContent() {
         return content;
     }
-    public UUID getAuthorId() {
-        return authorId;
+    public User getAuthor() {
+        return author;
     }
-    public UUID getChannelId() {
-        return channelId;
+    public Channel getChannel() {
+        return channel;
     }
 
     public void updateContent(String content) {
@@ -33,8 +36,11 @@ private UUID channelId;
         }
     }
 
+    @Override
+    public String toString() {
+        return "[" + channel.getChannelName() + " | " + author.getUsername() + "]" + '\n' +
+                content + '\n';
 
 
-
-
+    }
 }
