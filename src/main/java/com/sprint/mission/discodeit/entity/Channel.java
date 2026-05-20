@@ -9,50 +9,60 @@ public class Channel extends BaseEntity {
 
     public Channel(String name, String description, ChannelType type) {
         super();
-        this.name = validateName(name); // 채널 이름
-        this.description = validateDescription(description); // 채널 설명
-        this.type = type;
+        validateName(name); // 채널 이름
+        validateDescription(description); // 채널 설명
+        validateType(type);
     }
 
     public String getDescription() {
         return description;
     }
 
-    private String validateDescription(String description) {
+    private void validateDescription(String description) {
         if (description == null || description.isBlank()) {
             throw new IllegalArgumentException("채널 소개는 필수입니다.");
         }
+        this.description = description;
 
-        return description;
+    }
+    public void updateDescription(String description) {
+        validateDescription(description);
+        this.description = description;
+        setUpdatedAt();
     }
 
     public String getName() {
         return name;
     }
 
-    private String validateName(String name) {
+    private void validateName(String name) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("채널 이름은 필수입니다.");
         }
-
-        return name;
+        this.name = name;
     }
 
+    public void updateName(String name) {
+        validateName(name);
+        this.name = name;
+        setUpdatedAt();
+    }
 
     public ChannelType getType() {
         return type;
     }
 
-    public void setType(ChannelType type) {
-        this.type = validateType(type);
+    private void validateType(ChannelType type) {
+        if (type == null) {
+            throw new RuntimeException("채널 타입을 설정하세요.");
+        }
+        this.type = type;
     }
 
-    private ChannelType validateType(ChannelType type) {
-        if (type == null) {
-            return ChannelType.PUBLIC;
-        }
-
-        return type;
+    public void updateType(ChannelType type) {
+        validateType(type);
+        this.type = type;
+        setUpdatedAt();
     }
 
     @Override

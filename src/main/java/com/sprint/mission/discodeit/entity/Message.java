@@ -11,43 +11,48 @@ public class Message extends BaseEntity {
 
     public Message(String content, UUID authorId, UUID channelId) {
         super();
-        this.content = messageContent(content);
-        this.authorId = validateAuthorId(authorId);
-        this.channelId = validatechannelId(channelId);
+        validateAuthorId(authorId);
+        validateChannelId(channelId);
+        validaContent(content);
     }
 
     public UUID getChannelId() {
         return channelId;
     }
 
-    private UUID validatechannelId(UUID channelId) {
+    private void validateChannelId(UUID channelId) {
         if (channelId == null) {
             throw new IllegalArgumentException("채널 ID 작성은 필수입니다.");
         }
-        return channelId;
+        this.channelId = channelId;
     }
-
 
     public UUID getAuthorId() {
         return authorId;
     }
 
-    private UUID validateAuthorId(UUID authorId) {
+    private void validateAuthorId(UUID authorId) {
         if (authorId == null) {
             throw new IllegalArgumentException("작성자 ID는 필수입니다.");
         }
-        return authorId;
+        this.authorId = authorId;
     }
 
     public String getContent() {
         return content;
     }
 
-    private String messageContent(String content) {
+    private void validaContent(String content) {
         if (content == null || content.isBlank()) {
             throw new IllegalArgumentException("메세지의 내용이 없습니다.");
         }
-        return content;
+        this.content = content;
+    }
+
+    public void updateContent(String content) {
+        validaContent(content);
+        this.content = content;
+        setUpdatedAt();
     }
 
     @Override

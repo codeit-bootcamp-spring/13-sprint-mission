@@ -8,22 +8,24 @@ public class User extends BaseEntity {
 
     public User(String userName, String email, String passWord) {
         super();
-        this.userName = validateName(userName);
-        this.email = validateEmail(email);
-        this.passWord = validatePassWorld(passWord);
-    }
-
-    public void setUserName(String userName) {
-        this.userName = validateName(userName);
-        setUpdatedAt();
+        validateUserName(userName);
+        validateEmail(email);
+        validatePassWord(passWord);
     }
 
 
-    private String validateName(String newUserName) {
-        if (newUserName == null || newUserName.isBlank()) {
+    private void validateUserName(String userName) {
+        if (userName == null || userName.isBlank()) {
             throw new IllegalArgumentException("이름은 필수입니다.");
         }
-        return newUserName;
+        this.userName = userName;
+    }
+
+    public void updateUserName(String userName) {
+        validateUserName(userName);
+
+        this.userName = userName;
+        setUpdatedAt();
     }
 
     public String getUserName() {
@@ -34,32 +36,36 @@ public class User extends BaseEntity {
         return email;
     }
 
-    public void setEmail(String email) {
-        this.email = validateEmail(email);
-        setUpdatedAt();
-    }
-
-    private String validateEmail(String newEmail) {
-        if (newEmail == null || newEmail.isBlank()) {
+    private void validateEmail(String email) {
+        if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("이메일 입력은 필수입니다.");
         }
-        return newEmail;
+        this.email = email;
+    }
+
+    public void updateEmail(String email) {
+        validateEmail(email);
+
+        this.email = email;
+        setUpdatedAt();
     }
 
     public String getPassWord() {
         return passWord;
     }
 
-    public void setPassWord(String passWord) {
-        this.passWord = validatePassWorld(passWord);
-        setUpdatedAt();
-    }
-
-    private String validatePassWorld(String NewPassWord) {
-        if (NewPassWord == null || NewPassWord.isBlank()) {
+    private void validatePassWord(String passWord) {
+        if (passWord == null || passWord.isBlank()) {
             throw new IllegalArgumentException("비밀번호 입력 필수입니다.");
         }
-        return NewPassWord;
+        this.passWord = passWord;
+    }
+
+    public void updatePassWord(String passWord) {
+        validatePassWord(passWord);
+
+        this.passWord = passWord;
+        setUpdatedAt();
     }
 
     @Override

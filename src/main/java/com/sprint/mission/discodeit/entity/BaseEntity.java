@@ -26,4 +26,7 @@ public class BaseEntity {
         this.updatedAt = System.currentTimeMillis();
     }
 
+    public Long getUpdatedAt() {
+        return updatedAt;
+    }
 }
