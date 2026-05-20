@@ -1,10 +1,5 @@
 package com.sprint.mission.discodeit;
 
-
-
-import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
-
 import java.util.ArrayList;
 import java.util.Scanner;
 

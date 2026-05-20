@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.entity;
 
 
+import java.io.Serializable;
 
 public class Channel extends BaseEntity {
     private String name;
@@ -8,6 +9,7 @@ public class Channel extends BaseEntity {
     private ChannelType type;
 
     public Channel(String name,String description,ChannelType type){
+        super();
         this.name = name;
         this.description = description;
         this.type = type;
