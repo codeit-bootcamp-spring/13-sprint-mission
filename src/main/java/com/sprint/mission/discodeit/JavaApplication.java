@@ -1,15 +1,23 @@
 package com.sprint.mission.discodeit;
 
 
+import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
+import com.sprint.mission.discodeit.repository.jcf.JCFSelectFilter;
+
+import com.sprint.mission.discodeit.service.basic.BasicChannelService;
+import com.sprint.mission.discodeit.service.basic.BasicMessageService;
+import com.sprint.mission.discodeit.service.basic.BasicUserService;
 import com.sprint.mission.discodeit.service.file.FileChannelService;
 import com.sprint.mission.discodeit.service.file.FileMessageService;
 import com.sprint.mission.discodeit.service.file.FileUserService;
-import com.sprint.mission.discodeit.service.jcf.JCFChannelService;
-import com.sprint.mission.discodeit.service.jcf.JCFMessageService;
-import com.sprint.mission.discodeit.service.jcf.JCFUserService;
+
+//import com.sprint.mission.discodeit.service.jcf.JCFChannelService;
+//import com.sprint.mission.discodeit.service.jcf.JCFMessageService;
+//import com.sprint.mission.discodeit.service.jcf.JCFUserService;
 
 
 import java.nio.file.Paths;
@@ -24,9 +32,14 @@ public class JavaApplication {
         Scanner in = new Scanner(System.in);
         ConsoleInterface console = new ConsoleInterface(in);
 
-        FileChannelService chn = new FileChannelService(Paths.get("channel.ser"));
+//        FileChannelRepository chn = new FileChannelRepository(Paths.get("channel.ser"));
+//        FileChannelService chn = new FileChannelService(Paths.get("channel.ser"));
         FileUserService usr = new FileUserService(Paths.get("user.ser"));
-        FileMessageService msg = new FileMessageService(Paths.get("msg.ser"));
+//        FileMessageService msg = new FileMessageService(Paths.get("msg.ser"));
+
+        BasicChannelService chn = new BasicChannelService();
+//        BasicUserService usr = new BasicUserService();
+        BasicMessageService msg = new BasicMessageService();
 
         // current User, Channel info
 //        UUID curUserID;
@@ -81,7 +94,7 @@ public class JavaApplication {
         }
     }
 
-    static void channelService(ConsoleInterface console, FileChannelService chn) {
+    static void channelService(ConsoleInterface console, BasicChannelService chn) {
         final String[] newName = new String[1];
         final String[] newDec = new String[1];
         final String[] newType = new String[1];
@@ -114,24 +127,34 @@ public class JavaApplication {
                 innerClass.getChannelInfo();
                 type = newType[0].equals("y") ? ChannelType.PUBLIC : ChannelType.PRIVATE;
                 chn.createChannel(newName[0], newDec[0], type);
+//                chn.create(newName[0], newDec[0], type);
                 System.out.printf("%s channel created successfully\n", newName[0]);
                 break;
             case "2": // get list
                 System.out.println(" === List of channels === ");
+
+//                JCFSelectFilter<Channel> flt = (c) -> true ;
+
                 console.PrintOut(chn.readChannelAll());
-                console.inputMsg();
+                System.out.println("====================");
                 break;
             case "3": // get obj by id
                 System.out.println(" === Get channel === ");
+                System.out.println("type the channel id");
+
                 id = UUID.fromString(console.inputMsg());
+                // filter
+//                JCFSelectFilter<Channel> flt2 = (c) -> c.getId().equals(id) ;
+
                 console.PrintOut(chn.readChannel(id));
-                console.inputMsg();
+                System.out.println("====================");
                 break;
             case "4": // update
                 System.out.println(" === Update channel === ");
                 // select target
                 System.out.print("type target id");
                 id = UUID.fromString(console.inputMsg());
+//                flt2 = (c) -> c.getId().equals(id) ;
                 console.PrintOut(chn.readChannel(id));
                 console.inputMsg();
                 // mod info
@@ -155,7 +178,7 @@ public class JavaApplication {
         }
     }
 
-    static void messageService(ConsoleInterface console, FileMessageService msg) {
+    static void messageService(ConsoleInterface console, BasicMessageService msg) {
         final UUID[] newUser = new UUID[1];
         final UUID[] newChannel = new UUID[1];
         final String[] newData = new String[1];
@@ -174,34 +197,34 @@ public class JavaApplication {
                 newData[0] = console.inputMsg();
             }
 
-            boolean check() {
+//            boolean check() { // 원래라면 service 위치
 //                JCFChannelService chn = JCFChannelService.getInstance();
 //                JCFUserService user = JCFUserService.getInstance();
-                FileChannelService chn = new FileChannelService(Paths.get("channel.ser"));
-                FileUserService usr = new FileUserService(Paths.get("user.ser"));
-                try {
-                    usr.readUser(newUser[0]);
-                    chn.readChannel(newChannel[0]);
-                    return true;
-                }
-                catch (Exception e) {
-                    return false;
-                }
-            }
+//                FileChannelService chn = new FileChannelService(Paths.get("channel.ser"));
+//                FileUserService usr = new FileUserService(Paths.get("user.ser"));
+//                try {
+//                    usr.readUser(newUser[0]);
+//                    chn.readChannel(newChannel[0]);
+//                    return true;
+//                }
+//                catch (Exception e) {
+//                    return false;
+//                }
+//            }
         }
 
         String input = console.inputMsg();
         msgFunction innerClass = new msgFunction();
 
+
         switch (input) {
             case "1": // create
                 System.out.println(" === Create message Start === ");
+
                 innerClass.getMessageInfo();
-                if(!innerClass.check()){
-                    System.out.println("invalid creation msg.");
-                    break;
-                }
+
                 msg.createMessage(newUser[0], newChannel[0], newData[0]);
+
                 System.out.printf("%s message created successfully\n", newUser[0]);
                 break;
 
@@ -209,14 +232,12 @@ public class JavaApplication {
                 System.out.println(" === List of messages === ");
                 ArrayList<Message> messages = msg.readMessageAll();
                 console.PrintOut(messages);
-                console.inputMsg();
                 break;
 
             case "3": // get obj by id
                 System.out.println(" === Get message === ");
                 id = UUID.fromString(console.inputMsg());
                 console.PrintOut(msg.readMessage(id));
-                console.inputMsg();
                 break;
 
             case "4": // update
@@ -259,7 +280,6 @@ public class JavaApplication {
         final String[] newPassword = new String[1];
 //        JCFUserService usr = JCFUserService.getInstance();
         UUID id;
-        ArrayList<User> user;
 
 
         class userFunction {

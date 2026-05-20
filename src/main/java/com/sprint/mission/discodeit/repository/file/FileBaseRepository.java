@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.service.file;
+package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.BaseEntity;
 
@@ -9,11 +9,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 
+public class FileBaseRepository {
 
-public class FileBase  {
-//    static final long serialVersionUID = 1L;
     Path path;
-    public FileBase(Path path) {
+    public FileBaseRepository(Path path) {
         this.path = path;
     }
 
@@ -66,5 +65,4 @@ public class FileBase  {
             e.printStackTrace();
         }
     }
-
 }

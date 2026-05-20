@@ -8,10 +8,10 @@ public class ConsoleInterface {
     private ServiceType flag;
 
 //    private final HashMap<> consoleTable;
-    public ConsoleInterface(Scanner sc, ServiceType flag) {
-        this.sc = sc;
-        this.flag = flag;
-    }
+//    public ConsoleInterface(Scanner sc, ServiceType flag) {
+//        this.sc = sc;
+//        this.flag = flag;
+//    }
     public ConsoleInterface(Scanner sc) {
         this.sc = sc;
         this.flag = ServiceType.MAIN;
