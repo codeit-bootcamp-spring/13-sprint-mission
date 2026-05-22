@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.service.JCFException;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -55,7 +54,6 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
     public void delete(UUID id){
         HashMap<UUID,User> userList = this.load();
         User user = userList.remove(id);
-        if ( user == null) JCFException.throwRuntimeError("User dos not exist.");
     }
 
 

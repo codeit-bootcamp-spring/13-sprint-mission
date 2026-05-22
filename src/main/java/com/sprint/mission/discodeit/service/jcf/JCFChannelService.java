@@ -4,7 +4,6 @@ package com.sprint.mission.discodeit.service.jcf;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.service.ChannelService;
-import com.sprint.mission.discodeit.service.JCFException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,7 +42,6 @@ public class JCFChannelService implements ChannelService {
 
     @Override
     public ArrayList<Channel> readChannel(UUID id){
-        if(!this.data.containsKey(id)) JCFException.throwRuntimeError("Channel dos not exist.");
         ArrayList<Channel> channel = new ArrayList<>();
         channel.add(this.data.get(id));
         return channel;
@@ -66,7 +64,6 @@ public class JCFChannelService implements ChannelService {
     @Override
     public void deleteChannel(UUID id){
         Channel cnl = data.remove(id);
-        if ( cnl == null) JCFException.throwRuntimeError("Channel dos not exist.");
     }
 
 

@@ -4,7 +4,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.MessageRepository;
-import com.sprint.mission.discodeit.service.JCFException;
+
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -55,6 +55,5 @@ public class FileMessageRepository extends FileBaseRepository implements Message
     public void delete(Message usr){
         HashMap<UUID,Message> msgList = this.load();
         Message msg = msgList.remove(usr.getId());
-        if ( msg == null) JCFException.throwRuntimeError("Message dos not exist.");
     }
 }

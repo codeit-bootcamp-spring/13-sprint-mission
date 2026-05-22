@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit.service.jcf;
 
 
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.service.JCFException;
 import com.sprint.mission.discodeit.service.MessageService;
 
 import java.util.ArrayList;
@@ -35,7 +34,6 @@ public class JCFMessageService implements MessageService {
 
     @Override
     public ArrayList<Message> readMessage(UUID id){
-        if(!this.data.containsKey(id)) JCFException.throwRuntimeError("Message dos not exist.");
         ArrayList<Message> messages = new ArrayList<>();
         messages.add(this.data.get(id));
         return messages;
@@ -56,6 +54,5 @@ public class JCFMessageService implements MessageService {
     @Override
     public void deleteMessage(UUID id){
         Message msg = data.remove(id);
-        if ( msg == null) JCFException.throwRuntimeError("Message dos not exist.");
     }
 }

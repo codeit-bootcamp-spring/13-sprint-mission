@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit.service.jcf;
 
 
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.service.JCFException;
 import com.sprint.mission.discodeit.service.UserService;
 
 import java.util.HashMap;
@@ -39,7 +38,6 @@ public class JCFUserService implements UserService {
 
     @Override
     public ArrayList<User> readUser(UUID id){
-        if (!this.data.containsKey(id)) JCFException.throwRuntimeError("User not exist.");
         ArrayList<User> user = new ArrayList<>();
         user.add(data.get(id));
         return user;
@@ -71,7 +69,6 @@ public class JCFUserService implements UserService {
     @Override
     public void deleteUser(UUID id){
         User user = data.remove(id);
-        if ( user == null) JCFException.throwRuntimeError("User dos not exist.");
     }
 
 }

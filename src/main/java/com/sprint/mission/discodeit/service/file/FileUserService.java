@@ -1,7 +1,6 @@
 package com.sprint.mission.discodeit.service.file;
 
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.service.JCFException;
 import com.sprint.mission.discodeit.service.UserService;
 
 
@@ -75,7 +74,6 @@ public class FileUserService extends FileBase implements UserService {
     public void deleteUser(UUID id){
         HashMap<UUID,User> userList = this.load();
         User user = userList.remove(id);
-        if ( user == null) JCFException.throwRuntimeError("User dos not exist.");
     }
 
 }

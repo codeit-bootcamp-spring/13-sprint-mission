@@ -3,7 +3,6 @@ package com.sprint.mission.discodeit.service.file;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.service.ChannelService;
-import com.sprint.mission.discodeit.service.JCFException;
 
 
 import java.nio.file.Path;
@@ -34,7 +33,6 @@ public class FileChannelService extends FileBase implements ChannelService{
     @Override
     public ArrayList<Channel> readChannel(UUID id){
         HashMap<UUID, Channel> channelList = this.load();
-        if(!channelList.containsKey(id)) JCFException.throwRuntimeError("Channel dos not exist.");
         ArrayList<Channel> channel = new ArrayList<>();
         channel.add(channelList.get(id));
         return channel;
@@ -61,7 +59,6 @@ public class FileChannelService extends FileBase implements ChannelService{
     public void deleteChannel(UUID id){
         HashMap<UUID, Channel> channelList = this.load();
         Channel cnl = channelList.remove(id);
-        if ( cnl == null) JCFException.throwRuntimeError("Channel dos not exist.");
         this.save(channelList);
     }
 

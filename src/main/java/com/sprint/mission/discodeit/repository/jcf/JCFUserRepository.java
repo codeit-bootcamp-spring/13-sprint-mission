@@ -9,9 +9,9 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 public class JCFUserRepository implements UserRepository {
-    private final HashMap<UUID, User> data = new HashMap<UUID, User>();
+    private final HashMap<UUID, User> data;
 
-    JCFUserRepository() {}
+    JCFUserRepository() { data = new HashMap<>();}
 
     @Override
     public void create(String name, String id, String pw){

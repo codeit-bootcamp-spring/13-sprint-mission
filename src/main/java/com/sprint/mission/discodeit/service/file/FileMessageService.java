@@ -1,7 +1,6 @@
 package com.sprint.mission.discodeit.service.file;
 
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.service.JCFException;
 import com.sprint.mission.discodeit.service.MessageService;
 
 
@@ -34,7 +33,6 @@ public class FileMessageService extends FileBase implements MessageService {
     @Override
     public ArrayList<Message> readMessage(UUID id){
         HashMap<UUID, Message> msgList = this.load();
-        if(!msgList.containsKey(id)) JCFException.throwRuntimeError("Message dos not exist.");
         ArrayList<Message> messages = new ArrayList<>();
         messages.add(msgList.get(id));
         return messages;
@@ -59,7 +57,6 @@ public class FileMessageService extends FileBase implements MessageService {
     public void deleteMessage(UUID id){
         HashMap<UUID, Message> msgList = this.load();
         Message msg = msgList.remove(id);
-        if ( msg == null) JCFException.throwRuntimeError("Message dos not exist.");
         this.save(msgList);
     }
 }
