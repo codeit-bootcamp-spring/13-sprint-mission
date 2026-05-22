@@ -49,15 +49,6 @@ public class FileUserService extends FileBase implements UserService {
         return new ArrayList<>(userList.values());
     }
 
-//    @Override
-//    public ArrayList<User> readUserByUserId(String userId){
-//        HashMap<UUID,User> userList = this.load();
-//        ArrayList<User> res = (ArrayList<User>) userList.values().stream()
-//                .filter(user -> user.getUserId().equals(userId))
-//                .toList();
-//        if(res.isEmpty()) JCFException.throwRuntimeError("User dos not exist.");
-//        return res;
-//    }
 
     @Override
     public void updateUserInfo(UUID id, String name, String userID, String pw){

@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit;
 
 
 import com.sprint.mission.discodeit.entity.ChannelType;
-import com.sprint.mission.discodeit.entity.Message;
 
 import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
 import com.sprint.mission.discodeit.repository.file.FileMessageRepository;
@@ -17,10 +16,7 @@ import com.sprint.mission.discodeit.service.basic.BasicChannelService;
 import com.sprint.mission.discodeit.service.basic.BasicMessageService;
 import com.sprint.mission.discodeit.service.basic.BasicUserService;
 
-
-
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -190,10 +186,6 @@ public class JavaApplication {
                 newChannel[0] = UUID.fromString(console.inputMsg());
                 System.out.println("type user new Message");
                 newData[0] = console.inputMsg();
-            }
-
-            void getTagetMSG(){
-
             }
         }
 

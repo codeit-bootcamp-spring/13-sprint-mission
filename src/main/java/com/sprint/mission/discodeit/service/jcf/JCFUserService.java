@@ -48,14 +48,6 @@ public class JCFUserService implements UserService {
         return new ArrayList<>(data.values());
     }
 
-//    @Override
-//    public ArrayList<User> readUserByUserId(String userId){
-//        ArrayList<User> res = (ArrayList<User>) data.values().stream()
-//                .filter(user -> user.getUserId().equals(userId))
-//                .toList();
-//        if(res.isEmpty()) JCFException.throwRuntimeError("User dos not exist.");
-//        return res;
-//    }
 
     @Override
     public void updateUserInfo(UUID id, String name, String userID, String pw){
