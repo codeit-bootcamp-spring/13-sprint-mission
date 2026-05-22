@@ -38,19 +38,19 @@ public class JCFChannelService implements ChannelService {
     }
 
     @Override
-    public ArrayList<Channel> readChannel(UUID id){
+    public ArrayList<Channel> getChannelById(UUID id){
         ArrayList<Channel> channel = new ArrayList<>();
         channel.add(this.data.get(id));
         return channel;
     }
 
     @Override
-    public ArrayList<Channel> readChannelAll(){
+    public ArrayList<Channel> getChannelList(){
         return new ArrayList<>(data.values());
     }
 
     @Override
-    public void updateChannel(UUID id, String name,String description,ChannelType type){
+    public void updateChannelInfo(UUID id, String name,String description,ChannelType type){
         Channel cnl = data.get(id);
         cnl.setName(name);
         cnl.setDescription(description);

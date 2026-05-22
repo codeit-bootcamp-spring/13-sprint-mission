@@ -36,7 +36,7 @@ public class FileUserService extends FileBase implements UserService {
     }
 
     @Override
-    public ArrayList<User> readUser(UUID id){
+    public ArrayList<User> getUserById(UUID id){
         HashMap<UUID,User> userList = this.load();
         ArrayList<User> users = new ArrayList<>();
         users.add(userList.get(id));
@@ -44,7 +44,7 @@ public class FileUserService extends FileBase implements UserService {
     }
 
     @Override
-    public ArrayList<User> readUserAll(){
+    public ArrayList<User> getUserList(){
         HashMap<UUID,User> userList = this.load();
         return new ArrayList<>(userList.values());
     }
@@ -60,7 +60,7 @@ public class FileUserService extends FileBase implements UserService {
 //    }
 
     @Override
-    public void updateUser(UUID id, String name, String userID, String pw){
+    public void updateUserInfo(UUID id, String name, String userID, String pw){
         HashMap<UUID,User> userList = this.load();
         User trg = userList.get(id);
         trg.setName(name);

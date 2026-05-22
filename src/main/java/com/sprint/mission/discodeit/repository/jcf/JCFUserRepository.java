@@ -54,6 +54,6 @@ public class JCFUserRepository implements UserRepository {
     }
 
     // File * Repository 와의 호환성을 위한 더미 메서드
-    public void close(){};
+    public void close(){}
 
 }

@@ -9,8 +9,8 @@ import java.util.UUID;
 
 public interface MessageService {
     void createMessage(UUID user, UUID channel, String data);
-    ArrayList<Message> readMessage(UUID id);
-    ArrayList<Message> readMessageAll();
-    void updateMessage(UUID id, String text);
+    ArrayList<Message> getMessageById(UUID id);
+    ArrayList<Message> getMessageList();
+    void updateMessageData(UUID id, String data);
     void deleteMessage(UUID id);
 }

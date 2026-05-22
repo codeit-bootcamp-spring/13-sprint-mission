@@ -36,17 +36,17 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public ArrayList<Message> readMessage(UUID id){
+    public ArrayList<Message> getMessageById(UUID id){
         return fms.select((c) -> c.getId().equals(id));
     }
 
     @Override
-    public ArrayList<Message> readMessageAll(){
+    public ArrayList<Message> getMessageList(){
         return fms.select((c) -> true);
     }
 
     @Override
-    public void updateMessage(UUID id, String data){
+    public void updateMessageData(UUID id, String data){
         fms.update(id, data);
     }
 

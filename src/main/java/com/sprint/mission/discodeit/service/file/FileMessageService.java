@@ -31,7 +31,7 @@ public class FileMessageService extends FileBase implements MessageService {
     }
 
     @Override
-    public ArrayList<Message> readMessage(UUID id){
+    public ArrayList<Message> getMessageById(UUID id){
         HashMap<UUID, Message> msgList = this.load();
         ArrayList<Message> messages = new ArrayList<>();
         messages.add(msgList.get(id));
@@ -39,13 +39,13 @@ public class FileMessageService extends FileBase implements MessageService {
     }
 
     @Override
-    public ArrayList<Message> readMessageAll(){
+    public ArrayList<Message> getMessageList(){
         HashMap<UUID, Message> msgList = this.load();
         return new ArrayList<>(msgList.values());
     }
 
     @Override
-    public void updateMessage(UUID id, String text){
+    public void updateMessageData(UUID id, String text){
         HashMap<UUID, Message> msgList = this.load();
         Message msg = msgList.get(id);
         msg.setUpdatedAt(System.currentTimeMillis());

@@ -20,17 +20,17 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public ArrayList<User> readUser(UUID id){
+    public ArrayList<User> getUserById(UUID id){
         return fur.select((c) -> c.getId().equals(id));
     }
 
     @Override
-    public ArrayList<User> readUserAll(){
+    public ArrayList<User> getUserList(){
         return fur.select(((c) -> true));
     }
 
     @Override
-    public void updateUser(UUID id, String name, String userID, String pw){
+    public void updateUserInfo(UUID id, String name, String userID, String pw){
         fur.update(id, name, userID, pw);
     }
 

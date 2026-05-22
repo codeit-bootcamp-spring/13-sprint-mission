@@ -21,17 +21,17 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ArrayList<Channel> readChannel(UUID id) {
+    public ArrayList<Channel> getChannelById(UUID id) {
         return fcr.select((c) -> c.getId().equals(id));
     }
 
     @Override
-    public ArrayList<Channel> readChannelAll() {
+    public ArrayList<Channel> getChannelList() {
         return fcr.select((c) -> true);
     }
 
     @Override
-    public void updateChannel(UUID id, String name, String description, ChannelType type){
+    public void updateChannelInfo(UUID id, String name, String description, ChannelType type){
         fcr.update(id, name, description, type);
     }
 

@@ -31,7 +31,7 @@ public class FileChannelService extends FileBase implements ChannelService{
     }
 
     @Override
-    public ArrayList<Channel> readChannel(UUID id){
+    public ArrayList<Channel> getChannelById(UUID id){
         HashMap<UUID, Channel> channelList = this.load();
         ArrayList<Channel> channel = new ArrayList<>();
         channel.add(channelList.get(id));
@@ -39,13 +39,13 @@ public class FileChannelService extends FileBase implements ChannelService{
     }
 
     @Override
-    public ArrayList<Channel> readChannelAll(){
+    public ArrayList<Channel> getChannelList(){
         HashMap<UUID, Channel> channelList = this.load();
         return new ArrayList<>(channelList.values());
     }
 
     @Override
-    public void updateChannel(UUID id, String name,String description,ChannelType type){
+    public void updateChannelInfo(UUID id, String name,String description,ChannelType type){
         HashMap<UUID, Channel> channelList = this.load();
         Channel cnl = channelList.get(id);
         cnl.setName(name);

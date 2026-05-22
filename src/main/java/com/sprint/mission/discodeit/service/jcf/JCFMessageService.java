@@ -34,19 +34,19 @@ public class JCFMessageService implements MessageService {
     }
 
     @Override
-    public ArrayList<Message> readMessage(UUID id){
+    public ArrayList<Message> getMessageById(UUID id){
         ArrayList<Message> messages = new ArrayList<>();
         messages.add(this.data.get(id));
         return messages;
     }
 
     @Override
-    public ArrayList<Message> readMessageAll(){
+    public ArrayList<Message> getMessageList(){
         return new ArrayList<>(data.values());
     }
 
     @Override
-    public void updateMessage(UUID id, String text){
+    public void updateMessageData(UUID id, String text){
         Message msg = data.get(id);
         msg.setUpdatedAt(System.currentTimeMillis());
         msg.setMessages(text);

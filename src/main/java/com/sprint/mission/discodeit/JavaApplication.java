@@ -10,13 +10,13 @@ import com.sprint.mission.discodeit.repository.file.FileUserRepository;
 import com.sprint.mission.discodeit.repository.jcf.JCFChannelRepository;
 import com.sprint.mission.discodeit.repository.jcf.JCFMessageRepository;
 import com.sprint.mission.discodeit.repository.jcf.JCFUserRepository;
+import com.sprint.mission.discodeit.service.ChannelService;
+import com.sprint.mission.discodeit.service.MessageService;
+import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.basic.BasicChannelService;
 import com.sprint.mission.discodeit.service.basic.BasicMessageService;
 import com.sprint.mission.discodeit.service.basic.BasicUserService;
 
-//import com.sprint.mission.discodeit.service.jcf.JCFChannelService;
-//import com.sprint.mission.discodeit.service.jcf.JCFMessageService;
-//import com.sprint.mission.discodeit.service.jcf.JCFUserService;
 
 
 import java.nio.file.Path;
@@ -44,10 +44,6 @@ public class JavaApplication {
         BasicChannelService chn = new BasicChannelService(channel);
         BasicUserService usr = new BasicUserService(user);
         BasicMessageService msg = new BasicMessageService(channel, user, message);
-
-        // current User, Channel info
-//        UUID curUserID;
-//        UUID curChannelID;
 
         try {
             while (flag) {
@@ -101,14 +97,13 @@ public class JavaApplication {
         }
     }
 
-    static void channelService(ConsoleInterface console, BasicChannelService chn) {
+    static void channelService(ConsoleInterface console, ChannelService chn) {
         final String[] newName = new String[1];
         final String[] newDec = new String[1];
         final String[] newType = new String[1];
         ChannelType type;
         UUID id;
 
-//        JCFChannelService chn = JCFChannelService.getInstance();
 
         class channelFunction {
             void getChannelInfo(){
@@ -134,15 +129,13 @@ public class JavaApplication {
                 innerClass.getChannelInfo();
                 type = newType[0].equals("y") ? ChannelType.PUBLIC : ChannelType.PRIVATE;
                 chn.createChannel(newName[0], newDec[0], type);
-//                chn.create(newName[0], newDec[0], type);
                 System.out.printf("%s channel created successfully\n", newName[0]);
                 break;
             case "2": // get list
                 System.out.println(" === List of channels === ");
 
-//                JCFSelectFilter<Channel> flt = (c) -> true ;
 
-                console.PrintOut(chn.readChannelAll());
+                console.PrintOut(chn.getChannelList());
                 System.out.println("====================");
                 break;
             case "3": // get obj by id
@@ -150,24 +143,21 @@ public class JavaApplication {
                 System.out.println("type the channel id");
 
                 id = UUID.fromString(console.inputMsg());
-                // filter
-//                JCFSelectFilter<Channel> flt2 = (c) -> c.getId().equals(id) ;
 
-                console.PrintOut(chn.readChannel(id));
+                console.PrintOut(chn.getChannelById(id));
                 System.out.println("====================");
                 break;
             case "4": // update
                 System.out.println(" === Update channel === ");
                 // select target
+
                 System.out.print("type target id");
                 id = UUID.fromString(console.inputMsg());
-//                flt2 = (c) -> c.getId().equals(id) ;
-                console.PrintOut(chn.readChannel(id));
-                console.inputMsg();
-                // mod info
+                console.PrintOut(chn.getChannelById(id));
+
                 innerClass.getChannelInfo();
                 type = newType[0].equals("y") ? ChannelType.PUBLIC : ChannelType.PRIVATE;
-                chn.updateChannel(id, newName[0], newDec[0], type);
+                chn.updateChannelInfo(id, newName[0], newDec[0], type);
                 break;
             case "5": // remove
                 System.out.println(" === Delete channel === ");
@@ -185,13 +175,11 @@ public class JavaApplication {
         }
     }
 
-    static void messageService(ConsoleInterface console, BasicMessageService msg) {
+    static void messageService(ConsoleInterface console, MessageService msg) {
         final UUID[] newUser = new UUID[1];
         final UUID[] newChannel = new UUID[1];
         final String[] newData = new String[1];
         UUID id;
-
-//        JCFMessageService msg = JCFMessageService.getInstance();
 
 
         class msgFunction {
@@ -204,20 +192,9 @@ public class JavaApplication {
                 newData[0] = console.inputMsg();
             }
 
-//            boolean check() { // 원래라면 service 위치
-//                JCFChannelService chn = JCFChannelService.getInstance();
-//                JCFUserService user = JCFUserService.getInstance();
-//                FileChannelService chn = new FileChannelService(Paths.get("channel.ser"));
-//                FileUserService usr = new FileUserService(Paths.get("user.ser"));
-//                try {
-//                    usr.readUser(newUser[0]);
-//                    chn.readChannel(newChannel[0]);
-//                    return true;
-//                }
-//                catch (Exception e) {
-//                    return false;
-//                }
-//            }
+            void getTagetMSG(){
+
+            }
         }
 
         String input = console.inputMsg();
@@ -231,38 +208,33 @@ public class JavaApplication {
                 innerClass.getMessageInfo();
 
                 msg.createMessage(newUser[0], newChannel[0], newData[0]);
-
-                System.out.printf("%s message created successfully\n", newUser[0]);
                 break;
 
             case "2": // get list
                 System.out.println(" === List of messages === ");
-                ArrayList<Message> messages = msg.readMessageAll();
-                console.PrintOut(messages);
+                console.PrintOut(msg.getMessageList());
                 break;
-
             case "3": // get obj by id
                 System.out.println(" === Get message === ");
                 id = UUID.fromString(console.inputMsg());
-                console.PrintOut(msg.readMessage(id));
+                console.PrintOut(msg.getMessageById(id));
                 break;
 
             case "4": // update
                 System.out.println(" === Update message === ");
-                // select target
-                System.out.print("type target id");
+                System.out.println("type target id");
                 id = UUID.fromString(console.inputMsg());
-                console.PrintOut(msg.readMessage(id));
+                console.PrintOut(msg.getMessageById(id));
                 //console.inputMsg();
                 System.out.println("change info type in");
                 // mod info
                 innerClass.getMessageInfo();
-                msg.updateMessage(id, newData[0]);
+                msg.updateMessageData(id, newData[0]);
                 break;
 
             case "5": // remove
                 System.out.println(" === Delete channel === ");
-                System.out.print("type target id : ");
+                System.out.println("type target id : ");
                 id = UUID.fromString(console.inputMsg());
                 System.out.print("\n");
                 msg.deleteMessage(id);
@@ -278,11 +250,10 @@ public class JavaApplication {
         }
     }
 
-    static void userService(ConsoleInterface console, BasicUserService usr ) {
+    static void userService(ConsoleInterface console, UserService usr ) {
         final String[] newName = new String[1];
         final String[] newId = new String[1];
         final String[] newPassword = new String[1];
-//        JCFUserService usr = JCFUserService.getInstance();
         UUID id;
 
 
@@ -310,13 +281,13 @@ public class JavaApplication {
             case "2": // get list
                 System.out.println(" === List of Users === ");
 //                ArrayList<User> users = sr.readUserAll();
-                console.PrintOut(usr.readUserAll());
+                console.PrintOut(usr.getUserList());
                 console.inputMsg();
                 break;
             case "3": // get obj by id
                 System.out.println(" === Get user === ");
                 id = UUID.fromString(console.inputMsg());
-                console.PrintOut(usr.readUser(id));
+                console.PrintOut(usr.getUserById(id));
                 console.inputMsg();
                 break;
             case "4": // update
@@ -324,11 +295,11 @@ public class JavaApplication {
                 // select target
                 System.out.print("type target id");
                 id = UUID.fromString(console.inputMsg());
-                console.PrintOut(usr.readUser(id));
+                console.PrintOut(usr.getUserById(id));
                 console.inputMsg();
                 // mod info
                 innerClass.getUserInfo();
-                usr.updateUser(id, newName[0],newId[0],newPassword[0]);
+                usr.updateUserInfo(id, newName[0],newId[0],newPassword[0]);
                 break;
             case "5": // remove
                 System.out.println(" === Delete user === ");

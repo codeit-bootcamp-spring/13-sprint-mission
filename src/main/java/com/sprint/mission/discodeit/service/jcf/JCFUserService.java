@@ -37,14 +37,14 @@ public class JCFUserService implements UserService {
     }
 
     @Override
-    public ArrayList<User> readUser(UUID id){
+    public ArrayList<User> getUserById(UUID id){
         ArrayList<User> user = new ArrayList<>();
         user.add(data.get(id));
         return user;
     }
 
     @Override
-    public ArrayList<User> readUserAll(){
+    public ArrayList<User> getUserList(){
         return new ArrayList<>(data.values());
     }
 
@@ -58,7 +58,7 @@ public class JCFUserService implements UserService {
 //    }
 
     @Override
-    public void updateUser(UUID id, String name, String userID, String pw){
+    public void updateUserInfo(UUID id, String name, String userID, String pw){
         User trg = data.get(id);
         trg.setName(name);
         trg.setUserId(userID);
