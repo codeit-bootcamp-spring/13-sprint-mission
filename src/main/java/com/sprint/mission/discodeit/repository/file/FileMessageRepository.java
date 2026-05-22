@@ -4,13 +4,13 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.MessageRepository;
-import com.sprint.mission.discodeit.repository.jcf.JCFSelectFilter;
 import com.sprint.mission.discodeit.service.JCFException;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 public class FileMessageRepository extends FileBaseRepository implements MessageRepository {
 
@@ -32,10 +32,10 @@ public class FileMessageRepository extends FileBaseRepository implements Message
     }
 
     @Override
-    public ArrayList<Message> select(JCFSelectFilter fn){
+    public ArrayList<Message> select(Predicate<Message> fn){
         HashMap<UUID,Message> msgList = this.load();
         return new ArrayList<> (msgList.values().stream()
-                .filter(fn::filter)
+                .filter(fn)
                 .toList());
     }
 

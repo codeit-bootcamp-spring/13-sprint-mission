@@ -51,8 +51,11 @@ public class FileBaseRepository {
 
     <T> void save(HashMap<UUID,T> ent){
         try (
-                FileOutputStream fos = new FileOutputStream(this.path.toFile());
-                ObjectOutputStream oos = new ObjectOutputStream(fos)
+//                FileOutputStream fos = new FileOutputStream(this.path.toFile());
+                ObjectOutputStream oos = new ObjectOutputStream(
+//                        fos
+                new BufferedOutputStream(Files.newOutputStream(path))
+                )
         )
         {
             ArrayList<UUID> keys = new ArrayList<>(ent.keySet());

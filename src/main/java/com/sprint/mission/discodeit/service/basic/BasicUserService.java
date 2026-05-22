@@ -1,9 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.file.FileUserRepository;
-import com.sprint.mission.discodeit.repository.jcf.JCFSelectFilter;
 import com.sprint.mission.discodeit.service.UserService;
 
 import java.nio.file.Paths;
@@ -20,14 +18,12 @@ public class BasicUserService implements UserService {
 
     @Override
     public ArrayList<User> readUser(UUID id){
-        JCFSelectFilter<Channel> flt = (c) -> c.getId().equals(id);
-        return fur.select(flt);
+        return fur.select((c) -> c.getId().equals(id));
     }
 
     @Override
     public ArrayList<User> readUserAll(){
-        JCFSelectFilter<Channel> flt = ((c) -> true);
-        return fur.select(flt);
+        return fur.select(((c) -> true));
     }
 
     @Override

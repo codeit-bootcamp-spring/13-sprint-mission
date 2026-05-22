@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 public class JCFUserRepository implements UserRepository {
     private final HashMap<UUID, User> data = new HashMap<UUID, User>();
@@ -21,14 +22,14 @@ public class JCFUserRepository implements UserRepository {
                 break;
             }
         }
-    };
+    }
 
     @Override
-    public ArrayList<User> select(JCFSelectFilter fn){
+    public ArrayList<User> select(Predicate<User> fn){
          return new ArrayList<>(data.values().stream()
-                .filter(fn::filter)
+                .filter(fn)
                 .toList());
-    };
+    }
 
     @Override
     public void update(UUID id, String name, String userID, String pw){
@@ -37,10 +38,10 @@ public class JCFUserRepository implements UserRepository {
         user.setUserId(userID);
         user.setUserPw(pw);
         user.setUpdatedAt(System.currentTimeMillis());
-    };
+    }
 
     @Override
     public void delete(UUID id){
         data.remove(id);
-    };
+    }
 }

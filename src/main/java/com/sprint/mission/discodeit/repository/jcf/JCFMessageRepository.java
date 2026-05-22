@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.repository.MessageRepository;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 public class JCFMessageRepository implements MessageRepository {
     private final HashMap<UUID, Message> data;
@@ -28,9 +29,9 @@ public class JCFMessageRepository implements MessageRepository {
     }
 
     @Override
-    public ArrayList<Message> select (JCFSelectFilter fn) {
+    public ArrayList<Message> select (Predicate<Message> fn) {
         return new ArrayList<>(data.values().stream()
-                .filter(fn::filter)
+                .filter(fn)
                 .toList());
     }
 

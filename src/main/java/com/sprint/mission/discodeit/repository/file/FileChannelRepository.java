@@ -3,13 +3,13 @@ package com.sprint.mission.discodeit.repository.file;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
-import com.sprint.mission.discodeit.repository.jcf.JCFSelectFilter;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 public class FileChannelRepository extends FileBaseRepository implements ChannelRepository {
 
@@ -30,10 +30,10 @@ public class FileChannelRepository extends FileBaseRepository implements Channel
     }
 
     @Override
-    public ArrayList<Channel> select (JCFSelectFilter fn) {
+    public ArrayList<Channel> select (Predicate<Channel> fn) {
         HashMap<UUID, Channel> channelList = this.load();
         return new ArrayList<>(channelList.values().stream()
-                .filter(fn::filter)
+                .filter(fn)
                 .toList());
     }
 

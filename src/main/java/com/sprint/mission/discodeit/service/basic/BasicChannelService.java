@@ -3,7 +3,6 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
-import com.sprint.mission.discodeit.repository.jcf.JCFSelectFilter;
 import com.sprint.mission.discodeit.service.ChannelService;
 
 import java.nio.file.Paths;
@@ -19,14 +18,12 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public ArrayList<Channel> readChannel(UUID id) {
-        JCFSelectFilter<Channel> flt = (c) -> c.getId().equals(id);
-        return fcr.select(flt);
+        return fcr.select((c) -> c.getId().equals(id));
     }
 
     @Override
     public ArrayList<Channel> readChannelAll() {
-        JCFSelectFilter<Channel> flt = (c) -> true;
-        return fcr.select(flt);
+        return fcr.select((c) -> true);
     }
 
     @Override

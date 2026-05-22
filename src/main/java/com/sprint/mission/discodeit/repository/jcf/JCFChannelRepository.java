@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 public class JCFChannelRepository implements ChannelRepository {
     private final HashMap<UUID, Channel> data;
@@ -27,9 +28,9 @@ public class JCFChannelRepository implements ChannelRepository {
     }
 
     @Override
-    public ArrayList<Channel> select (JCFSelectFilter fn) {
+    public ArrayList<Channel> select (Predicate<Channel> fn) {
         return new ArrayList<>(data.values().stream()
-                .filter(fn::filter)
+                .filter(fn)
                 .toList());
     }
 

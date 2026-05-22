@@ -1,26 +1,18 @@
 package com.sprint.mission.discodeit;
 
 
-import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
-import com.sprint.mission.discodeit.repository.jcf.JCFSelectFilter;
 
 import com.sprint.mission.discodeit.service.basic.BasicChannelService;
 import com.sprint.mission.discodeit.service.basic.BasicMessageService;
 import com.sprint.mission.discodeit.service.basic.BasicUserService;
-import com.sprint.mission.discodeit.service.file.FileChannelService;
-import com.sprint.mission.discodeit.service.file.FileMessageService;
-import com.sprint.mission.discodeit.service.file.FileUserService;
 
 //import com.sprint.mission.discodeit.service.jcf.JCFChannelService;
 //import com.sprint.mission.discodeit.service.jcf.JCFMessageService;
 //import com.sprint.mission.discodeit.service.jcf.JCFUserService;
 
 
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.UUID;
@@ -34,11 +26,11 @@ public class JavaApplication {
 
 //        FileChannelRepository chn = new FileChannelRepository(Paths.get("channel.ser"));
 //        FileChannelService chn = new FileChannelService(Paths.get("channel.ser"));
-        FileUserService usr = new FileUserService(Paths.get("user.ser"));
+//        FileUserService usr = new FileUserService(Paths.get("user.ser"));
 //        FileMessageService msg = new FileMessageService(Paths.get("msg.ser"));
 
         BasicChannelService chn = new BasicChannelService();
-//        BasicUserService usr = new BasicUserService();
+        BasicUserService usr = new BasicUserService();
         BasicMessageService msg = new BasicMessageService();
 
         // current User, Channel info
@@ -271,10 +263,7 @@ public class JavaApplication {
         }
     }
 
-    static void userService(
-            ConsoleInterface console,
-            FileUserService usr
-    ) {
+    static void userService(ConsoleInterface console, BasicUserService usr ) {
         final String[] newName = new String[1];
         final String[] newId = new String[1];
         final String[] newPassword = new String[1];

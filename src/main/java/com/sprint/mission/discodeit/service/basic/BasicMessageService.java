@@ -6,7 +6,6 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
 import com.sprint.mission.discodeit.repository.file.FileMessageRepository;
 import com.sprint.mission.discodeit.repository.file.FileUserRepository;
-import com.sprint.mission.discodeit.repository.jcf.JCFSelectFilter;
 import com.sprint.mission.discodeit.service.MessageService;
 
 import java.nio.file.Paths;
@@ -21,11 +20,9 @@ public class BasicMessageService implements MessageService {
     @Override
     public void createMessage(UUID user, UUID channel, String data){
 
-        JCFSelectFilter<User> fltu =  (c) -> c.getId().equals(user);
-        JCFSelectFilter<Channel> fltc =  (c) -> c.getId().equals(channel);
         try {
-            User u = fus.select(fltu).get(0);
-            Channel c = fcs.select(fltc).get(0);
+            User u = fus.select((c) -> c.getId().equals(user)).get(0);
+            Channel c = fcs.select((ch) -> ch.getId().equals(channel)).get(0);
             fms.create(u,c,data);
         }
         catch(Exception e){
@@ -35,26 +32,27 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public ArrayList<Message> readMessage(UUID id){
-        JCFSelectFilter<Message> fltm = (c) -> c.getId().equals(id);
-        return fms.select(fltm);
+        return fms.select((c) -> c.getId().equals(id));
     }
 
     @Override
     public ArrayList<Message> readMessageAll(){
-        JCFSelectFilter<Message> flt = (c) -> true;
-        return fms.select(flt);
+        return fms.select((c) -> true);
     }
 
     @Override
     public void updateMessage(UUID id, String data){
-        JCFSelectFilter<Message> fltm = (c) -> c.getId().equals(id);
-        fms.update(fms.select(fltm).get(0), data);
+        fms.update(
+                fms.select((c) -> c.getId().equals(id))
+                        .get(0),
+                data);
     }
 
     @Override
     public void deleteMessage(UUID id){
-        JCFSelectFilter<Message> fltm = (c) -> c.getId().equals(id);
-        fms.delete(fms.select(fltm).get(0));
+        fms.delete(
+                fms.select((c) -> c.getId().equals(id))
+                        .get(0));
     }
 
 }

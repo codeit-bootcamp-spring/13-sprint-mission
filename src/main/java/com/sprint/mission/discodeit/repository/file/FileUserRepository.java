@@ -2,13 +2,13 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.jcf.JCFSelectFilter;
 import com.sprint.mission.discodeit.service.JCFException;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 public class FileUserRepository extends FileBaseRepository implements UserRepository {
 
@@ -30,10 +30,10 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
     }
 
     @Override
-    public ArrayList<User> select(JCFSelectFilter fn){
+    public ArrayList<User> select(Predicate<User> fn){
         HashMap<UUID,User> userList = this.load();
         return new ArrayList<>(userList.values().stream()
-                .filter(fn::filter)
+                .filter(fn)
                 .toList());
     }
 
