@@ -2,13 +2,15 @@ package com.sprint.mission;
 
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.service.*;
+import com.sprint.mission.discodeit.service.file.*;
 import com.sprint.mission.discodeit.service.jcf.*;
 
+import java.nio.file.*;
 import java.util.*;
 
 public class JavaApplication {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
 
         UserService userService = new JCFUserService();
@@ -96,6 +98,24 @@ public class JavaApplication {
         System.out.println(channelService.readAll());
         System.out.println(messageService.readAll());
 
+
+        // ----------------------------------------------------------------------
+        FileChannelService cs = new FileChannelService();
+
+        for (Channel channel : channelService.readAll()) {
+            cs.create(channel);
+        }
+
+        Path chaPath = Path.of("data/channels.ser");
+        cs.saveToFile(chaPath);
+
+        System.out.println("채널 직렬화 저장 완료: " + chaPath.toAbsolutePath());
+
+        FileChannelService loaded =
+                FileChannelService.loadFromFile(chaPath);
+
+        System.out.println("=== 역직렬화 결과 ===");
+        loaded.readAll().forEach(System.out::println);
     }
 
 }

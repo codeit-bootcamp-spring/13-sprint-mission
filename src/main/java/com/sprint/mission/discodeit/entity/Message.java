@@ -1,8 +1,9 @@
 package com.sprint.mission.discodeit.entity;
 
+import java.io.*;
 import java.util.*;
 
-public class Message extends BaseEntity {
+public class Message extends BaseEntity implements Serializable {
 
     private String content; // 메세지 내용
     private UUID authorId; // 메세지를 작성한 유저
