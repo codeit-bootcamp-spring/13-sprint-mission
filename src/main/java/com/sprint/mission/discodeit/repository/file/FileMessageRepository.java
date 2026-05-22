@@ -13,28 +13,32 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 public class FileMessageRepository extends FileBaseRepository implements MessageRepository {
+    private final HashMap<UUID, Message> data = new HashMap<>();
+    private final Path path;
 
     public FileMessageRepository(Path path) {
-        super(path);
+        super();
+        this.path = path;
+        HashMap<UUID, Message> fData = load(path);
+        for (UUID k : fData.keySet()){
+            this.data.put(k, fData.get(k));
+        }
     }
 
     @Override
     public void create(User user, Channel channel, String data){
-        HashMap<UUID, Message> userList = this.load();
         for (int i = 0; i < 3; i ++){
             Message msg = new Message(user.getId(), channel.getId(), data);
-            if (!userList.containsKey(msg.getId())) {
-                userList.put(msg.getId(), msg);
+            if (!this.data.containsKey(msg.getId())) {
+                this.data.put(msg.getId(), msg);
                 break;
             }
         }
-        this.save(userList);
     }
 
     @Override
     public ArrayList<Message> select(Predicate<Message> fn){
-        HashMap<UUID,Message> msgList = this.load();
-        return new ArrayList<> (msgList.values().stream()
+        return new ArrayList<> (this.data.values().stream()
                 .filter(fn)
                 .toList());
     }
@@ -42,18 +46,23 @@ public class FileMessageRepository extends FileBaseRepository implements Message
 
     @Override
     public void update(Message pmsg, String data){
-        HashMap<UUID,Message> msgList = this.load();
-        Message msg = msgList.remove(pmsg.getId());
+        Message msg = this.data.remove(pmsg.getId());
 
         msg.setMessages(data);
         msg.setUpdatedAt(System.currentTimeMillis());
 
-        this.save(msgList);
     }
 
     @Override
     public void delete(Message usr){
-        HashMap<UUID,Message> msgList = this.load();
-        Message msg = msgList.remove(usr.getId());
+        Message msg = this.data.remove(usr.getId());
+    }
+
+    public static FileMessageRepository open(Path path){
+        return new FileMessageRepository(path);
+    }
+
+    public void close(){
+        save(data,path);
     }
 }

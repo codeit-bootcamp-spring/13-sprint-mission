@@ -10,37 +10,36 @@ import java.util.HashMap;
 import java.util.UUID;
 
 public class FileBaseRepository {
+    public FileBaseRepository(){}
 
-    Path path;
-    public FileBaseRepository(Path path) {
-        this.path = path;
-    }
-
-    void init(Path file){
-        if (!Files.exists(file)){
+    private static void checkDirectory(Path file){
+        if (!Files.exists(file.getParent())) {
             try {
-                Files.createFile(file);
-                System.out.println("file created successfully");
+                Files.createDirectories(file.getParent());
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    <T extends BaseEntity> HashMap<UUID,T> load() {
-        init(path);
+    static <T extends BaseEntity> HashMap<UUID,T> load(Path path) {
+        checkDirectory(path);
+
         HashMap<UUID,T> res = new HashMap<>();
         try (
-                FileInputStream fis = new FileInputStream(this.path.toFile());
-                ObjectInputStream ois = new ObjectInputStream(fis)
+//                FileInputStream fis = new FileInputStream(this.path.toFile());
+                BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(path));
+                ObjectInputStream ois = new ObjectInputStream(bis)
         ){
             while(true){
-                T i = (T) ois.readObject();
-                res.put(i.getId(), i);
+                try {
+                    T i = (T) ois.readObject();
+                    res.put(i.getId(), i);
+                }
+                catch (EOFException e) {
+                    break;
+                }
             }
-        }
-        catch (EOFException e){
-            System.out.println("read end");
         }
         catch (IOException | ClassNotFoundException e){
             e.printStackTrace();
@@ -49,7 +48,9 @@ public class FileBaseRepository {
         return res;
     }
 
-    <T> void save(HashMap<UUID,T> ent){
+    static <T> void save(HashMap<UUID,T> ent, Path path){
+        checkDirectory(path);
+
         try (
 //                FileOutputStream fos = new FileOutputStream(this.path.toFile());
                 ObjectOutputStream oos = new ObjectOutputStream(

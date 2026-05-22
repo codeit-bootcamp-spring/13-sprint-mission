@@ -11,7 +11,6 @@ import java.util.UUID;
 
 public class JCFChannelService implements ChannelService {
     private final HashMap<UUID, Channel> data;
-    private final HashMap<UUID,ArrayList<UUID>> userList;
 
     private static class ChannelInstance {
         private static final JCFChannelService INSTANCE = new JCFChannelService();
@@ -19,7 +18,6 @@ public class JCFChannelService implements ChannelService {
 
     private JCFChannelService() {
         data = new HashMap<>();
-        userList = new HashMap<>();
     }
 
     public static JCFChannelService getInstance() {
@@ -37,7 +35,6 @@ public class JCFChannelService implements ChannelService {
                     = new Channel(name, description, type);
         }
         this.data.put(channel.getId(),channel);
-        this.userList.put(channel.getId(),new ArrayList<>());
     }
 
     @Override
@@ -63,16 +60,6 @@ public class JCFChannelService implements ChannelService {
 
     @Override
     public void deleteChannel(UUID id){
-        Channel cnl = data.remove(id);
-    }
-
-
-    public void join(UUID userID,UUID channelID){
-        userList.get(channelID).add(userID);
-    }
-
-    public void quit(UUID userID,UUID channelID)
-    {
-        userList.get(channelID).remove(userID);
+        data.remove(id);
     }
 }

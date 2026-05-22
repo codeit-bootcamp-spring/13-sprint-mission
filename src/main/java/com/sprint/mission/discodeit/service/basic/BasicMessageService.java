@@ -13,16 +13,16 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 public class BasicMessageService implements MessageService {
-    private final FileMessageRepository fms = new FileMessageRepository(Paths.get("msg.ser"));
-    private final FileUserRepository fus = new FileUserRepository(Paths.get("user.ser"));
-    private final FileChannelRepository fcs = new FileChannelRepository(Paths.get("channel.ser"));
+    private final FileMessageRepository fms = new FileMessageRepository(Paths.get("data/msg.ser"));
+    private final FileUserRepository fus = new FileUserRepository(Paths.get("data/user.ser"));
+    private final FileChannelRepository fcs = new FileChannelRepository(Paths.get("data/channel.ser"));
 
     @Override
     public void createMessage(UUID user, UUID channel, String data){
-
         try {
             User u = fus.select((c) -> c.getId().equals(user)).get(0);
             Channel c = fcs.select((ch) -> ch.getId().equals(channel)).get(0);
+
             fms.create(u,c,data);
         }
         catch(Exception e){

@@ -18,15 +18,15 @@ public class FileChannelService extends FileBase implements ChannelService{
 
     @Override
     public void createChannel(String name, String description, ChannelType type){
-        HashMap<UUID, Channel> channelList = this.load();
 
+        // save logic
+        HashMap<UUID, Channel> channelList = this.load();
         Channel channel = new Channel(name, description, type);
         for (int i = 0; i < 3; i++){
             if (channelList.containsKey(channel.getId()))
                 channel = new Channel(name, description, type);
         }
         channelList.put(channel.getId(),channel);
-
         this.save(channelList);
     }
 

@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 public class JCFMessageService implements MessageService {
+
     private final HashMap<UUID, Message> data;
 
     private static class UserInstance{
