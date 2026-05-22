@@ -1,15 +1,18 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.repository.file.FileUserRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.UserService;
 
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.UUID;
 
 public class BasicUserService implements UserService {
-    private final FileUserRepository fur = new FileUserRepository(Paths.get("user.ser"));
+    private final UserRepository fur;
+
+    public BasicUserService(UserRepository usr) {
+        fur = usr;
+    }
 
     @Override
     public void createUser(String name, String id, String pw){

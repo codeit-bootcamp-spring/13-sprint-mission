@@ -4,6 +4,9 @@ package com.sprint.mission.discodeit;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 
+import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
+import com.sprint.mission.discodeit.repository.file.FileMessageRepository;
+import com.sprint.mission.discodeit.repository.file.FileUserRepository;
 import com.sprint.mission.discodeit.service.basic.BasicChannelService;
 import com.sprint.mission.discodeit.service.basic.BasicMessageService;
 import com.sprint.mission.discodeit.service.basic.BasicUserService;
@@ -13,6 +16,7 @@ import com.sprint.mission.discodeit.service.basic.BasicUserService;
 //import com.sprint.mission.discodeit.service.jcf.JCFUserService;
 
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.UUID;
@@ -29,9 +33,13 @@ public class JavaApplication {
 //        FileUserService usr = new FileUserService(Paths.get("user.ser"));
 //        FileMessageService msg = new FileMessageService(Paths.get("msg.ser"));
 
-        BasicChannelService chn = new BasicChannelService();
-        BasicUserService usr = new BasicUserService();
-        BasicMessageService msg = new BasicMessageService();
+        FileUserRepository user = FileUserRepository.open(Path.of("data/user.ser"));
+        FileChannelRepository channer = FileChannelRepository.open(Path.of("data/channel.ser"));
+        FileMessageRepository message = FileMessageRepository.open(Path.of("data/message.ser"));
+
+        BasicChannelService chn = new BasicChannelService(channer);
+        BasicUserService usr = new BasicUserService(user);
+        BasicMessageService msg = new BasicMessageService(channer, user, message);
 
         // current User, Channel info
 //        UUID curUserID;
@@ -57,6 +65,9 @@ public class JavaApplication {
                         flag = false;
                 }
             }
+            user.close();
+            channer.close();
+            message.close();
         }
         catch (Exception e) {
             System.out.println(e.getMessage());

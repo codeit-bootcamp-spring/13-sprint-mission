@@ -16,7 +16,7 @@ public class FileMessageRepository extends FileBaseRepository implements Message
     private final HashMap<UUID, Message> data = new HashMap<>();
     private final Path path;
 
-    public FileMessageRepository(Path path) {
+    private FileMessageRepository(Path path) {
         super();
         this.path = path;
         HashMap<UUID, Message> fData = load(path);
@@ -45,17 +45,16 @@ public class FileMessageRepository extends FileBaseRepository implements Message
 
 
     @Override
-    public void update(Message pmsg, String data){
-        Message msg = this.data.remove(pmsg.getId());
-
+    public void update(UUID id, String data){
+        Message msg = this.data.get(id);
         msg.setMessages(data);
         msg.setUpdatedAt(System.currentTimeMillis());
 
     }
 
     @Override
-    public void delete(Message usr){
-        Message msg = this.data.remove(usr.getId());
+    public void delete(UUID id){
+        Message msg = this.data.remove(id);
     }
 
     public static FileMessageRepository open(Path path){

@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.entity.BaseEntity;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,6 +21,13 @@ public class FileBaseRepository {
                 e.printStackTrace();
             }
         }
+        if (!Files.exists(file)) {
+            try {
+                Files.createFile(file);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     static <T extends BaseEntity> HashMap<UUID,T> load(Path path) {
@@ -32,14 +40,15 @@ public class FileBaseRepository {
                 ObjectInputStream ois = new ObjectInputStream(bis)
         ){
             while(true){
-                try {
-                    T i = (T) ois.readObject();
-                    res.put(i.getId(), i);
-                }
-                catch (EOFException e) {
-                    break;
-                }
+                T i = (T) ois.readObject();
+                res.put(i.getId(), i);
             }
+        }
+        catch (EOFException e){
+            // file read done.
+        }
+        catch (NoSuchFileException e){
+            System.out.println("No such file or directory");
         }
         catch (IOException | ClassNotFoundException e){
             e.printStackTrace();

@@ -14,7 +14,7 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
     private final HashMap<UUID, User> data = new HashMap<>();
     private final Path path;
 
-    public FileUserRepository(Path path) {
+    private FileUserRepository(Path path) {
         super();
         this.path = path;
         HashMap<UUID, User> fData = load(path);

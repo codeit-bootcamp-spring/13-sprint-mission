@@ -3,6 +3,9 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
 import com.sprint.mission.discodeit.repository.file.FileMessageRepository;
 import com.sprint.mission.discodeit.repository.file.FileUserRepository;
@@ -13,9 +16,14 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 public class BasicMessageService implements MessageService {
-    private final FileMessageRepository fms = new FileMessageRepository(Paths.get("data/msg.ser"));
-    private final FileUserRepository fus = new FileUserRepository(Paths.get("data/user.ser"));
-    private final FileChannelRepository fcs = new FileChannelRepository(Paths.get("data/channel.ser"));
+    private final MessageRepository fms;
+    private final UserRepository fus;
+    private final ChannelRepository fcs;
+    public BasicMessageService(ChannelRepository chn, UserRepository usr, MessageRepository msg) {
+        fms = msg;
+        fus = usr;
+        fcs = chn;
+    }
 
     @Override
     public void createMessage(UUID user, UUID channel, String data){
@@ -42,17 +50,12 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public void updateMessage(UUID id, String data){
-        fms.update(
-                fms.select((c) -> c.getId().equals(id))
-                        .get(0),
-                data);
+        fms.update(id, data);
     }
 
     @Override
     public void deleteMessage(UUID id){
-        fms.delete(
-                fms.select((c) -> c.getId().equals(id))
-                        .get(0));
+        fms.delete(id);
     }
 
 }
