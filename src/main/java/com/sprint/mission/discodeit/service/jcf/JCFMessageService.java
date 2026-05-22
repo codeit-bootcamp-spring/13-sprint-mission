@@ -54,6 +54,6 @@ public class JCFMessageService implements MessageService {
 
     @Override
     public void deleteMessage(UUID id){
-        Message msg = data.remove(id);
+        data.remove(id);
     }
 }

@@ -7,6 +7,9 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
 import com.sprint.mission.discodeit.repository.file.FileMessageRepository;
 import com.sprint.mission.discodeit.repository.file.FileUserRepository;
+import com.sprint.mission.discodeit.repository.jcf.JCFChannelRepository;
+import com.sprint.mission.discodeit.repository.jcf.JCFMessageRepository;
+import com.sprint.mission.discodeit.repository.jcf.JCFUserRepository;
 import com.sprint.mission.discodeit.service.basic.BasicChannelService;
 import com.sprint.mission.discodeit.service.basic.BasicMessageService;
 import com.sprint.mission.discodeit.service.basic.BasicUserService;
@@ -28,18 +31,19 @@ public class JavaApplication {
         Scanner in = new Scanner(System.in);
         ConsoleInterface console = new ConsoleInterface(in);
 
-//        FileChannelRepository chn = new FileChannelRepository(Paths.get("channel.ser"));
-//        FileChannelService chn = new FileChannelService(Paths.get("channel.ser"));
-//        FileUserService usr = new FileUserService(Paths.get("user.ser"));
-//        FileMessageService msg = new FileMessageService(Paths.get("msg.ser"));
+        // File * Repository test line
+//        FileUserRepository user = FileUserRepository.open(Path.of("data/user.ser"));
+//        FileChannelRepository channel = FileChannelRepository.open(Path.of("data/channel.ser"));
+//        FileMessageRepository message = FileMessageRepository.open(Path.of("data/message.ser"));
 
-        FileUserRepository user = FileUserRepository.open(Path.of("data/user.ser"));
-        FileChannelRepository channer = FileChannelRepository.open(Path.of("data/channel.ser"));
-        FileMessageRepository message = FileMessageRepository.open(Path.of("data/message.ser"));
+        // JCF * Repository test line
+        JCFUserRepository user = JCFUserRepository.open();
+        JCFChannelRepository channel = JCFChannelRepository.open();
+        JCFMessageRepository message = JCFMessageRepository.open();
 
-        BasicChannelService chn = new BasicChannelService(channer);
+        BasicChannelService chn = new BasicChannelService(channel);
         BasicUserService usr = new BasicUserService(user);
-        BasicMessageService msg = new BasicMessageService(channer, user, message);
+        BasicMessageService msg = new BasicMessageService(channel, user, message);
 
         // current User, Channel info
 //        UUID curUserID;
@@ -66,7 +70,7 @@ public class JavaApplication {
                 }
             }
             user.close();
-            channer.close();
+            channel.close();
             message.close();
         }
         catch (Exception e) {

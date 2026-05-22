@@ -57,7 +57,7 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
 
     @Override
     public void delete(UUID id){
-        User user = data.remove(id);
+        data.remove(id);
     }
 
     public static FileUserRepository open(Path path){

@@ -11,7 +11,15 @@ import java.util.function.Predicate;
 public class JCFUserRepository implements UserRepository {
     private final HashMap<UUID, User> data;
 
-    JCFUserRepository() { data = new HashMap<>();}
+    private static class JUR{
+        private static final JCFUserRepository INSTANCE = new JCFUserRepository();
+    }
+
+    private JCFUserRepository() { data = new HashMap<>();}
+
+    public static JCFUserRepository open() {
+        return JUR.INSTANCE;
+    }
 
     @Override
     public void create(String name, String id, String pw){
@@ -44,4 +52,8 @@ public class JCFUserRepository implements UserRepository {
     public void delete(UUID id){
         data.remove(id);
     }
+
+    // File * Repository 와의 호환성을 위한 더미 메서드
+    public void close(){};
+
 }

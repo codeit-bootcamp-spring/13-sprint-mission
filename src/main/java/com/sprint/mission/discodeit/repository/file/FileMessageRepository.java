@@ -54,7 +54,7 @@ public class FileMessageRepository extends FileBaseRepository implements Message
 
     @Override
     public void delete(UUID id){
-        Message msg = this.data.remove(id);
+        this.data.remove(id);
     }
 
     public static FileMessageRepository open(Path path){

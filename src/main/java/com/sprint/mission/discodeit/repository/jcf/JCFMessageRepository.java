@@ -13,8 +13,16 @@ import java.util.function.Predicate;
 public class JCFMessageRepository implements MessageRepository {
     private final HashMap<UUID, Message> data;
 
-    public JCFMessageRepository() {
+    private static class JMR {
+        private static final JCFMessageRepository INSTANCE = new JCFMessageRepository();
+    }
+
+    private JCFMessageRepository() {
         data = new HashMap<>();
+    }
+
+    public static JCFMessageRepository open() {
+        return JMR.INSTANCE;
     }
 
     @Override
@@ -36,13 +44,18 @@ public class JCFMessageRepository implements MessageRepository {
     }
 
     @Override
-    public void update(Message msg, String data) {
+    public void update(UUID id, String data) {
+        Message msg = this.data.get(id);
         msg.setUpdatedAt(System.currentTimeMillis());
         msg.setMessages(data);
     }
 
     @Override
-    public void delete(Message message) {
-        data.remove(message.getId());
+    public void delete(UUID id) {
+        data.remove(id);
     }
+
+
+    // File * Repository 와의 호환성을 위한 더미 메서드
+    public void close(){};
 }

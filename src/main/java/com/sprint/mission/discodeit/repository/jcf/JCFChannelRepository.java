@@ -12,8 +12,16 @@ import java.util.function.Predicate;
 public class JCFChannelRepository implements ChannelRepository {
     private final HashMap<UUID, Channel> data;
 
-    public JCFChannelRepository() {
+    private static class JCR {
+        private static final JCFChannelRepository INSTANCE = new JCFChannelRepository();
+    }
+
+    private JCFChannelRepository() {
         data = new HashMap<>();
+    }
+
+    public static JCFChannelRepository open() {
+        return JCR.INSTANCE;
     }
 
     @Override
@@ -47,4 +55,8 @@ public class JCFChannelRepository implements ChannelRepository {
     public void delete(UUID channel) {
         data.remove(channel);
     }
+
+
+    // File * Repository 와의 호환성을 위한 더미 메서드
+    public void close(){};
 }
