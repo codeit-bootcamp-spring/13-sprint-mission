@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class FileUserRepository implements UserRepository {
 
@@ -59,30 +60,36 @@ public class FileUserRepository implements UserRepository {
         }
     }
 
-    
+
+
     //interface
     @Override
-    public void saveUser(User user) {
-
+    public void save() {
+        saveToBinary();
     }
 
     @Override
-    public void findUser(User user) {
-
+    public void createUser(User user) {
+        users.add(user);
+        saveToBinary();
     }
 
     @Override
-    public void findAll() {
-
+    public Optional<User> findUser(User user) {
+        if (users.contains(user)){
+            return Optional.of(user);
+        }
+        return Optional.empty();
     }
 
     @Override
-    public void updateUser() {
-
+    public List<User> findAll() {
+        return users;
     }
 
     @Override
-    public void deleteUser() {
-
+    public void deleteUser(User user) {
+        users.remove(user);
+        saveToBinary();
     }
 }
