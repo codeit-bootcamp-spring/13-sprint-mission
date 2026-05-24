@@ -20,13 +20,9 @@ public class JCFUserRepository implements UserRepository {
     public void save() {}
 
     @Override
-    public boolean existsUser(String email) {
-        for (User user : users) {
-            if (user.getEmail().equals(email)) {
-                return true;
-            }
-        }
-        return false;
+    public boolean existsUserByEmail(String email) {
+        return users.stream()
+                .anyMatch(user -> user.getEmail().equals(email));
     }
 
     @Override
@@ -35,12 +31,10 @@ public class JCFUserRepository implements UserRepository {
     }
 
     @Override
-    public Optional<User> findUser(User user) {
-        if (users.contains(user)) {
-            return Optional.of(user);
-        }
-
-        return Optional.empty();
+    public Optional<User> findUserByEmail(String email) {
+        return users.stream()
+                .filter(user -> user.getEmail().equals(email))
+                .findFirst();
     }
 
     @Override

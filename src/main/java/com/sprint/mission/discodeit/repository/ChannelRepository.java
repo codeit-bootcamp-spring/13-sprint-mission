@@ -9,9 +9,9 @@ import java.util.Optional;
 public interface ChannelRepository {
 
     void save();
-    boolean existsChannel(String name);
+    boolean existsChannelByName(String name);
     void createChannel(Channel channel);
-    Optional<Channel> findChannel(Channel channel);
+    Optional<Channel> findChannelByName(String name);
     List<Channel> findAll();
     void deleteChannel(Channel channel);
 }

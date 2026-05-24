@@ -25,13 +25,9 @@ public class FileChannelRepository extends FileRepositoryRoot<Channel> implement
     }
 
     @Override
-    public boolean existsChannel(String name) {
-        for (Channel channel : storage) {
-            if (channel.getName().equals(name)) {
-                return true;
-            }
-        }
-        return false;
+    public boolean existsChannelByName(String name) {
+        return storage.stream()
+                .anyMatch(chanel -> chanel.getName().equals(name));
     }
 
     @Override
@@ -41,11 +37,10 @@ public class FileChannelRepository extends FileRepositoryRoot<Channel> implement
     }
 
     @Override
-    public Optional<Channel> findChannel(Channel channel) {
-        if (storage.contains(channel)){
-            return Optional.of(channel);
-        }
-        return Optional.empty();
+    public Optional<Channel> findChannelByName(String name) {
+        return storage.stream()
+                .filter(channel -> channel.getName().equals(name))
+                .findFirst();
     }
 
     @Override

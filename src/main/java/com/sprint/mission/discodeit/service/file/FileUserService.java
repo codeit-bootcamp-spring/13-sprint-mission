@@ -30,9 +30,10 @@ public class FileUserService implements UserService {
         if (name == null || name.isBlank()) throw new RuntimeException("에러: 이름은 공백일 수 없습니다.");
         if (email == null || email.isBlank()) throw new RuntimeException("에러: 이메일은 공백일 수 없습니다.");
 
-        if (userRepository.existsUser(email)){
-            System.out.println("에러: 이메일: " + email + "은 이미 사용중인 이메일입니다. 유저 생성 거부.\n" );
-            return null;
+        if (userRepository.existsUserByEmail(email)){
+            System.out.println("이메일: " + email + "은 이미 사용중인 이메일입니다. 대신 해당 이메일을 사용하는 유저 객체 반환하겠습니다.\n" );
+            return userRepository.findUserByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
         }
 
         User user = new User(name, email);
@@ -46,7 +47,7 @@ public class FileUserService implements UserService {
     public void printUserInfo(User user) {
         if (user == null) throw new RuntimeException("에러: 출력하려는 유저는 null이면 안됩니다.");
 
-        User userTemp = userRepository.findUser(user)
+        User userTemp = userRepository.findUserByEmail(user.getEmail())
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         System.out.println(userTemp + "\n");
@@ -65,7 +66,7 @@ public class FileUserService implements UserService {
         if (user == null) throw new RuntimeException("에러: 유저는 null이면 안됩니다.");
         if (newName == null || newName.isBlank()) throw new RuntimeException("에러: 새 이름은 공백일 수 없습니다.\n");
 
-        User userTemp = userRepository.findUser(user)
+        User userTemp = userRepository.findUserByEmail(user.getEmail())
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         System.out.println("유저명: " + userTemp.getName() + "가 수정됨.\n -> " + newName + "\n");
@@ -79,12 +80,12 @@ public class FileUserService implements UserService {
         if (user == null) throw new RuntimeException("에러: 유저는 null이면 안됩니다.");
         if (newEmail == null || newEmail.isBlank()) throw new RuntimeException("에러: 새 이메일은 공백일 수 없습니다.\n");
 
-        if (userRepository.existsUser(newEmail)){
+        if (userRepository.existsUserByEmail(newEmail)){
             System.out.println("에러: 이메일: " + newEmail + "은 이미 사용중인 이메일입니다. 이메일 업데이트 거부.\n" );
             return;
         }
 
-        User userTemp = userRepository.findUser(user)
+        User userTemp = userRepository.findUserByEmail(user.getEmail())
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         System.out.println("유저 이메일: " + userTemp.getEmail() + "가 수정됨.\n -> " + newEmail + "\n");
@@ -97,7 +98,7 @@ public class FileUserService implements UserService {
     public User deleteUser(User user) {
         if (user == null) throw new RuntimeException("에러: 유저는 null이면 안됩니다.");
 
-        User userTemp = userRepository.findUser(user)
+        User userTemp = userRepository.findUserByEmail(user.getEmail())
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         for (Channel channel : userTemp.getChannels()) {
@@ -113,9 +114,12 @@ public class FileUserService implements UserService {
     @Override
     public void joinChannel(User user, Channel channel) {
         if (channel == null || user == null) throw new RuntimeException("에러: 채널, 유저는 null이면 안됩니다.");
-        if (channel.getUsers().contains(user)) throw new RuntimeException("에러: 이 채널에는 이미 해당 유저가 존재합니다.");
+        if (validateUserExistsChannel(channel, user)) {
+            System.out.println("에러: 이 채널에는 이미 해당 유저가 존재합니다.");
+            return;
+        }
 
-        User userTemp = userRepository.findUser(user)
+        User userTemp = userRepository.findUserByEmail(user.getEmail())
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         channel.addUser(userTemp);
@@ -129,7 +133,7 @@ public class FileUserService implements UserService {
     public void printMyChannelsInfo(User user) {
         if (user == null) throw new RuntimeException("에러: 유저는 null이면 안됩니다.");
 
-        User userTemp = userRepository.findUser(user)
+        User userTemp = userRepository.findUserByEmail(user.getEmail())
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         System.out.println(user.getName() + "가 가입한 채널: ");
@@ -142,9 +146,12 @@ public class FileUserService implements UserService {
     @Override
     public void leaveChannel(User user, Channel channel) {
         if (channel == null || user == null) throw new RuntimeException("에러: 채널, 탈퇴하려는 유저는 null이면 안됩니다.");
-        if (!channel.getUsers().contains(user)) throw new RuntimeException("에러: 이 유저는 애초에 이 채널에 없습니다.");
+        if (!validateUserExistsChannel(channel, user)) {
+            System.out.println("에러: 이 유저는 애초에 이 채널에 없습니다.");
+            return;
+        }
 
-        User userTemp = userRepository.findUser(user)
+        User userTemp = userRepository.findUserByEmail(user.getEmail())
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         channel.removeUser(userTemp);
@@ -158,7 +165,7 @@ public class FileUserService implements UserService {
     public void printMessages(User user) {
         if (user == null) throw new RuntimeException("에러: 유저는 null이면 안됩니다.");
 
-        User userTemp = userRepository.findUser(user)
+        User userTemp = userRepository.findUserByEmail(user.getEmail())
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         System.out.println(userTemp.getName() + "가 작성한 메세지들: ");
@@ -166,5 +173,10 @@ public class FileUserService implements UserService {
             System.out.println(message.getMessage());
         }
         System.out.println();
+    }
+
+    //들어온 user가 해당 channel에 존재하면 true반환, 아니면 false 반환
+    private boolean validateUserExistsChannel(Channel channel, User user) {
+        return channel.getUsers().stream().anyMatch(userTemp -> userTemp.getId().equals(user.getId()));
     }
 }

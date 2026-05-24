@@ -20,13 +20,9 @@ public class JCFChannelRepository implements ChannelRepository {
     public void save() {}
 
     @Override
-    public boolean existsChannel(String name) {
-        for (Channel channel : channels) {
-            if (channel.getName().equals(name)) {
-                return true;
-            }
-        }
-        return false;
+    public boolean existsChannelByName(String name) {
+        return channels.stream()
+                .anyMatch(chanel -> chanel.getName().equals(name));
     }
 
     @Override
@@ -35,11 +31,10 @@ public class JCFChannelRepository implements ChannelRepository {
     }
 
     @Override
-    public Optional<Channel> findChannel(Channel channel) {
-        if (channels.contains(channel)){
-            return Optional.of(channel);
-        }
-        return Optional.empty();
+    public Optional<Channel> findChannelByName(String name) {
+        return channels.stream()
+                .filter(channel -> channel.getName().equals(name))
+                .findFirst();
     }
 
     @Override

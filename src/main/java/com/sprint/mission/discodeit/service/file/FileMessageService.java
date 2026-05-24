@@ -23,8 +23,11 @@ public class FileMessageService implements MessageService {
     @Override
     public Message createMessage(User user, Channel channel, String message) {
         if (message == null || message.isBlank()) throw new RuntimeException("에러: 메세지는 공백일 수 없습니다.");
-        if (message == null || user == null) throw new RuntimeException("에러: 메세지, 유저는 null이면 안됩니다.");
-        if (!user.getChannels().contains(channel)) throw new RuntimeException("에러: 해당 유저는 이 채널에 존재하지 않습니다.");
+        if (channel == null || user == null) throw new RuntimeException("에러: 메세지, 유저는 null이면 안됩니다.");
+        if (!validateUserExistsChannel(channel, user)){
+            System.out.println("에러: 해당 유저는 이 채널에 존재하지 않습니다.");
+            return null;
+        }
 
         Message newMessage = new Message(message, user, channel);
         messageRepository.createMessage(newMessage);
@@ -58,7 +61,10 @@ public class FileMessageService implements MessageService {
     public void editMessage(Message message, User user, String newMessage) {
         if (newMessage == null || newMessage.isBlank()) throw new RuntimeException("에러: 새 메세지는 공백일 수 없습니다.\n");
         if (message == null || user == null) throw new RuntimeException("에러: 메세지, 유저는 null이면 안됩니다.\n");
-        if (user != message.getUser()) throw new RuntimeException("에러: 해당 메세지 작성자가 아니므로 수정 불가.\n");
+        if (!validateMessageWriter(message, user)){
+            System.out.println("에러: 해당 메세지 작성자가 아니므로 수정 불가.");
+            return;
+        }
 
         Message messageTemp = messageRepository.findMessage(message)
                 .orElseThrow(() -> new RuntimeException("에러: 해당 메세지는 데이터파일에 존재하지 않습니다."));
@@ -72,7 +78,10 @@ public class FileMessageService implements MessageService {
     @Override
     public Message deleteMessage(Message message, User user) {
         if (message == null || user == null) throw new RuntimeException("에러: 메세지, 유저는 null이면 안됩니다.");
-        if (user != message.getUser()) throw new RuntimeException("에러: 해당 메세지 작성자가 아니므로 삭제 불가.");
+        if (!validateMessageWriter(message, user)){
+            System.out.println("에러: 해당 메세지 작성자가 아니므로 삭제 불가.");
+            return message;
+        }
 
         Message messageTemp = messageRepository.findMessage(message)
                 .orElseThrow(() -> new RuntimeException("에러: 해당 메세지는 데이터파일에 존재하지 않습니다."));
@@ -105,4 +114,16 @@ public class FileMessageService implements MessageService {
 
         System.out.println("Wrote Channel Name: " + messageTemp.getChannel().getName());
     }
+
+
+    //들어온 user가 message의 작성자이면 true반환, 아니면 false 반환
+    private boolean validateMessageWriter(Message message, User user) {
+        return message.getUser().getId().equals(user.getId());
+    }
+
+    //들어온 user가 해당 channel에 존재하면 true반환, 아니면 false 반환
+    private boolean validateUserExistsChannel(Channel channel, User user) {
+        return channel.getUsers().stream().anyMatch(userTemp -> userTemp.getId().equals(user.getId()));
+    }
+
 }

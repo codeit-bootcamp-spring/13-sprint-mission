@@ -1,8 +1,9 @@
 package com.sprint.mission.discodeit.entity;
 
+import java.io.Serializable;
 import java.util.UUID;
 
-public abstract class EntityRoot {
+public abstract class EntityRoot implements Serializable {
 
     //필드
     private UUID id;

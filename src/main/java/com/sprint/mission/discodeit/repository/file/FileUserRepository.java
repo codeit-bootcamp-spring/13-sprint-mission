@@ -24,13 +24,9 @@ public class FileUserRepository extends FileRepositoryRoot<User> implements User
     }
 
     @Override
-    public boolean existsUser(String email) {
-        for (User user : storage) {
-            if (user.getEmail().equals(email)) {
-                return true;
-            }
-        }
-        return false;
+    public boolean existsUserByEmail(String email) {
+        return storage.stream()
+                .anyMatch(user -> user.getEmail().equals(email));
     }
 
     @Override
@@ -40,11 +36,10 @@ public class FileUserRepository extends FileRepositoryRoot<User> implements User
     }
 
     @Override
-    public Optional<User> findUser(User user) {
-        if (storage.contains(user)){
-            return Optional.of(user);
-        }
-        return Optional.empty();
+    public Optional<User> findUserByEmail(String email) {
+        return storage.stream()
+                .filter(user -> user.getEmail().equals(email))
+                .findFirst();
     }
 
     @Override
