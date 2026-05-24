@@ -1,10 +1,14 @@
 package com.sprint.mission.discodeit.entity;
 
+import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.UUID;
 
-public class User {
+public class User implements Serializable {
+    private static final long serialVersionUID = 1L;
 
-    private final UUID id;
+    private final UUID userId;
     private final long createdAt;
     private long updatedAt;
     private String name;
@@ -13,7 +17,7 @@ public class User {
 
 
     public User (String name, String email, String password) {
-        this.id = UUID.randomUUID();
+        this.userId = UUID.randomUUID();
         this.createdAt = System.currentTimeMillis();
         this.updatedAt = this.createdAt;
         this.name = name;
@@ -22,7 +26,7 @@ public class User {
     }
 
     public UUID getId() {
-        return id;
+        return userId;
     }
 
     public long getCreatedAt() {
@@ -45,29 +49,32 @@ public class User {
         return password;
     }
 
-    public void updateName(String name){
+    public void updateUserName(String name){
         this.name = name;
         this.updatedAt = System.currentTimeMillis();
     }
-    public void updateEmail(String email){
+    public void updateUserEmail(String email){
         this.email = email;
         this.updatedAt = System.currentTimeMillis();
     }
 
-    public void updatePassword(String password){
+    public void updateUserPassword(String password){
         this.password = password;
         this.updatedAt = System.currentTimeMillis();
     }
 
     @Override
     public String toString() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String createdAt = sdf.format(new Date(this.createdAt));
+        String updatedAt = sdf.format(new Date(this.updatedAt));
         return "User{" +
-                "id=" + id +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                ", name='" + name + '\'' +
-                ", email='" + email + '\'' +
-                ", password='" + password + '\'' +
+                "id = " + userId +
+                ", 생성 시간 = " + createdAt +
+                ", 업데이트 시간 = " + updatedAt +
+                ", 이름 = '" + name + '\'' +
+                ", 이메일 = '" + email + '\'' +
+                ", 비밀번호 = '" + password + '\'' +
                 '}';
     }
 }

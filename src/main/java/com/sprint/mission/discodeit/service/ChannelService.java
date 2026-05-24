@@ -9,15 +9,15 @@ import java.util.UUID;
 public interface ChannelService {
 
     //(C)생성
-    Channel createChannel(String name); //PUBLIC
-    Channel createChannel(String name, ChannelType channelType); //PUBLIC PRIVATE
+    Channel createChannel(String name, String description); //PUBLIC
+    Channel createChannel(String name, String description ,ChannelType channelType); //PUBLIC PRIVATE
     //(R)조회 단건
-    Channel findById(UUID id);
+    Channel findByChannel(UUID ChannelId);
     //(R)조회 다수
-    List<Channel> findAll();
+    List<Channel> findAllChannel();
     //(U)수정
-    Channel updateChannel(UUID id, String name, ChannelType channelType);
-    Channel updateChannel(UUID id, String name);
+    Channel updateChannel(UUID ChannelId, String name, String description ,ChannelType channelType);
+    Channel updateChannel(UUID ChannelId, String name, String description);
     //(D)삭제
     void deleteChannel(UUID id);
 }

@@ -12,11 +12,11 @@ public interface UserService {
     //(C)생성
     User createUser(String name, String email, String password);
     //(R)조회 단건
-    User findById(UUID id);
+    User findByUser(UUID userId);
     //(R)조회 다수
-    List<User> findAll();
+    List<User> findAllUser();
     //(U)수정
-    User updateUser(UUID id, String name, String email, String password);
+    User updateUser(UUID userId, String name, String email, String password);
     //(D)삭제
-    void delete(UUID id);
+    void deleteUser(UUID userId);
 }

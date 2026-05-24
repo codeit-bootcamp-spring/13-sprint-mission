@@ -11,11 +11,11 @@ public interface MessageService {
     //(C)생성
     Message createContent(String content, UUID channelId, UUID authorId);
     //(R)조회 단건
-    Message findById(UUID id);
+    Message findByMessage(UUID messageId);
     //(R)조회 다수[특정 채널 메시지 조회]
-    List<Message> findAllByChannelId(UUID channelId);
+    List<Message> findAllByMessage(UUID channelId);
     //(U)수정
-    Message updateMessage(UUID id, String content);
+    Message updateContent(UUID messageId, String content);
     //(D)삭제
-    void deleteChannel(UUID id);
+    void deleteMessage(UUID messageId);
 }
