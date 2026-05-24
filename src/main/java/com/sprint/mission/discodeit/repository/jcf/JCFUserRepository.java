@@ -20,6 +20,16 @@ public class JCFUserRepository implements UserRepository {
     public void save() {}
 
     @Override
+    public boolean existsUser(String email) {
+        for (User user : users) {
+            if (user.getEmail().equals(email)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public void createUser(User user) {
         users.add(user);
     }

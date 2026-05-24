@@ -30,6 +30,11 @@ public class FileUserService implements UserService {
         if (name == null || name.isBlank()) throw new RuntimeException("에러: 이름은 공백일 수 없습니다.");
         if (email == null || email.isBlank()) throw new RuntimeException("에러: 이메일은 공백일 수 없습니다.");
 
+        if (userRepository.existsUser(email)){
+            System.out.println("에러: 이메일: " + email + "은 이미 사용중인 이메일입니다. 유저 생성 거부.\n" );
+            return null;
+        }
+
         User user = new User(name, email);
         userRepository.createUser(user);
         System.out.println("유저: " + name + "가 생성됨.\n" );
@@ -73,6 +78,11 @@ public class FileUserService implements UserService {
     public void changeEmail(User user, String newEmail) {
         if (user == null) throw new RuntimeException("에러: 유저는 null이면 안됩니다.");
         if (newEmail == null || newEmail.isBlank()) throw new RuntimeException("에러: 새 이메일은 공백일 수 없습니다.\n");
+
+        if (userRepository.existsUser(newEmail)){
+            System.out.println("에러: 이메일: " + newEmail + "은 이미 사용중인 이메일입니다. 이메일 업데이트 거부.\n" );
+            return;
+        }
 
         User userTemp = userRepository.findUser(user)
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));

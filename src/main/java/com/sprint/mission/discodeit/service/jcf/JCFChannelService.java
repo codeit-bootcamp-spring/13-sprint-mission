@@ -26,6 +26,11 @@ public class JCFChannelService implements ChannelService {
         if (name == null || name.isBlank()) throw new RuntimeException("에러: 채널명은 공백일 수 없습니다.");
         if (channelHost == null) throw new RuntimeException("에러: 채널 호스트는 null이면 안됩니다.");
 
+        if (channelRepository.existsChannel(name)){
+            System.out.println("에러: 채널명: " + name + "은 이미 사용중인 이름입니다. 채널 생성 거부.\n" );
+            return null;
+        }
+
         Channel channel = new Channel(name, channelHost);
         channelRepository.createChannel(channel);
         System.out.println("채널: " + name + "가 생성됨.\n" );
@@ -58,6 +63,11 @@ public class JCFChannelService implements ChannelService {
         if (newName == null || newName.isBlank()) throw new RuntimeException("에러: 새 채널명은 공백일 수 없습니다.\n");
         if (channel == null || user == null) throw new RuntimeException("에러: 채널, 수정하려는 유저는 null이면 안됩니다.");
         if (channel.getChannelHost() != user) throw new RuntimeException("에러: 채널 이름을 수정하려는 유저는 이 채널 호스트여야 합니다.\n");
+
+        if (channelRepository.existsChannel(newName)){
+            System.out.println("에러: 채널명: " + newName + "은 이미 사용중인 이름입니다. 채널명 업데이트 거부.\n" );
+            return;
+        }
 
         Channel channelTemp = channelRepository.findChannel(channel)
                 .orElseThrow(() -> new RuntimeException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));

@@ -20,6 +20,16 @@ public class JCFChannelRepository implements ChannelRepository {
     public void save() {}
 
     @Override
+    public boolean existsChannel(String name) {
+        for (Channel channel : channels) {
+            if (channel.getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public void createChannel(Channel channel) {
         channels.add(channel);
     }

@@ -24,6 +24,16 @@ public class FileUserRepository extends FileRepositoryRoot<User> implements User
     }
 
     @Override
+    public boolean existsUser(String email) {
+        for (User user : storage) {
+            if (user.getEmail().equals(email)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public void createUser(User user) {
         storage.add(user);
         saveToBinary();

@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 
 import java.io.*;
@@ -21,6 +22,16 @@ public class FileChannelRepository extends FileRepositoryRoot<Channel> implement
     @Override
     public void save() {
         saveToBinary();
+    }
+
+    @Override
+    public boolean existsChannel(String name) {
+        for (Channel channel : storage) {
+            if (channel.getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

@@ -11,6 +11,7 @@ public interface UserRepository {
 //    void loadFromBinary();
 
     void save();
+    boolean existsUser(String email);
     void createUser(User user);
     Optional<User> findUser(User user);
     List<User> findAll();
