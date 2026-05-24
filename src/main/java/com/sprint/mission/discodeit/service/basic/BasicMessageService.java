@@ -1,22 +1,21 @@
-package com.sprint.mission.discodeit.service.file;
+package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.MessageRepository;
-import com.sprint.mission.discodeit.repository.file.FileMessageRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 
 import java.util.List;
 
-public class FileMessageService implements MessageService {
+public class BasicMessageService implements MessageService {
 
     //필드
     private final MessageRepository messageRepository;
 
     //ctor
-    public FileMessageService() {
-        this.messageRepository = new FileMessageRepository();
+    public BasicMessageService(MessageRepository messageRepository) {
+        this.messageRepository = messageRepository;
     }
 
     //interface

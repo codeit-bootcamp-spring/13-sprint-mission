@@ -35,7 +35,7 @@ public class JCFMessageService implements MessageService {
 
         user.addMessage(newMessage);
         channel.addMessage(newMessage);
-        System.out.println("메세지: " + newMessage + "가 생성됨.\n" );
+        System.out.println("메세지: \n" + newMessage + "\n가 생성됨.\n" );
 
         return newMessage;
     }
@@ -70,7 +70,7 @@ public class JCFMessageService implements MessageService {
         Message messageTemp = messageRepository.findMessage(message)
                 .orElseThrow(() -> new RuntimeException("에러: 해당 메세지는 데이터파일에 존재하지 않습니다."));
 
-        System.out.println("메세지: \n{" + messageTemp + "}가 수정됨.\n -> " + newMessage + "\n");
+        System.out.println("메세지: \n{" + messageTemp + "}가 수정됨.\n -> [Message: " + newMessage + "]\n");
         messageTemp.updateMessage(newMessage);
     }
 
