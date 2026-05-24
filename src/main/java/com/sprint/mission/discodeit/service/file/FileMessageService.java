@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.file.FileMessageRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 
 import java.util.List;
@@ -11,11 +12,11 @@ import java.util.List;
 public class FileMessageService implements MessageService {
 
     //필드
-    MessageRepository messageRepository;
+    private final MessageRepository messageRepository;
 
     //ctor
-    public FileMessageService(MessageRepository messageRepository) {
-        this.messageRepository = messageRepository;
+    public FileMessageService() {
+        this.messageRepository = new FileMessageRepository();
     }
 
     //interface

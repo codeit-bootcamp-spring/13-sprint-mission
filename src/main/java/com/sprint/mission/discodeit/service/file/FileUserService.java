@@ -20,8 +20,8 @@ public class FileUserService implements UserService {
     private final UserRepository userRepository;
 
     //ctor
-    public FileUserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public FileUserService() {
+        this.userRepository = new FileUserRepository();
     }
 
     //interface

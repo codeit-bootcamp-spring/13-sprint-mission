@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 
 import java.util.List;
@@ -11,11 +12,11 @@ import java.util.List;
 public class FileChannelService implements ChannelService {
 
     //필드
-    ChannelRepository channelRepository;
+    private final ChannelRepository channelRepository;
 
     //ctor
-    public FileChannelService(ChannelRepository channelRepository) {
-        this.channelRepository = channelRepository;
+    public FileChannelService() {
+        this.channelRepository = new FileChannelRepository();
     }
 
     //interface
