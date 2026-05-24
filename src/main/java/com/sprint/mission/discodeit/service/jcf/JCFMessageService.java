@@ -65,8 +65,10 @@ public class JCFMessageService implements MessageService {
 
         message.getUser().removeMessage(message);
         message.getChannel().removeMessage(message);
+
         System.out.println("메세지: " + message + "가 삭제됨.\n" );
         messages.remove(message);
+
         return null;
     }
 

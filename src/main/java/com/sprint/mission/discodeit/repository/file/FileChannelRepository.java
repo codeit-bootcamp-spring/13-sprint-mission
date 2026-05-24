@@ -1,7 +1,6 @@
 package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 
 import java.io.*;
@@ -51,7 +50,7 @@ public class FileChannelRepository implements ChannelRepository {
             // 일단 channels 초기화
             if (channels != null)
                 channels.clear();
-            // 유저에 역직렬화한 List<User> 넣기
+            // 유저에 역직렬화한 List<Channel> 넣기
             channels.addAll(channelsTemp);
 
         } catch (ClassNotFoundException e) {
