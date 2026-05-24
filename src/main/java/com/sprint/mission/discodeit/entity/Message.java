@@ -1,9 +1,10 @@
 package com.sprint.mission.discodeit.entity;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-public class Message extends EntityRoot{
+public class Message extends EntityRoot implements Serializable {
 
     //필드
     private String message;

@@ -1,9 +1,10 @@
 package com.sprint.mission.discodeit.entity;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class User extends EntityRoot{
+public class User extends EntityRoot implements Serializable {
 
     //필드
     private String name;
