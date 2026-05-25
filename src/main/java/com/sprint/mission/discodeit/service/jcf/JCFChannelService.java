@@ -19,13 +19,13 @@ public class JCFChannelService implements ChannelService {
 	
 	@Override
 	public void create(Channel channel) {
-		this.channels.put(channel.getId(), channel);
+		channels.put(channel.getId(), channel);
 	}
 	
 	@Override
 	public Channel findById(UUID id) {
-		return this.channels.get(id);
-	}
+		return channels.get(id);
+    }
 	
 	@Override
 	public Collection<Channel> findAll() {

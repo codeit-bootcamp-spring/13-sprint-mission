@@ -6,19 +6,21 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.service.file.FileChannelService;
+import com.sprint.mission.discodeit.service.file.FileMessageService;
+import com.sprint.mission.discodeit.service.file.FileUserService;
 import com.sprint.mission.discodeit.service.jcf.JCFChannelService;
 import com.sprint.mission.discodeit.service.jcf.JCFMessageService;
 import com.sprint.mission.discodeit.service.jcf.JCFUserService;
 
 import java.util.Collection;
-import java.util.Optional;
 
 public class JaveApp {
 	public static void main(String[] args) {
 		
-		UserService userService = new JCFUserService();
-		ChannelService channelService = new JCFChannelService();
-		MessageService messageService = new JCFMessageService(userService, channelService);
+		UserService userService = new FileUserService();
+		ChannelService channelService = new FileChannelService();
+		MessageService messageService = new FileMessageService(userService, channelService);
 		
 		// 유저 생성
 		User user1 = new User("KJH", "KJH@kjh.com");
@@ -167,7 +169,7 @@ public class JaveApp {
 		
 		try {
 			Message hackMessage = new Message("치트키 씁니다", fakeUser, channel2);
-			messageService.create(hackMessage); // 💥 여기서 에러가 터져야 성공!
+			messageService.create(hackMessage);
 			
 			System.out.println("검증 실패: 가짜 유저인데 저장되었습니다.");
 		} catch (IllegalArgumentException e) {
