@@ -15,4 +15,6 @@ public interface ChannelRepository {
     void update(UUID id, Channel channel);
 
     void delete(UUID id);
+
+    boolean exists(UUID id);
 }

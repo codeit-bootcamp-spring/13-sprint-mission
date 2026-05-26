@@ -11,7 +11,7 @@ public class BaseEntity {
     BaseEntity() {
         this.id = UUID.randomUUID();
         this.createdAt = System.currentTimeMillis();
-        this.updatedAt = System.currentTimeMillis();
+        this.updatedAt = null;
     }
 
     public UUID getId() {

@@ -16,4 +16,7 @@ public interface MessageRepository {
 
     void delete(UUID id);
 
+    boolean exists(UUID id);
+
+
 }

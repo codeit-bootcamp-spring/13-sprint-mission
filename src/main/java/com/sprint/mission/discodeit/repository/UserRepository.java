@@ -16,4 +16,6 @@ public interface UserRepository {
 
     void delete(UUID id);
 
+    boolean exists(UUID id);
+
 }
