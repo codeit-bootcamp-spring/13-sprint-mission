@@ -17,7 +17,6 @@ public interface ChannelService {
     List<Channel> findAllChannel();
     //(U)수정
     Channel updateChannel(UUID ChannelId, String name, String description ,ChannelType channelType);
-    Channel updateChannel(UUID ChannelId, String name, String description);
     //(D)삭제
     void deleteChannel(UUID id);
 }
