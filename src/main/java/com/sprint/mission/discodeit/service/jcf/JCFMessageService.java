@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.service.jcf;
 
+import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
@@ -28,7 +30,20 @@ public class JCFMessageService implements MessageService {
         //main에서 MessageService.cerate(Message message);로 호출
         //메세지객체 주소가 들어있는 참조변수를 리스트에 저장한다.
         //호출 된 곳으로 복귀.
+
+        User foundUser = userService.read(message.getAuthorId());
+        if (foundUser == null) {
+            throw new IllegalArgumentException("유저를 찾을 수 없습니다.");
+        }
+
+        Channel channel = channelService.read(message.getChannelId());
+        if (channel == null) {
+            throw new IllegalArgumentException("채널을 찾을 수 없습니다.");
+        }
+
         data.add(message);
+        System.out.println("메세지가 등록되었습니다."+message.getMessage());
+
     }
 
     @Override

@@ -7,6 +7,9 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.service.file.FileChannelService;
+import com.sprint.mission.discodeit.service.file.FileMessageService;
+import com.sprint.mission.discodeit.service.file.FileUserService;
 import com.sprint.mission.discodeit.service.jcf.JCFChannelService;
 import com.sprint.mission.discodeit.service.jcf.JCFMessageService;
 import com.sprint.mission.discodeit.service.jcf.JCFUserService;
@@ -17,15 +20,15 @@ public class JavaApplication {
     public static void main(String[] args) {
         //객체를 생성하고 참조 변수에 객체의 주소 값을 할당하는 곳
         //생성자를 호출해서 필드 변수에 값을 할당 받는다.
-        UserService userService = new JCFUserService();
+        UserService userService = new FileUserService();
 
         //동일하게 생성자를 호출해서 필드 변수에 값릏 할당 받는다.
         //JCFChannelService안에 생성자를 호출해서 userService 구현 객체를 담는 참조 변수를 할당 받는다.
-        ChannelService channelService = new JCFChannelService(userService);
+        ChannelService channelService = new FileChannelService(userService);
 
         //동일하게 생성자를 호출해서 필드 변수에 값릏 할당 받는다.
         //JCFMessageService안에 생성자를 호출해서 userService와 channelService 구현 객체를 담는 참조 변수를 할당 받는다.
-        MessageService messageService = new JCFMessageService(userService, channelService);
+        MessageService messageService = new FileMessageService(userService, channelService);
 
 
         //객체가 생성 객체 안에는 클레스에 있는 필드변수가 존재한다.
@@ -42,13 +45,15 @@ public class JavaApplication {
         Channel channel = new Channel("임시채", "임시 채널 입니다.");
         channelService.create(channel);// 동일
 
+        Channel channel2 = new Channel("테스트", "검증 테스트 채널");
+        channelService.create(channel2);
+
         //동일 경로
         //단, Message 객체의 인수에는 UserId와 ChannelId를  각각 get()으로 꺼내서 인수로 할당.
-        Message message = new Message("안녕하세요", user.getId(), channel.getId());
+        Message message = new Message("검증", user2.getId(), channel2.getId());
         messageService.create(message);//동일
 
         System.out.println("=============단건 조화============");
-
         //User클레스에 있는 getId호출->id를 가져옴
         // -> JCFUserService의 read메서드 호출 id 할당
         //-> read에서 반환한 객체의주소를 가지고 복귀 -> foundUser에 객체 할당
@@ -111,6 +116,14 @@ public class JavaApplication {
         //->JCFUserService의 read메서드 호출-> null반환 메서드 종료
         //호출 위치인 main에 복귀 후 null을 출력한다.
         System.out.println(userService.read(foundUser.getId()));
+
+        try {
+            messageService.create(message);
+        }catch (IllegalArgumentException e){
+            System.out.println(e.getMessage());
+        }
+
+
     }
 
 

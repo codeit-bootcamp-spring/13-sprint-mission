@@ -1,10 +1,11 @@
 package com.sprint.mission.discodeit.entity;
 
+import java.io.Serializable;
 import java.util.UUID;
 //멘토님의 조언을 적용해서 메서드이 흐름 위주로 그려보자.
 
 
-public class Channel {
+public class Channel implements Serializable {
     //메인에서 Channel channel = new channel();로 객체를 생성한다.
     private UUID id;
     private Long createdAt;
