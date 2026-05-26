@@ -7,17 +7,25 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
-public class FileChannelService implements Serializable, ChannelService {
+public class FileChannelService implements ChannelService {
 
     private static final long serialVersionUID = 1L;
     private final List<Channel> storage = new ArrayList<>();
+    private final Path channelPath;
+
+    public FileChannelService(Path channelPath) {
+        this.channelPath = channelPath;
+        loadFromFile();
+    }
 
     @Override
     public void create(Channel channel) {
         if (channel == null || channel.getId() == null) {
             throw new IllegalArgumentException("채널 정보가 없습니다.");
         }
+
         storage.add(channel);
+        saveToFile();
     }
 
     @Override
@@ -53,6 +61,7 @@ public class FileChannelService implements Serializable, ChannelService {
         for (int i = 0; i < storage.size(); i++) {
             if (storage.get(i).getId().equals(id)) {
                 storage.set(i, channel);
+                saveToFile();
                 return;
             }
         }
@@ -65,41 +74,52 @@ public class FileChannelService implements Serializable, ChannelService {
         if (id == null) {
             throw new IllegalArgumentException("채널 ID는 필수입니다.");
         }
-        storage.removeIf(channel -> channel.getId().equals(id));
-    }
 
-    // 직렬화
-    public void saveToFile(Path channelPath) throws IOException {
-        Path parent = channelPath.getParent();
-        if (parent != null) {
-            Files.createDirectories(parent);
+        boolean removed = storage.removeIf(channel -> channel.getId().equals(id));
+
+        if (!removed) {
+            throw new IllegalArgumentException("존재하지 않는 채널 ID입니다.");
         }
 
-        try(ObjectOutputStream cio =
-                    new ObjectOutputStream(
-                            new BufferedOutputStream(
-                                    Files.newOutputStream(channelPath)))){
-
-            cio.writeObject(new ArrayList<>(storage));
-        }
-
-
+        saveToFile();
     }
 
-    // 역직렬화
-    public static FileChannelService loadFromFile(Path channelPath) {
-        FileChannelService service = new FileChannelService();
+    private void saveToFile() {
+        try {
+            Path parent = channelPath.getParent();
 
-        try(ObjectInputStream coo =
-                    new ObjectInputStream(
-                            new BufferedInputStream(
-                                    Files.newInputStream(channelPath)))) {
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
 
-            service.storage.addAll((List<Channel>) coo.readObject());
+            try (ObjectOutputStream oos =
+                         new ObjectOutputStream(
+                                 new BufferedOutputStream(
+                                         Files.newOutputStream(channelPath)))) {
+
+                oos.writeObject(new ArrayList<>(storage));
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("채널 파일 저장 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loadFromFile() {
+        if (!Files.exists(channelPath)) {
+            return;
+        }
+
+        try (ObjectInputStream ois =
+                     new ObjectInputStream(
+                             new BufferedInputStream(
+                                     Files.newInputStream(channelPath)))) {
+
+            storage.addAll((List<Channel>) ois.readObject());
+
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            throw new RuntimeException("채널 파일 불러오기 중 오류가 발생했습니다.", e);
         }
-        return service;
     }
-
 }

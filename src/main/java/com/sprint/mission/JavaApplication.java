@@ -10,13 +10,24 @@ import java.util.*;
 
 public class JavaApplication {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args)  {
 
 
-        UserService userService = new JCFUserService();
-        ChannelService channelService = new JCFChannelService();
+        UserService userService =
+                new FileUserService(Paths.get("data/users.ser"));
+
+        ChannelService channelService =
+                new FileChannelService(Paths.get("data/channels.ser"));
+
         MessageService messageService =
-                new JCFMessageService(userService, channelService);
+                new FileMessageService(Paths.get("data/messages.ser"));
+
+        System.out.println("현재 실행 위치: " + Paths.get("").toAbsolutePath());
+        System.out.println("users.ser 위치: " + Paths.get("data/users.ser").toAbsolutePath());
+
+        System.out.println("users.ser = " + Files.exists(Paths.get("data/users.ser")));
+        System.out.println("channels.ser = " + Files.exists(Paths.get("data/channels.ser")));
+        System.out.println("messages.ser = " + Files.exists(Paths.get("data/messages.ser")));
 
         User user1 = new User("신혜선","shinhyesun@yuha.com","abcd1234");
         Channel channel1 = new Channel("JavaSpring","같이 공부해요", ChannelType.PUBLIC);
@@ -98,25 +109,6 @@ public class JavaApplication {
         System.out.println(channelService.readAll());
         System.out.println(messageService.readAll());
 
-
-        // ----------------------------------------------------------------------
-        FileChannelService cs = new FileChannelService();
-
-        for (Channel channel : channelService.readAll()) {
-            cs.create(channel);
-        }
-
-        Path chaPath = Path.of("data/channels.ser");
-        cs.saveToFile(chaPath);
-
-        System.out.println("채널 직렬화 저장 완료: " + chaPath.toAbsolutePath());
-
-        FileChannelService loaded =
-                FileChannelService.loadFromFile(chaPath);
-
-        System.out.println("=== 역직렬화 결과 ===");
-        loaded.readAll().forEach(System.out::println);
     }
-
 }
 
