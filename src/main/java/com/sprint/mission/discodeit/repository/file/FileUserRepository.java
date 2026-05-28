@@ -24,6 +24,10 @@ public class FileUserRepository implements UserRepository {
         saveToFile();
     }
 
+    public boolean exists(UUID id) {
+        return users.stream().anyMatch(user -> user.getId().equals(id));
+    }
+
     @Override
     public User read(UUID id) {
         for (User user : users) {
@@ -76,7 +80,6 @@ public class FileUserRepository implements UserRepository {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void loadFromFile() {
         if (!Files.exists(userPath)) {
             return;

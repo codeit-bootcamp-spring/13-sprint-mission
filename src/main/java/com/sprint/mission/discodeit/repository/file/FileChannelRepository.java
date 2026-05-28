@@ -18,7 +18,7 @@ public class FileChannelRepository implements ChannelRepository {
     }
 
     @Override
-    public void create(Channel channel) {
+    public void create(Channel channel){
         channels.add(channel);
         saveToFile();
     }
@@ -56,6 +56,10 @@ public class FileChannelRepository implements ChannelRepository {
         saveToFile();
     }
 
+    public boolean exists(UUID id) {
+        return channels.stream().anyMatch(channel -> channel.getId().equals(id));
+    }
+
     private void saveToFile() {
         try {
             Path parent = channelPath.getParent();
@@ -75,7 +79,7 @@ public class FileChannelRepository implements ChannelRepository {
         }
     }
 
-    @SuppressWarnings("unchecked")
+
     private void loadFromFile() {
         if (!Files.exists(channelPath)) {
             return;

@@ -23,6 +23,10 @@ public class FileMessageRepository implements MessageRepository {
         saveToFile();
     }
 
+    public boolean exists(UUID id) {
+        return messages.stream().anyMatch(message -> message.getId().equals(id));
+    }
+
     @Override
     public Message read(UUID id) {
         for (Message message : messages) {
@@ -75,7 +79,7 @@ public class FileMessageRepository implements MessageRepository {
         }
     }
 
-    @SuppressWarnings("unchecked")
+
     private void loadFromFile() {
         if (!Files.exists(messagePath)) {
             return;
