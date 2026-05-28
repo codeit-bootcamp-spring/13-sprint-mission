@@ -5,18 +5,14 @@ import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.ChannelService;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class JCFChannelService implements ChannelService {
     private final Map<UUID, Channel> data;
 
-    public JCFChannelService(Map<UUID, Channel> data) {
-        this.data = data;
+    public JCFChannelService() {
+        this.data = new HashMap<>();
     }
-
 
     @Override
     public Channel create(ChannelType type, String channelName, String description) {
