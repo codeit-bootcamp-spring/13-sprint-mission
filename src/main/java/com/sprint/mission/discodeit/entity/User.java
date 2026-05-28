@@ -50,4 +50,13 @@ public class User{
         this.pw = pw;
         this.updatedAt = System.currentTimeMillis();
     }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "userName='" + userName + '\'' +
+                ", pw='" + pw + '\'' +
+                ", email='" + email + '\'' +
+                '}';
+    }
 }

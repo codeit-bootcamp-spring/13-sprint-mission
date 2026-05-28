@@ -50,4 +50,13 @@ public class Channel {
         this.description = description;
         this.updatedAt = System.currentTimeMillis();
     }
+
+    @Override
+    public String toString() {
+        return "Channel{" +
+                "type=" + type +
+                ", channelName='" + channelName + '\'' +
+                ", description='" + description + '\'' +
+                '}';
+    }
 }

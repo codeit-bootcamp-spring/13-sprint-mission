@@ -48,4 +48,11 @@ public class Message {
         this.content = content;
         this.updatedAt = System.currentTimeMillis();
     }
+
+    @Override
+    public String toString() {
+        return "Message{" +
+                "content='" + content + '\'' +
+                '}';
+    }
 }
