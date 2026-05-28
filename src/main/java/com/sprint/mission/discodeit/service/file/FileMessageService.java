@@ -1,11 +1,58 @@
 package com.sprint.mission.discodeit.service.file;
 
-import java.io.Serializable;
+import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.file.FileMessageRepository;
+import com.sprint.mission.discodeit.service.MessageService;
 
-public class FileMessageService implements Serializable {
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
-    private static final long serialVersionUID = 1L;
+
+public class FileMessageService implements MessageService {
+
+    private final MessageRepository messageRepository;
+
+    public FileMessageService() {
+        this.messageRepository = new FileMessageRepository();
+    }
+
+    @Override
+    public Message create(Message message) {
+        return messageRepository.create(message);
+    }
+
+    @Override
+    public Message findByContent(String content) {
+        return messageRepository.findByContent(content);
+    }
+
+    @Override
+    public List<Message> findAll() {
+        return messageRepository.findAll();
+    }
+
+    @Override
+    public void update(Message requestMessage) {
+        messageRepository.update(requestMessage);
+    }
+
+    @Override
+    public void delete(String content) {
+        messageRepository.delete(content);
+    }
+
+
+
 }
+
+
+
 /*
 기본 요구사항
 File IO를 통한 데이터 영속화

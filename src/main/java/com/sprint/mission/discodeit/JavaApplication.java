@@ -20,8 +20,8 @@ public class JavaApplication {
     public  static void main(String[] args) {
 
 
-        // <기존 데이터 등록>
-        UserService userService = new JCFUserService();
+        // <기존 데이터 등록ㅏ
+        UserService userService = new JCFUserService(); // 2차 미션 때는 File로 갈아 끼우기
         ChannelService channelService = new JCFChannelService();
         MessageService messageService = new JCFMessageService();
         Scanner scanner = new Scanner(System.in); // 키보드 입력기

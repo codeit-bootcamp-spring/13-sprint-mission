@@ -38,7 +38,7 @@ public class FileUserService implements UserService {
             }
         }
 
-    // 파일에서 사용자 목록을 구출
+    // 파일에서 사용자 목록을 추출
     private  List<User> readFile() {
         if (!Files.exists(filePath)) {
             return new  ArrayList<>();
