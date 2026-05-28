@@ -36,7 +36,7 @@ public class FileMessageRepository implements MessageRepository {
 
     // 파일에서 메세지 목록을 통째로 읽어오는 역직렬화 도구
     @SuppressWarnings("unchecked") // Unchecked(검증 안 됨) 경고는 Suppress(억제/패스) 해라!
-    private  List<Message> readFile() {
+    private List<Message> readFile() {
         if (!Files.exists(filePath)) {
             return new ArrayList<>(); // 파일이 아직 없으면 빈 리스트 리턴
         }
