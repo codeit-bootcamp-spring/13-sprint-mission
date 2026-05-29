@@ -1,8 +1,11 @@
 package com.sprint.mission.discodeit.entity;
 
+import java.io.Serializable;
 import java.util.UUID;
 
-public class User {
+public class User implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private UUID id;
     private Long createdAt;
@@ -10,7 +13,7 @@ public class User {
 
     private String username;
     private String email;
-    private String password;
+    private transient String password;  // 직렬화에서 제외
 
     public User(String username, String email, String password) {
         this.id = UUID.randomUUID();
