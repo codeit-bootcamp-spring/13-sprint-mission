@@ -1,35 +1,33 @@
 package com.sprint.mission.discodeit;
-
-
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.repository.jcf.JCFChannelRepository;
+import com.sprint.mission.discodeit.repository.jcf.JCFMessageRepository;
+import com.sprint.mission.discodeit.repository.jcf.JCFUserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.file.FileChannelService;
-import com.sprint.mission.discodeit.service.file.FileMessageService;
-import com.sprint.mission.discodeit.service.file.FileUserService;
-import com.sprint.mission.discodeit.service.jcf.JCFChannelService;
-import com.sprint.mission.discodeit.service.jcf.JCFMessageService;
-import com.sprint.mission.discodeit.service.jcf.JCFUserService;
+import com.sprint.mission.discodeit.service.basic.BasicChannelService;
+import com.sprint.mission.discodeit.service.basic.BasicMessageService;
+import com.sprint.mission.discodeit.service.basic.BasicUserService;
 
 import java.util.List;
 
 public class JavaApplication {
     public static void main(String[] args) {
-        //객체를 생성하고 참조 변수에 객체의 주소 값을 할당하는 곳
-        //생성자를 호출해서 필드 변수에 값을 할당 받는다.
-        UserService userService = new FileUserService();
+        UserRepository userRepository = new JCFUserRepository();
+        ChannelRepository channelRepository = new JCFChannelRepository();
+        MessageRepository messageRepository = new JCFMessageRepository();
 
-        //동일하게 생성자를 호출해서 필드 변수에 값릏 할당 받는다.
-        //JCFChannelService안에 생성자를 호출해서 userService 구현 객체를 담는 참조 변수를 할당 받는다.
-        ChannelService channelService = new FileChannelService(userService);
-
-        //동일하게 생성자를 호출해서 필드 변수에 값릏 할당 받는다.
-        //JCFMessageService안에 생성자를 호출해서 userService와 channelService 구현 객체를 담는 참조 변수를 할당 받는다.
-        MessageService messageService = new FileMessageService(userService, channelService);
-
+        UserService userService = new BasicUserService(userRepository);
+        ChannelService channelService = new BasicChannelService(channelRepository);
+        MessageService messageService = new BasicMessageService(userRepository,
+                                                                    channelRepository,
+                                                                        messageRepository);
 
         //객체가 생성 객체 안에는 클레스에 있는 필드변수가 존재한다.
         //생성자가 호출되고 객체의 인수를 순서대로 필드 변수에 할당한다.
@@ -42,7 +40,7 @@ public class JavaApplication {
         userService.create(user2);// 동일 경로
 
         //위와 동일 경로
-        Channel channel = new Channel("임시채", "임시 채널 입니다.");
+        Channel channel = new Channel("임시채널", "임시 채널 입니다.");
         channelService.create(channel);// 동일
 
         Channel channel2 = new Channel("테스트", "검증 테스트 채널");
@@ -63,10 +61,12 @@ public class JavaApplication {
         Message foundMessage = messageService.read(message.getId());
 
         //foundUser변수안에서 getname으로 필드 변수의 값을 가져온다.
-        System.out.println(foundUser.getUserName());
+        System.out.println(foundUser.getUserName()+"/"+
+                foundChannel.getChannelName()+ "/"+
+                foundMessage.getMessage());
         //둘다 동일
-        System.out.println(foundChannel.getChannelName());
-        System.out.println(foundMessage.getMessage());
+        //System.out.println(foundChannel.getChannelName());
+        //System.out.println(foundMessage.getMessage());
 
         System.out.println("=============다건 조화============");
 
@@ -79,7 +79,7 @@ public class JavaApplication {
         for (User userAll : users) {
             //List<User> 타입 변수 User에서 순차적으로 모든 값을 좌항 변수에 할당)
             //getUserName으로 모든 User객체의 필드 변수에서 name만 출력
-            System.out.println(userAll.getUserName());
+            System.out.print(userAll.getUserName()+"/");
         }
 
         //둘다 동일
@@ -100,7 +100,8 @@ public class JavaApplication {
         channelService.update(channel.getId(),"안임시", "안임시채널입니다.");
         messageService.update(message.getId(),"안안녕하세요");
             //객체의 필드 변수 값을 각getter로 반환해서 출력
-            System.out.println(foundUser.getUserName()+" "+foundUser.getEmail()+" "+foundUser.getPassword());
+        System.out.println(foundUser.getUserName()+" "+foundUser.getEmail()+" "+foundUser.getPassword());
+
         System.out.println("====삭제====");
 
         //user class의 get()메서드 호출->getID로 유저 객체의 id를 반환해서
