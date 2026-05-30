@@ -19,7 +19,7 @@ public class FileMessageRepository implements MessageRepository {
 
     private final Path filePath;
 
-    public FileMessageRepository(Path filePath, UserService userService, ChannelService channelService) {
+    public FileMessageRepository(Path filePath) {
         this.filePath = filePath;
         if (!Files.exists(filePath.getParent())) {
             try {
@@ -50,7 +50,6 @@ public class FileMessageRepository implements MessageRepository {
             throw new RuntimeException("파일 불러오기 실패");
         }
     }
-
 
     @Override
     public void save(Message message) {

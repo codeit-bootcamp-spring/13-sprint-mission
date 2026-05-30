@@ -54,22 +54,7 @@ public class JCFChannelService implements ChannelService {
         return new ArrayList<>(data.values());
     }
 
-    @Override //PUBLIC
-    public Channel updateChannel(UUID id, String name, String description) {
-        Channel updateChannel = data.get(id);
-        if (updateChannel == null) {
-            throw new NoSuchElementException("존재하지 않는 채널입니다.");
-        }
-        if (name != null && !name.isBlank()){
-            updateChannel.updateChannel(name);
-        }
-        if (description != null){
-        updateChannel.updateChannelDescription(description);
-        }
-        return updateChannel;
-    }
-
-    @Override //PRIVATE
+    @Override
     public Channel updateChannel(UUID channelId, String name, String description, ChannelType channelType) {
         Channel updateChannel = data.get(channelId);
         if (updateChannel == null){
