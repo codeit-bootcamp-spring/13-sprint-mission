@@ -74,7 +74,7 @@ public class User implements Serializable {
                 ", 업데이트 시간 = " + updatedAt +
                 ", 이름 = '" + name + '\'' +
                 ", 이메일 = '" + email + '\'' +
-                ", 비밀번호 = '" + password + '\'' +
+                ", 비밀번호 = '" + "******" + '\'' +
                 '}';
     }
 }
