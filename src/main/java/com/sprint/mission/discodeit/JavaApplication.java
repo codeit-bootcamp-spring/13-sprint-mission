@@ -13,12 +13,13 @@ import com.sprint.mission.discodeit.service.jcf.JCFUserService;
 
 import java.util.List;
 import java.util.Scanner;
+import java.util.UUID;
 
 public class JavaApplication {
     public static void main(String[] args) {
         UserService userService = new JCFUserService();
         ChannelService channelService = new JCFChannelService();
-        MessageService messageService = new JCFMessageService();
+        MessageService messageService = new JCFMessageService(userService, channelService);
 
         System.out.println("========= [ 1. 등   록 ] =========");
         System.out.println(" 1) 유저 등록 ");
@@ -78,6 +79,31 @@ public class JavaApplication {
         userService.read(user4.getId());
         channelService.read(channel3.getId());
         messageService.read(message3.getId());
+        System.out.println();
 
+        System.out.println("========= [ 5. 서비스 간 의존성 주입 ] =========");
+        MessageService messageServiceDI = new JCFMessageService(userService, channelService);
+
+        System.out.println(" 1) 정상 데이터 테스트 ");
+        User realUser = userService.create("홍길동", "pw123", "hong@gmail.com");
+        Channel realChannel = channelService.create(ChannelType.PUBLIC, "자바게시판", "자바 질문하는 곳");
+        Message msg1 = messageService.create(realUser.getId(), realChannel.getId(), "안녕하세요! 자바 질문 있습니다.");
+        if (msg1 != null) {
+            System.out.println("정상 데이터 검증");
+        }
+
+        System.out.println(" 2) 유저 실패 데이터 테스트 ");
+        UUID fakeUserId = UUID.randomUUID();
+        Message msg2 = messageService.create(fakeUserId, realChannel.getId(), "가짜 유저 id 입니다.");
+        if (msg2 == null) {
+            System.out.println("가짜 유저 차단");
+        }
+
+        System.out.println(" 3) 채널 실패 데이터 테스트 ");
+        UUID fakeChannelId = UUID.randomUUID();
+        Message msg3 = messageService.create(realUser.getId(), fakeChannelId, "가짜 채널 id 입니다.");
+        if (msg3 == null) {
+            System.out.println("가짜 채널 차단");
+        }
     }
 }
