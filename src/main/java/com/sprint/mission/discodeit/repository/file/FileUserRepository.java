@@ -4,88 +4,40 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class FileUserRepository implements UserRepository {
 
-    private final Path directory = Paths.get(System.getProperty("user.dir"));
-    private final Path filePath = directory.resolve("users.ser");
+    private UserRepository userRepository;
 
-    public  FileUserRepository() {
-        try {
-            Files.createDirectories(directory);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void saveFile(List<User> foundUser) {
-        try (ObjectOutputStream oos = new ObjectOutputStream
-                (new FileOutputStream(filePath.toFile()))) {
-            oos.writeObject(foundUser);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private List<User> readFile() {
-        if (Files.notExists(filePath)) {
-            return new ArrayList<>();
-        }
-        try (ObjectInputStream ois = new ObjectInputStream
-                (new FileInputStream(filePath.toFile()))) {
-            return (List<User>) ois.readObject();
-        }
-        catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+    public FileUserRepository() {
+        this.userRepository = new FileUserRepository();
     }
 
     @Override
     public User create(User user) {
-        List<User> foundUser = readFile();
-        foundUser.add(user);
-        saveFile(foundUser);
-        return user;
+        return userRepository.create(user);
     }
 
     @Override
     public User findById(UUID id) {
-        List<User> foundUser = readFile();
-        for (User user : foundUser) {
-            if (user.getId().equals(id)) {
-                return user;
-            }
-        }
-        return null;
+        return userRepository.findById(id);
     }
 
     @Override
     public List<User> findAll() {
-        return readFile();
+        return userRepository.findAll();
     }
 
     @Override
-    public void update(User inputUser) {
-        List<User> foundUser = readFile();
-        for (User user : foundUser) {
-            if (user.getId().equals(inputUser.getId())) {
-                user.updateName(inputUser);
-                break;
-            }
-        }
+    public void update(User user) {
+        userRepository.update(user);
     }
 
     @Override
     public void delete(UUID id) {
-        List<User> foundUser = readFile();
-        foundUser.removeIf(u->u.getId().equals(id));
-        saveFile(foundUser);
+        userRepository.delete(id);
     }
 
 }

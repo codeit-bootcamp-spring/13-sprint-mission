@@ -4,90 +4,40 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class FileChannelRepository implements ChannelRepository {
 
-    // 주소 설정
-    private final Path directory = Paths.get(System.getProperty("channel.dir"), "data");
-    private final Path filePath = directory.resolve("channels.ser");
+    private ChannelRepository channelRepository;
 
     public FileChannelRepository() {
-        try {
-            Files.createDirectories(directory);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        this.channelRepository = new FileChannelRepository();
     }
-
-    private void saveFile(List<Channel> channels) {
-        try (ObjectOutputStream oos = new ObjectOutputStream
-                (new FileOutputStream(filePath.toFile()))) {
-            oos.writeObject(channels);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    private List<Channel> readFile() {
-        if (!Files.exists(filePath)) {
-            return new ArrayList<>();
-        }
-            try (ObjectInputStream ois = new ObjectInputStream
-                    (new FileInputStream(filePath.toFile()))) {
-                return (List<Channel>) ois.readObject();
-            } catch (IOException | ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
 
     @Override
-    public Channel create(Channel newChannel) {
-        List<Channel> channels = readFile();
-        channels.add(newChannel);
-        saveFile(channels);
-        return newChannel;
+    public Channel create(Channel channel) {
+        return channelRepository.create(channel);
     }
 
     @Override
     public Channel findById(UUID id) {
-        List<Channel> channels = readFile();
-        for (Channel channel : channels) {
-            if (channel.getId().equals(id)) {
-                return channel;
-            }
-        }
-        return null;
+        return channelRepository.findById(id);
     }
 
     @Override
     public List<Channel> findAll() {
-        return readFile();
+        return channelRepository.findAll();
     }
 
     @Override
-    public void update(Channel requestChannel) {
-        List<Channel> channels = readFile();
-        for (Channel foundChannel : channels) {
-            if (foundChannel.getId().equals(requestChannel.getId())) {
-                foundChannel.updateTitles(requestChannel);
-                break;
-            }
-        }
+    public void update(Channel channel) {
+        channelRepository.update(channel);
     }
 
     @Override
     public void delete(UUID id) {
-        List<Channel> FoundChannel = readFile();
-        FoundChannel.removeIf(c -> c.getId().equals(id));
-        saveFile(FoundChannel);
+        channelRepository.delete(id);
     }
 }
 /*
