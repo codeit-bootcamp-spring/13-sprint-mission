@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.service.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
+import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 
 import java.io.*;
@@ -13,96 +14,47 @@ import java.util.List;
 import java.util.UUID;
 
 public class FileChannelService implements ChannelService {
-    private final Path path;
+    private final ChannelRepository channelRepository;
 
-    public FileChannelService(String path) {
-        this.path = Paths.get(path);
-    }
-
-    private void saveChannelFile(List<Channel> channels) {
-        Path parent = path.getParent();
-        if (parent != null) {
-            try {
-                Files.createDirectories(parent);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        try (ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(Files.newOutputStream(path)))) {
-            oos.writeObject(new ArrayList<>(channels));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private List<Channel> loadChannelFile() {
-        if (!Files.exists(path)) {
-            return new ArrayList<>();
-        }
-
-        try (ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(Files.newInputStream(path)))) {
-            return (List<Channel>) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+    public FileChannelService(ChannelRepository channelRepository) {
+        this.channelRepository = channelRepository;
     }
 
     @Override
     public Channel create(ChannelType type, String channelName, String description) {
         Channel channel = new Channel(type, channelName, description);
-        List<Channel> channels = loadChannelFile();
-
-        channels.add(channel);
-        saveChannelFile(channels);
-
+        channelRepository.create(channel);
         System.out.println(channelName + " 채널이 생성되었습니다!");
         return channel;
     }
 
     @Override
     public Channel read(UUID id) {
-        List<Channel> channels = loadChannelFile();
-
-        for (Channel channel : channels) {
-            if (channel.getId().equals(id)) {
-                return channel;
-            }
+        Channel channel = channelRepository.read(id);
+        if (channel == null) {
+            System.out.println("채널이 존재하지 않습니다.");
         }
-        System.out.println("채널이 존재하지 않습니다.");
-        return null;
+        return channel;
     }
 
     @Override
     public List<Channel> readAll() {
-        return loadChannelFile();
+        return channelRepository.readAll();
     }
 
     @Override
     public void update(UUID id, ChannelType type, String channelName, String description) {
-        List<Channel> channels = loadChannelFile();
-
-        for (Channel channel : channels) {
-            if (channel.getId().equals(id)) {
-                channel.update(type, channelName, description);
-                break;
-            }
+        Channel channel = channelRepository.read(id);
+        if (channel != null) {
+            channel.update(type, channelName, description);
+            channelRepository.update(channel);
+        } else {
+            System.out.println("수정할 채널이 존재하지 않습니다.");
         }
-
-        saveChannelFile(channels);
     }
 
     @Override
     public void delete(UUID id) {
-        List<Channel> channels = loadChannelFile();
-
-        for (Channel channel : channels) {
-            if(channel.getId().equals(id)) {
-                channels.remove(channel);
-                break;
-            }
-        }
-
-        saveChannelFile(channels);
+        channelRepository.delete(id);
     }
 }

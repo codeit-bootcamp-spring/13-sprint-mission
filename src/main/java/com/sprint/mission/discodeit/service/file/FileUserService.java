@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service.file;
 
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.UserService;
 
 import java.io.*;
@@ -10,95 +11,49 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class FileUserService implements UserService {
-    private final Path path;
+    private final UserRepository userRepository;
 
-    public FileUserService(String path) {
-        this.path = Paths.get(path);
-    }
-
-    private void saveUserFile(List<User> user) {
-        Path parent = path.getParent();
-        if (parent != null) {
-            try {
-                Files.createDirectories(parent);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        try (ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(Files.newOutputStream(path)))) {
-            oos.writeObject(new ArrayList<>(user));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private List<User> loadUserFile() {
-        if (!Files.exists(path)) {
-            return new ArrayList<>();
-        }
-
-        try (ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(Files.newInputStream(path)))) {
-            return (List<User>) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+    public FileUserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     @Override
     public User create(String userName, String pw, String email) {
         User user = new User(userName, pw, email);
-        List<User> users = loadUserFile();
-
-        users.add(user);
-        saveUserFile(users);
-
+        userRepository.create(user);
         System.out.println(userName + " 계정이 생성되었습니다!");
         return user;
     }
 
     @Override
     public User read(UUID id) {
-        List<User> users = loadUserFile();
+        User user = userRepository.read(id);
 
-        for (User user : users) {
-            if (user.getId().equals(id)) {
-                return user;
-            }
+        if (user == null) {
+            System.out.println("계정이 존재하지 않습니다.");
         }
-        System.out.println("계정이 존재하지 않습니다.");
-        return null;
+        return user;
     }
 
     @Override
     public List<User> readAll() {
-        return loadUserFile();
+        return userRepository.readAll();
     }
 
     @Override
     public void update(UUID id, String userName, String pw, String email) {
-        List<User> users = loadUserFile();
+        User user = userRepository.read(id);
 
-        for (User user : users) {
-            if (user.getId().equals(id)) {
-                user.update(userName, pw, email);
-                break;
-            }
+        if (user != null) {
+            user.update(userName, pw, email);
+            userRepository.update(user);
+        } else {
+            System.out.println("수정할 계정이 존재하지 않습니다.");
         }
-        saveUserFile(users);
     }
 
     @Override
     public void delete(UUID id) {
-        List<User> users = loadUserFile();
-
-        for (User user : users) {
-            if(user.getId().equals(id)) {
-                users.remove(user);
-                break;
-            }
-        }
-
-        saveUserFile(users);
+        userRepository.delete(id);
     }
 }

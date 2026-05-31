@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service.file;
 
 import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
@@ -14,44 +15,14 @@ import java.util.List;
 import java.util.UUID;
 
 public class FileMessageService implements MessageService {
-    private final Path path;
-
+    private final MessageRepository messageRepository;
     private final UserService userService;
     private final ChannelService channelService;
 
-    public FileMessageService(String path, UserService userService, ChannelService channelService) {
-        this.path = Paths.get(path);
+    public FileMessageService(MessageRepository messageRepository, UserService userService, ChannelService channelService) {
+        this.messageRepository = messageRepository;
         this.userService = userService;
         this.channelService = channelService;
-    }
-
-    private void saveMessageFile(List<Message> messages) {
-        Path parent = path.getParent();
-        if (parent != null) {
-            try {
-                Files.createDirectories(parent);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        try (ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(Files.newOutputStream(path)))) {
-            oos.writeObject(new ArrayList<>(messages));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private List<Message> loadMessageFile() {
-        if (!Files.exists(path)) {
-            return new ArrayList<>();
-        }
-
-        try (ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(Files.newInputStream(path)))) {
-            return (List<Message>) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
@@ -66,58 +37,38 @@ public class FileMessageService implements MessageService {
         }
 
         Message message = new Message(userId, channelId, content);
-        List<Message> messages = loadMessageFile();
-
-        messages.add(message);
-        saveMessageFile(messages);
-
+        messageRepository.create(message); // 저장소 위임
         System.out.println("메시지가 작성되었습니다!");
         return message;
     }
 
     @Override
     public Message read(UUID id) {
-        List<Message> messages = loadMessageFile();
-
-        for (Message message : messages) {
-            if (message.getId().equals(id)) {
-                return message;
-            }
+        Message message = messageRepository.read(id);
+        if (message == null) {
+            System.out.println("메시지가 작성되지 않았습니다.");
         }
-        System.out.println("메시지가 작성되지 않았습니다.");
-        return null;
+        return message;
     }
 
     @Override
     public List<Message> readAll() {
-        return loadMessageFile();
+        return messageRepository.readAll();
     }
 
     @Override
     public void update(UUID id, String content) {
-        List<Message> messages = loadMessageFile();
-
-        for (Message message : messages) {
-            if (message.getId().equals(id)) {
-                message.update(content);
-                break;
-            }
+        Message message = messageRepository.read(id);
+        if (message != null) {
+            message.update(content);
+            messageRepository.update(message);
+        } else {
+            System.out.println("수정할 메시지가 존재하지 않습니다.");
         }
-
-        saveMessageFile(messages);
     }
 
     @Override
     public void delete(UUID id) {
-        List<Message> messages = loadMessageFile();
-
-        for (Message message : messages) {
-            if(message.getId().equals(id)) {
-                messages.remove(message);
-                break;
-            }
-        }
-
-        saveMessageFile(messages);
+        messageRepository.delete(id);
     }
 }
