@@ -4,9 +4,18 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
+import com.sprint.mission.discodeit.repository.file.FileMessageRepository;
+import com.sprint.mission.discodeit.repository.file.FileUserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.service.file.FileChannelService;
+import com.sprint.mission.discodeit.service.file.FileMessageService;
+import com.sprint.mission.discodeit.service.file.FileUserService;
 import com.sprint.mission.discodeit.service.jcf.JCFChannelService;
 import com.sprint.mission.discodeit.service.jcf.JCFMessageService;
 import com.sprint.mission.discodeit.service.jcf.JCFUserService;
@@ -17,9 +26,13 @@ import java.util.UUID;
 
 public class JavaApplication {
     public static void main(String[] args) {
-        UserService userService = new JCFUserService();
-        ChannelService channelService = new JCFChannelService();
-        MessageService messageService = new JCFMessageService(userService, channelService);
+        UserRepository userRepository = new FileUserRepository("data/users.ser");
+        ChannelRepository channelRepository = new FileChannelRepository("data/channels.ser");
+        MessageRepository messageRepository = new FileMessageRepository("data/messages.ser");
+
+        UserService userService = new FileUserService(userRepository);
+        ChannelService channelService = new FileChannelService(channelRepository);
+        MessageService messageService = new FileMessageService(messageRepository, userService, channelService);
 
         System.out.println("========= [ 1. 등   록 ] =========");
         System.out.println(" 1) 유저 등록 ");
@@ -87,21 +100,21 @@ public class JavaApplication {
         System.out.println(" 1) 정상 데이터 테스트 ");
         User realUser = userService.create("홍길동", "pw123", "hong@gmail.com");
         Channel realChannel = channelService.create(ChannelType.PUBLIC, "자바게시판", "자바 질문하는 곳");
-        Message msg1 = messageService.create(realUser.getId(), realChannel.getId(), "안녕하세요! 자바 질문 있습니다.");
+        Message msg1 = messageServiceDI.create(realUser.getId(), realChannel.getId(), "안녕하세요! 자바 질문 있습니다.");
         if (msg1 != null) {
             System.out.println("정상 데이터 검증");
         }
 
         System.out.println(" 2) 유저 실패 데이터 테스트 ");
         UUID fakeUserId = UUID.randomUUID();
-        Message msg2 = messageService.create(fakeUserId, realChannel.getId(), "가짜 유저 id 입니다.");
+        Message msg2 = messageServiceDI.create(fakeUserId, realChannel.getId(), "가짜 유저 id 입니다.");
         if (msg2 == null) {
             System.out.println("가짜 유저 차단");
         }
 
         System.out.println(" 3) 채널 실패 데이터 테스트 ");
         UUID fakeChannelId = UUID.randomUUID();
-        Message msg3 = messageService.create(realUser.getId(), fakeChannelId, "가짜 채널 id 입니다.");
+        Message msg3 = messageServiceDI.create(realUser.getId(), fakeChannelId, "가짜 채널 id 입니다.");
         if (msg3 == null) {
             System.out.println("가짜 채널 차단");
         }
