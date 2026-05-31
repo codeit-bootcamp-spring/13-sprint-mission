@@ -1,10 +1,45 @@
 package com.sprint.mission.discodeit.service.file;
 
-import java.io.Serializable;
+import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
+import com.sprint.mission.discodeit.service.ChannelService;
 
-public class FileChannelService implements Serializable {
+import java.util.List;
+import java.util.UUID;
 
-    private static final long serialVersionUID = 1L;
+public class FileChannelService implements ChannelService {
+
+    private ChannelRepository channelRepository;
+
+    public FileChannelService() {
+        this.channelRepository = new FileChannelRepository();
+    }
+
+    @Override
+    public Channel create(Channel channel) {
+        return channelRepository.create(channel);
+    }
+
+    @Override
+    public Channel findById(UUID id) {
+        return channelRepository.findById(id);
+    }
+
+    @Override
+    public List<Channel> findAll() {
+        return channelRepository.findAll();
+    }
+
+    @Override
+    public void update(Channel channel) {
+        channelRepository.update(channel);
+    }
+
+    @Override
+    public void delete(UUID id) {
+        channelRepository.delete(id);
+    }
 }
 /*
 기본 요구사항

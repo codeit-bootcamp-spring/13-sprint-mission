@@ -1,6 +1,18 @@
 package com.sprint.mission.discodeit.repository;
 
+import com.sprint.mission.discodeit.entity.Channel;
+
+import java.util.List;
+import java.util.UUID;
+
 public interface ChannelRepository {
+
+    Channel create (Channel channel);
+    Channel findById(UUID id);
+    List<Channel> findAll();
+    void update(Channel channel);
+    void delete(UUID id);
+
 }
 /*
 레포지토리 설계 및 구현
