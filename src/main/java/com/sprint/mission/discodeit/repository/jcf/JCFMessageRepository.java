@@ -1,4 +1,4 @@
 package com.sprint.mission.discodeit.repository.jcf;
 
-public class MessageRepository {
+public class JCFMessageRepository {
 }
