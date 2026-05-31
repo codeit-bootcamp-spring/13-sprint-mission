@@ -18,7 +18,7 @@ public class FileChannelService implements ChannelService {
 
     public FileChannelService() {
         this.directory = Paths.get(
-                System.getProperty("channel.dir"),
+                System.getProperty("user.dir"),
                 "data",
                 "channels"
         );

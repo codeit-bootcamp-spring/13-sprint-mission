@@ -17,7 +17,7 @@ public class FileChannelRepository implements ChannelRepository {
 
     public FileChannelRepository() {
         this.directory = Paths.get(
-                System.getProperty("channel.dir"),
+                System.getProperty("user.dir"),
                 "data",
                 "channels"
         );

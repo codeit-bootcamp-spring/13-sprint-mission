@@ -17,7 +17,7 @@ public class FileMessageRepository implements MessageRepository {
 
     public FileMessageRepository() {
         this.directory = Paths.get(
-                System.getProperty("message.dir"),
+                System.getProperty("user.dir"),
                 "data",
                 "messages"
         );

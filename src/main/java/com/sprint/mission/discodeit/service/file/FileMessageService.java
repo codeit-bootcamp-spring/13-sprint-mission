@@ -18,7 +18,7 @@ public class FileMessageService implements MessageService {
 
     public FileMessageService() {
         this.directory = Paths.get(
-                System.getProperty("message.dir"),
+                System.getProperty("user.dir"),
                 "data",
                 "messages"
         );
