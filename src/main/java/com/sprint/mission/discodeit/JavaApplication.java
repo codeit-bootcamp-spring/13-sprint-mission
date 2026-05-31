@@ -6,6 +6,9 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.service.file.FileChannelService;
+import com.sprint.mission.discodeit.service.file.FileMessageService;
+import com.sprint.mission.discodeit.service.file.FileUserService;
 import com.sprint.mission.discodeit.service.jcf.JCFChannelService;
 import com.sprint.mission.discodeit.service.jcf.JCFMessageService;
 import com.sprint.mission.discodeit.service.jcf.JCFUserService;
@@ -20,10 +23,10 @@ public class JavaApplication {
     public  static void main(String[] args) {
 
 
-        // <기존 데이터 등록ㅏ
-        UserService userService = new JCFUserService(); // 2차 미션 때는 File로 갈아 끼우기
-        ChannelService channelService = new JCFChannelService();
-        MessageService messageService = new JCFMessageService();
+        // <기존 데이터 등록
+        UserService userService = new FileUserService(); // 2차 미션 때는 File로 갈아 끼우기
+        ChannelService channelService = new FileChannelService();
+        MessageService messageService = new FileMessageService();
         Scanner scanner = new Scanner(System.in); // 키보드 입력기
 
         SampleData.loadSampleNames(); // 기존 데이터 먼저 준비

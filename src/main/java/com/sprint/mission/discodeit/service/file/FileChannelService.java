@@ -14,7 +14,7 @@ import java.util.UUID;
 public class FileChannelService implements ChannelService {
 
     // 주소 설정
-    private final Path directory = Paths.get(System.getProperty("channel.dir"), "data");
+    private final Path directory = Paths.get(System.getProperty("user.dir"), "data");
     private final Path filePath = directory.resolve("channels.ser");
 
     public FileChannelService() {

@@ -14,7 +14,7 @@ import java.util.List;
 public class FileMessageService implements MessageService {
 
     // 주소 설정
-    private final Path directory = Paths.get(System.getProperty("message.dir"), "data");
+    private final Path directory = Paths.get(System.getProperty("user.dir"), "data");
     private final Path filePath = directory.resolve("messages.ser");
 
     public FileMessageService() {
