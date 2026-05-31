@@ -3,11 +3,18 @@ package com.sprint.mission.discodeit;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.service.ChannelService;
+import com.sprint.mission.discodeit.service.MessageService;
+import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.service.file.FileChannelService;
+import com.sprint.mission.discodeit.service.file.FileMessageService;
+import com.sprint.mission.discodeit.service.file.FileUserService;
 import com.sprint.mission.discodeit.service.jcf.JCFChannelService;
 import com.sprint.mission.discodeit.service.jcf.JCFMessageService;
 import com.sprint.mission.discodeit.service.jcf.JCFUserService;
 
 import java.util.List;
+import java.util.UUID;
 
 import static com.sprint.mission.discodeit.entity.Channel.ChannelType.PRIVATE;
 import static com.sprint.mission.discodeit.entity.Channel.ChannelType.PUBLIC;
@@ -19,6 +26,9 @@ public class JavaApplication {
         JCFUserService userService = new JCFUserService();
         JCFChannelService channelService = new JCFChannelService();
         JCFMessageService messageService = new JCFMessageService();
+        UserService fileUserService = new FileUserService();
+        ChannelService fileChannelService = new FileChannelService();
+        MessageService fileMessageService = new FileMessageService();
 
         User user1 = new User("령", "gpfud09@gmail.com", "111@@@");
         User user2 = new User("영경", "smdrma1127@naver.com", "1123@@@");
@@ -116,6 +126,67 @@ public class JavaApplication {
         // 메시지 삭제 후 조회
         List<Message> deleteAllMessages = messageService.findAllMessages();
         System.out.println("deleteAllMessages = " + deleteAllMessages);
+
+        System.out.println("\n===================================================================\n");
+        // 유저 생성
+        fileUserService.createUser(user1);
+
+        // 유저 단일 조회
+        User findUser2 = fileUserService.findUser(user1.getId());
+        System.out.println(findUser2);
+
+        // 유저 전체 조회
+        System.out.println(userService.findAllUsers());
+
+        // 유저 수정 후 조회
+        userService.updateUser(
+                user1.getId(),
+                "에베벱",
+                "new@egmail.com",
+                "5678@@"
+        );
+        System.out.println(userService.findUser(user1.getId()));
+
+        // 유저 삭제
+        userService.deleteUser(user1.getId());
+        System.out.println(userService.findUser(user1.getId()));
+
+        System.out.println("\n===================================================================\n");
+        // channel 생성
+        fileChannelService.createChannel(ch1);
+
+        // channel 단일 조회
+        Channel findCh1 = fileChannelService.findChannel(ch1.getId());
+        System.out.println(findCh1);
+
+        // channel 전체 조회
+        System.out.println(fileChannelService.findAllChannels());
+
+        // channel 수정 후 조회
+        fileChannelService.updateChannel(ch1.getId(), "점메추", PRIVATE, "오늘 점심 머머글래요 ?");
+        System.out.println(fileChannelService.findChannel(ch1.getId()));
+
+        // channel 삭제
+        fileChannelService.deleteChannel(ch1.getId());
+        System.out.println(fileChannelService.findAllChannels());
+
+        System.out.println("\n===================================================================\n");
+        // 메시지 생성
+        fileMessageService.createMessage(m1);
+
+        // 메시지 단일 조회
+        Message findM1 = fileMessageService.findMessage(m1.getId());
+        System.out.println(findM1);
+
+        // 메시지 전체 조회
+        System.out.println(fileMessageService.findAllMessages());
+
+        // 메시지 수정 후 조회
+        fileMessageService.updateMessage(m1.getId(), "김밥 어때요 ?");
+
+        // 메시지 삭제
+        fileMessageService.deleteMessage(m1.getId());
+        System.out.println(fileMessageService.findAllMessages());
 
     }
 
