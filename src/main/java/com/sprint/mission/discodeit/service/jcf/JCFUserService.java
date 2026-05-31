@@ -16,7 +16,7 @@ public class JCFUserService implements UserService {
     public User create(String userName, String pw, String email) {
         User user = new User(userName, pw, email);
         data.put(user.getId(), user);
-        System.out.println("계정이 생성되었습니다!");
+        System.out.println(userName + "님의 계정이 생성되었습니다!");
         return user;
     }
 

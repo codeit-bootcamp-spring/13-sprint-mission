@@ -18,7 +18,7 @@ public class JCFChannelService implements ChannelService {
     public Channel create(ChannelType type, String channelName, String description) {
         Channel channel = new Channel(type, channelName, description);
         data.put(channel.getId(), channel);
-        System.out.println("채널이 생성되었습니다!");
+        System.out.println(channelName+" 채널이 생성되었습니다!");
         return channel;
     }
 

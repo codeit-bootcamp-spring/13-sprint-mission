@@ -2,19 +2,34 @@ package com.sprint.mission.discodeit.service.jcf;
 
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
+import com.sprint.mission.discodeit.service.UserService;
 
 import java.util.*;
 
 public class JCFMessageService implements MessageService {
     private final Map<UUID, Message> data;
 
-    public JCFMessageService() {
+    private final UserService userService;
+    private final ChannelService channelService;
+
+    public JCFMessageService(UserService userService, ChannelService channelService) {
         this.data = new HashMap<>();
+        this.userService = userService;
+        this.channelService = channelService;
     }
 
     @Override
     public Message create(UUID userId, UUID channelId, String content) {
+        if(userService.read(userId)==null) {
+            System.out.println("계정이 존재하지 않습니다.");
+            return null;
+        }
+        if(channelService.read(channelId)==null) {
+            System.out.println("채널이 존재하지 않습니다.");
+            return null;
+        }
         Message message = new Message(userId, channelId, content);
         data.put(message.getId(), message);
         System.out.println("메시지가 작성되었습니다!");
