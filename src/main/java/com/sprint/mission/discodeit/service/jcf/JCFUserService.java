@@ -16,6 +16,7 @@ public class JCFUserService implements UserService {
     // 생성
     @Override
     public void createUser(User user) {
+        // 저장 로직
         data.add(user);
     }
 
@@ -24,6 +25,7 @@ public class JCFUserService implements UserService {
     public User findUser(UUID id) {
         for (User user : data) {
             if (user.getId().equals(id)) {
+                // 저장 로직
                 return user;
             }
         }
@@ -34,16 +36,20 @@ public class JCFUserService implements UserService {
     @Override
     public List<User> findAllUsers() {
         if (!data.isEmpty()) {
+            // 저장 롲직
             return data;
         }
         return Collections.emptyList();
     }
 
     // 수정
+    // 비즈니스 로직은 사용자 정보를 수정하는 규칙을 처리하는 코드
     @Override
     public void updateUser(UUID id, String username, String email, String password) {
         for (User user : data) {
+            // 비즈니스 로직
             if (user.getId().equals(id)) {
+                // 비즈니스 로직
                 user.update(username, email, password);
                 return;
             }
@@ -56,6 +62,7 @@ public class JCFUserService implements UserService {
     public void deleteUser(UUID id) {
         for (User user : data) {
             if (user.getId().equals(id)) {
+                // 저장 로직
                 data.remove(user);
                 return;
             }

@@ -32,7 +32,7 @@ public class JCFUserRepository implements UserRepository {
     }
 
     @Override
-    public List<User> findAllUsers() {
+    public List<User> findAll() {
         if (!data.isEmpty()) {
             return data;
         }

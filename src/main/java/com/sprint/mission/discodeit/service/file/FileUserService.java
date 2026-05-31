@@ -47,13 +47,15 @@ public class FileUserService implements UserService {
     // 단일 조회
     @Override
     public User findUser(UUID id) {
-        Path filePath =
-                directory.resolve(id + ".ser");
+        // 저장 로직
+        Path filePath = directory.resolve(id + ".ser");
+
         if (!Files.exists(filePath)) {
             return null;
         }
-        try (FileInputStream fis = new FileInputStream(filePath.toFile());
-             ObjectInputStream ois = new ObjectInputStream(fis)
+        try (   // 저장 로직
+                FileInputStream fis = new FileInputStream(filePath.toFile());
+                ObjectInputStream ois = new ObjectInputStream(fis)
         ) {
             return (User) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
@@ -66,19 +68,19 @@ public class FileUserService implements UserService {
     public List<User> findAllUsers() {
         if (Files.exists(directory)) {
             try {
+                // 저장 로직
                 List<User> list = Files.list(directory)
                         .map(path -> {
-                            try (
+                            try (   // 저장 로직
                                     FileInputStream fis = new FileInputStream(path.toFile());
-                                    ObjectInputStream ois = new ObjectInputStream(fis)
-                            ) {
+                                    ObjectInputStream ois = new ObjectInputStream(fis))
+                            {
                                 Object data = ois.readObject();
                                 return (User) data;
                             } catch (IOException | ClassNotFoundException e) {
                                 throw new RuntimeException(e);
                             }
-                        })
-                        .toList();
+                        }).toList();
                 return list;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -88,25 +90,30 @@ public class FileUserService implements UserService {
         }
     }
 
+    // 수정 후 조회
     @Override
     public void updateUser(UUID id, String name, String email, String password) {
         User user = findUser(id);
+        // 비즈니스 로직
         if (user == null) {
             return;
         }
 
+        // 비즈니스 로직
         user.update(name, email, password);
 
+        // 저장 로직
         Path filePath = directory.resolve(id + ".ser");
-
         save(filePath, user);
     }
+
 
     @Override
     public void deleteUser(UUID id) {
         Path filePath = directory.resolve(id + ".ser");
 
         try {
+            // 저장 로직
             Files.deleteIfExists(filePath);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -125,3 +132,16 @@ public class FileUserService implements UserService {
         }
     }
 }
+
+/**
+ * JCF*Service와 File*Service 비교
+ *
+ * 공통점
+ * 1. UserService 인터페이스를 구현
+ * 2. 사용자 생성, 조회, 수정, 삭제 기능
+ * 3. 사용자 수정 시 user.update() 메서드
+ *
+ * 차이점
+ * JCF*Service : 메모리에 저장 -> 프로그램 종료 후 데이터 사라짐
+ * File*Service : 파일에 저장 -> 프로그램 종료 후에도 데이터 유지
+ */
