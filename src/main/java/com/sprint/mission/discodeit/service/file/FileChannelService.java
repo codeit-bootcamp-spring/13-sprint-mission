@@ -84,7 +84,6 @@ public class FileChannelService implements ChannelService {
         Map<UUID, Channel> data = loadFromFile();
         return new ArrayList<>(data.values());
     }
-
     //비공개 채널 수정
     @Override
     public Channel updateChannel(UUID ChannelId, String name, String description, ChannelType channelType) {
@@ -101,23 +100,6 @@ public class FileChannelService implements ChannelService {
         }
         if (channelType != null){
             updateChannel.updateIsChannelType(channelType);
-        }
-        saveToFile(data);
-        return updateChannel;
-    }
-    //공개 채널 수정
-    @Override
-    public Channel updateChannel(UUID ChannelId, String name, String description) {
-        Map<UUID, Channel> data = loadFromFile();
-        Channel updateChannel = data.get(ChannelId);
-        if (updateChannel == null) {
-            throw new NoSuchElementException("존재하지 않는 채널입니다.");
-        }
-        if (name != null && !name.isBlank()){
-            updateChannel.updateChannel(name);
-        }
-        if (description != null){
-            updateChannel.updateChannelDescription(description);
         }
         saveToFile(data);
         return updateChannel;
