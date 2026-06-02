@@ -19,7 +19,7 @@ import java.util.function.Predicate;
 
 @Repository
 public class FileMessageRepository extends FileBaseRepository implements MessageRepository {
-    private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","message");;
+    private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","message");
 
     public FileMessageRepository() {
         super();
@@ -28,12 +28,15 @@ public class FileMessageRepository extends FileBaseRepository implements Message
     @Override
     public void create(User user, Channel channel, String data){
         Message msg = new Message(user.getId(), channel.getId(), data);
-        this.save(DIRECTORY.resolve(msg.getId().toString() + ".ser"),msg);
+        this.save(DIRECTORY.resolve(msg.getId() + ".ser"),msg);
     }
 
     @Override
     public ArrayList<Message> select(Predicate<Message> fn){
         try {
+            Files.list(DIRECTORY).forEach(path -> {
+                System.out.println(path.toString());
+            });
             List<Message> d = Files.list(DIRECTORY)
                     .map(c -> (Message) load(DIRECTORY.resolve(c)))
                     .toList();

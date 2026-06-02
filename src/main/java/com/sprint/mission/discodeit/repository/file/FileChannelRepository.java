@@ -17,7 +17,7 @@ import java.util.function.Predicate;
 
 @Repository
 public class FileChannelRepository extends FileBaseRepository implements ChannelRepository {
-    private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","channel");;
+    private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","channel");
 
     public FileChannelRepository() {
         super();
@@ -26,7 +26,7 @@ public class FileChannelRepository extends FileBaseRepository implements Channel
     @Override
     public void create(String name, String description, ChannelType type) {
         Channel channel = new Channel(name, description, type);
-        this.save(DIRECTORY.resolve(channel.getId().toString() + ".ser"), channel);
+        this.save(DIRECTORY.resolve(channel.getId()+ ".ser"), channel);
     }
 
     @Override

@@ -1,7 +1,9 @@
 package com.sprint.mission.discodeit.entity;
 
 
+import lombok.Getter;
 
+@Getter
 public class User extends BaseEntity {
     private String name;
     private String userId;
@@ -30,28 +32,18 @@ public class User extends BaseEntity {
         return res;
     }
 
-    // name set/get
+
     public void setName(String name){
         this.name = name;
     }
-    public String getName(){
-        return this.name;
-    }
 
-    // userId set/get
     public void setUserId(String userId){
         this.userId = userId;
     }
-    public String getUserId(){
-        return this.userId;
-    }
 
-    // userPw set/get
     public void setUserPw(String userPw){
         this.userPw = userPw;
     }
-    public String getUserPw(){
-        return this.userPw;
-    }
+
 
 }

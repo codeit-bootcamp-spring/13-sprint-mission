@@ -25,7 +25,7 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
     @Override
     public void create(String name, String id, String pw){
         User user = new User(name, id, pw);
-        this.save(DIRECTORY.resolve(user.getId().toString() + ".ser"),user);
+        this.save(DIRECTORY.resolve(user.getId()+ ".ser"),user);
     }
 
     @Override

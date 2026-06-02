@@ -7,15 +7,13 @@ import com.sprint.mission.discodeit.service.UserService;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class BasicUserService implements UserService {
     private final UserRepository fur;
-
-    public BasicUserService(UserRepository usr) {
-        fur = usr;
-    }
 
     @Override
     public void createUser(String name, String id, String pw){

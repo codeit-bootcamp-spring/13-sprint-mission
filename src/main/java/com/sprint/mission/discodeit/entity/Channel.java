@@ -1,9 +1,13 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
+
+@Getter
 public class Channel extends BaseEntity {
     private String name;
     private String description;
     private ChannelType type;
+
 
     public Channel(String name,String description,ChannelType type){
         super();
@@ -25,24 +29,15 @@ public class Channel extends BaseEntity {
         return res;
     }
 
-    // save method
-    public String getName() {
-        return name;
-    }
-    public void setName(String name) {
-        this.name = name;
-    }
-    public String getDescription() {
-        return description;
+
+    public void setType(ChannelType type) {
+        this.type = type;
     }
     public void setDescription(String description) {
         this.description = description;
     }
-    public ChannelType getType() {
-        return type;
-    }
-    public void setType(ChannelType type) {
-        this.type = type;
+    public void setName(String name) {
+        this.name = name;
     }
 
 
