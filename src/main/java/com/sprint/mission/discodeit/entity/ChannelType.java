@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
 
+@Getter
 public enum ChannelType {
     PUBLIC("공개"),
     PRIVATE("비공개");
@@ -9,10 +11,6 @@ public enum ChannelType {
 
     ChannelType(String displayName) {
         this.displayName = displayName;
-    }
-
-    public String getDisplayName() {
-        return displayName;
     }
 }
 

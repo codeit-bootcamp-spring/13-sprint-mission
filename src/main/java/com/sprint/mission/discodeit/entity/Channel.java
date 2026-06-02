@@ -1,20 +1,21 @@
 package com.sprint.mission.discodeit.entity;
 
 import lombok.Getter;
+import lombok.ToString;
 
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Instant;
 import java.util.UUID;
 
 @Getter
+@ToString
 public class Channel implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final UUID channelId;
     private String name;
-    private final long createdAt;
-    private long updatedAt;
+    private final Instant createdAt;
+    private Instant updatedAt;
     private ChannelType channelType;
     private String description;
 
@@ -22,7 +23,7 @@ public class Channel implements Serializable {
     public Channel(String name, String description) {
         this.channelId = UUID.randomUUID();
         this.name = name;
-        this.createdAt = System.currentTimeMillis();
+        this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
         this.description = description;
         this.channelType = channelType.PUBLIC;
@@ -32,7 +33,7 @@ public class Channel implements Serializable {
     public Channel(String name, String description, ChannelType channelType) {
         this.channelId = UUID.randomUUID();
         this.name = name;
-        this.createdAt = System.currentTimeMillis();
+        this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
         this.description = description;
         this.channelType = channelType;
@@ -40,32 +41,16 @@ public class Channel implements Serializable {
 
     public void updateChannel(String name) {
         this.name = name;
-        this.updatedAt = System.currentTimeMillis();
+        this.updatedAt = Instant.now();
     }
 
     public void updateChannelDescription(String description) {
         this.description = description;
-        this.updatedAt = System.currentTimeMillis();
+        this.updatedAt = Instant.now();
     }
 
     public void updateIsChannelType(ChannelType ChannelType) {
         this.channelType = ChannelType;
-        this.updatedAt = System.currentTimeMillis();
-    }
-
-    @Override
-    public String toString() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String createdAt = sdf.format(new Date(this.createdAt));
-        String updatedAt = sdf.format(new Date(this.updatedAt));
-
-        return "Channel{" +
-                "id =" + channelId +
-                ", 채널 이름 ='" + name + '\'' +
-                ", 생성 시간 = " + createdAt +
-                ", 업데이트 시간 = " + updatedAt +
-                ", 채널 설명 = " + description +
-                ", 공개 범위 = " + channelType.getDisplayName()+
-                '}';
+        this.updatedAt = Instant.now();
     }
 }
