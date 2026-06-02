@@ -1,15 +1,18 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
+@Getter
 public class Message extends EntityRoot implements Serializable {
 
     //필드
     private String message;
-    private User user;
-    private Channel channel;
+    private final User user;
+    private final Channel channel;
 
     //ctor
     public Message(String message, User user, Channel channel) {
@@ -18,19 +21,6 @@ public class Message extends EntityRoot implements Serializable {
         this.message = message;
         this.user = user;
         this.channel = channel;
-    }
-
-    //getter
-    public String getMessage() {
-        return message;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public Channel getChannel() {
-        return channel;
     }
 
     //update Method

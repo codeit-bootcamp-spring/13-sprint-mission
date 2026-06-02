@@ -1,17 +1,20 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Getter
 public class Channel extends EntityRoot implements Serializable {
 
     //필드
     private String name;
     private User channelHost;
-    private List<User> users;
-    private List<Message> messages;
+    private final List<User> users;
+    private final List<Message> messages;
 
     //ctor
     public Channel(String name, User channelHost) {
@@ -21,23 +24,6 @@ public class Channel extends EntityRoot implements Serializable {
         this.channelHost = channelHost;
         users = new ArrayList<>();
         messages = new ArrayList<>();
-    }
-
-    //getter
-    public String getName() {
-        return name;
-    }
-
-    public User getChannelHost() {
-        return channelHost;
-    }
-
-    public List<User> getUsers() {
-        return users;
-    }
-
-    public List<Message> getMessages() {
-        return messages;
     }
 
     //update Method
@@ -87,8 +73,6 @@ public class Channel extends EntityRoot implements Serializable {
     }
 
     //method override
-
-
     @Override
     public String toString() {
         return "[Channel: " + name + ", Channel Host: " + channelHost.getName() + "]";

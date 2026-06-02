@@ -1,17 +1,20 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
 public class User extends EntityRoot implements Serializable {
 
     //필드
     private String name;
     private String email;
-    private List<User> friends;
-    private List<Channel> channels;
-    private List<Message> messages;
+    private final List<User> friends;
+    private final List<Channel> channels;
+    private final List<Message> messages;
 
     //ctor
     public User(String name, String email) {
@@ -22,27 +25,6 @@ public class User extends EntityRoot implements Serializable {
         friends = new ArrayList<>();
         channels = new ArrayList<>();
         messages = new ArrayList<>();
-    }
-
-    //getter
-    public String getName() {
-        return name;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public List<User> getFriends() {
-        return friends;
-    }
-
-    public List<Channel> getChannels() {
-        return channels;
-    }
-
-    public List<Message> getMessages() {
-        return messages;
     }
 
     //update Method
