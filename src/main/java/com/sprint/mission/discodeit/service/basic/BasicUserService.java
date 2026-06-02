@@ -25,8 +25,8 @@ public class BasicUserService implements UserService {
     @Override
     public User findById(UUID userId) {
         User user = userRepository.findById(userId);
-        if (user ==null) {
-            throw new NoSuchElementException(userId + " 유저를 찾을 수 없습니다.");
+        if (user == null) {
+            throw new NoSuchElementException("유저를 찾을 수 없습니다.");
         }
         return user;
 
@@ -38,10 +38,10 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public void update(UUID userId, String newUsername, String newEmail, String newPassword) {
+    public User update(UUID userId, String newUsername, String newEmail, String newPassword) {
         User user = userRepository.findById(userId);
         if (user == null) {
-            throw new NoSuchElementException(userId + " 유저를 찾을 수 없습니다.");
+            throw new NoSuchElementException("유저를 찾을 수 없습니다.");
         }
         if (newUsername != null) {
             user.updateProfile(newUsername);
@@ -52,6 +52,7 @@ public class BasicUserService implements UserService {
         if (newPassword != null) {
             user.updatePassword(newPassword);
         }
+        return userRepository.save(user);
     }
 
     @Override
