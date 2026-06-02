@@ -54,6 +54,11 @@ public class User implements Serializable {
         this.updatedAt = System.currentTimeMillis();
     }
 
+    public void updateEmail(String email) {
+        this.email = email;
+        this.updatedAt = System.currentTimeMillis();
+    }
+
     public void updatePassword(String password) {
         this.password = password;
         this.updatedAt = System.currentTimeMillis();
