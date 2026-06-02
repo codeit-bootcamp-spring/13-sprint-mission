@@ -14,7 +14,8 @@ public class JCFUserService implements UserService {
     }
 
     @Override
-    public User create(User user) {
+    public User create(String username, String email, String password) {
+        User user = new User(username, email, password);
         data.put(user.getId(), user);
         return user;
     }
@@ -30,13 +31,14 @@ public class JCFUserService implements UserService {
     }
 
     @Override
-    public void update(UUID id, String newUsername) {
-        User user = data.get(id);
+    public User update(UUID userId, String newUsername, String newEmail, String newPassword) {
+        User user = data.get(userId);
 
         if (user == null) {
             throw new IllegalArgumentException("User not found");
         }
         user.updateProfile(newUsername);
+        return user;
     }
 
     @Override

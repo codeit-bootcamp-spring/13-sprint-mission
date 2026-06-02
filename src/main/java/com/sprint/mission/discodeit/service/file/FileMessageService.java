@@ -32,7 +32,7 @@ public class FileMessageService implements MessageService {
     }
 
     @Override
-    public void update(UUID id, String content) {
+    public Message update(UUID id, String content) {
         Message message = repository.findById(id);
 
         if (message == null) {
@@ -41,6 +41,7 @@ public class FileMessageService implements MessageService {
         message.updateContent(content);
         repository.save(message);
 
+        return message;
     }
 
     @Override

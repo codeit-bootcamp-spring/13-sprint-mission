@@ -47,13 +47,14 @@ public class JCFMessageService implements MessageService {
     }
 
     @Override
-    public void update(UUID id, String content) {
+    public Message update(UUID id, String content) {
         Message message = data.get(id);
 
         if (message == null) {
             throw new IllegalArgumentException("Message not found");
         }
         message.updateContent(content);
+        return message;
     }
 
     @Override

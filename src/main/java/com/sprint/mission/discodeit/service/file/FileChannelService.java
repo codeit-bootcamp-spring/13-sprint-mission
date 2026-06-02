@@ -3,11 +3,11 @@ package com.sprint.mission.discodeit.service.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
-import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 
 import java.util.List;
 import java.util.UUID;
+
 
 public class FileChannelService implements ChannelService {
 
@@ -18,7 +18,8 @@ public class FileChannelService implements ChannelService {
     }
 
     @Override
-    public Channel create(Channel channel) {
+    public Channel create(Channel.ChannelType type, String name, String description) {
+        Channel channel = new Channel(name, description, type);
         return repository.save(channel);
     }
 
@@ -33,17 +34,17 @@ public class FileChannelService implements ChannelService {
     }
 
     @Override
-    public void update(UUID id, String name, String description, Channel.ChannelType type) {
-        Channel channel = repository.findById(id);
+    public Channel update(UUID channelId, String newName, String newDescription) {
+        Channel channel = repository.findById(channelId);
 
         if (channel == null) {
             throw new IllegalArgumentException("Channel not found");
         }
-        channel.updateName(name);
-        channel.updateDescription(description);
-        channel.updateType(type);
+        channel.updateName(newName);
+        channel.updateDescription(newDescription);
         repository.save(channel);
 
+        return channel;
     }
 
     @Override

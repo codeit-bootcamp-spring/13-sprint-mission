@@ -14,7 +14,8 @@ public class JCFChannelService implements ChannelService {
     }
 
     @Override
-    public Channel create(Channel channel) {
+    public Channel create(Channel.ChannelType type, String name, String description) {
+        Channel channel = new Channel(name, description, type);
         data.put(channel.getId(), channel);
         return channel;
     }
@@ -30,15 +31,15 @@ public class JCFChannelService implements ChannelService {
     }
 
     @Override
-    public void update(UUID id, String name, String description, Channel.ChannelType type) {
-        Channel channel = data.get(id);
+    public Channel update(UUID channelId, String newName, String newDescription) {
+        Channel channel = data.get(channelId);
 
         if (channel == null) {
             throw new IllegalArgumentException("Channel not found");
         }
-        channel.updateName(name);
-        channel.updateDescription(description);
-        channel.updateType(type);
+        channel.updateName(newName);
+        channel.updateDescription(newDescription);
+        return channel;
     }
 
     @Override

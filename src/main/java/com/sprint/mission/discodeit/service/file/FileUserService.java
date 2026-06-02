@@ -16,7 +16,8 @@ public class FileUserService implements UserService {
     }
 
     @Override
-    public User create(User user) {
+    public User create(String username, String email, String password) {
+        User user = new User(username, email, password);
         return repository.save(user);
     }
 
@@ -31,8 +32,8 @@ public class FileUserService implements UserService {
     }
 
     @Override
-    public void update(UUID id, String newUsername) {
-        User user = repository.findById(id);
+    public User update(UUID userId, String newUsername, String newEmail, String newPassword) {
+        User user = repository.findById(userId);
 
         if (user == null) {
             throw new IllegalArgumentException("User not found");
@@ -40,6 +41,7 @@ public class FileUserService implements UserService {
         user.updateProfile(newUsername);
         repository.save(user);
 
+        return user;
     }
 
     @Override
