@@ -5,6 +5,7 @@ import lombok.Getter;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 public class User extends EntityRoot implements Serializable {
@@ -12,16 +13,18 @@ public class User extends EntityRoot implements Serializable {
     //필드
     private String name;
     private String email;
+    private UUID profileId;
     private final List<User> friends;
     private final List<Channel> channels;
     private final List<Message> messages;
 
     //ctor
-    public User(String name, String email) {
+    public User(String name, String email, UUID profileId) {
         super();
 
         this.name = name;
         this.email = email;
+        this.profileId = profileId;
         friends = new ArrayList<>();
         channels = new ArrayList<>();
         messages = new ArrayList<>();
@@ -40,6 +43,10 @@ public class User extends EntityRoot implements Serializable {
             return;
 
         this.email = email;
+        updateUpdatedAt();
+    }
+    public void updateProfileId(UUID profileId) {
+        this.profileId = profileId;
         updateUpdatedAt();
     }
 
