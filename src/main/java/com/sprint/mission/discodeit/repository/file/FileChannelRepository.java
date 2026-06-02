@@ -2,18 +2,20 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import org.springframework.stereotype.Repository;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+@Repository
 public class FileChannelRepository implements ChannelRepository {
 
     private final Path filePath;
 
-    public FileChannelRepository(Path filePath){
-        this.filePath = filePath;
+    public FileChannelRepository(){
+        this.filePath =  Path.of("data/channel.ser");
         if (!Files.exists(filePath.getParent())){
             try {
                 Files.createDirectories(filePath.getParent());
@@ -48,7 +50,7 @@ public class FileChannelRepository implements ChannelRepository {
     @Override
     public void save(Channel channel) {
         Map<UUID, Channel> data = loadFromFile();
-        data.put(channel.getId(), channel);
+        data.put(channel.getChannelId(), channel);
         saveToFile(data);
     }
 

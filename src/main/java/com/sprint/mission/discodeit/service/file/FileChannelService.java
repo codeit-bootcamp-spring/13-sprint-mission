@@ -50,7 +50,7 @@ public class FileChannelService implements ChannelService {
         Map<UUID, Channel> data = loadFromFile();
         validateChannel(data, name, description);
         Channel channel = new Channel(name, description);
-        data.put(channel.getId(), channel);
+        data.put(channel.getChannelId(), channel);
         saveToFile(data);
         return channel;
     }
@@ -61,7 +61,7 @@ public class FileChannelService implements ChannelService {
         Map<UUID, Channel> data = loadFromFile();
         validateChannel(data, name, description);
         Channel channel = new Channel(name, description, channelType);
-        data.put(channel.getId(), channel);
+        data.put(channel.getChannelId(), channel);
         saveToFile(data);
         return channel;
     }

@@ -67,7 +67,7 @@ public class FileMessageService implements MessageService {
              throw new IllegalArgumentException("메시지를 입력해 주세요!");
          }
          Message message = new Message(content, channelId, authorId);
-         data.put(message.getId(), message);
+         data.put(message.getMessageId(), message);
          saveToFile(data);
          return message;
     }

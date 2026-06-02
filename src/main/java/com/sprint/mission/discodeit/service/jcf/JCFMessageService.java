@@ -30,7 +30,7 @@ public class JCFMessageService implements MessageService {
         }
 
         Message message = new Message(content, channelId, authorId);
-        data.put(message.getId(), message);
+        data.put(message.getMessageId(), message);
         return message;
     }
 

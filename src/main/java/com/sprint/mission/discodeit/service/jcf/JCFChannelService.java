@@ -29,14 +29,14 @@ public class JCFChannelService implements ChannelService {
             throw new IllegalArgumentException("이미 동일한 채널명이 존재합니다.");
         }
         Channel channel = new Channel(name, description);
-        data.put(channel.getId(),channel);
+        data.put(channel.getChannelId(),channel);
         return channel;
 
     }
     @Override //PRIVATE
     public Channel createChannel(String name, String description,ChannelType channelType) {
         Channel channel = new Channel(name, description, channelType);
-        data.put(channel.getId(),channel);
+        data.put(channel.getChannelId(),channel);
         return channel;
     }
 

@@ -30,8 +30,8 @@ public class JavaApplication {
     }
 
     static void messageCreateTest(MessageService messageService, Channel channel, User author) {
-        Message message = messageService.createContent("안녕하세요!", channel.getId(), author.getId());
-        System.out.println("메시지 생성: " + message.getId());
+        Message message = messageService.createContent("안녕하세요!", channel.getChannelId(), author.getUserId());
+        System.out.println("메시지 생성: " + message.getMessageId());
     }
 
     public static void main(String[] args) {
@@ -66,17 +66,17 @@ public class JavaApplication {
         //user, channel, message 생성
         User user2 = userService.createUser("손흥민", "son@gmail.com", "7777");
         Channel channel1 = channelService.createChannel("학습채널", "같이 공부 하는 채널");
-        Message content1 = messageService.createContent("반가워요!", channel.getId(), user2.getId());
+        Message content1 = messageService.createContent("반가워요!", channel.getChannelId(), user2.getUserId());
 
         System.out.println("====================================== 단건 조회 ======================================");
         //user 단건 조회
-        User findByUser = userService.findByUser(user2.getId());
+        User findByUser = userService.findByUser(user2.getUserId());
         System.out.println("사용자 조회: " + findByUser);
         //채널 조회
-        Channel findByChannel = channelService.findByChannel(channel1.getId());
+        Channel findByChannel = channelService.findByChannel(channel1.getChannelId());
         System.out.println("채널 조회: " + findByChannel);
         //메시지 조회
-        Message findByMessage = messageService.findByMessage(content1.getId());
+        Message findByMessage = messageService.findByMessage(content1.getMessageId());
         System.out.println("메시지 조회:" + findByMessage);
 
 
@@ -92,32 +92,32 @@ public class JavaApplication {
         System.out.println(allChannel);
 
         //채널 메시지 전체 조회
-        List<Message> allByMessage = messageService.findAllByMessage(channel.getId());
+        List<Message> allByMessage = messageService.findAllByMessage(channel.getChannelId());
         System.out.println("공지채널 전체 메시지: " + allByMessage.size());
         System.out.println(allByMessage);
 
         System.out.println("====================================== 수정 ======================================");
         //유저 수정
-        User updateUser = userService.updateUser(user.getId(), "박경석2", null, null);
+        User updateUser = userService.updateUser(user.getUserId(), "박경석2", null, null);
         System.out.println(updateUser);
 
         //채널 수정
-        Channel updateChannel = channelService.updateChannel(channel1.getId(), "4팀 채널", "4팀 소통 채널 입니다.", ChannelType.PRIVATE);
+        Channel updateChannel = channelService.updateChannel(channel1.getChannelId(), "4팀 채널", "4팀 소통 채널 입니다.", ChannelType.PRIVATE);
         System.out.println(updateChannel);
 
         //메시지 수정
-        Message updateContent = messageService.updateContent(content1.getId(), "반가워요!!!!!");
+        Message updateContent = messageService.updateContent(content1.getMessageId(), "반가워요!!!!!");
         System.out.println(updateContent);
 
 
 //      ===================================================== 삭제 테스트 =======================================================
         //유저 삭제
-        userService.deleteUser(user.getId());
+        userService.deleteUser(user.getUserId());
         //채널 삭제
-        channelService.deleteChannel(channel1.getId());
+        channelService.deleteChannel(channel1.getChannelId());
 
         //메시지 삭제
-        messageService.deleteMessage(content1.getId());
+        messageService.deleteMessage(content1.getMessageId());
 
 
         System.out.println("====================================== 삭제 확인 ======================================");
@@ -128,7 +128,7 @@ public class JavaApplication {
         List<Channel> deleteChannel = channelService.findAllChannel();
         System.out.println("전체 체널: " +  deleteChannel.size());
 
-        List<Message> deleteMessage = messageService.findAllByMessage(channel.getId());
+        List<Message> deleteMessage = messageService.findAllByMessage(channel.getChannelId());
         System.out.println("공지채널 전체 메시지: " +  deleteMessage.size());
 
     }

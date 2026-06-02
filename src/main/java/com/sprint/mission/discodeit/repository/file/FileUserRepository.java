@@ -2,18 +2,20 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import org.springframework.stereotype.Repository;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+@Repository
 public class FileUserRepository implements UserRepository {
 
     private final Path filePath;
 
-    public FileUserRepository(Path filePath) {
-        this.filePath = filePath;
+    public FileUserRepository() {
+        this.filePath = Path.of("data/users.ser");
         if (!Files.exists(filePath.getParent())){
             try {
                 Files.createDirectories(filePath.getParent());
@@ -46,7 +48,7 @@ public class FileUserRepository implements UserRepository {
     @Override
     public void save(User user) {
         Map<UUID, User> data = loadFromFile();
-        data.put(user.getId(), user);
+        data.put(user.getUserId(), user);
         saveToFile(data);
     }
 

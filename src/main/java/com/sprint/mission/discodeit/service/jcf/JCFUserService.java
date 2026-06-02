@@ -33,7 +33,7 @@ public class JCFUserService implements UserService {
                     throw new IllegalArgumentException("이미 생성된 이메일 입니다.");
             }
             User user = new User(name, email, password);
-            data.put(user.getId(), user);
+            data.put(user.getUserId(), user);
             return user;
     }
 
