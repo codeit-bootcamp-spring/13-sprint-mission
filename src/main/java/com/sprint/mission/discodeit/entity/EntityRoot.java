@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.entity;
 import lombok.Getter;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.UUID;
 
 @Getter
@@ -10,19 +11,19 @@ public abstract class EntityRoot implements Serializable {
 
     //필드
     private final UUID id;
-    private final Long createdAt;
-    private Long updatedAt;
+    private final Instant createdAt;
+    private Instant updatedAt;
 
     //ctor
     public EntityRoot() {
         id = UUID.randomUUID();
-        createdAt = System.currentTimeMillis();
+        createdAt = Instant.now();
         updatedAt = createdAt;
     }
 
     //updateMethod
     public void updateUpdatedAt(){
-        updatedAt = System.currentTimeMillis();
+        updatedAt = Instant.now();
     }
 
 }
