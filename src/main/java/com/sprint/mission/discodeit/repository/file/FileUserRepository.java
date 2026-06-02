@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -55,7 +54,7 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
                         user.setName(name);
                         user.setUserId(userID);
                         user.setUserPw(pw);
-                        user.setUpdatedAt(Instant.now());
+                        user.setUpdatedAt();
                         save(DIRECTORY.resolve(user.getId().toString() + ".ser"),user);
                         return null;
                     });

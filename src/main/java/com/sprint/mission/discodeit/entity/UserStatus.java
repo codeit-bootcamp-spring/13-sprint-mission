@@ -11,7 +11,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class UsertStatus extends BaseEntity {
+public class UserStatus extends BaseEntity {
     private final UUID userID;
     private Instant lastLogin;
 

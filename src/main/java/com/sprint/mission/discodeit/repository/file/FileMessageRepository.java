@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -59,7 +58,7 @@ public class FileMessageRepository extends FileBaseRepository implements Message
                     .map(c -> {
                         Message msg= load(DIRECTORY.resolve(c));
                         msg.setMessages(data);
-                        msg.setUpdatedAt(Instant.now());
+                        msg.setUpdatedAt();
                         save(DIRECTORY.resolve(msg.getId().toString() + ".ser"),msg);
                         return null;
                     });

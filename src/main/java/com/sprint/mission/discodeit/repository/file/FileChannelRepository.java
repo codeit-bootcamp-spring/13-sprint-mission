@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Instant;
 import java.util.ArrayList;
 
 import java.util.List;
@@ -55,7 +54,7 @@ public class FileChannelRepository extends FileBaseRepository implements Channel
                         cnl.setName(name);
                         cnl.setDescription(description);
                         cnl.setType(type);
-                        cnl.setUpdatedAt(Instant.now());
+                        cnl.setUpdatedAt();
                         save(DIRECTORY.resolve(cnl.getId().toString() + ".ser"),cnl);
                         return null;
                     });
