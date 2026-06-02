@@ -4,77 +4,47 @@ import com.sprint.mission.discodeit.entity.BaseEntity;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.UUID;
 
 public class FileBaseRepository {
-    public FileBaseRepository(){}
 
-    private static void checkDirectory(Path file){
-        if (!Files.exists(file.getParent())) {
-            try {
-                Files.createDirectories(file.getParent());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        if (!Files.exists(file)) {
-            try {
-                Files.createFile(file);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+    static void check(Path path) throws IOException {
+        if(!Files.exists(path.getParent())){
+            Files.createDirectories(path.getParent());
         }
     }
 
-    static <T extends BaseEntity> HashMap<UUID,T> load(Path path) {
-        checkDirectory(path);
-
-        HashMap<UUID,T> res = new HashMap<>();
-        try (
-//                FileInputStream fis = new FileInputStream(this.path.toFile());
-                BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(path));
-                ObjectInputStream ois = new ObjectInputStream(bis)
-        ){
-            while(true){
-                T i = (T) ois.readObject();
-                res.put(i.getId(), i);
+    static <T extends BaseEntity> T load(Path path) {
+        try {
+            check(path);
+            try (
+                    BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(path));
+                    ObjectInputStream ois = new ObjectInputStream(bis);
+            ){
+                return (T) ois.readObject();
+            } catch (ClassNotFoundException | IOException e) {
+                e.printStackTrace();
+                return null;
             }
-        }
-        catch (EOFException e){
-            // file read done.
-        }
-        catch (NoSuchFileException e){
-            System.out.println("No such file or directory");
-        }
-        catch (IOException | ClassNotFoundException e){
+        } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-
-        return res;
     }
 
-    static <T> void save(HashMap<UUID,T> ent, Path path){
-        checkDirectory(path);
-
-        try (
-//                FileOutputStream fos = new FileOutputStream(this.path.toFile());
-                ObjectOutputStream oos = new ObjectOutputStream(
-//                        fos
-                new BufferedOutputStream(Files.newOutputStream(path))
-                )
-        )
-        {
-            ArrayList<UUID> keys = new ArrayList<>(ent.keySet());
-            for (UUID key : keys) {
-                oos.writeObject(ent.get(key));
+    <T> void save(Path path,T entity) {
+        try {
+            check(path);
+            try (
+                    ObjectOutputStream oos = new ObjectOutputStream(
+                            new BufferedOutputStream(Files.newOutputStream(path))
+                    )
+            ){
+                oos.writeObject(entity);
+            } catch(IOException e){
+                e.printStackTrace();
             }
-        }
-        catch (Exception e)
-        {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

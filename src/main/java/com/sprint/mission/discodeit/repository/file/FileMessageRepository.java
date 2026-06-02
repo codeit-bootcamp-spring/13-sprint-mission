@@ -6,62 +6,69 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
 public class FileMessageRepository extends FileBaseRepository implements MessageRepository {
-    private final HashMap<UUID, Message> data = new HashMap<>();
-    private final Path path;
+    private final Path DIRECTORY;
 
-    private FileMessageRepository(Path path) {
+    public FileMessageRepository() {
         super();
-        this.path = path;
-        HashMap<UUID, Message> fData = load(path);
-        for (UUID k : fData.keySet()){
-            this.data.put(k, fData.get(k));
-        }
+        DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","message");
     }
 
     @Override
     public void create(User user, Channel channel, String data){
-        for (int i = 0; i < 3; i ++){
-            Message msg = new Message(user.getId(), channel.getId(), data);
-            if (!this.data.containsKey(msg.getId())) {
-                this.data.put(msg.getId(), msg);
-                break;
-            }
-        }
+        Message msg = new Message(user.getId(), channel.getId(), data);
+        this.save(DIRECTORY.resolve(msg.getId().toString() + ".ser"),msg);
     }
 
     @Override
     public ArrayList<Message> select(Predicate<Message> fn){
-        return new ArrayList<> (this.data.values().stream()
-                .filter(fn)
-                .toList());
+        try {
+            List<Message> d = Files.list(DIRECTORY)
+                    .map(c -> (Message) load(DIRECTORY.resolve(c)))
+                    .toList();
+            return new ArrayList<>(d.stream()
+                    .filter(fn)
+                    .toList());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
     }
 
 
     @Override
     public void update(UUID id, String data){
-        Message msg = this.data.get(id);
-        msg.setMessages(data);
-        msg.setUpdatedAt(System.currentTimeMillis());
-
+        try {
+            Files.list(DIRECTORY)
+                    .filter(path -> path.equals(DIRECTORY.resolve(id.toString() + ".ser")))
+                    .map(c -> {
+                        Message msg= load(DIRECTORY.resolve(c));
+                        msg.setMessages(data);
+                        msg.setUpdatedAt(System.currentTimeMillis());
+                        save(DIRECTORY.resolve(msg.getId().toString() + ".ser"),msg);
+                        return null;
+                    });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void delete(UUID id){
-        this.data.remove(id);
-    }
-
-    public static FileMessageRepository open(Path path){
-        return new FileMessageRepository(path);
-    }
-
-    public void close(){
-        save(data,path);
+        try {
+            Files.delete(DIRECTORY.resolve(id.toString() + ".ser"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

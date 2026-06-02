@@ -1,71 +1,74 @@
 package com.sprint.mission.discodeit.repository.file;
 
 
+import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
 public class FileUserRepository extends FileBaseRepository implements UserRepository {
-    private final HashMap<UUID, User> data = new HashMap<>();
-    private final Path path;
-
-    private FileUserRepository(Path path) {
+    private final Path DIRECTORY;
+    public FileUserRepository() {
         super();
-        this.path = path;
-        HashMap<UUID, User> fData = load(path);
-        for (UUID k : fData.keySet()){
-            this.data.put(k, fData.get(k));
-        }
+        DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","user");
     }
 
     @Override
     public void create(String name, String id, String pw){
-        for (int i = 0; i < 3; i ++){
-            User user = new User(name, id, pw);
-            if (!data.containsKey(user.getId())) {
-                data.put(user.getId(), user);
-                break;
-            }
-        }
-
+        User user = new User(name, id, pw);
+        this.save(DIRECTORY.resolve(user.getId().toString() + ".ser"),user);
     }
 
     @Override
     public ArrayList<User> select(Predicate<User> fn){
-        return new ArrayList<>(data.values().stream()
-                .filter(fn)
-                .toList());
+        try {
+            List<User> d = Files.list(DIRECTORY)
+                    .map(c -> (User) load(DIRECTORY.resolve(c)))
+                    .toList();
+            return new ArrayList<>(d.stream()
+                    .filter(fn)
+                    .toList());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
     }
 
 
     @Override
     public void update(UUID id, String name, String userID, String pw){
-        User user = data.remove(id);
-
-        user.setName(name);
-        user.setUserId(userID);
-        user.setUserPw(pw);
-        user.setUpdatedAt(System.currentTimeMillis());
-
-
+        try {
+            Files.list(DIRECTORY)
+                    .filter(path -> path.equals(DIRECTORY.resolve(id.toString() + ".ser")))
+                    .map(c -> {
+                        User user = load(DIRECTORY.resolve(c));
+                        user.setName(name);
+                        user.setUserId(userID);
+                        user.setUserPw(pw);
+                        user.setUpdatedAt(System.currentTimeMillis());
+                        save(DIRECTORY.resolve(user.getId().toString() + ".ser"),user);
+                        return null;
+                    });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void delete(UUID id){
-        data.remove(id);
+        try {
+            Files.delete(DIRECTORY.resolve(id.toString() + ".ser"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-
-    public static FileUserRepository open(Path path){
-        return new FileUserRepository(path);
-    }
-
-    public void close(){
-        save(data,path);
-    }
-
 }

@@ -4,62 +4,72 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
-public class FileChannelRepository extends FileBaseRepository implements ChannelRepository {
-    private final HashMap<UUID, Channel> data = new HashMap<>();
-    private final Path path;
 
-    private FileChannelRepository(Path path) {
+public class FileChannelRepository extends FileBaseRepository implements ChannelRepository {
+    private final Path DIRECTORY;
+
+    public FileChannelRepository() {
         super();
-        this.path = path;
-        HashMap<UUID,Channel>  fData = load(path);
-        for (UUID k : fData.keySet()){
-            this.data.put(k, fData.get(k));
-        }
+        DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","channel");
     }
 
     @Override
     public void create(String name, String description, ChannelType type) {
         Channel channel = new Channel(name, description, type);
-        for (int i = 0; i < 3; i++){
-            if (data.containsKey(channel.getId()))
-                channel = new Channel(name, description, type);
-        }
-        data.put(channel.getId(),channel);
+        this.save(DIRECTORY.resolve(channel.getId().toString() + ".ser"), channel);
     }
 
     @Override
     public ArrayList<Channel> select (Predicate<Channel> fn) {
-        return new ArrayList<>(data.values().stream()
-                .filter(fn)
-                .toList());
+        try {
+            List<Channel> d = Files.list(DIRECTORY)
+                    .map(c -> (Channel) load(DIRECTORY.resolve(c)))
+                    .toList();
+            return new ArrayList<>(d.stream()
+                            .filter(fn)
+                            .toList());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
     }
 
     @Override
     public void update(UUID pcnl, String name,String description,ChannelType type) {
-        Channel cnl = data.get(pcnl);
-        cnl.setName(name);
-        cnl.setDescription(description);
-        cnl.setType(type);
-        cnl.setUpdatedAt(System.currentTimeMillis());
+        try {
+            Files.list(DIRECTORY)
+                    .filter(path -> path.equals(DIRECTORY.resolve(pcnl.toString() + ".ser")))
+                    .map(c -> {
+                        Channel cnl= load(DIRECTORY.resolve(c));
+                        cnl.setName(name);
+                        cnl.setDescription(description);
+                        cnl.setType(type);
+                        cnl.setUpdatedAt(System.currentTimeMillis());
+                        save(DIRECTORY.resolve(cnl.getId().toString() + ".ser"),cnl);
+                        return null;
+                    });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void delete(UUID cnl) {
-        data.remove(cnl);
-    }
-
-    public static FileChannelRepository open(Path path) {
-        return new FileChannelRepository(path);
-    }
-
-    public void close(){
-        save(data,path);
+        try {
+            Files.delete(DIRECTORY.resolve(cnl.toString() + ".ser"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
