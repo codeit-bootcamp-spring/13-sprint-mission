@@ -1,29 +1,26 @@
 package com.sprint.mission.discodeit.entity;
 
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 // memo - class ID 가 달라졌었음. 필드 받아가는 로직을 Getter로 바꾼것 뿐인데 왜?
 
 
 @Getter
+@AllArgsConstructor
 public class Message extends BaseEntity {
     private final UUID userID;
     private final UUID channelID;
-
-    // make with generic?
-    // now first make this at simple string
     private String data;
+    private final List<UUID> attrID = new ArrayList<>();
 
 
-    public Message(UUID userID, UUID channelID, String data) {
-        super();
-        this.userID = userID;
-        this.channelID = channelID;
-        this.data = data;
-    }
 
     // temp ToString
     @Override
@@ -41,6 +38,8 @@ public class Message extends BaseEntity {
     public void setMessages(String data) {
         this.data = data;
     }
-
+    public void addAttr(UUID attrID) {
+        this.attrID.add(attrID);
+    }
 
 }

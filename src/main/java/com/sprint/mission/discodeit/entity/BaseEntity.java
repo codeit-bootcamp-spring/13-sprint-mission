@@ -9,7 +9,6 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Getter
-@Setter
 public class BaseEntity implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
@@ -22,5 +21,7 @@ public class BaseEntity implements Serializable {
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
     }
-
+    public void setUpdatedAt() {
+        this.updatedAt = Instant.now();
+    }
 }
