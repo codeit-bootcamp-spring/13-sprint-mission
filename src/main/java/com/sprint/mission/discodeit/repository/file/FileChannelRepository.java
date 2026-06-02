@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.repository.file;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,18 +11,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
-
+@Repository
 public class FileChannelRepository extends FileBaseRepository implements ChannelRepository {
-    private final Path DIRECTORY;
+    private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","channel");;
 
     public FileChannelRepository() {
         super();
-        DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","channel");
     }
 
     @Override

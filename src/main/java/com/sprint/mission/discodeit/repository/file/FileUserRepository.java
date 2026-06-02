@@ -1,25 +1,25 @@
 package com.sprint.mission.discodeit.repository.file;
 
 
-import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
+@Repository
 public class FileUserRepository extends FileBaseRepository implements UserRepository {
-    private final Path DIRECTORY;
+    private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","user");
+
     public FileUserRepository() {
         super();
-        DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","user");
     }
 
     @Override

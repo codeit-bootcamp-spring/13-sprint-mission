@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.MessageRepository;
+import org.springframework.stereotype.Repository;
 
 
 import java.io.IOException;
@@ -11,17 +12,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
+
+@Repository
 public class FileMessageRepository extends FileBaseRepository implements MessageRepository {
-    private final Path DIRECTORY;
+    private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","message");;
 
     public FileMessageRepository() {
         super();
-        DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","message");
     }
 
     @Override

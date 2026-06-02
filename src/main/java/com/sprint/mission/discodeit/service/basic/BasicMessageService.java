@@ -7,15 +7,17 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
+import org.springframework.stereotype.Service;
 
 
 import java.util.ArrayList;
 import java.util.UUID;
-
+@Service
 public class BasicMessageService implements MessageService {
     private final MessageRepository fms;
     private final UserRepository fus;
     private final ChannelRepository fcs;
+
     public BasicMessageService(ChannelRepository chn, UserRepository usr, MessageRepository msg) {
         fms = msg;
         fus = usr;
