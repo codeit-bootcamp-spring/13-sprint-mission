@@ -1,0 +1,66 @@
+package com.sprint.mission.discodeit.service.jcf;
+
+
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.service.UserService;
+
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.UUID;
+
+public class JCFUserService implements UserService {
+    private final HashMap<UUID, User> data;
+
+
+    private static class UserInstance {
+        private static final JCFUserService INSTANCE = new JCFUserService();
+    }
+
+
+    private JCFUserService() {
+        data = new HashMap<>();
+    }
+
+    public static JCFUserService getInstance() {
+        return UserInstance.INSTANCE;
+    }
+
+    @Override
+    public void createUser(String name, String id, String pw){
+        // create user
+        User user = new User(name, id, pw);
+        for (int i = 0; i < 3; i ++){
+            if (this.data.get(user.getId()) != null) break;
+            user = new User(name, id, pw);
+        }
+        data.put(user.getId(), user);
+    }
+
+    @Override
+    public ArrayList<User> getUserById(UUID id){
+        ArrayList<User> user = new ArrayList<>();
+        user.add(data.get(id));
+        return user;
+    }
+
+    @Override
+    public ArrayList<User> getUserList(){
+        return new ArrayList<>(data.values());
+    }
+
+
+    @Override
+    public void updateUserInfo(UUID id, String name, String userID, String pw){
+        User trg = data.get(id);
+        trg.setName(name);
+        trg.setUserId(userID);
+        trg.setUserPw(pw);
+        trg.setUpdatedAt(System.currentTimeMillis());
+    }
+
+    @Override
+    public void deleteUser(UUID id){
+        User user = data.remove(id);
+    }
+
+}
