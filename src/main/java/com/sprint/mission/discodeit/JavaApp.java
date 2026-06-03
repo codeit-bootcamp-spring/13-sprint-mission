@@ -24,7 +24,7 @@ import com.sprint.mission.discodeit.service.basic.BasicUserService;
 
 import java.util.Collection;
 
-public class JaveApp {
+public class JavaApp {
 	public static void main(String[] args) {
 
 		UserRepository userRepository = new FileUserRepository(); //new JCFUserRepository();
