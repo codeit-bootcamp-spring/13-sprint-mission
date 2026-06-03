@@ -13,19 +13,19 @@ public class User extends EntityRoot implements Serializable {
     //필드
     private String name;
     private String email;
+    private String password;
     private UUID profileId;
-    private final List<User> friends;
     private final List<Channel> channels;
     private final List<Message> messages;
 
     //ctor
-    public User(String name, String email, UUID profileId) {
+    public User(String name, String email, String password, UUID profileId) {
         super();
 
         this.name = name;
         this.email = email;
+        this.password = password;
         this.profileId = profileId;
-        friends = new ArrayList<>();
         channels = new ArrayList<>();
         messages = new ArrayList<>();
     }
@@ -45,26 +45,23 @@ public class User extends EntityRoot implements Serializable {
         this.email = email;
         updateUpdatedAt();
     }
+    public void changePassword(String password) {
+        if (password == null || password.isBlank())
+            return;
+
+        this.password = password;
+        updateUpdatedAt();
+    }
     public void updateProfileId(UUID profileId) {
+        if (password == null)
+            return;
+
         this.profileId = profileId;
         updateUpdatedAt();
     }
 
+
     //method
-    public void addFriend(User friend) {
-        if (friends.contains(friend) || friend == null)
-            return;
-
-        friends.add(friend);
-        updateUpdatedAt();
-    }
-    public void removeFriend(User friend) {
-        if (!friends.contains(friend) || friend == null)
-            return;
-
-        friends.remove(friend);
-        updateUpdatedAt();
-    }
     public void addChannel(Channel channel) {
         if (channels.contains(channel) || channel == null)
             return;
@@ -93,6 +90,7 @@ public class User extends EntityRoot implements Serializable {
         messages.remove(message);
         updateUpdatedAt();
     }
+
 
     //method override
     @Override
