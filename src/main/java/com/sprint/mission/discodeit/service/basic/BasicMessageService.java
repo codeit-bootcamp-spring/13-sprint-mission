@@ -25,19 +25,23 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public void create(Message message) {
-        User author = userRepository.findById(message.getAuthor().getId());
-        Channel channel = channelRepository.findById(message.getChannel().getId());
+    public Message create(String content, UUID authorId, UUID channelId) {
+        User author = userRepository.findById(authorId);
+        Channel channel = channelRepository.findById(channelId);
 
-        if (author == null) {
+        if (authorId == null) {
             throw new IllegalArgumentException("존재하지 않는 유저의 메시지입니다.");
         }
-
-        if (channel == null) {
+        if (channelId == null) {
             throw new IllegalArgumentException("존재하지 않는 채널의 메시지입니다.");
         }
+    if (content == null) {
+        throw new IllegalArgumentException("존재하지 않은 내용입니다.");
+    }
 
+        Message message = new Message(content, author, channel);
         messageRepository.save(message);
+        return message;
     }
 
 

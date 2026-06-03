@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.entity;
 
 
+import lombok.ToString;
+
 public class User extends AllApply {
 	
 	String name;
@@ -24,5 +26,16 @@ public class User extends AllApply {
 		this.name = name;
 		this.email = email;
 		updateTime();
+	}
+
+	@Override
+	public String toString() {
+		return "User[" +
+				"id= " + getId() +
+				"Name=" + getName() + "\n" +
+				"Email=" + getEmail() + "\n" +
+				"CreateAt=" + getCreateAt() + "\n" +
+				"UpdateAt=" + getUpdateAt() +
+				"]";
 	}
 }

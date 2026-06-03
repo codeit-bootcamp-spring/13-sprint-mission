@@ -43,7 +43,6 @@ public class FileMessageRepository implements MessageRepository {
         this.messagesRepo = loadMessagesRepo();
 }
 
-
     @Override
     public void save(Message message) {
         messagesRepo.put(message.getId(), message);
@@ -57,7 +56,7 @@ public class FileMessageRepository implements MessageRepository {
 
     @Override
     public Collection<Message> findAll() {
-        return messagesRepo.values();
+        return new ArrayList<>(messagesRepo.values());
     }
 
     @Override

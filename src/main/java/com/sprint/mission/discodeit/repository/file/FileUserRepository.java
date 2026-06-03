@@ -52,7 +52,7 @@ public class FileUserRepository implements UserRepository {
 
     @Override
     public Collection<User> findAll() {
-        return users.values();
+        return new ArrayList<>(users.values());
     }
 
     @Override

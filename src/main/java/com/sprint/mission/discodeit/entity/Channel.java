@@ -7,10 +7,11 @@ public class Channel extends AllApply {
 	String name;
 	String nameDescription;
 	User creator;
-	channelType type;
+	ChannelType type;
+
 	
 	
-	public Channel(String name, String nameDescription, User creator, channelType type) {
+	public Channel(String name, String nameDescription, User creator, ChannelType type) {
 		super();
 		this.name = name;
 		this.nameDescription = nameDescription;
@@ -29,22 +30,28 @@ public class Channel extends AllApply {
 	public User getCreator() {
 		return creator;
 	}
-	
-	public channelType getType() {
+
+	public ChannelType getType() {
 		return type;
 	}
-	
+
+
 	public void update(String name, String nameDescription) {
 		this.name = name;
 		this.nameDescription = nameDescription;
 		updateTime();
 	}
-	
-	public enum channelType{
-		TEXT,
-		VOICE,
-		DIRECT_MESSAGE;
-		
+
+	@Override
+	public String toString() {
+		return "Channel[" +
+				"id= " + getId() +
+				"Name=" + getName() + "\n" +
+				"NameDescription=" + getNameDescription() + "\n" +
+				"Creator=" + (creator == null ? null : getCreator())+ "\n" +
+				"Type=" + getType() + "\n" +
+				"]";
 	}
+
 	
 }

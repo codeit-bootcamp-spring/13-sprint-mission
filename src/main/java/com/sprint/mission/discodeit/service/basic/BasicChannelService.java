@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.entity.ChannelType;
+import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 
@@ -15,8 +17,10 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public void create(Channel channel) {
+    public Channel create(String name, String description, User creator, ChannelType type) {
+        Channel channel = new Channel(name, description, creator, type);
         channelRepository.save(channel);
+        return channel;
     }
 
     @Override
