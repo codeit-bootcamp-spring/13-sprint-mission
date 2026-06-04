@@ -51,6 +51,15 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
     }
 
     @Override
+    public User findByID(UUID id){
+        try {
+            return find(u -> u.getId().equals(id)).get(0);
+        } catch (IndexOutOfBoundsException e) {
+            return null;
+        }
+    }
+
+    @Override
     public void delete(UUID id){
         try {
             Files.delete(DIRECTORY.resolve(id.toString() + ".ser"));

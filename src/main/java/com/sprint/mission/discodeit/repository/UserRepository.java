@@ -10,5 +10,6 @@ public interface UserRepository {
 
     void save(User user);
     List<User> find(Predicate<User> fn);
+    User findByID(UUID id);
     void delete(UUID id);
 }

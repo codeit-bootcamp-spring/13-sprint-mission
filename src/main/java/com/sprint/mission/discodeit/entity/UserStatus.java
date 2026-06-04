@@ -8,6 +8,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * 사용자별 마지막 접속시간 표현 도메인
+ */
+
+
 @Getter
 @Setter
 @Builder
