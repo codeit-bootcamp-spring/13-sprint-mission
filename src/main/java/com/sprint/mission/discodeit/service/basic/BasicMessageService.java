@@ -1,8 +1,9 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.dto.input.CreateMessageInput;
+import com.sprint.mission.discodeit.dto.input.UpdateMessageInput;
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -11,46 +12,47 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 
-import java.util.ArrayList;
+
+import java.util.List;
 import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class BasicMessageService implements MessageService {
-    private final MessageRepository fms;
-    private final UserRepository fus;
-    private final ChannelRepository fcs;
+    private final MessageRepository mr;
+    private final UserRepository ur;
+    private final ChannelRepository cr;
+    private final BinaryContentRepository bcr;
 
     @Override
-    public void createMessage(UUID user, UUID channel, String data){
-        try {
-            User u = fus.select((c) -> c.getId().equals(user)).get(0);
-            Channel c = fcs.select((ch) -> ch.getId().equals(channel)).get(0);
+    public void createMessage(CreateMessageInput cmi){
 
-            fms.create(u,c,data);
+        if (ur.find(c -> c.getId().equals(cmi.getUserID())).isEmpty()) throw new RuntimeException();
+        if (!cr.find(ch -> ch.getId().equals(cmi.getChannelID())).isEmpty()) throw new RuntimeException();
+
+        mr.save(new Message(cmi.getUserID(), cmi.getChannelID(), cmi.getMessage(), cmi.getDataIDs()));
+    }
+
+    @Override
+    public List<Message> findallByChannelId(UUID cannelID){
+        return mr.find(m -> m.getChannelID().equals(cannelID));
+    }
+
+    @Override
+    public void updateMessageData(UpdateMessageInput umi){
+        Message msg = mr.find(m -> m.getId().equals(umi.getMessageID())).get(0);
+        msg.setText(umi.getText());
+        msg.getAttrID().clear();
+        for (UUID dataID : umi.getDataIDs()) {
+                msg.getAttrID().add(dataID);
         }
-        catch(Exception e){
-            System.out.println("User/Channel UUID error");
-        }
-    }
-
-    @Override
-    public ArrayList<Message> getMessageById(UUID id){
-        return fms.select((c) -> c.getId().equals(id));
-    }
-
-    @Override
-    public ArrayList<Message> getMessageList(){
-        return fms.select((c) -> true);
-    }
-
-    @Override
-    public void updateMessageData(UUID id, String data){
-        fms.update(id, data);
+        mr.save(msg);
     }
 
     @Override
     public void deleteMessage(UUID id){
-        fms.delete(id);
+        mr.delete(id);
+        bcr.findContantByAuthorID(id)
+                .forEach(b -> bcr.delete(b.getId()));
     }
 
 }
