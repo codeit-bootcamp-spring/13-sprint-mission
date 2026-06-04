@@ -17,9 +17,6 @@ public class JCFUserRepository implements UserRepository {
 
     private JCFUserRepository() { data = new HashMap<>();}
 
-    public static JCFUserRepository open() {
-        return JUR.INSTANCE;
-    }
 
     @Override
     public void save(User user) {

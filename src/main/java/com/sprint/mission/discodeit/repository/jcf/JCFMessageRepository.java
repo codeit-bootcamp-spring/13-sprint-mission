@@ -1,11 +1,9 @@
 package com.sprint.mission.discodeit.repository.jcf;
 
-import com.sprint.mission.discodeit.entity.Channel;
+
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -20,10 +18,6 @@ public class JCFMessageRepository implements MessageRepository {
 
     private JCFMessageRepository() {
         data = new HashMap<>();
-    }
-
-    public static JCFMessageRepository open() {
-        return JMR.INSTANCE;
     }
 
     @Override
@@ -50,7 +44,4 @@ public class JCFMessageRepository implements MessageRepository {
         data.remove(id);
     }
 
-
-    // File * Repository 와의 호환성을 위한 더미 메서드
-    public void close(){}
 }
