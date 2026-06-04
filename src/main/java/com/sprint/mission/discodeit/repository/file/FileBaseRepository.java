@@ -14,38 +14,24 @@ public class FileBaseRepository {
         }
     }
 
-    static <T extends BaseEntity> T load(Path path) {
-        try {
-            check(path);
-            try (
-                    BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(path));
-                    ObjectInputStream ois = new ObjectInputStream(bis);
-            ){
-                return (T) ois.readObject();
-            } catch (ClassNotFoundException | IOException e) {
-                e.printStackTrace();
-                return null;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+    static <T extends BaseEntity> T read(Path path) throws IOException, ClassNotFoundException {
+        check(path);
+        try (
+                BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(path));
+                ObjectInputStream ois = new ObjectInputStream(bis);
+        ){
+            return (T) ois.readObject();
         }
     }
 
-    <T> void save(Path path,T entity) {
-        try {
-            check(path);
-            try (
-                    ObjectOutputStream oos = new ObjectOutputStream(
-                            new BufferedOutputStream(Files.newOutputStream(path))
-                    )
-            ){
-                oos.writeObject(entity);
-            } catch(IOException e){
-                e.printStackTrace();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+    static <T> void write(Path path,T entity) throws IOException {
+        check(path);
+        try (
+                ObjectOutputStream oos = new ObjectOutputStream(
+                        new BufferedOutputStream(Files.newOutputStream(path))
+                )
+        ){
+            oos.writeObject(entity);
         }
     }
 }

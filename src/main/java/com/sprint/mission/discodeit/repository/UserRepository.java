@@ -10,6 +10,5 @@ public interface UserRepository {
 
     void save(User user);
     List<User> find(Predicate<User> fn);
-    void update(UUID id, String name, String pw);
     void delete(UUID id);
 }

@@ -33,13 +33,6 @@ public class JCFMessageRepository implements MessageRepository {
     }
 
     @Override
-    public void update(UUID id, String data) {
-        Message msg = this.data.get(id);
-        msg.setUpdatedAt();
-        msg.setMessages(data);
-    }
-
-    @Override
     public void delete(UUID id) {
         data.remove(id);
     }

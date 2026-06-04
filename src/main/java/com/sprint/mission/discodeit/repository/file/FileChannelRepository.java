@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 @Repository
 public class FileChannelRepository extends FileBaseRepository implements ChannelRepository {
@@ -23,41 +24,29 @@ public class FileChannelRepository extends FileBaseRepository implements Channel
     }
 
     @Override
-    public void save(Channel cnl) {
-        this.save(DIRECTORY.resolve(cnl.getId()+ ".ser"), cnl);
-    }
-
-    @Override
-    public List<Channel> find (Predicate<Channel> fn) {
+    public void save(Channel cnl) throws RuntimeException {
         try {
-            List<Channel> d = Files.list(DIRECTORY)
-                    .map(c -> (Channel) load(DIRECTORY.resolve(c)))
-                    .toList();
-            return d.stream()
-                            .filter(fn)
-                            .toList();
+            write(DIRECTORY.resolve(cnl.getId()+ ".ser"), cnl);
         } catch (IOException e) {
-            e.printStackTrace();
-            return List.of();
+            throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void update(UUID pcnl, String name,String description,ChannelType type) {
-        try {
-            Files.list(DIRECTORY)
-                    .filter(path -> path.equals(DIRECTORY.resolve(pcnl.toString() + ".ser")))
-                    .map(c -> {
-                        Channel cnl= load(DIRECTORY.resolve(c));
-                        cnl.setName(name);
-                        cnl.setDescription(description);
-                        cnl.setType(type);
-                        cnl.setUpdatedAt();
-                        save(DIRECTORY.resolve(cnl.getId().toString() + ".ser"),cnl);
-                        return null;
-                    });
+    public List<Channel> find (Predicate<Channel> fn) {
+        try (
+                Stream<Path> paths = Files.list(DIRECTORY)
+                ){
+                    return paths.map(c -> {
+                        try {
+                            return (Channel) read(DIRECTORY.resolve(c));
+                        } catch (IOException | ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }})
+                            .filter(fn)
+                            .toList();
         } catch (IOException e) {
-            e.printStackTrace();
+           throw new RuntimeException(e);
         }
     }
 
@@ -66,7 +55,7 @@ public class FileChannelRepository extends FileBaseRepository implements Channel
         try {
             Files.delete(DIRECTORY.resolve(cnl.toString() + ".ser"));
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 }

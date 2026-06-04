@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.repository.file;
 
 
+import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import org.springframework.stereotype.Repository;
@@ -12,6 +14,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 @Repository
 public class FileUserRepository extends FileBaseRepository implements UserRepository {
@@ -23,40 +26,28 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
 
     @Override
     public void save(User user){
-        this.save(DIRECTORY.resolve(user.getId()+ ".ser"),user);
+        try {
+            write(DIRECTORY.resolve(user.getId()+ ".ser"), user);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public List<User> find(Predicate<User> fn){
-        try {
-            List<User> d = Files.list(DIRECTORY)
-                    .map(c -> (User) load(DIRECTORY.resolve(c)))
-                    .toList();
-            return d.stream()
+        try (
+                Stream<Path> paths = Files.list(DIRECTORY)
+        ){
+            return paths.map(u -> {
+                        try {
+                            return (User) read(DIRECTORY.resolve(u));
+                        } catch (IOException | ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }})
                     .filter(fn)
                     .toList();
         } catch (IOException e) {
-            e.printStackTrace();
-            return List.of();
-        }
-    }
-
-
-    @Override
-    public void update(UUID id, String name, String pw){
-        try {
-            Files.list(DIRECTORY)
-                    .filter(path -> path.equals(DIRECTORY.resolve(id.toString() + ".ser")))
-                    .map(c -> {
-                        User user = load(DIRECTORY.resolve(c));
-                        user.setName(name);
-                        user.setPassword(pw);
-                        user.setUpdatedAt();
-                        save(DIRECTORY.resolve(user.getId().toString() + ".ser"),user);
-                        return null;
-                    });
-        } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -65,7 +56,7 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
         try {
             Files.delete(DIRECTORY.resolve(id.toString() + ".ser"));
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 }

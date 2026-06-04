@@ -10,7 +10,6 @@ import java.util.function.Predicate;
 public interface MessageRepository {
     void save(Message message);
     List<Message> find(Predicate<Message> fn);
-    void update(UUID id, String data);
     void delete(UUID id);
 }
 

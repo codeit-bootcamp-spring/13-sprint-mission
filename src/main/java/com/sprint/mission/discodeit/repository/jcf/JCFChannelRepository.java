@@ -4,7 +4,6 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -31,15 +30,6 @@ public class JCFChannelRepository implements ChannelRepository {
         return data.values().stream()
                 .filter(fn)
                 .toList();
-    }
-
-    @Override
-    public void update(UUID id, String name,String description,ChannelType type) {
-        Channel cnl = data.get(id);
-        cnl.setName(name);
-        cnl.setDescription(description);
-        cnl.setType(type);
-        cnl.setUpdatedAt();
     }
 
     @Override
