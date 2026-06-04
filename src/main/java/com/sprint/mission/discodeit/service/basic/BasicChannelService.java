@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.input.ChannelProfile;
-import com.sprint.mission.discodeit.dto.input.ReadyStateInput;
+import com.sprint.mission.discodeit.dto.input.CreateReadyStatusInput;
 import com.sprint.mission.discodeit.dto.output.ChannelOutput;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -29,7 +29,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public void createPrivateChannel(ReadyStateInput rsi){
+    public void createPrivateChannel(CreateReadyStatusInput rsi){
         rsr.save(new ReadStatus(rsi.getUserID(),rsi.getChannelID()));
         cr.save(new Channel("", "", ChannelType.PRIVATE));
     }

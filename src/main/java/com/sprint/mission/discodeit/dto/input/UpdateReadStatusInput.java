@@ -6,10 +6,11 @@ import lombok.Setter;
 
 import java.util.UUID;
 
-@Setter
 @Getter
+@Setter
 @Builder
-public class ReadyStateInput {
-    UUID userID;
-    UUID channelID;
+public class UpdateReadStatusInput {
+    private UUID readStatusID;
+    private UUID userID;
+    private UUID channelID;
 }
