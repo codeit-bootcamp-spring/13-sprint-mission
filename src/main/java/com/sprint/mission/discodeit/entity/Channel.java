@@ -11,70 +11,30 @@ import java.util.UUID;
 public class Channel extends EntityRoot implements Serializable {
 
     //필드
+    private ChannelType type;
     private String name;
-    private User channelHost;
-    private final List<User> users;
-    private final List<Message> messages;
+    private String description;
 
     //ctor
-    public Channel(String name, User channelHost) {
+    public Channel(ChannelType type, String name, String description) {
         super();
 
+        this.type = type;
         this.name = name;
-        this.channelHost = channelHost;
-        users = new ArrayList<>();
-        messages = new ArrayList<>();
+        this.description = description;
     }
 
     //update Method
-    public void changeName(String name) {
-        if (name == null || name.isBlank())
-            return;
-
+    public void updateChannel(String name, String description) {
         this.name = name;
-        updateUpdatedAt();
-    }
-    public void changeChannelHost(User channelHost) {
-        if (channelHost == null || channelHost == this.channelHost)
-            return;
+        this.description = description;
 
-        this.channelHost = channelHost;
-        updateUpdatedAt();
-    }
-
-    //method
-    public void addUser(User user) {
-        if (users.contains(user) || user == null)
-            return;
-
-        users.add(user);
-        updateUpdatedAt();
-    }
-    public void removeUser(User user) {
-        if (!users.contains(user) || user == null)
-            return;
-
-        users.remove(user);
-        updateUpdatedAt();
-    }
-    public void addMessage(Message message) {
-        if (messages.contains(message) || message == null)
-            return;
-
-        messages.add(message);
-        updateUpdatedAt();
-    }
-    public void removeMessage(Message message) {
-        if (!messages.contains(message) || message == null)
-            return;
-
-        messages.remove(message);
         updateUpdatedAt();
     }
 
     //method override
     @Override
     public String toString() {
-        return "[Channel: " + name + ", Channel Host: " + channelHost.getName() + "]";
+        return "[Channel: " + name + ", Description: " + description + "]";
     }
 }

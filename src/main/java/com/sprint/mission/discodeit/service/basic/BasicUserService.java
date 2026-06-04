@@ -124,13 +124,7 @@ public class BasicUserService implements UserService {
         userTemp.updateUser(request.newName(), request.newEmail(), request.newPassword(), binaryContentId);
         userRepository.save();
 
-//        log.info(userTemp.toString());
-        return new UserUpdateResponse(
-                userId,
-                userTemp.getName(),
-                userTemp.getEmail(),
-                userTemp.getProfileId()
-        );
+        return UserUpdateResponse.from(userTemp);
     }
 
     @Override
@@ -150,7 +144,9 @@ public class BasicUserService implements UserService {
         //기존 유저 프로필 이미지 삭제
         deleteProfileImage(userId);
 
+        //유저 삭제
         userRepository.deleteUser(userId);
+
         log.info("유저: {}가 삭제됨.", userTemp.getName());
     }
 

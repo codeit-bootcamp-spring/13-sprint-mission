@@ -1,211 +1,174 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.dto.request.ChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.ChannelUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.ChannelFindResponse;
+import com.sprint.mission.discodeit.dto.response.ChannelUpdateResponse;
+import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BasicChannelService implements ChannelService {
 
     //필드
     private final ChannelRepository channelRepository;
+    private final MessageRepository messageRepository;
+    private final ReadStatusRepository readStatusRepository;
 
     //interface
     @Override
-    public Channel createChannel(String name, User channelHost) {
-        if (name == null || name.isBlank()) throw new RuntimeException("에러: 채널명은 공백일 수 없습니다.");
-        if (channelHost == null) throw new RuntimeException("에러: 채널 호스트는 null이면 안됩니다.");
+    public Channel createChannel(ChannelCreateRequest request) {
+        //입력값 검증 처리하겠습니다
+        validateString(request.name());
+        validateString(request.description());
 
-        if (channelRepository.existsChannelByName(name)){
-            System.out.println("채널명: " + name + "은 이미 사용중인 이름입니다. 대신 해당 채널명을 사용하는 채널 객체 반환하겠습니다.\n" );
-            return channelRepository.findChannelByName(name)
-                    .orElseThrow(() -> new RuntimeException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
+        //채널 생성
+        Channel channel;
+        if (request.type() == ChannelType.PUBLIC){  //Channel이 Public일 경우
+            channel = new Channel(request.type(), request.name(), request.description());
+            channelRepository.createChannel(channel);
+            log.info("채널: {}가 생성됨.", channel.getName());
+
+        } else { //Channel이 Private일 경우
+            channel = new Channel(request.type(), null, null);
+            channelRepository.createChannel(channel);
+            log.info("채널: {}가 생성됨.", channel.getName());
+
         }
-
-        Channel channel = new Channel(name, channelHost);
-        channelRepository.createChannel(channel);
-        System.out.println("채널: " + name + "가 생성됨.\n" );
-
-        addUserToChannel(channel, channelHost);
 
         return channel;
     }
 
     @Override
-    public void printChannelInfo(Channel channel) {
-        if (channel == null) throw new RuntimeException("에러: 채널은 null이면 안됩니다.");
+    public ChannelFindResponse findChannel(UUID channelId) {
+        //입력값 검증 처리하겠습니다
+        validateUUID(channelId);
 
-        Channel channelTemp = channelRepository.findChannelByName(channel.getName())
+        //채널 검색
+        Channel channelTemp = channelRepository.findChannelById(channelId)
                 .orElseThrow(() -> new RuntimeException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
 
-        System.out.println(channelTemp + "\n");
+        return makeChannelFindResponse(channelTemp);
     }
 
     @Override
-    public void printAllChannelsInfo() {
-        List<Channel> channels = channelRepository.findAll();
-        for (Channel channel : channels) {
-            System.out.println(channel + "\n");
+    public List<ChannelFindResponse> findAllByUserId(UUID userId) {
+        //입력값 검증 처리하겠습니다
+        validateUUID(userId);
+
+        //반환할 리스트
+        List<ChannelFindResponse> channelFindResponseList = new ArrayList<>();
+
+        //해당 유저가 참가해있는 readStatus들 검색
+        List<ReadStatus> readStatuses = readStatusRepository.findAllReadStatusByUserId(userId);
+
+        //ChannelType이 PRIVATE인 것만 진행
+        for (ReadStatus readStatus : readStatuses) {
+            //채널 검색
+            Channel channelTemp = channelRepository.findChannelById(readStatus.getChannelId())
+                    .orElseThrow(() -> new RuntimeException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
+
+            if (channelTemp.getType() == ChannelType.PUBLIC)
+                continue;
+
+            channelFindResponseList.add(makeChannelFindResponse(channelTemp));
         }
+
+        //ChannelType이 PUBLIC인 것만 진행
+        List<Channel> publicChannelListTemp = channelRepository.findAllChannelsByChannelType(ChannelType.PUBLIC);
+        for (Channel channelTemp : publicChannelListTemp) {
+            channelFindResponseList.add(makeChannelFindResponse(channelTemp));
+        }
+
+        return channelFindResponseList;
     }
 
     @Override
-    public void editChannelName(Channel channel, User user, String newName) {
-        if (newName == null || newName.isBlank()) throw new RuntimeException("에러: 새 채널명은 공백일 수 없습니다.\n");
-        if (channel == null || user == null) throw new RuntimeException("에러: 채널, 수정하려는 유저는 null이면 안됩니다.");
-        if (!validateChannelHost(channel, user)){
-            System.out.println("에러: 채널 이름을 수정하려는 유저는 이 채널 호스트여야 합니다.");
-            return;
+    public ChannelUpdateResponse updateChannel(UUID channelId, ChannelUpdateRequest request) {
+        //입력값 검증 처리하겠습니다
+        validateString(request.name());
+        validateString(request.description());
+
+        //ChannelType 검증
+        if (request.type() == ChannelType.PUBLIC){
+            throw new IllegalArgumentException("에러: PUBLIC 채널은 수정할 수 없습니다.");
         }
 
-        if (channelRepository.existsChannelByName(newName)){
-            System.out.println("에러: 채널명: " + newName + "은 이미 사용중인 이름입니다. 채널명 업데이트 거부.\n" );
-            return;
-        }
-
-        Channel channelTemp = channelRepository.findChannelByName(channel.getName())
+        //채널 검색
+        Channel channelTemp = channelRepository.findChannelById(channelId)
                 .orElseThrow(() -> new RuntimeException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
 
-        System.out.println("채널명: " + channelTemp.getName() + "가 수정됨.\n -> " + newName + "\n");
-        channelTemp.changeName(newName);
-
+        //채널 업데이트
+        channelTemp.updateChannel(request.name(), request.description());
         channelRepository.save();
+
+        return ChannelUpdateResponse.from(channelTemp);
     }
 
     @Override
-    public Channel deleteChannel(Channel channel, User user) {
-        if (user == null || channel == null) throw new RuntimeException("에러: 채널, 유저는 null이면 안됩니다.");
-        if (!validateChannelHost(channel, user)) {
-            System.out.println("에러: 이 채널의 호스트가 아니므로 채널 삭제 불가.");
-            return channel;
-        }
+    public void deleteChannel(UUID channelId) {
+        //입력값 검증 처리하겠습니다
+        validateUUID(channelId);
 
-        Channel channelTemp = channelRepository.findChannelByName(channel.getName())
+        //채널 검색
+        Channel channelTemp = channelRepository.findChannelById(channelId)
                 .orElseThrow(() -> new RuntimeException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
 
-        for (User users : channelTemp.getUsers()) {
-            users.removeChannel(channelTemp);
-        }
-        for (Message messages : channelTemp.getMessages()) {
-            messages.getUser().removeMessage(messages);
-        }
+        //채널 내 메시지 삭제
+        messageRepository.deleteMessagesByChannelId(channelTemp.getId());
 
-        channelRepository.deleteChannel(channel);
-        System.out.println("채널: " + channelTemp.getName() + "가 삭제됨.\n" );
+        //채널 참조하는 ReadStatus 삭제
+        readStatusRepository.deleteReadStatusByChannelId(channelTemp.getId());
 
-        return null;
-    }
+        //채널 삭제
+        channelRepository.deleteChannel(channelTemp.getId());
 
-    @Override
-    public void addUserToChannel(Channel channel, User user) {
-        if (channel == null || user == null) throw new RuntimeException("에러: 채널, 유저는 null이면 안됩니다.");
-        if (validateUserExistsChannel(channel, user)) {
-            System.out.println("에러: 추가하려는 유저가 이미 해당 채널에 존재합니다.");
-            return;
-        }
-
-        Channel channelTemp = channelRepository.findChannelByName(channel.getName())
-                .orElseThrow(() -> new RuntimeException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
-
-        user.addChannel(channelTemp);
-        channelTemp.addUser(user);
-        System.out.println("채널: " + channel.getName() + "에 " + user.getName() + "가 추가됨.\n" );
-
-        channelRepository.save();
-    }
-
-    @Override
-    public void printUsersInfo(Channel channel) {
-        if (channel == null) throw new RuntimeException("에러: 채널은 null이면 안됩니다.");
-
-        Channel channelTemp = channelRepository.findChannelByName(channel.getName())
-                .orElseThrow(() -> new RuntimeException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
-
-        System.out.println(channel.getName() + "채널 유저: ");
-        for (User user : channelTemp.getUsers()) {
-            System.out.println(user.getName());
-        }
-        System.out.println();
-    }
-
-    @Override
-    public void printChannelHostInfo(Channel channel) {
-        if (channel == null) throw new RuntimeException("에러: 채널은 null이면 안됩니다.");
-
-        Channel channelTemp = channelRepository.findChannelByName(channel.getName())
-                .orElseThrow(() -> new RuntimeException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
-
-        System.out.println("채널 호스트: " + channelTemp.getChannelHost());
-    }
-
-    @Override
-    public void changeChannelHost(Channel channel, User user) {
-        if (user == null || channel == null) throw new RuntimeException("에러: 채널, 유저는 null이면 안됩니다.");
-        if (!validateUserExistsChannel(channel, user)) {
-            System.out.println("에러: 해당 유저는 이 채널에 존재하지 않습니다.");
-            return;
-        }
-        if (validateChannelHost(channel, user)) {
-            System.out.println("에러: 해당 유저는 이미 이 채널의 호스트입니다.");
-            return;
-        }
-
-        Channel channelTemp = channelRepository.findChannelByName(channel.getName())
-                .orElseThrow(() -> new RuntimeException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
-
-        System.out.println(channelTemp.getName() + "채널 호스트가 " + channelTemp.getChannelHost().getName() + "에서 " + user.getName() + "으로 변경됨.\n" );
-        channelTemp.changeChannelHost(user);
-
-        channelRepository.save();
-    }
-
-    @Override
-    public void deleteUserFromChannel(Channel channel, User user) {
-        if (user == null || channel == null) throw new RuntimeException("에러: 채널, 유저는 null이면 안됩니다.");
-        if (!validateUserExistsChannel(channel, user)) {
-            System.out.println("에러: 이 채널에는 이 유저가 존재하지 않습니다.");
-            return;
-        }
-
-        Channel channelTemp = channelRepository.findChannelByName(channel.getName())
-                .orElseThrow(() -> new RuntimeException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
-
-        channelTemp.removeUser(user);
-        user.removeChannel(channelTemp);
-        System.out.println(channelTemp.getName() + "채널에서 " + user.getName() + "가 퇴장했습니다.\n");
-
-        channelRepository.save();
-    }
-
-    @Override
-    public void printMessages(Channel channel) {
-        if (channel == null) throw new RuntimeException("에러: 채널은 null이면 안됩니다.");
-
-        Channel channelTemp = channelRepository.findChannelByName(channel.getName())
-                .orElseThrow(() -> new RuntimeException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
-
-        System.out.println(channelTemp.getName() + "채널 메세지: ");
-        for (Message message : channelTemp.getMessages()) {
-            System.out.println(message + "\n");
-        }
-
+        log.info("채널: {}가 삭제됨.", channelTemp.getName());
     }
 
 
-    //들어온 user가 channel의 호스트이면 true반환, 아니면 false 반환
-    private boolean validateChannelHost(Channel channel, User user) {
-        return channel.getChannelHost().getId().equals(user.getId());
-    }
+    //ChannelFindResponse DTO를 만들어서 반환해주는 메서드
+    private ChannelFindResponse makeChannelFindResponse(Channel channel) {
+        //가장 최근 메시지 검색
+        List<Message> messageListTemp = messageRepository.findAllMessagesByChannelId(channel.getId());
+        Message recentMessage = messageListTemp.stream()
+                .max(Comparator.comparing(Message::getCreatedAt))
+                .orElse(null);
 
-    //들어온 user가 해당 channel에 존재하면 true반환, 아니면 false 반환
-    private boolean validateUserExistsChannel(Channel channel, User user) {
-        return channel.getUsers().stream().anyMatch(userTemp -> userTemp.getId().equals(user.getId()));
+        //해당 채널에 참여하고 있는 userId들 추출
+        List<ReadStatus> readStatusListTemp = readStatusRepository.findAllReadStatusByChannelId(channel.getId());
+        List<UUID> usersId = readStatusListTemp.stream()
+                .map(ReadStatus::getUserId)
+                .toList();
+
+        //가장 최근 메시지가 존재하면 해당 메시지의 시간 정보, 존재하지 않으면 Instant 기본값으로 DTO 생성
+        //채널 타입이 PRIVATE이면 usersId를 넣고, 아니면 null을 넣도록 구현
+        return ChannelFindResponse.from(channel, (recentMessage != null) ? recentMessage.getCreatedAt() : Instant.EPOCH, (channel.getType() == ChannelType.PRIVATE) ? usersId : null);
+    }
+    // 들어온 String 필드가 null 혹은 공백인지 검증하는 메서드
+    private void validateString(String str) {
+        if (str == null || str.isBlank()) {
+            throw new IllegalArgumentException("에러: 입력값이 Null 또는 공백입니다.");
+        }
+    }
+    // 들어온 UUID 필드가 null인지 검증하는 메서드
+    private void validateUUID(UUID id) {
+        if (id == null) {
+            throw new IllegalArgumentException("에러: 입력값이 Null입니다.");
+        }
     }
 }
