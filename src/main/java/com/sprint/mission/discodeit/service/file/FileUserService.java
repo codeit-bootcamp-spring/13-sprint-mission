@@ -33,7 +33,7 @@ public class FileUserService implements UserService {
             throw new IllegalArgumentException("유저 ID를 찾을 수가 없습니다.");
         }
 
-       User user = repository.read(id);
+       User user = repository.find(id);
 
        if (user == null) {
             throw new IllegalArgumentException("존재하지 않는 유저 ID입니다.");
@@ -43,7 +43,7 @@ public class FileUserService implements UserService {
 
     @Override
     public List<User> readAll() {
-        return repository.readAll();
+        return repository.findAll();
     }
 
     @Override
@@ -54,7 +54,7 @@ public class FileUserService implements UserService {
             String passWord
     ) {
 
-        User user = repository.read(id);
+        User user = repository.find(id);
 
         user.updateUserName(userName);
         user.updateEmail(email);

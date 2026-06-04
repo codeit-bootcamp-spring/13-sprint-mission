@@ -25,12 +25,12 @@ public class JCFUserRepository implements UserRepository {
     }
 
     @Override
-    public User read(UUID id) {
+    public User find(UUID id) {
         return data.get(id);
     }
 
     @Override
-    public List<User> readAll() {
+    public List<User> findAll() {
         return new ArrayList<>(data.values());
     }
 

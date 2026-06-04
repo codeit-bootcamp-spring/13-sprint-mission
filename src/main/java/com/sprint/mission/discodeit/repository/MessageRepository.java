@@ -8,9 +8,9 @@ public interface MessageRepository {
 
     void create(Message message);
 
-    Message read(UUID id);
+    Message find(UUID id);
 
-    List<Message> readAll();
+    List<Message> findAll();
 
     void update(UUID id, Message message);
 

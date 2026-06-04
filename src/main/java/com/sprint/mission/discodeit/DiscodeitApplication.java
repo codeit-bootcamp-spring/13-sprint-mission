@@ -7,11 +7,13 @@ import com.sprint.mission.discodeit.service.*;
 import com.sprint.mission.discodeit.service.basic.*;
 import com.sprint.mission.discodeit.service.file.*;
 import org.springframework.boot.*;
+import org.springframework.boot.autoconfigure.*;
 import org.springframework.context.*;
 
 import java.nio.file.*;
 import java.util.*;
 
+@SpringBootApplication
 public class DiscodeitApplication {
 
 	public static void main(String[] args) {

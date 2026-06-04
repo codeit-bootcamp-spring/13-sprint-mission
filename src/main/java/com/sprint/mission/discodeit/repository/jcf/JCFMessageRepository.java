@@ -31,12 +31,12 @@ public class JCFMessageRepository implements MessageRepository {
     }
 
     @Override
-    public Message read(UUID id) {
+    public Message find(UUID id) {
         return data.get(id);
     }
 
     @Override
-    public List<Message> readAll() {
+    public List<Message> findAll() {
         return new ArrayList<>(data.values());
     }
 

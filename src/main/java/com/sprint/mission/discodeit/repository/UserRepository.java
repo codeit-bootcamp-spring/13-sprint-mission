@@ -8,9 +8,9 @@ public interface UserRepository {
 
     void create(User user);
 
-    User read(UUID id);
+    User find(UUID id);
 
-    List<User> readAll();
+    List<User> findAll();
 
     void update(UUID id, User user);
 

@@ -33,12 +33,12 @@ public class JCFChannelService implements ChannelService {
             throw new IllegalArgumentException("존재하지 않는 ID입니다.");
         }
 
-        return repository.read(id);
+        return repository.find(id);
     }
 
     @Override
     public List<Channel> readAll() {
-        return repository.readAll();
+        return repository.findAll();
     }
 
     @Override
@@ -51,7 +51,7 @@ public class JCFChannelService implements ChannelService {
             throw new IllegalArgumentException("존재하지 않는 채널 ID입니다.");
         }
 
-        Channel channel = repository.read(id);
+        Channel channel = repository.find(id);
         channel.update(name, description, type);
 
         repository.update(id, channel);

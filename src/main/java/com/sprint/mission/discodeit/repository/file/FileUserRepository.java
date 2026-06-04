@@ -14,8 +14,12 @@ public class FileUserRepository implements UserRepository {
     private final List<User> users = new ArrayList<>();
     private final Path userPath;
 
-    public FileUserRepository(Path userPath) {
-        this.userPath = userPath;
+    public FileUserRepository() {
+        this(Paths.get("data/users.ser"));
+    }
+
+    public FileUserRepository(Path usersPath) {
+        this.userPath = usersPath;
         loadFromFile();
     }
 
@@ -31,7 +35,7 @@ public class FileUserRepository implements UserRepository {
     }
 
     @Override
-    public User read(UUID id) {
+    public User find(UUID id) {
         for (User user : users) {
             if (user.getId().equals(id)) {
                 return user;
@@ -53,7 +57,7 @@ public class FileUserRepository implements UserRepository {
     }
 
     @Override
-    public List<User> readAll() {
+    public List<User> findAll() {
         return new ArrayList<>(users);
     }
 

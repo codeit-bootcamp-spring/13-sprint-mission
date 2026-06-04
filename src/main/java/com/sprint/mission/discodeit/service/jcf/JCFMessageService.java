@@ -55,12 +55,12 @@ public class JCFMessageService implements MessageService {
             throw new IllegalArgumentException("존재하지 않는 메시지 ID입니다.");
         }
 
-        return repository.read(messageId);
+        return repository.find(messageId);
     }
 
     @Override
     public List<Message> readAll() {
-        return repository.readAll();
+        return repository.findAll();
     }
 
     @Override
@@ -73,7 +73,7 @@ public class JCFMessageService implements MessageService {
             throw new IllegalArgumentException("수정할 메시지가 존재하지 않습니다.");
         }
 
-        Message message = repository.read(id);
+        Message message = repository.find(id);
         message.updateContent(content);
 
         repository.update(id, message);

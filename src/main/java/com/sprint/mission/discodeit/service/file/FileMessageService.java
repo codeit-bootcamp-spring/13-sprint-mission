@@ -31,7 +31,7 @@ public class FileMessageService implements MessageService{
         if (id == null) {
             throw new IllegalArgumentException("메세지 ID가 없습니다.");
         }
-        Message message = repository.read(id);
+        Message message = repository.find(id);
         if (message == null) {
             throw new IllegalArgumentException("존재하지 않는 메세지 ID입니다.");
         }
@@ -54,7 +54,7 @@ public class FileMessageService implements MessageService{
 
     @Override
     public List<Message> readAll() {
-        return repository.readAll();
+        return repository.findAll();
     }
 
     @Override
@@ -67,7 +67,7 @@ public class FileMessageService implements MessageService{
             throw new IllegalArgumentException("존재하지 않는 메세지 ID입니다.");
         }
 
-        Message message = repository.read(id);
+        Message message = repository.find(id);
         message.updateContent(content);
 
         repository.update(id, message);

@@ -14,8 +14,12 @@ public class FileMessageRepository implements MessageRepository {
     private final List<Message> messages = new ArrayList<>();
     private final Path messagePath;
 
-    public FileMessageRepository(Path messagePath) {
-        this.messagePath = messagePath;
+    public FileMessageRepository() {
+        this(Paths.get("data/messages.ser"));
+    }
+
+    public FileMessageRepository(Path messagesPath) {
+        this.messagePath = messagesPath;
         loadFromFile();
     }
 
@@ -30,7 +34,7 @@ public class FileMessageRepository implements MessageRepository {
     }
 
     @Override
-    public Message read(UUID id) {
+    public Message find(UUID id) {
         for (Message message : messages) {
             if (message.getId().equals(id)) {
                 return message;
@@ -41,7 +45,7 @@ public class FileMessageRepository implements MessageRepository {
     }
 
     @Override
-    public List<Message> readAll() {
+    public List<Message> findAll() {
         return new ArrayList<>(messages);
     }
 

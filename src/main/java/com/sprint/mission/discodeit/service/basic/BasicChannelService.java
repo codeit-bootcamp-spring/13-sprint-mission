@@ -28,7 +28,7 @@ public class BasicChannelService implements ChannelService {
         if (id == null) {
             throw new IllegalArgumentException("채널 ID는 필수입니다.");
         }
-        Channel channel = repository.read(id);
+        Channel channel = repository.find(id);
 
         if (channel == null) {
             throw new IllegalArgumentException("존재하지 않는 채널 ID입니다.");
@@ -39,7 +39,7 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public List<Channel> readAll() {
-        return repository.readAll();
+        return repository.findAll();
     }
 
     @Override
@@ -52,7 +52,7 @@ public class BasicChannelService implements ChannelService {
             throw new IllegalArgumentException("존재하지 않는 채널 ID입니다.");
         }
 
-        Channel channel = repository.read(id);
+        Channel channel = repository.find(id);
         channel.update(name, description, type);
 
         repository.update(id, channel);
@@ -66,7 +66,7 @@ public class BasicChannelService implements ChannelService {
         if (id == null) {
             throw new IllegalArgumentException("채널 ID는 필수입니다.");
         }
-        if (repository.read(id) == null) {
+        if (repository.find(id) == null) {
             throw new IllegalArgumentException("존재하지 않는 채널 ID입니다.");
         }
         repository.delete(id);

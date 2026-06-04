@@ -28,7 +28,6 @@ public class Message extends BaseEntity implements Serializable {
         if (channelId == null) {
             throw new IllegalArgumentException("채널 ID 작성은 필수입니다.");
         }
-        this.channelId = channelId;
     }
 
     private void validateAuthorId(UUID authorId) {

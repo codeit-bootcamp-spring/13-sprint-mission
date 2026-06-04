@@ -31,7 +31,7 @@ public class JCFUserService implements UserService {
             throw new IllegalArgumentException("유저 ID는 필수입니다.");
         }
 
-        User user = repository.read(id);
+        User user = repository.find(id);
 
         if (user == null) {
             throw new IllegalArgumentException("유저 정보가 없습니다.");
@@ -42,7 +42,7 @@ public class JCFUserService implements UserService {
 
     @Override
     public List<User> readAll() {
-        return repository.readAll();
+        return repository.findAll();
     }
 
     @Override
@@ -53,7 +53,7 @@ public class JCFUserService implements UserService {
             String passWord
     ) {
 
-        User user = repository.read(id);
+        User user = repository.find(id);
 
         user.updateUserName(userName);
         user.updateEmail(email);

@@ -27,6 +27,10 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
+springBoot {
+	mainClass = 'com.sprint.mission.discodeit.DiscodeitApplication'
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
 }

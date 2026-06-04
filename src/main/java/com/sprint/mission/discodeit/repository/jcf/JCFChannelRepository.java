@@ -25,12 +25,12 @@ public class JCFChannelRepository implements ChannelRepository {
     }
 
     @Override
-    public Channel read (UUID id){
+    public Channel find (UUID id){
         return data.get(id);
     }
 
     @Override
-    public List<Channel> readAll () {
+    public List<Channel> findAll() {
         return new ArrayList<>(data.values());
     }
 

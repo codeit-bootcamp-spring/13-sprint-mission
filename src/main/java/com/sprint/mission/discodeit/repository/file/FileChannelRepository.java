@@ -14,6 +14,10 @@ public class FileChannelRepository implements ChannelRepository {
     private final List<Channel> channels = new ArrayList<>();
     private final Path channelPath;
 
+    public FileChannelRepository() {
+        this(Paths.get("data/channels.ser"));
+    }
+
     public FileChannelRepository(Path channelPath) {
         this.channelPath = channelPath;
         loadFromFile();
@@ -26,7 +30,7 @@ public class FileChannelRepository implements ChannelRepository {
     }
 
     @Override
-    public Channel read(UUID id) {
+    public Channel find(UUID id) {
         for (Channel channel : channels) {
             if (channel.getId().equals(id)) {
                 return channel;
@@ -37,7 +41,7 @@ public class FileChannelRepository implements ChannelRepository {
     }
 
     @Override
-    public List<Channel> readAll() {
+    public List<Channel> findAll() {
         return new ArrayList<>(channels);
     }
 
