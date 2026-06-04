@@ -8,6 +8,7 @@ import java.util.UUID;
 
 public interface UserRepository {
 
+    boolean existsUserById(UUID userId);
     boolean existsUserByName(String name);
     boolean existsUserByEmail(String email);
     void createUser(User user);

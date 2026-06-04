@@ -1,127 +1,151 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.MessageUpdateResponse;
+import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
+import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BasicMessageService implements MessageService {
 
     //필드
     private final MessageRepository messageRepository;
+    private final UserRepository userRepository;
+    private final ChannelRepository channelRepository;
+    private final BinaryContentRepository binaryContentRepository;
 
     //interface
     @Override
-    public Message createMessage(User user, Channel channel, String message) {
-        if (message == null || message.isBlank()) throw new RuntimeException("에러: 메세지는 공백일 수 없습니다.");
-        if (channel == null || user == null) throw new RuntimeException("에러: 메세지, 유저는 null이면 안됩니다.");
-        if (!validateUserExistsChannel(channel, user)){
-            System.out.println("에러: 해당 유저는 이 채널에 존재하지 않습니다.");
-            return null;
+    public Message createMessage(MessageCreateRequest request) {
+        //입력값 검증 처리하겠습니다
+        validateString(request.content());
+        validateUUID(request.authorId());
+        validateUUID(request.channelId());
+
+        //존재하는 유저, 채널인지 검증
+        validateUserExists(request.authorId());
+        validateChannelExists(request.channelId());
+
+        //첨부파일 추가 작업
+        List<UUID> binaryContentIdList = new ArrayList<>();
+        for (String attachmentPath : request.attachmentPathList()) {
+            if (attachmentPath != null && !attachmentPath.isBlank()) {
+                //binaryContent 생성
+                BinaryContent binaryContent = new BinaryContent(attachmentPath);
+                binaryContentRepository.createBinaryContent(binaryContent);
+                binaryContentIdList.add(binaryContent.getId());
+            }
         }
 
-        Message newMessage = new Message(message, user, channel);
-        messageRepository.createMessage(newMessage);
+        //메세지 생성
+        Message message = new Message(request.content(), request.authorId(), request.channelId(), binaryContentIdList);
+        messageRepository.createMessage(message);
+        log.info("메시지: {}가 생성됨.", message.getContent());
 
-        user.addMessage(newMessage);
-        channel.addMessage(newMessage);
-        System.out.println("메세지: \n" + newMessage + "\n가 생성됨.\n" );
-
-        return newMessage;
+        return message;
     }
 
     @Override
-    public void printMessage(Message message) {
-        if (message == null) throw new RuntimeException("에러: 메세지는 null이면 안됩니다.");
+    public List<Message> findAllByChannelId(UUID channelId) {
+        //입력값 검증 처리하겠습니다
+        validateUUID(channelId);
 
-        Message messageTemp = messageRepository.findMessage(message)
-                .orElseThrow(() -> new RuntimeException("에러: 해당 메세지는 데이터파일에 존재하지 않습니다."));
-
-        System.out.println(messageTemp + "\n");
+        return messageRepository.findAllMessagesByChannelId(channelId);
     }
 
     @Override
-    public void printAllMessages() {
-        List<Message> messages = messageRepository.findAll();
-        for (Message message : messages) {
-            System.out.println(message + "\n");
-        }
-    }
+    public MessageUpdateResponse updateMessage(UUID messageId, MessageUpdateRequest request) {
+        //입력값 검증 처리하겠습니다
+        validateUUID(messageId);
+        validateString(request.content());
 
-    @Override
-    public void editMessage(Message message, User user, String newMessage) {
-        if (newMessage == null || newMessage.isBlank()) throw new RuntimeException("에러: 새 메세지는 공백일 수 없습니다.\n");
-        if (message == null || user == null) throw new RuntimeException("에러: 메세지, 유저는 null이면 안됩니다.\n");
-        if (!validateMessageWriter(message, user)){
-            System.out.println("에러: 해당 메세지 작성자가 아니므로 수정 불가.");
-            return;
+        //메시지 검색
+        Message messageTemp = messageRepository.findMessageById(messageId)
+                .orElseThrow(() -> new RuntimeException("에러: 해당 메시지는 데이터파일에 존재하지 않습니다."));
+
+        //이전 첨부파일 삭제
+        for (UUID attachmentId : messageTemp.getAttachmentIds()) {
+            binaryContentRepository.deleteBinaryContent(attachmentId);
         }
 
-        Message messageTemp = messageRepository.findMessage(message)
-                .orElseThrow(() -> new RuntimeException("에러: 해당 메세지는 데이터파일에 존재하지 않습니다."));
+        //첨부파일 추가 작업
+        List<UUID> binaryContentIdList = new ArrayList<>();
+        for (String attachmentPath : request.attachmentPathList()) {
+            if (attachmentPath != null && !attachmentPath.isBlank()) {
+                //binaryContent 생성
+                BinaryContent binaryContent = new BinaryContent(attachmentPath);
+                binaryContentRepository.createBinaryContent(binaryContent);
+                binaryContentIdList.add(binaryContent.getId());
+            }
+        }
 
-        System.out.println("메세지: \n{" + messageTemp + "}가 수정됨.\n -> [Message: " + newMessage + "]\n");
-        messageTemp.updateMessage(newMessage);
-
+        //메시지 업데이트
+        messageTemp.updateMessage(request.content(), binaryContentIdList);
         messageRepository.save();
+
+        return MessageUpdateResponse.from(messageTemp);
     }
 
     @Override
-    public Message deleteMessage(Message message, User user) {
-        if (message == null || user == null) throw new RuntimeException("에러: 메세지, 유저는 null이면 안됩니다.");
-        if (!validateMessageWriter(message, user)){
-            System.out.println("에러: 해당 메세지 작성자가 아니므로 삭제 불가.");
-            return message;
+    public void deleteMessage(UUID messageId) {
+        //입력값 검증 처리하겠습니다
+        validateUUID(messageId);
+
+        //메시지 검색
+        Message messageTemp = messageRepository.findMessageById(messageId)
+                .orElseThrow(() -> new RuntimeException("에러: 해당 메시지는 데이터파일에 존재하지 않습니다."));
+
+        //첨부파일 삭제
+        for (UUID attachmentId : messageTemp.getAttachmentIds()) {
+            binaryContentRepository.deleteBinaryContent(attachmentId);
         }
 
-        Message messageTemp = messageRepository.findMessage(message)
-                .orElseThrow(() -> new RuntimeException("에러: 해당 메세지는 데이터파일에 존재하지 않습니다."));
+        //메시지 삭제
+        messageRepository.deleteMessageById(messageTemp.getId());
 
-        messageTemp.getUser().removeMessage(messageTemp);
-        messageTemp.getChannel().removeMessage(messageTemp);
-
-        System.out.println("메세지: " + messageTemp + "가 삭제됨.\n" );
-        messageRepository.deleteMessage(messageTemp);
-
-        return null;
-    }
-
-    @Override
-    public void printWriter(Message message) {
-        if (message == null) throw new RuntimeException("에러: 메세지는 null이면 안됩니다.");
-
-        Message messageTemp = messageRepository.findMessage(message)
-                .orElseThrow(() -> new RuntimeException("에러: 해당 메세지는 데이터파일에 존재하지 않습니다."));
-
-        System.out.println("Writer: " + messageTemp.getUser().getName());
-    }
-
-    @Override
-    public void printChannel(Message message) {
-        if (message == null) throw new RuntimeException("에러: 메세지는 null이면 안됩니다.");
-
-        Message messageTemp = messageRepository.findMessage(message)
-                .orElseThrow(() -> new RuntimeException("에러: 해당 메세지는 데이터파일에 존재하지 않습니다."));
-
-        System.out.println("Wrote Channel Name: " + messageTemp.getChannel().getName());
+        log.info("메시지: {}가 삭제됨.", messageTemp.getContent());
     }
 
 
-    //들어온 user가 message의 작성자이면 true반환, 아니면 false 반환
-    private boolean validateMessageWriter(Message message, User user) {
-        return message.getUser().getId().equals(user.getId());
+    // 들어온 String 필드가 null 혹은 공백인지 검증하는 메서드
+    private void validateString(String str) {
+        if (str == null || str.isBlank()) {
+            throw new IllegalArgumentException("에러: 입력값이 Null 또는 공백입니다.");
+        }
     }
-
-    //들어온 user가 해당 channel에 존재하면 true반환, 아니면 false 반환
-    private boolean validateUserExistsChannel(Channel channel, User user) {
-        return channel.getUsers().stream().anyMatch(userTemp -> userTemp.getId().equals(user.getId()));
+    // 들어온 UUID 필드가 null인지 검증하는 메서드
+    private void validateUUID(UUID id) {
+        if (id == null) {
+            throw new IllegalArgumentException("에러: 입력값이 Null입니다.");
+        }
     }
-
+    // 들어온 userId 필드가 레포지터리에 존재하는지 검증하는 메서드
+    private void validateUserExists(UUID userId) {
+        if (!userRepository.existsUserById(userId)) {
+            throw new RuntimeException("유저: " + userId + "이 존재하지 않습니다.");
+        }
+    }
+    // 들어온 channelId필드가 레포지터리에 존재하는지 검증하는 메서드
+    private void validateChannelExists(UUID channelId) {
+        if (!channelRepository.existsChannelById(channelId)) {
+            throw new RuntimeException("채널: " + channelId + "이 존재하지 않습니다.");
+        }
+    }
 }

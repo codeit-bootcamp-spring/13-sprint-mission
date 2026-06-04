@@ -10,6 +10,7 @@ import java.util.UUID;
 
 public interface ChannelRepository {
 
+    boolean existsChannelById(UUID channelId);
     void createChannel(Channel channel);
     Optional<Channel> findChannelById(UUID channelId);
     List<Channel> findAllChannelsByChannelType(ChannelType channelType);

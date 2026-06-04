@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record ChannelFindResponse(
+        UUID channelId,
         ChannelType type,
         String name,
         String description,
@@ -16,6 +17,7 @@ public record ChannelFindResponse(
 ) {
     public static ChannelFindResponse from(Channel channel, Instant recentMessageTime, List<UUID> usersId) {
         return new ChannelFindResponse(
+                channel.getId(),
                 channel.getType(),
                 channel.getName(),
                 channel.getDescription(),
