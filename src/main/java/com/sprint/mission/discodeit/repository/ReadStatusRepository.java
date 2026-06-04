@@ -7,7 +7,8 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 public interface ReadStatusRepository {
-    ReadStatus save(ReadStatus readStatus);
+    void save(ReadStatus readStatus);
     List<ReadStatus> find(Predicate<ReadStatus> fn);
+    ReadStatus findByID(UUID id);
     void delete(UUID id);
 }

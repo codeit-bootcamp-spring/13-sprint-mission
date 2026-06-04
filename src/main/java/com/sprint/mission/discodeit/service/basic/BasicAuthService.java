@@ -23,7 +23,7 @@ public class BasicAuthService implements AuthService {
         if (!user.getPassword().equals(login.getPassword())) throw new RuntimeException("Invalid email or password");
 
 
-        UserStatus ust = usr.findStatusByUserID(user.getId());
+        UserStatus ust = usr.findByUserID(user.getId());
         // login time update to now
         ust.setUpdatedAt();
 

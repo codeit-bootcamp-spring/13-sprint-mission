@@ -44,9 +44,17 @@ public class BasicUserService implements UserService {
                 .build();
         fur.save(user);
 
-        usr.save(user.getId());
+        usr.save(UserStatus.builder()
+                .userID(user.getId())
+                .build());
+
         if (upf.getThumbnail() != null){
-            bcr.save(user.getId(),upf.getThumbnail());
+            bcr.save(
+                    BinaryContent.builder()
+                            .authorID(user.getId())
+                            .contentID(upf.getThumbnail())
+                            .build()
+            );
         }
     }
 
@@ -55,7 +63,7 @@ public class BasicUserService implements UserService {
         User user;
         try {
             user = fur.find((c) -> c.getId().equals(id)).get(0);
-            UserStatus ust = usr.findStatusByUserID(user.getId());
+            UserStatus ust = usr.findByUserID(user.getId());
             return UserOutput.builder()
                     .name(user.getName())
                     .email(user.getEmail())
@@ -73,14 +81,14 @@ public class BasicUserService implements UserService {
                 .map(u -> UserOutput.builder()
                         .name(u.getName())
                         .email(u.getEmail())
-                        .online(usr.findStatusByUserID(u.getId()).online())
+                        .online(usr.findByUserID(u.getId()).online())
                         .build())
                 .toList();
     }
 
     @Override
     public BinaryObjectOutput getUserThumbnail(UUID id){
-        BinaryContent bct = bcr.findContantByAuthorID(id).orElseThrow(RuntimeException::new);
+        BinaryContent bct = bcr.findByID(id);
         return BinaryObjectOutput.builder()
                 .contentID(bct.getContentID())
                 .build();
@@ -90,7 +98,6 @@ public class BasicUserService implements UserService {
     public void updateProfileInfo(UUID id, String name, String pw){
         // name duplicate check.
         if (!fur.find(c -> c.getName().equals(name)).isEmpty()) return;
-
 
         User user = fur.find(c -> c.getId().equals(id)).get(0);
         user.setName(name);
@@ -105,14 +112,13 @@ public class BasicUserService implements UserService {
         // check user exist.
         if (!fur.find(c -> c.getId().equals(id)).isEmpty()) return;
 
-        try{
-            bcr.findContantByAuthorID(id)
-                    .orElseThrow(RuntimeException::new)
-                    .setContentID(upf.getThumbnail());
-        } catch (RuntimeException e){
-            bcr.save(id, upf.getThumbnail());
-        }
-
+        bcr.delete(bcr.findByAuthorID(id).getId());
+        bcr.save(
+                BinaryContent.builder()
+                        .contentID(upf.getThumbnail())
+                        .authorID(id)
+                        .build()
+        );
     }
 
     @Override

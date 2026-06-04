@@ -7,9 +7,9 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 public interface BinaryContentRepository {
-    BinaryContent save(BinaryContent bc);
+    void save(BinaryContent bc);
     List<BinaryContent> find(Predicate<BinaryContent> fn);
     BinaryContent findByID(UUID id);
-    void update(BinaryContent bc);
-    void delete(UUID authorID);
+    BinaryContent findByAuthorID(UUID userID);
+    void delete(UUID id);
 }
