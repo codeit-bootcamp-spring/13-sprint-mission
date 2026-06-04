@@ -3,7 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.input.Login;
 import com.sprint.mission.discodeit.dto.input.UserProfile;
 import com.sprint.mission.discodeit.dto.output.BinaryObjectOutput;
-import com.sprint.mission.discodeit.dto.output.UserState;
+import com.sprint.mission.discodeit.dto.output.UserOutput;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
@@ -51,12 +51,12 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public UserState getUserById(UUID id){
+    public UserOutput getUserById(UUID id){
         User user;
         try {
             user = fur.find((c) -> c.getId().equals(id)).get(0);
             UserStatus ust = usr.findStatusByUserID(user.getId());
-            return UserState.builder()
+            return UserOutput.builder()
                     .name(user.getName())
                     .email(user.getEmail())
                     .online(ust.online())
@@ -67,10 +67,10 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public List<UserState> getUserList(){
+    public List<UserOutput> getUserList(){
         return fur.find(((c) -> true))
                 .stream()
-                .map(u -> UserState.builder()
+                .map(u -> UserOutput.builder()
                         .name(u.getName())
                         .email(u.getEmail())
                         .online(usr.findStatusByUserID(u.getId()).online())
