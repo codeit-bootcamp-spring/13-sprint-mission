@@ -2,7 +2,9 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.input.Login;
 import com.sprint.mission.discodeit.dto.input.UserProfile;
+import com.sprint.mission.discodeit.dto.output.BinaryObjectOutput;
 import com.sprint.mission.discodeit.dto.output.UserState;
+import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -77,18 +79,32 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    public BinaryObjectOutput getUserThumbnail(UUID id){
+        BinaryContent bct = bcr.findContantByAuthorID(id).orElseThrow(RuntimeException::new);
+        return BinaryObjectOutput.builder()
+                .contentID(bct.getContentID())
+                .build();
+    }
+
+    @Override
     public void updateProfileInfo(UUID id, String name, String pw){
         // name duplicate check.
-        boolean check = fur.find(c -> c.getName().equals(name)).isEmpty();
-        if (!check){
-            return;
-        }
+        if (!fur.find(c -> c.getName().equals(name)).isEmpty()) return;
 
-        fur.update(id, name, pw);
+
+        User user = fur.find(c -> c.getId().equals(id)).get(0);
+        user.setName(name);
+        user.setPassword(pw);
+        user.setUpdatedAt();
+
+        fur.save(user);
     }
 
     @Override
     public void updateProfileImage(UUID id, UserProfile upf) {
+        // check user exist.
+        if (!fur.find(c -> c.getId().equals(id)).isEmpty()) return;
+
         try{
             bcr.findContantByAuthorID(id)
                     .orElseThrow(RuntimeException::new)
@@ -98,7 +114,6 @@ public class BasicUserService implements UserService {
         }
 
     }
-
 
     @Override
     public void deleteUser(UUID id){

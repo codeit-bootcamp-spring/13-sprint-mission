@@ -1,8 +1,7 @@
 package com.sprint.mission.discodeit.repository.file;
 
 
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.Message;
+
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import org.springframework.stereotype.Repository;
@@ -34,7 +33,7 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
     }
 
     @Override
-    public List<User> find(Predicate<User> fn){
+    public List<User> find(Predicate<User> fn) throws RuntimeException {
         try (
                 Stream<Path> paths = Files.list(DIRECTORY)
         ){

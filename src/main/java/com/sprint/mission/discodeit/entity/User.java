@@ -1,23 +1,18 @@
 package com.sprint.mission.discodeit.entity;
 
 
+import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
+@Builder
 public class User extends BaseEntity {
+
+    private final String email;
+    private String password;
     private String name;
-    private String userId;
-    private String userPw;
-
-    // 기타 사용자 프로필 정보.
-    public User(String name, String userId, String userPw) {
-        super();
-        this.name = name;
-        this.userId = userId;
-        this.userPw = userPw;
-
-        //this.joinedChannel = new ArrayList<>()
-    }
 
     // temp ToString
     @Override
@@ -27,22 +22,9 @@ public class User extends BaseEntity {
                 + "createdAt : " + this.getCreatedAt() + "\n"
                 + "updatedAt :" + this.getUpdatedAt() + "\n"
                 + "name : " + this.name + "\n"
-                + "userId :" + this.userId + "\n"
-                + "userPw : " + this.userPw + "\n";
+                + "userId :" + this.email + "\n"
+                + "userPw : " + this.password + "\n";
         return res;
-    }
-
-
-    public void setName(String name){
-        this.name = name;
-    }
-
-    public void setUserId(String userId){
-        this.userId = userId;
-    }
-
-    public void setUserPw(String userPw){
-        this.userPw = userPw;
     }
 
 
