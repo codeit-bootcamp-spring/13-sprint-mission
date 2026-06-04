@@ -26,13 +26,12 @@ public class FileMessageRepository extends FileBaseRepository implements Message
     }
 
     @Override
-    public void create(User user, Channel channel, String data){
-        Message msg = new Message(user.getId(), channel.getId(), data);
+    public void save(Message msg) {
         this.save(DIRECTORY.resolve(msg.getId() + ".ser"),msg);
     }
 
     @Override
-    public ArrayList<Message> select(Predicate<Message> fn){
+    public List<Message> find(Predicate<Message> fn){
         try {
             Files.list(DIRECTORY).forEach(path -> {
                 System.out.println(path.toString());
@@ -40,12 +39,12 @@ public class FileMessageRepository extends FileBaseRepository implements Message
             List<Message> d = Files.list(DIRECTORY)
                     .map(c -> (Message) load(DIRECTORY.resolve(c)))
                     .toList();
-            return new ArrayList<>(d.stream()
+            return d.stream()
                     .filter(fn)
-                    .toList());
+                    .toList();
         } catch (IOException e) {
             e.printStackTrace();
-            return new ArrayList<>();
+            return List.of();
         }
     }
 

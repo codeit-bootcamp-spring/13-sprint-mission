@@ -23,37 +23,35 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
     }
 
     @Override
-    public void create(String name, String id, String pw){
-        User user = new User(name, id, pw);
+    public void save(User user){
         this.save(DIRECTORY.resolve(user.getId()+ ".ser"),user);
     }
 
     @Override
-    public ArrayList<User> select(Predicate<User> fn){
+    public List<User> find(Predicate<User> fn){
         try {
             List<User> d = Files.list(DIRECTORY)
                     .map(c -> (User) load(DIRECTORY.resolve(c)))
                     .toList();
-            return new ArrayList<>(d.stream()
+            return d.stream()
                     .filter(fn)
-                    .toList());
+                    .toList();
         } catch (IOException e) {
             e.printStackTrace();
-            return new ArrayList<>();
+            return List.of();
         }
     }
 
 
     @Override
-    public void update(UUID id, String name, String userID, String pw){
+    public void update(UUID id, String name, String pw){
         try {
             Files.list(DIRECTORY)
                     .filter(path -> path.equals(DIRECTORY.resolve(id.toString() + ".ser")))
                     .map(c -> {
                         User user = load(DIRECTORY.resolve(c));
                         user.setName(name);
-                        user.setUserId(userID);
-                        user.setUserPw(pw);
+                        user.setPassword(pw);
                         user.setUpdatedAt();
                         save(DIRECTORY.resolve(user.getId().toString() + ".ser"),user);
                         return null;

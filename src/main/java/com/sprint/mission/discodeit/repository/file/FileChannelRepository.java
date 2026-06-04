@@ -24,23 +24,22 @@ public class FileChannelRepository extends FileBaseRepository implements Channel
     }
 
     @Override
-    public void create(String name, String description, ChannelType type) {
-        Channel channel = new Channel(name, description, type);
-        this.save(DIRECTORY.resolve(channel.getId()+ ".ser"), channel);
+    public void save(Channel cnl) {
+        this.save(DIRECTORY.resolve(cnl.getId()+ ".ser"), cnl);
     }
 
     @Override
-    public ArrayList<Channel> select (Predicate<Channel> fn) {
+    public List<Channel> find (Predicate<Channel> fn) {
         try {
             List<Channel> d = Files.list(DIRECTORY)
                     .map(c -> (Channel) load(DIRECTORY.resolve(c)))
                     .toList();
-            return new ArrayList<>(d.stream()
+            return d.stream()
                             .filter(fn)
-                            .toList());
+                            .toList();
         } catch (IOException e) {
             e.printStackTrace();
-            return new ArrayList<>();
+            return List.of();
         }
     }
 

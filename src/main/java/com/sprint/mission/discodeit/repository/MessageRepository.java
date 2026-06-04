@@ -5,13 +5,14 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
 
 public interface MessageRepository {
-    void create(User user, Channel channel, String data);
-    ArrayList<Message> select(Predicate<Message> fn);
+    void save(Message message);
+    List<Message> find(Predicate<Message> fn);
     void update(UUID id, String data);
     void delete(UUID id);
 }

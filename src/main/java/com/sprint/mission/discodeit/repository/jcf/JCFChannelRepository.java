@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -20,26 +21,16 @@ public class JCFChannelRepository implements ChannelRepository {
         data = new HashMap<>();
     }
 
-    public static JCFChannelRepository open() {
-        return JCR.INSTANCE;
+    @Override
+    public void save(Channel cnl) {
+        data.put(cnl.getId(),cnl);
     }
 
     @Override
-    public void create(String name, String description, ChannelType type) {
-        Channel channel = new Channel(name, description, type);
-        for (int i = 0; i < 3; i++){
-            if (this.data.containsKey(channel
-                    .getId())) channel
-                    = new Channel(name, description, type);
-        }
-        data.put(channel.getId(),channel);
-    }
-
-    @Override
-    public ArrayList<Channel> select (Predicate<Channel> fn) {
-        return new ArrayList<>(data.values().stream()
+    public List<Channel> find (Predicate<Channel> fn) {
+        return data.values().stream()
                 .filter(fn)
-                .toList());
+                .toList();
     }
 
     @Override
@@ -48,7 +39,7 @@ public class JCFChannelRepository implements ChannelRepository {
         cnl.setName(name);
         cnl.setDescription(description);
         cnl.setType(type);
-        cnl.setUpdatedAt(System.currentTimeMillis());
+        cnl.setUpdatedAt();
     }
 
     @Override
@@ -56,7 +47,4 @@ public class JCFChannelRepository implements ChannelRepository {
         data.remove(channel);
     }
 
-
-    // File * Repository 와의 호환성을 위한 더미 메서드
-    public void close(){}
 }

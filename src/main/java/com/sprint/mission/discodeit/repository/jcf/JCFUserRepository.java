@@ -3,8 +3,8 @@ package com.sprint.mission.discodeit.repository.jcf;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -22,38 +22,28 @@ public class JCFUserRepository implements UserRepository {
     }
 
     @Override
-    public void create(String name, String id, String pw){
-        for (int i = 0; i < 3; i ++){
-            User user = new User(name, id, pw);
-            if (!this.data.containsKey(user.getId())) {
-                data.put(user.getId(), user);
-                break;
-            }
-        }
+    public void save(User user) {
+        data.put(user.getId(), user);
     }
 
     @Override
-    public ArrayList<User> select(Predicate<User> fn){
-         return new ArrayList<>(data.values().stream()
+    public List<User> find(Predicate<User> fn){
+         return data.values().stream()
                 .filter(fn)
-                .toList());
+                .toList();
     }
 
     @Override
-    public void update(UUID id, String name, String userID, String pw){
+    public void update(UUID id, String name, String pw){
         User user = data.get(id);
         user.setName(name);
-        user.setUserId(userID);
-        user.setUserPw(pw);
-        user.setUpdatedAt(System.currentTimeMillis());
+        user.setPassword(pw);
+        user.setUpdatedAt();
     }
 
     @Override
     public void delete(UUID id){
         data.remove(id);
     }
-
-    // File * Repository 와의 호환성을 위한 더미 메서드
-    public void close(){}
 
 }
