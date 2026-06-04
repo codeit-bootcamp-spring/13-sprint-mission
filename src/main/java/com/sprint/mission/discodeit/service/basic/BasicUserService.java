@@ -3,18 +3,18 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.UserService;
+import lombok.*;
+import org.springframework.stereotype.*;
 
 import java.util.List;
 import java.util.UUID;
 
+@Service
+@RequiredArgsConstructor
 public class BasicUserService implements UserService {
 
     private final UserRepository repository;
-
-    public BasicUserService(UserRepository repository) {
-        this.repository = repository;
-    }
-
+    
     @Override
     public User create(String userName, String email, String passWord) {
         User user = new User(userName, email, passWord);

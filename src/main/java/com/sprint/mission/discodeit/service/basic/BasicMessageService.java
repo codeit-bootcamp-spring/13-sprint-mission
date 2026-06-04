@@ -3,24 +3,19 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
+import lombok.*;
+import org.springframework.stereotype.*;
 
 import java.util.*;
 
+@Service
+@RequiredArgsConstructor
 public class BasicMessageService implements MessageService {
 
     private final MessageRepository repository;
     private final UserService userService;
     private final ChannelService channelService;
 
-    public BasicMessageService(
-            MessageRepository repository,
-            UserService userService,
-            ChannelService channelService
-    ) {
-        this.repository = repository;
-        this.userService = userService;
-        this.channelService = channelService;
-    }
     @Override
     public Message read(UUID id) {
         if (id == null) {

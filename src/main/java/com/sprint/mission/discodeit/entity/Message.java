@@ -1,8 +1,11 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.*;
+
 import java.io.*;
 import java.util.*;
 
+@Getter
 public class Message extends BaseEntity implements Serializable {
 
     private String content; // 메세지 내용
@@ -21,10 +24,6 @@ public class Message extends BaseEntity implements Serializable {
         this.authorId = authorId;
     }
 
-    public UUID getChannelId() {
-        return channelId;
-    }
-
     private void validateChannelId(UUID channelId) {
         if (channelId == null) {
             throw new IllegalArgumentException("채널 ID 작성은 필수입니다.");
@@ -32,18 +31,10 @@ public class Message extends BaseEntity implements Serializable {
         this.channelId = channelId;
     }
 
-    public UUID getAuthorId() {
-        return authorId;
-    }
-
     private void validateAuthorId(UUID authorId) {
         if (authorId == null) {
             throw new IllegalArgumentException("작성자 ID는 필수입니다.");
         }
-    }
-
-    public String getContent() {
-        return content;
     }
 
     private void validateContent(String content) {

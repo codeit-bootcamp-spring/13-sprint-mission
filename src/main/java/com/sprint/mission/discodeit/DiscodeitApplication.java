@@ -6,6 +6,8 @@ import com.sprint.mission.discodeit.repository.file.*;
 import com.sprint.mission.discodeit.service.*;
 import com.sprint.mission.discodeit.service.basic.*;
 import com.sprint.mission.discodeit.service.file.*;
+import org.springframework.boot.*;
+import org.springframework.context.*;
 
 import java.nio.file.*;
 import java.util.*;
@@ -14,27 +16,16 @@ public class DiscodeitApplication {
 
 	public static void main(String[] args) {
 
-		UserRepository userRepository =
-				new FileUserRepository(Paths.get("data/users.ser"));
-
-		ChannelRepository channelRepository =
-				new FileChannelRepository(Paths.get("data/channels.ser"));
-
-		MessageRepository messageRepository =
-				new FileMessageRepository(Paths.get("data/messages.ser"));
+		ConfigurableApplicationContext context = SpringApplication.run(DiscodeitApplication.class, args);
 
 		UserService userService =
-				new BasicUserService(userRepository);
+				context.getBean(UserService.class);
 
 		ChannelService channelService =
-				new BasicChannelService(channelRepository);
+				context.getBean(ChannelService.class);
 
 		MessageService messageService =
-				new BasicMessageService(
-						messageRepository,
-						userService,
-						channelService
-				);
+				context.getBean(MessageService.class);
 
 		printFileStatus();
 

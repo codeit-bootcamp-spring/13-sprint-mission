@@ -1,8 +1,11 @@
 package com.sprint.mission.discodeit.entity;
 
 
+import lombok.*;
+
 import java.io.*;
 
+@Getter
 public class Channel extends BaseEntity implements Serializable {
 
     private ChannelType type; // 채널 공개여부
@@ -14,10 +17,6 @@ public class Channel extends BaseEntity implements Serializable {
         validateName(name); // 채널 이름
         validateDescription(description); // 채널 설명
         validateType(type);
-    }
-
-    public String getDescription() {
-        return description;
     }
 
     private void validateDescription(String description) {
@@ -33,10 +32,6 @@ public class Channel extends BaseEntity implements Serializable {
         setUpdatedAt();
     }
 
-    public String getName() {
-        return name;
-    }
-
     private void validateName(String name) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("채널 이름은 필수입니다.");
@@ -48,10 +43,6 @@ public class Channel extends BaseEntity implements Serializable {
         validateName(name);
         this.name = name;
         setUpdatedAt();
-    }
-
-    public ChannelType getType() {
-        return type;
     }
 
     private void validateType(ChannelType type) {
