@@ -13,6 +13,7 @@ public interface UserRepository {
     void createUser(User user);
     Optional<User> findUserByEmail(String email);
     Optional<User> findUserById(UUID userId);
+    Optional<User> findUserByNameAndPassword(String username, String password);
     List<User> findAll();
     void save();
     void deleteUser(UUID id);
