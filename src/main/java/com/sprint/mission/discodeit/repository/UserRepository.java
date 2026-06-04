@@ -4,21 +4,17 @@ import com.sprint.mission.discodeit.entity.User;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface UserRepository {
 
-//    void saveToBinary();
-//    void loadFromBinary();
-
-    void save();
+    boolean existsUserByName(String name);
     boolean existsUserByEmail(String email);
     void createUser(User user);
     Optional<User> findUserByEmail(String email);
+    Optional<User> findUserById(UUID userId);
     List<User> findAll();
-//    void updateUser(User user);
-    void deleteUser(User user);
-
-
-
+    void save();
+    void deleteUser(UUID id);
 
 }

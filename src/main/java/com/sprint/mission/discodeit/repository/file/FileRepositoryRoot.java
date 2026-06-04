@@ -54,7 +54,7 @@ public abstract class FileRepositoryRoot<T extends EntityRoot>{
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("역직렬화에 실패했습니다.");
         } catch (IOException e) {
-            throw new RuntimeException("역직렬화에 실패했습니다22.");
+            throw new RuntimeException("역직렬화에 실패했습니다.");
         }
     }
 }
