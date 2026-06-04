@@ -1,5 +1,9 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
+
+@Getter
+
 public class Message extends AllApply {
 
 	String content;
@@ -11,17 +15,6 @@ public class Message extends AllApply {
 		this.content = content;
 		this.author = author;
 		this.channel = channel;
-	}
-	
-	public String getContent() {
-		return content;
-	}
-	
-	public User getAuthor() {
-		return author;
-	}
-	public Channel getChannel() {
-		return channel;
 	}
 	
 	public void author(User author) {
@@ -36,7 +29,7 @@ public class Message extends AllApply {
 	@Override
 	public String toString() {
 		return "[Channel: " + getChannel().getName() + "] " + "\n" +
-				"Author: " + getAuthor().getName() + "\n" +
+				"Author: " + getAuthor().getName()+ "\n" +
 				"Content: " + getContent() + "\n" +
 				"Time: " + getUpdateAt()+ "\n";
 	}

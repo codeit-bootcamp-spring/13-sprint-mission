@@ -1,7 +1,8 @@
 package com.sprint.mission.discodeit.entity;
 
-import java.util.UUID;
+import lombok.Getter;
 
+@Getter
 public class Channel extends AllApply {
 
 	String name;
@@ -18,23 +19,6 @@ public class Channel extends AllApply {
 		this.creator = creator;
 		this.type = type;
 	}
-	
-	public String getName() {
-		return name;
-	}
-	
-	public String getNameDescription() {
-		return nameDescription;
-	}
-	
-	public User getCreator() {
-		return creator;
-	}
-
-	public ChannelType getType() {
-		return type;
-	}
-
 
 	public void update(String name, String nameDescription) {
 		this.name = name;
@@ -45,7 +29,7 @@ public class Channel extends AllApply {
 	@Override
 	public String toString() {
 		return "Channel[" +
-				"id= " + getId() +
+				"id= " + getId() + "\n" +
 				"Name=" + getName() + "\n" +
 				"NameDescription=" + getNameDescription() + "\n" +
 				"Creator=" + (creator == null ? null : getCreator())+ "\n" +

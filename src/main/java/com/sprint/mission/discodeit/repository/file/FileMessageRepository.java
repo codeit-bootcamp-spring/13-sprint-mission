@@ -2,12 +2,13 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
-
+import org.springframework.stereotype.Repository;
 
 
 import java.io.*;
 import java.util.*;
 
+@Repository
 public class FileMessageRepository implements MessageRepository {
 
     private final File messageFileRepo;
@@ -39,7 +40,7 @@ public class FileMessageRepository implements MessageRepository {
 
 
     public FileMessageRepository() {
-        this.messageFileRepo = new File("data/repository-message.ser");
+        this.messageFileRepo = new File("data/repository-message.json");
         this.messagesRepo = loadMessagesRepo();
 }
 
