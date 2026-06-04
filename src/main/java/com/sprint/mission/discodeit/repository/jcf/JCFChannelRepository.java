@@ -1,7 +1,6 @@
 package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 
 import java.util.HashMap;
@@ -18,6 +17,10 @@ public class JCFChannelRepository implements ChannelRepository {
 
     private JCFChannelRepository() {
         data = new HashMap<>();
+    }
+
+    public static JCFChannelRepository getInstance() {
+        return JCR.INSTANCE;
     }
 
     @Override

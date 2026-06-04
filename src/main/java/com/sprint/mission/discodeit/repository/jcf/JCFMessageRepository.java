@@ -20,6 +20,10 @@ public class JCFMessageRepository implements MessageRepository {
         data = new HashMap<>();
     }
 
+    public static JCFMessageRepository getInstance() {
+        return JMR.INSTANCE;
+    }
+
     @Override
     public void save(Message msg) {
         this.data.put(msg.getId(),msg);

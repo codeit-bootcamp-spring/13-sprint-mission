@@ -18,7 +18,7 @@ public class FileBaseRepository {
         check(path);
         try (
                 BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(path));
-                ObjectInputStream ois = new ObjectInputStream(bis);
+                ObjectInputStream ois = new ObjectInputStream(bis)
         ){
             return (T) ois.readObject();
         }

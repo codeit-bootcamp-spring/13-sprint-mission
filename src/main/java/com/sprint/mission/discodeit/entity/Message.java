@@ -3,22 +3,22 @@ package com.sprint.mission.discodeit.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 // memo - class ID 가 달라졌었음. 필드 받아가는 로직을 Getter로 바꾼것 뿐인데 왜?
 
 
 @Getter
+@Setter
 @AllArgsConstructor
 public class Message extends BaseEntity {
     private final UUID userID;
     private final UUID channelID;
-    private String data;
-    private final List<UUID> attrID = new ArrayList<>();
+    private String text;
+    private final Set<UUID> attrID;
 
 
 
@@ -31,15 +31,9 @@ public class Message extends BaseEntity {
                 + "updatedAt :" + this.getUpdatedAt() + "\n"
                 + "userId : " + this.userID.toString() + "\n"
                 + "channelId :" + this.channelID.toString() + "\n"
-                + "data : " + this.data + "\n";
+                + "data : " + this.text + "\n";
         return res;
     }
 
-    public void setMessages(String data) {
-        this.data = data;
-    }
-    public void addAttr(UUID attrID) {
-        this.attrID.add(attrID);
-    }
 
 }

@@ -6,7 +6,6 @@ import com.sprint.mission.discodeit.service.basic.BasicUserService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
 
 @Component
 public class DiscodeitInit implements CommandLineRunner {
