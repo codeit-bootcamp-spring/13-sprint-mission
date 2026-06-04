@@ -18,40 +18,40 @@ public class FileChannelService implements ChannelService {
    private final ChannelRepository channelRepository=new FileChannelRepository();
 
     @Override
-    public Channel createOne(ChannelType type, String name, Long createdAt) throws IOException {
+    public Channel createChannel(ChannelType type, String name, Long createdAt) throws IOException {
         Channel channel=new Channel(type, name, createdAt);
 
-        return channelRepository.createOne(channel);
+        return channelRepository.saveChannel(channel);
 
     }
 
     @Override
-    public Optional<Channel> readOne(UUID id) throws IOException {
-        return channelRepository.readOne(id);
+    public Optional<Channel> readChannel(UUID id) throws IOException {
+        return channelRepository.fineChannel(id);
     }
 
 
 
     @Override
-    public List<Channel> readAll() throws IOException {
+    public List<Channel> readChannels() throws IOException {
 
-        return channelRepository.readAll();
+        return channelRepository.findChannels();
     }
 
     @Override
-    public Channel editOne(UUID id, ChannelType newType, String newName, Long updatedAt) throws IOException {
+    public Channel editChannel(UUID id, ChannelType newType, String newName, Long updatedAt) throws IOException {
 
-        Channel channel=channelRepository.readOne(id)
+        Channel channel=channelRepository.fineChannel(id)
                 .orElseThrow();
-        channel.updateChannel(id,newType,newName,updatedAt);
-        channelRepository.createOne(channel);
+        channel.updateChannel(newType,newName,updatedAt);
+        channelRepository.saveChannel(channel);
         return channel;
     }
 
     @Override
-    public void deleteOne(UUID id) throws IOException {
+    public void deleteChannel(UUID id) throws IOException {
 
-        channelRepository.deleteOne(id); // 삭제는 리턴할 값 없음
+        channelRepository.deleteChannel(id); // 삭제는 리턴할 값 없음
     }
 
 }

@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -15,15 +14,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-
-
 public class FileUserRepository implements UserRepository {
 
-    private final Path userPath =Path.of("data/users.csv");
+    private static final String userFile = "users.csv";
 
     @Override
-    public User createOne(User user) throws IOException {
-
+    public User saveUser(User user) throws IOException {
+        Path userPath=Path.of("data", userFile);
         Path parent=userPath.getParent(); // 경로 실제로 존재하는지 확인하기 위해 부모 경로 확인
 
         if(parent!=null){ // null 체크 먼저 진행하자
@@ -38,7 +35,8 @@ public class FileUserRepository implements UserRepository {
     }
 
     @Override
-    public Optional<User> readOne(UUID id) throws IOException {
+    public Optional<User> findUser(UUID id) throws IOException {
+        Path userPath=Path.of("data", userFile);
         try (BufferedReader reader = Files.newBufferedReader(userPath, StandardCharsets.UTF_8)) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -69,8 +67,9 @@ public class FileUserRepository implements UserRepository {
     }
 
     @Override
-    public List<User> readAll() throws IOException {
+    public List<User> findUsers() throws IOException {
         List<User> allResult=new ArrayList<>();
+        Path userPath=Path.of("data", userFile);
         try (BufferedReader reader=Files.newBufferedReader(userPath, StandardCharsets.UTF_8)) {
 
 
@@ -85,8 +84,9 @@ public class FileUserRepository implements UserRepository {
 
 
     @Override
-    public void deleteOne(UUID id) throws IOException {
+    public void deleteUser(UUID id) throws IOException {
         List<User> erase=new ArrayList<>();
+        Path userPath=Path.of("data", userFile);
         try (BufferedReader reader=Files.newBufferedReader(userPath, StandardCharsets.UTF_8)) {
 
 

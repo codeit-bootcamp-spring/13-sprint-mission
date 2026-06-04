@@ -14,24 +14,24 @@ public class JCFUserService implements UserService {
     UserRepository userRepository=new JCFUserRepository();
 
     @Override
-    public User createOne(String username, String email, Long createdAt) throws IOException {
+    public User createUser(String username, String email, Long createdAt) throws IOException {
         User user =new User(username, email, createdAt);
-        return userRepository.createOne(user);
+        return userRepository.saveUser(user);
     }
 
     @Override
-    public Optional<User> readOne(UUID id) throws IOException { // 단건, 다건
-        return userRepository.readOne(id);
+    public Optional<User> readUser(UUID id) throws IOException { // 단건, 다건
+        return userRepository.findUser(id);
     }
 
     @Override
-    public List<User> readAll() throws IOException {
-        return userRepository.readAll();
+    public List<User> readUsers() throws IOException {
+        return userRepository.findUsers();
     }
 
     @Override
-    public User editOne(UUID id, String newUserName, String newEmail, Long updatedAt) throws IOException {
-        User user=userRepository.readOne(id)
+    public User editUser(UUID id, String newUserName, String newEmail, Long updatedAt) throws IOException {
+        User user=userRepository.findUser(id)
                 .orElseThrow();
         user.updateUser(newUserName, newEmail, updatedAt);
 
@@ -39,8 +39,8 @@ public class JCFUserService implements UserService {
     }
 
     @Override
-    public void deleteOne(UUID id) throws IOException {
-        userRepository.deleteOne(id);
+    public void deleteUser(UUID id) throws IOException {
+        userRepository.deleteUser(id);
     }
 }
 

@@ -19,18 +19,17 @@ public interface MessageService {
     // [도메인 모델 이름]Service 인터페이스 네이밍 규칙
 
     // 생성
-    Message createOne(UUID channelId, String content, Long createdAt) throws IOException;
+    Message createMessage(UUID channelId, String content, Long createdAt) throws IOException;
 
     // 읽기
-    Optional<Message> readOne(UUID id) throws IOException;
-    List<Message> readAll() throws IOException;
+    Optional<Message> readMessage(UUID id) throws IOException;
+    List<Message> readMessages() throws IOException;
 
     // 수정
-    Message editOne(UUID id,  UUID newChannelId, String newContent, Long updatedAt) throws IOException;
-
+    Message editMessage(UUID id, UUID newChannelId, String newContent, Long updatedAt) throws IOException;
 
     // 삭제
-    void deleteOne(UUID id) throws IOException; // 삭제는 반환할 값이 없기 때문에 void
+    void deleteMessage(UUID id) throws IOException; // 삭제는 반환할 값이 없기 때문에 void
 
 
 

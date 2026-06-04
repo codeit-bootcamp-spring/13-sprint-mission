@@ -9,11 +9,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ChannelRepository {
-    Channel createOne(Channel channel) throws IOException;
+    Channel saveChannel(Channel channel) throws IOException;
 
-    Optional<Channel> readOne(UUID id) throws IOException;
+    Optional<Channel> fineChannel(UUID id) throws IOException;
 
-    List<Channel> readAll() throws IOException;
+    List<Channel> findChannels() throws IOException;
 
-    void deleteOne(UUID id) throws IOException;
+    void deleteChannel(UUID id) throws IOException;
 }

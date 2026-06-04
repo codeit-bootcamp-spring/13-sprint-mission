@@ -10,23 +10,23 @@ public class JCFMessageRepository implements MessageRepository {
     private final Map<UUID, Message> data=new HashMap<>();
 
     @Override
-    public Message createOne(Message message) {
+    public Message saveMessage(Message message) {
         data.put(message.getId(), message);
         return message;
     }
 
     @Override
-    public Optional<Message> readOne(UUID id) {
+    public Optional<Message> findMessage(UUID id) {
         return Optional.ofNullable(data.get(id));
     }
 
     @Override
-    public List<Message> readAll() {
+    public List<Message> findMessages() {
         return new ArrayList<>(data.values());
     }
 
     @Override
-    public void deleteOne(UUID id) {
+    public void deleteMessage(UUID id) {
         data.remove(id);
     }
 

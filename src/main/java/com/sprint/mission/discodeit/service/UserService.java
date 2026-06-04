@@ -19,18 +19,18 @@ public interface UserService {
     // 인터페이스에도 throws IOException 추가
 
     // 생성
-    User createOne(String username, String email, Long createdAt) throws IOException;
+    User createUser(String username, String email, Long createdAt) throws IOException;
 
     // 읽기
-    Optional<User> readOne(UUID id) throws IOException;
-    List<User> readAll() throws IOException;
+    Optional<User> readUser(UUID id) throws IOException;
+    List<User> readUsers() throws IOException;
 
     // 수정
-    User editOne(UUID id, String newUserName, String newEmail, Long updatedAt) throws IOException;
+    User editUser(UUID id, String newUserName, String newEmail, Long updatedAt) throws IOException;
 
 
     // 삭제
-    void deleteOne(UUID id) throws IOException; // 삭제는 반환할 값이 없기 때문에 void
+    void deleteUser(UUID id) throws IOException; // 삭제는 반환할 값이 없기 때문에 void
 
 
 }

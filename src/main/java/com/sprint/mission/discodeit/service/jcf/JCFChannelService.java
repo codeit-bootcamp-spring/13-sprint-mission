@@ -22,37 +22,37 @@ public class JCFChannelService implements ChannelService {
 
 
     @Override
-    public Channel createOne(ChannelType type, String name, Long createdAt) throws IOException {
+    public Channel createChannel(ChannelType type, String name, Long createdAt) throws IOException {
         Channel channel=new Channel(type, name, createdAt);
         //data.put(newChannel.getId(), newChannel);
         //return newChannel;
-        return channelRepository.createOne(channel);
+        return channelRepository.saveChannel(channel);
     }
 
     @Override
-    public Optional<Channel> readOne(UUID id) throws IOException { // 단건, 다건
+    public Optional<Channel> readChannel(UUID id) throws IOException { // 단건, 다건
         //return Optional.ofNullable(data.get(id));
-        return channelRepository.readOne(id);
+        return channelRepository.fineChannel(id);
     }
 
     @Override
-    public List<Channel> readAll() throws IOException {
-        return channelRepository.readAll();
+    public List<Channel> readChannels() throws IOException {
+        return channelRepository.findChannels();
         //return new ArrayList<>(data.values());
     }
 
     @Override
-    public Channel editOne(UUID id, ChannelType newType, String newName, Long updatedAt) throws IOException {
-        Channel channel=channelRepository.readOne(id)
+    public Channel editChannel(UUID id, ChannelType newType, String newName, Long updatedAt) throws IOException {
+        Channel channel=channelRepository.fineChannel(id)
                 .orElseThrow();
-        channel.updateChannel(id, newType, newName, updatedAt);
+        channel.updateChannel(newType, newName, updatedAt);
         return channel;
 
     }
 
     @Override
-    public void deleteOne(UUID id) throws IOException {
-        channelRepository.deleteOne(id);
+    public void deleteChannel(UUID id) throws IOException {
+        channelRepository.deleteChannel(id);
         //data.remove(id);
     }
 }

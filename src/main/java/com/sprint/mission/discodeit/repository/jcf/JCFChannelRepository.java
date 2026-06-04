@@ -11,23 +11,23 @@ public class JCFChannelRepository implements ChannelRepository {
     private final Map<UUID, Channel> data=new HashMap<>();
 
     @Override
-    public Channel createOne(Channel channel) {
+    public Channel saveChannel(Channel channel) {
         data.put(channel.getId(), channel);
         return channel;
     }
 
     @Override
-    public Optional<Channel> readOne(UUID id) {
+    public Optional<Channel> fineChannel(UUID id) {
         return Optional.ofNullable(data.get(id));
     }
 
     @Override
-    public List<Channel> readAll() {
+    public List<Channel> findChannels() {
         return new ArrayList<>(data.values());
     }
 
     @Override
-    public void deleteOne(UUID id) {
+    public void deleteChannel(UUID id) {
         data.remove(id);
     }
 }

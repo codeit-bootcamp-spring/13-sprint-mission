@@ -20,29 +20,29 @@ public class JCFMessageService implements MessageService {
     private final MessageRepository messageRepository=new JCFMessageRepository();
 
     @Override
-    public Message createOne(UUID channelId, String content, Long createdAt) throws IOException {
+    public Message createMessage(UUID channelId, String content, Long createdAt) throws IOException {
         Message message =new Message(channelId, content, createdAt);
 
         // data.put(message.getId(), message);
-        return messageRepository.createOne(message);
+        return messageRepository.saveMessage(message);
     }
 
     @Override
-    public Optional<Message> readOne(UUID id) throws IOException { // 단건, 다건
-        return messageRepository.readOne(id);
+    public Optional<Message> readMessage(UUID id) throws IOException { // 단건, 다건
+        return messageRepository.findMessage(id);
         //return Optional.ofNullable(data.get(id));
     }
 
     @Override
-    public List<Message> readAll() throws IOException {
-        return messageRepository.readAll();
+    public List<Message> readMessages() throws IOException {
+        return messageRepository.findMessages();
         //return new ArrayList<>(data.values());
     }
 
     @Override
-    public Message editOne(UUID id, UUID newChannelId, String newContent, Long updatedAt) throws IOException {
+    public Message editMessage(UUID id, UUID newChannelId, String newContent, Long updatedAt) throws IOException {
         //Message message=data.get(id);
-        Message message=messageRepository.readOne(id)
+        Message message=messageRepository.findMessage(id)
                 .orElseThrow();
         message.updateMessage(newChannelId, newContent, updatedAt);
 
@@ -50,8 +50,8 @@ public class JCFMessageService implements MessageService {
     }
 
     @Override
-    public void deleteOne(UUID id) throws IOException {
-        messageRepository.deleteOne(id);
+    public void deleteMessage(UUID id) throws IOException {
+        messageRepository.deleteMessage(id);
         //data.remove(id);
     }
 
