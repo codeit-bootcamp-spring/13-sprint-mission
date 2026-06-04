@@ -67,6 +67,12 @@ public class Channel extends BaseEntity implements Serializable {
         setUpdatedAt();
     }
 
+    public void update(String name, String description, ChannelType type) {
+        updateName(name);
+        updateDescription(description);
+        updateType(type);
+    }
+
     @Override
     public String toString() {
         return "Channel: " +

@@ -1,16 +1,17 @@
-package com.sprint.mission.discodeit.service.jcf;
+package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.repository.*;
-import com.sprint.mission.discodeit.service.*;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.service.UserService;
 
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
-public class JCFUserService implements UserService {
+public class BasicUserService implements UserService {
 
     private final UserRepository repository;
 
-    public JCFUserService(UserRepository repository) {
+    public BasicUserService(UserRepository repository) {
         this.repository = repository;
     }
 
@@ -23,18 +24,16 @@ public class JCFUserService implements UserService {
         return user;
     }
 
-
     @Override
     public User read(UUID id) {
-
         if (id == null) {
-            throw new IllegalArgumentException("유저 ID는 필수입니다.");
+            throw new IllegalArgumentException("유저 ID를 찾을 수가 없습니다.");
         }
 
         User user = repository.read(id);
 
         if (user == null) {
-            throw new IllegalArgumentException("유저 정보가 없습니다.");
+            throw new IllegalArgumentException("존재하지 않는 유저 ID입니다.");
         }
 
         return user;
@@ -71,9 +70,9 @@ public class JCFUserService implements UserService {
         }
 
         if (!repository.exists(id)) {
-            throw new IllegalArgumentException("삭제할 유저가 존재하지 않습니다.");
+            throw new IllegalArgumentException("존재하지 않는 유저 ID입니다.");
         }
+
         repository.delete(id);
     }
 }
-

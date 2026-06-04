@@ -1,22 +1,18 @@
-package com.sprint.mission.discodeit.service.file;
+package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
-import org.springframework.stereotype.*;
 
-import java.io.*;
-import java.nio.file.*;
 import java.util.*;
 
-
-public class FileMessageService implements MessageService{
+public class BasicMessageService implements MessageService {
 
     private final MessageRepository repository;
     private final UserService userService;
     private final ChannelService channelService;
 
-    public FileMessageService(
+    public BasicMessageService(
             MessageRepository repository,
             UserService userService,
             ChannelService channelService
@@ -25,7 +21,6 @@ public class FileMessageService implements MessageService{
         this.userService = userService;
         this.channelService = channelService;
     }
-
     @Override
     public Message read(UUID id) {
         if (id == null) {
@@ -40,9 +35,6 @@ public class FileMessageService implements MessageService{
 
     @Override
     public Message create(String content, UUID channelId, UUID authorId) {
-
-        userService.read(authorId);
-        channelService.read(channelId);
 
         Message message =
                 new Message(content, channelId, authorId);
@@ -68,6 +60,7 @@ public class FileMessageService implements MessageService{
         }
 
         Message message = repository.read(id);
+
         message.updateContent(content);
 
         repository.update(id, message);

@@ -3,13 +3,14 @@ package com.sprint.mission.discodeit.service.file;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
+import org.springframework.stereotype.*;
 
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
 
-public class FileUserService implements Serializable, UserService {
+public class FileUserService implements UserService {
 
    private final UserRepository repository;
 
@@ -18,11 +19,12 @@ public class FileUserService implements Serializable, UserService {
    }
 
     @Override
-    public void create(User user) {
-        if (user == null || user.getId() == null) {
-            throw new IllegalArgumentException("유저이름이 없습니다.");
-        }
+    public User create(String userName, String email, String passWord) {
+        User user = new User(userName, email, passWord);
+
         repository.create(user);
+
+        return user;
     }
 
     @Override
@@ -45,18 +47,23 @@ public class FileUserService implements Serializable, UserService {
     }
 
     @Override
-    public void update(UUID id, User user) {
-        if (id == null) {
-            throw new IllegalArgumentException("유저 ID를 찾을 수 없습니다.");
-        }
-        if (user == null || user.getId() == null) {
-            throw new IllegalArgumentException("유저가 없습니다.");
-        }
-        if (repository.read(id) == null){
-            throw new IllegalArgumentException("존재하지 않는 유저 ID입니다.");
-            }
+    public User update(
+            UUID id,
+            String userName,
+            String email,
+            String passWord
+    ) {
+
+        User user = repository.read(id);
+
+        user.updateUserName(userName);
+        user.updateEmail(email);
+        user.updatePassWord(passWord);
+
         repository.update(id, user);
-        }
+
+        return user;
+    }
 
     @Override
     public void delete(UUID id) {

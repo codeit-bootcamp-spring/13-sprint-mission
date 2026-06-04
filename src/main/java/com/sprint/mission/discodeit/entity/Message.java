@@ -9,12 +9,16 @@ public class Message extends BaseEntity implements Serializable {
     private UUID authorId; // 메세지를 작성한 유저
     private UUID channelId; // 어느 채널의 메세지
 
+    public Message(String content, UUID channelId, UUID authorId) {
 
-    public Message(String content, UUID authorId, UUID channelId) {
-        super();
-        validateAuthorId(authorId);
+        validateContent(content);
+        this.content = content;
+
         validateChannelId(channelId);
-        validaContent(content);
+        this.channelId = channelId;
+
+        validateAuthorId(authorId);
+        this.authorId = authorId;
     }
 
     public UUID getChannelId() {
@@ -36,22 +40,25 @@ public class Message extends BaseEntity implements Serializable {
         if (authorId == null) {
             throw new IllegalArgumentException("작성자 ID는 필수입니다.");
         }
-        this.authorId = authorId;
     }
 
     public String getContent() {
         return content;
     }
 
-    private void validaContent(String content) {
+    private void validateContent(String content) {
         if (content == null || content.isBlank()) {
             throw new IllegalArgumentException("메세지의 내용이 없습니다.");
         }
-        this.content = content;
     }
 
     public void updateContent(String content) {
-        validaContent(content);
+        validateContent(content);
+
+        if (content.equals(this.content)) {
+            return;
+        }
+
         this.content = content;
         setUpdatedAt();
     }

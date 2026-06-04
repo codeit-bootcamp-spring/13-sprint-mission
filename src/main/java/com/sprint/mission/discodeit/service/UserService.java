@@ -8,13 +8,13 @@ import java.util.*;
 
 public interface UserService {
 
-    void create(User user);
+    User create(String userName, String email, String passWord);
 
     User read(UUID id);
 
     List<User> readAll();
 
-    void update(UUID id, User user);
+    User update(UUID id, String userName, String email, String passWord);
 
     void delete(UUID id);
 

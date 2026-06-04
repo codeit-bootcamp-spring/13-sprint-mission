@@ -7,13 +7,13 @@ import java.util.*;
 
 public interface ChannelService {
 
-    void create(Channel channel);
+    Channel create(String name, String description, ChannelType type);
 
     Channel read(UUID id);
 
     List<Channel> readAll();
 
-    void update(UUID id, Channel channel);
+    Channel update(UUID id, String name, String description, ChannelType type);
 
     void delete(UUID id);
 

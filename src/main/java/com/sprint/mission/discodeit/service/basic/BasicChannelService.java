@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.service.jcf;
+package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
@@ -6,13 +6,13 @@ import com.sprint.mission.discodeit.service.*;
 
 import java.util.*;
 
-public class JCFChannelService implements ChannelService {
+public class BasicChannelService implements ChannelService {
 
-   private final ChannelRepository repository;
+    private final ChannelRepository repository;
 
-   public JCFChannelService(ChannelRepository repository) {
-       this.repository = repository;
-   }
+    public BasicChannelService(ChannelRepository repository) {
+        this.repository = repository;
+    }
 
     @Override
     public Channel create(String name, String description, ChannelType type) {
@@ -28,12 +28,13 @@ public class JCFChannelService implements ChannelService {
         if (id == null) {
             throw new IllegalArgumentException("채널 ID는 필수입니다.");
         }
+        Channel channel = repository.read(id);
 
-        if (!repository.exists(id)) {
-            throw new IllegalArgumentException("존재하지 않는 ID입니다.");
+        if (channel == null) {
+            throw new IllegalArgumentException("존재하지 않는 채널 ID입니다.");
         }
 
-        return repository.read(id);
+        return channel;
     }
 
     @Override
@@ -59,13 +60,14 @@ public class JCFChannelService implements ChannelService {
         return channel;
     }
 
+
     @Override
     public void delete(UUID id) {
         if (id == null) {
-            throw new IllegalArgumentException("ID가 존재하지 않습니다.");
+            throw new IllegalArgumentException("채널 ID는 필수입니다.");
         }
-        if (!repository.exists(id)) {
-            throw new IllegalArgumentException("삭제할 채널이 없습니다.");
+        if (repository.read(id) == null) {
+            throw new IllegalArgumentException("존재하지 않는 채널 ID입니다.");
         }
         repository.delete(id);
     }
