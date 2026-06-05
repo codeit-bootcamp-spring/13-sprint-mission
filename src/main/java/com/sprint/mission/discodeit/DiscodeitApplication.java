@@ -116,7 +116,7 @@ public class DiscodeitApplication {
 		}
 		System.out.println("==========================================");
 
-		// user2 정보 변경
+		// user2 정보 변경		//아마 정상이라면 file 테스트에서 두 번째 진행할 때는 수정하려는 이름이 중복되어 에러날 것
 		System.out.println("user2 정보 변경\n");
 		userService.updateUser(new UserUpdateRequest(user2.getId(), "박민재", "박민재@gmail.com", "MyNewPassword", null));
 		System.out.println("==========================================");
