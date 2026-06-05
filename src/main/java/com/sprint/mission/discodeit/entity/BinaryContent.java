@@ -12,7 +12,15 @@ public class BinaryContent {
     private UUID id;
     private Instant createdAt;
 
-    private UUID profileId;
-    private List<UUID> attachmentIds;
+    private UUID messageId;
+
+    private BinaryContent(UUID id, Instant createdAt) {
+        this.id = id;
+        this.createdAt = createdAt;
+        this.messageId = null;
+    }
+    public void updateMessageId(UUID messageId) {
+        this.messageId = messageId;
+    }
 
 }
