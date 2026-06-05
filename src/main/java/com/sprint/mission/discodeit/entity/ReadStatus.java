@@ -28,4 +28,9 @@ public class ReadStatus {
 
     }
 
+    public void update(Instant readAt) {
+        this.readAt = readAt;
+        this.updatedAt = Instant.now();
+    }
+
 }
