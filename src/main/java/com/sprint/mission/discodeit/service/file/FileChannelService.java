@@ -8,7 +8,7 @@ import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 
 import java.util.List;
-
+/*
 public class FileChannelService implements ChannelService {
 
     //필드

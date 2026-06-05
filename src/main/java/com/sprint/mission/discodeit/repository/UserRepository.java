@@ -12,7 +12,6 @@ public interface UserRepository {
     boolean existsUserByName(String name);
     boolean existsUserByEmail(String email);
     void createUser(User user);
-    Optional<User> findUserByEmail(String email);
     Optional<User> findUserById(UUID userId);
     Optional<User> findUserByNameAndPassword(String username, String password);
     List<User> findAll();

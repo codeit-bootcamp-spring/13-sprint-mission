@@ -10,42 +10,63 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public class FileMessageRepository extends FileRepositoryRoot<Message> implements MessageRepository {
 
+    //ctor
     public FileMessageRepository() {
         super(Path.of("data/messages.ser"));
     }
 
     //interface
     @Override
+    public void createMessage(Message message) {
+        storage.add(message);
+
+        saveToBinary();
+    }
+
+    @Override
+    public Optional<Message> findMessageById(UUID id) {
+        return storage.stream()
+                .filter(message -> message.getId().equals(id))
+                .findFirst();
+    }
+
+    @Override
+    public List<Message> findAllMessagesByChannelId(UUID channelId) {
+        return storage.stream()
+                .filter(message -> message.getChannelId().equals(channelId))
+                .toList();
+    }
+
+    @Override
     public void save() {
         saveToBinary();
     }
 
     @Override
-    public void createMessage(Message message) {
-        storage.add(message);
+    public void deleteMessagesByChannelId(UUID channelId) {
+        storage.removeAll(
+                storage.stream()
+                        .filter(message -> message.getChannelId().equals(channelId))
+                        .toList()
+        );
+
         saveToBinary();
     }
 
     @Override
-    public Optional<Message> findMessage(Message message) {
-        if (storage.contains(message)){
-            return Optional.of(message);
-        }
-        return Optional.empty();
-    }
+    public void deleteMessageById(UUID id) {
+        storage.remove(
+                storage.stream()
+                        .filter(message -> message.getId().equals(id))
+                        .findFirst()
+                        .get()
+        );
 
-    @Override
-    public List<Message> findAll() {
-        return storage;
-    }
-
-    @Override
-    public void deleteMessage(Message message) {
-        storage.remove(message);
         saveToBinary();
     }
 }

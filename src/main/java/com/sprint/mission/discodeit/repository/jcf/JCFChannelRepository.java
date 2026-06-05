@@ -1,28 +1,28 @@
 package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
+@Repository
+@NoArgsConstructor
 public class JCFChannelRepository implements ChannelRepository {
 
     //필드
     private final List<Channel> channels = new ArrayList<>();
 
-    //ctor
-    public JCFChannelRepository() {}
-
     //interface
     @Override
-    public void save() {}
-
-    @Override
-    public boolean existsChannelByName(String name) {
+    public boolean existsChannelById(UUID channelId) {
         return channels.stream()
-                .anyMatch(chanel -> chanel.getName().equals(name));
+                .anyMatch(channel -> channel.getId().equals(channelId));
     }
 
     @Override
@@ -31,19 +31,31 @@ public class JCFChannelRepository implements ChannelRepository {
     }
 
     @Override
-    public Optional<Channel> findChannelByName(String name) {
+    public Optional<Channel> findChannelById(UUID channelId) {
         return channels.stream()
-                .filter(channel -> channel.getName().equals(name))
+                .filter(channel -> channel.getId().equals(channelId))
                 .findFirst();
     }
 
     @Override
-    public List<Channel> findAll() {
-        return channels;
+    public List<Channel> findAllChannelsByChannelType(ChannelType channelType) {
+        return channels.stream()
+                .filter(channel -> channel.getType() == channelType)
+                .toList();
     }
 
     @Override
-    public void deleteChannel(Channel channel) {
-        channels.remove(channel);
+    public void save() {
+
+    }
+
+    @Override
+    public void deleteChannel(UUID channelId) {
+        channels.remove(
+                channels.stream()
+                        .filter(channel -> channel.getId().equals(channelId))
+                        .findFirst()
+                        .get()
+        );
     }
 }

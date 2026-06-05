@@ -9,7 +9,7 @@ import com.sprint.mission.discodeit.service.ChannelService;
 
 import java.util.ArrayList;
 import java.util.List;
-
+/*
 public class JCFChannelService implements ChannelService {
 
     //필드

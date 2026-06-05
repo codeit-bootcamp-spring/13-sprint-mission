@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class FileRepositoryRoot<T extends EntityRoot>{
+public abstract class FileRepositoryRoot<T>{
 
     //entity 저장 객체 및 저장 경로
     protected final List<T> storage = new ArrayList<>();

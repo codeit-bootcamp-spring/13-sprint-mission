@@ -2,22 +2,33 @@ package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
+@Repository
+@NoArgsConstructor
 public class JCFUserRepository implements UserRepository {
 
     //필드
     private final List<User> users = new ArrayList<>();
 
-    //ctor
-    public JCFUserRepository() {}
-
     //interface
     @Override
-    public void save() {}
+    public boolean existsUserById(UUID userId) {
+        return users.stream()
+                .anyMatch(user -> user.getId().equals(userId));
+    }
+
+    @Override
+    public boolean existsUserByName(String name) {
+        return users.stream()
+                .anyMatch(user -> user.getName().equals(name));
+    }
 
     @Override
     public boolean existsUserByEmail(String email) {
@@ -31,9 +42,16 @@ public class JCFUserRepository implements UserRepository {
     }
 
     @Override
-    public Optional<User> findUserByEmail(String email) {
+    public Optional<User> findUserById(UUID userId) {
         return users.stream()
-                .filter(user -> user.getEmail().equals(email))
+                .filter(user -> user.getId().equals(userId))
+                .findFirst();
+    }
+
+    @Override
+    public Optional<User> findUserByNameAndPassword(String username, String password) {
+        return users.stream()
+                .filter(user -> user.getName().equals(username) && user.getPassword().equals(password))
                 .findFirst();
     }
 
@@ -43,7 +61,17 @@ public class JCFUserRepository implements UserRepository {
     }
 
     @Override
-    public void deleteUser(User user) {
-        users.remove(user);
+    public void save() {
+
+    }
+
+    @Override
+    public void deleteUser(UUID id) {
+        users.remove(
+                users.stream()
+                        .filter(user -> user.getId().equals(id))
+                        .findFirst()
+                        .get()
+        );
     }
 }

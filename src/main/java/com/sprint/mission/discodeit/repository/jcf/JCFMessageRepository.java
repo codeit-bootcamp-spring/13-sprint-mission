@@ -2,43 +2,62 @@ package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
+import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
+@Repository
+@NoArgsConstructor
 public class JCFMessageRepository implements MessageRepository {
 
     //필드
     private final List<Message> messages = new ArrayList<>();
 
-    //ctor
-    public JCFMessageRepository() {}
-
     //interface
-    @Override
-    public void save() {}
-
     @Override
     public void createMessage(Message message) {
         messages.add(message);
     }
 
     @Override
-    public Optional<Message> findMessage(Message message) {
-        if(messages.contains(message)) {
-            return Optional.of(message);
-        }
-        return Optional.empty();
+    public Optional<Message> findMessageById(UUID id) {
+        return messages.stream()
+                .filter(message -> message.getId().equals(id))
+                .findFirst();
     }
 
     @Override
-    public List<Message> findAll() {
-        return messages;
+    public List<Message> findAllMessagesByChannelId(UUID channelId) {
+        return messages.stream()
+                .filter(message -> message.getChannelId().equals(channelId))
+                .toList();
     }
 
     @Override
-    public void deleteMessage(Message message) {
-        messages.remove(message);
+    public void save() {
+
+    }
+
+    @Override
+    public void deleteMessagesByChannelId(UUID channelId) {
+        messages.removeAll(
+                messages.stream()
+                        .filter(message -> message.getChannelId().equals(channelId))
+                        .toList()
+        );
+    }
+
+    @Override
+    public void deleteMessageById(UUID id) {
+        messages.remove(
+                messages.stream()
+                        .filter(message -> message.getId().equals(id))
+                        .findFirst()
+                        .get()
+        );
     }
 }
