@@ -8,40 +8,37 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public abstract class FileUserRepository implements UserRepository {
+//파일(Users.dat)에 사용자 데이터를 저장하는 Repository (프로그램이 종료되어도 데이터가 유지됨)
+public class FileUserRepository implements UserRepository {
     private final String filePath = "users.dat";
     private List<User> users = new ArrayList<>();
 
-    public FileUserRepository() {
-        load();
-    }
+    public FileUserRepository() { load(); }
 
-    //@Override
+    @Override
     public User save(User user) {
         users.add(user);
-        saveToFile();
+        save();
         return user;
     }
 
-    //@Override
-    public User findByld(UUID id){
+    @Override
+    public User findById(UUID id) {
         for (User user : users) {
             if (user.getId().equals(id))
                 return user;
         }
         return null;
     }
-
-    private void saveToFile() {
+    private void save() {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
             oos.writeObject(users);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
-    @SuppressWarnings("uncheked")
-    private void load() {
+    @SuppressWarnings("unchecked")
+    private  void load() {
         File file = new File(filePath);
         if (!file.exists()) {
             users = new ArrayList<>();
@@ -54,4 +51,18 @@ public abstract class FileUserRepository implements UserRepository {
         }
     }
 
+    @Override
+    public List<User> findAll() {
+        return new ArrayList<>(users);
+    }
+
+    @Override
+    public void delete(UUID id) {
+
+        users.removeIf(
+                user -> user.getId().equals(id)
+        );
+
+        save();
+    }
 }

@@ -4,10 +4,11 @@ import com.sprint.mission.discodeit.entity.Message;
 import java.util.UUID;
 import java.util.List;
 
-public abstract class MessageService {
-    public abstract void create(Message message);
-    public abstract Message read(UUID id);
-    public abstract List<Message> readAll();
-    public abstract void update(Message message);
-    public abstract void delete(UUID id);
+//Message 엔티티(메시지)용 CRUD 기능 인터페이스
+public interface MessageService {
+    void create(Message message); // (C) 메시지 생성
+    Message read(UUID id); // (R) 아이디로 메시지 한 개 조회
+    List<Message> readAll(); // (R) 모든 메시지 리스트 조회
+    void update(Message message); //(U) 메시지 내용 수정
+    void delete(UUID id); // (D) 메시지 삭제
 }
