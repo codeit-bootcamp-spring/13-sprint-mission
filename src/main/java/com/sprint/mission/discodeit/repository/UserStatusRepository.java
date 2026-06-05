@@ -9,6 +9,6 @@ import java.util.UUID;
 public interface UserStatusRepository {
     void save(UserStatus userStatus);
     UserStatus findById(UUID id);
-    Collection<UserStatus> findlByUserId(UUID userid);
+    Collection<UserStatus> findByUserId(UUID userid);
     void delete(UUID id);
 }
