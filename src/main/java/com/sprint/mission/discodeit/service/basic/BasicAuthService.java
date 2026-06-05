@@ -19,15 +19,20 @@ public class BasicAuthService implements AuthService {
 
     @Override
     public UserOutput login(Login login){
-        User user = ur.find(c-> c.getEmail().equals(login.getEmail())).get(0);
-        if (!user.getPassword().equals(login.getPassword())) throw new RuntimeException("Invalid email or password");
+        User user;
+        try {
+            user = ur.findByEmail(login.getEmail());
+            if (!user.getPassword().equals(login.getPassword())) throw new RuntimeException("Invalid email or password");
+        } catch (NullPointerException e){
+            throw new RuntimeException("no user in database");
+        }
 
-
+        // update userState.updatedAt time
         UserStatus ust = usr.findByUserID(user.getId());
-        // login time update to now
         ust.setUpdatedAt();
 
         return UserOutput.builder()
+                .id(user.getId())
                 .email(user.getEmail())
                 .name(user.getName())
                 .online(ust.online())

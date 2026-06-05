@@ -17,4 +17,15 @@ public class ChannelOutput {
     private final String channelDescription;
     private final Instant lastMsgTime;
     private final List<UUID> userIDs;
+
+    @Override
+    public String toString() {
+        return "ChannelOutput{" +
+                "channelID=" + channelID +
+                ", channelName='" + channelName + '\'' +
+                ", channelDescription='" + channelDescription + '\'' +
+                ", lastMsgTime=" + lastMsgTime +
+                ", userIDs=" + userIDs +
+                '}';
+    }
 }

@@ -29,7 +29,7 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
     public void save(User user){
         try {
             write(DIRECTORY.resolve(user.getId()+ ".ser"), user);
-            log.debug("User create - " + user.getId());
+            log.debug("User create - {}", user.getId());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -40,7 +40,6 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
         return rawFind(fn,DIRECTORY);
     }
 
-    // Todo - handle outOfindex exception
     @Override
     public User findByID(UUID id){
         try{
@@ -63,7 +62,7 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
     public void delete(UUID id){
         try {
             Files.delete(DIRECTORY.resolve(id.toString() + ".ser"));
-            log.debug("User deleted - " + id);
+            log.debug("User deleted - {}", id);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

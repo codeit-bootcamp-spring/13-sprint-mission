@@ -9,5 +9,7 @@ import java.util.function.Predicate;
 public interface ChannelRepository {
     void save(Channel channel);
     List<Channel> find(Predicate<Channel> fn);
+    List<Channel> findAll();
+    Channel findById(UUID id);
     void delete(UUID id);
 }

@@ -12,28 +12,30 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
 
+import java.time.Instant;
 import java.util.*;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BasicUserService implements UserService {
 
     private final UserRepository fur;
     private final UserStatusRepository usr;
     private final BinaryContentRepository bcr;
 
-    // Todo - check logic change.
     @Override
     public void createUser(Login lgn, UserProfile upf){
-        boolean check =  fur.find(((c) -> ! c.getEmail().equals(lgn.getEmail())))
-                .stream()
-                .noneMatch(c -> c.getName().equals(upf.getName()));
+        boolean check =  fur.findByEmail(lgn.getEmail()) != null
+                || fur.find(u -> u.getName().equals(upf.getName())) != null;
 
         if (!check){
+            log.debug("User create cancel - same name or email detached.");
             return;
         }
 
@@ -44,9 +46,13 @@ public class BasicUserService implements UserService {
                 .build();
         fur.save(user);
 
-        usr.save(UserStatus.builder()
+
+        UserStatus ust = UserStatus.builder()
                 .userID(user.getId())
-                .build());
+                .lastLogin(Instant.now())
+                .build();
+        usr.save(ust);
+
 
         if (upf.getThumbnail() != null){
             bcr.save(
@@ -112,7 +118,7 @@ public class BasicUserService implements UserService {
         // check user exist.
         if (!fur.find(c -> c.getId().equals(id)).isEmpty()) return;
 
-        bcr.delete(bcr.findByAuthorID(id).getId());
+        bcr.delete(bcr.findByAuthorID(id).get(0).getId());
         bcr.save(
                 BinaryContent.builder()
                         .contentID(upf.getThumbnail())
@@ -124,7 +130,9 @@ public class BasicUserService implements UserService {
     @Override
     public void deleteUser(UUID id){
         fur.delete(id);
-        bcr.delete(id);
-        usr.delete(id);
+        usr.delete(usr.findByUserID(id).getId());
+        if (!bcr.findByAuthorID(id).isEmpty()) {
+            bcr.delete(bcr.findByAuthorID(id).get(0).getId());
+        }
     }
 }

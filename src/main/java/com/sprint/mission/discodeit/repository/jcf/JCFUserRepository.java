@@ -39,6 +39,11 @@ public class JCFUserRepository implements UserRepository {
     }
 
     @Override
+    public User findByEmail(String email){
+        return find(u -> u.getEmail().equals(email)).get(0);
+    }
+
+    @Override
     public void delete(UUID id){
         data.remove(id);
     }

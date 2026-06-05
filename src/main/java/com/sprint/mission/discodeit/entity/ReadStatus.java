@@ -10,4 +10,12 @@ import java.util.UUID;
 public class ReadStatus extends BaseEntity {
     private final UUID userID;
     private final UUID channelID;
+
+    @Override
+    public String toString() {
+        return "ReadStatus{" +
+                "userID=" + userID +
+                ", channelID=" + channelID +
+                '}';
+    }
 }

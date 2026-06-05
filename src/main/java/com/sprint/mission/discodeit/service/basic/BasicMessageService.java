@@ -26,8 +26,8 @@ public class BasicMessageService implements MessageService {
     @Override
     public void createMessage(CreateMessageInput cmi){
 
-        if (ur.find(c -> c.getId().equals(cmi.getUserID())).isEmpty()) throw new RuntimeException();
-        if (!cr.find(ch -> ch.getId().equals(cmi.getChannelID())).isEmpty()) throw new RuntimeException();
+        if (ur.findByID(cmi.getUserID()) == null) throw new RuntimeException();
+        if (cr.findById(cmi.getChannelID()) == null) throw new RuntimeException();
 
         mr.save(new Message(cmi.getUserID(), cmi.getChannelID(), cmi.getMessage(), cmi.getDataIDs()));
     }
@@ -51,7 +51,7 @@ public class BasicMessageService implements MessageService {
     @Override
     public void deleteMessage(UUID id){
         mr.delete(id);
-        bcr.findContantByAuthorID(id)
+        bcr.findByAuthorID(id)
                 .forEach(b -> bcr.delete(b.getId()));
     }
 

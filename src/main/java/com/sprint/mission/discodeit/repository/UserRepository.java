@@ -11,5 +11,6 @@ public interface UserRepository {
     void save(User user);
     List<User> find(Predicate<User> fn);
     User findByID(UUID id);
+    User findByEmail(String email);
     void delete(UUID id);
 }

@@ -20,20 +20,13 @@ public class Message extends BaseEntity {
     private String text;
     private final Set<UUID> attrID;
 
-
-
-    // temp ToString
     @Override
-    public String toString(){
-        String res = " ===== Message ====== \n"
-                + "id : "  + this.getId() + "\n"
-                + "createdAt : " + this.getCreatedAt() + "\n"
-                + "updatedAt :" + this.getUpdatedAt() + "\n"
-                + "userId : " + this.userID.toString() + "\n"
-                + "channelId :" + this.channelID.toString() + "\n"
-                + "data : " + this.text + "\n";
-        return res;
+    public String toString() {
+        return "Message{" +
+                "userID=" + userID +
+                ", channelID=" + channelID +
+                ", text='" + text + '\'' +
+                ", attrID=" + attrID +
+                '}';
     }
-
-
 }

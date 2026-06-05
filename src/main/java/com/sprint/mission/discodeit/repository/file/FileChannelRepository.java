@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.util.function.Predicate;
 
 
 @Repository
+@Slf4j
 public class FileChannelRepository extends FileBaseRepository implements ChannelRepository {
     private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","channel");
 
@@ -26,6 +28,7 @@ public class FileChannelRepository extends FileBaseRepository implements Channel
     public void save(Channel cnl) throws RuntimeException {
         try {
             write(DIRECTORY.resolve(cnl.getId()+ ".ser"), cnl);
+            log.debug("Channel created - {}",cnl.getId());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -41,15 +44,21 @@ public class FileChannelRepository extends FileBaseRepository implements Channel
         return find(cnl -> true);
     }
 
+    // Todo - NullPointerException handle in fn
     @Override
     public Channel findById(UUID id) {
-        return find(cnl -> cnl.getId().equals(id)).get(0);
+        try {
+            return find(cnl -> cnl.getId().equals(id)).get(0);
+        } catch(IndexOutOfBoundsException e){
+            return null;
+        }
     }
 
     @Override
     public void delete(UUID cnl) {
         try {
             Files.delete(DIRECTORY.resolve(cnl.toString() + ".ser"));
+            log.debug("Channel deleted - {}",cnl);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

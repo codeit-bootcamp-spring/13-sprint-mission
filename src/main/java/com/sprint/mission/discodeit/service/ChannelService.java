@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public interface ChannelService {
     void createPublicChannel(ChannelProfile cnp);
-    void createPrivateChannel(CreateReadyStatusInput rsi);
+    void createPrivateChannel(UUID userID);
     ChannelOutput findChannelInfoById(UUID Channelid);
     List<ChannelOutput> findAllByUserID(UUID userID);
     void updateChannelInfo(UUID id, ChannelProfile cnp);

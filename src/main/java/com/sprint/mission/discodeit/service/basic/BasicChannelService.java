@@ -1,7 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.input.ChannelProfile;
-import com.sprint.mission.discodeit.dto.input.CreateReadyStatusInput;
 import com.sprint.mission.discodeit.dto.output.ChannelOutput;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -29,22 +28,27 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public void createPrivateChannel(CreateReadyStatusInput rsi){
-        rsr.save(new ReadStatus(rsi.getUserID(),rsi.getChannelID()));
-        cr.save(new Channel("", "", ChannelType.PRIVATE));
+    public void createPrivateChannel(UUID userID){
+        Channel cnl = new Channel("", "", ChannelType.PRIVATE);
+        cr.save(cnl);
+        rsr.save(new ReadStatus(userID,cnl.getId()));
     }
 
     @Override
     public ChannelOutput findChannelInfoById(UUID id) {
-        Channel cnl =  cr.find((c) -> c.getId().equals(id)).get(0);
-        List<Message> msg = mr.find(m -> m.getChannelID().equals(id));
-        // sort by cur to past
-        msg.sort(Comparator.comparing(BaseEntity::getUpdatedAt).reversed());
+        Channel cnl =  cr.findById(id);
+        // 일반 리스트 정렬시, immutableCollectios 예외를 뱉었음.
+        // stream 이나, 새로운 List 구현체를 반환해서 작업할 것.
+        List<Message> msg = mr.findByChannelID(cnl.getId())
+                .stream()
+                .sorted(Comparator.comparing(
+                        (m1) -> m1.getCreatedAt()
+                ))
+                .toList();
 
         List<UUID> userIDs;
         if (cnl.getType().equals(ChannelType.PRIVATE)) {
-            userIDs = rsr.find(c -> c.getChannelID().equals(cnl.getId()))
-                    .stream()
+            userIDs = rsr.findbyChennalID(cnl.getId()).stream()
                     .map(ReadStatus::getUserID)
                     .toList();
         } else {
@@ -55,7 +59,7 @@ public class BasicChannelService implements ChannelService {
                 .channelID(cnl.getId())
                 .channelName(cnl.getName())
                 .channelDescription(cnl.getDescription())
-                .lastMsgTime(msg.get(0).getUpdatedAt())
+                .lastMsgTime(!msg.isEmpty() ? msg.get(0).getUpdatedAt() : null)
                 .userIDs(userIDs)
                 .build();
     }
@@ -84,8 +88,8 @@ public class BasicChannelService implements ChannelService {
     public void deleteChannel(UUID id) {
         cr.delete(id);
         mr.find(m -> m.getChannelID().equals(id))
-                .forEach(c -> cr.delete(c.getId()));
-        rsr.find(m -> m.getChannelID().equals(id))
-                .forEach(c -> rsr.delete(c.getId()));
+                .forEach(ms -> mr.delete(ms.getId()));
+        rsr.find(r -> r.getChannelID().equals(id))
+                .forEach(rs -> rsr.delete(rs.getId()));
     }
 }

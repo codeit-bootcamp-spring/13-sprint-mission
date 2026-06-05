@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.repository.file;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.util.function.Predicate;
 
 @Repository
 @RequiredArgsConstructor
+@Slf4j
 public class FileBinaryContentRepository extends FileBaseRepository implements BinaryContentRepository {
     private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","binarycontent");
 
@@ -23,6 +25,7 @@ public class FileBinaryContentRepository extends FileBaseRepository implements B
     public void save(BinaryContent bc) {
         try {
             write(DIRECTORY.resolve(bc.getId()+ ".ser"), bc);
+            log.debug("BinaryContent created - {}",bc.getId());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -47,6 +50,7 @@ public class FileBinaryContentRepository extends FileBaseRepository implements B
     public void delete(UUID id) {
         try {
             Files.delete(DIRECTORY.resolve(id.toString() + ".ser"));
+            log.debug("BinaryContent deleted - {}",id);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.repository.file;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.util.function.Predicate;
 
 @Repository
 @RequiredArgsConstructor
+@Slf4j
 public class FileReadStatusRepository extends FileBaseRepository implements ReadStatusRepository {
     private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","readstatus");
 
@@ -23,6 +25,7 @@ public class FileReadStatusRepository extends FileBaseRepository implements Read
     public void save(ReadStatus rs) {
         try {
             write(DIRECTORY.resolve(rs.getId()+ ".ser"), rs);
+            log.debug("ReadStatus create - {}", rs.getId());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -47,6 +50,7 @@ public class FileReadStatusRepository extends FileBaseRepository implements Read
     public void delete(UUID id) {
         try {
             Files.delete(DIRECTORY.resolve(id.toString() + ".ser"));
+            log.debug("ReadStatus delete - {}", id);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

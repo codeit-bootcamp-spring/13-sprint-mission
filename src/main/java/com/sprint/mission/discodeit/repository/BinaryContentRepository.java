@@ -10,6 +10,6 @@ public interface BinaryContentRepository {
     void save(BinaryContent bc);
     List<BinaryContent> find(Predicate<BinaryContent> fn);
     BinaryContent findByID(UUID id);
-    BinaryContent findByAuthorID(UUID userID);
+    List<BinaryContent> findByAuthorID(UUID userID);
     void delete(UUID id);
 }

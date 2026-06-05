@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
 
@@ -16,6 +17,7 @@ import java.util.function.Predicate;
 
 
 @Repository
+@Slf4j
 public class FileMessageRepository extends FileBaseRepository implements MessageRepository {
     private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","message");
 
@@ -27,6 +29,7 @@ public class FileMessageRepository extends FileBaseRepository implements Message
     public void save(Message msg) {
         try {
             write(DIRECTORY.resolve(msg.getId()+ ".ser"), msg);
+            log.debug("Message created - {}", msg.getId());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -46,6 +49,7 @@ public class FileMessageRepository extends FileBaseRepository implements Message
     public void delete(UUID id){
         try {
             Files.delete(DIRECTORY.resolve(id.toString() + ".ser"));
+            log.debug("Message deleted - {}", id);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

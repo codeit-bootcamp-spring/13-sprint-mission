@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.repository.file;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.util.function.Predicate;
 
 @Repository
 @RequiredArgsConstructor
+@Slf4j
 public class FileUserStatusRepository extends FileBaseRepository implements UserStatusRepository {
     private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","userstatus");
 
@@ -22,6 +24,7 @@ public class FileUserStatusRepository extends FileBaseRepository implements User
     public void save(UserStatus ust) {
         try {
             write(DIRECTORY.resolve(ust.getId()+ ".ser"), ust);
+            log.debug("UserStatus create - by UserID : {}" ,ust.getUserID());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -51,6 +54,7 @@ public class FileUserStatusRepository extends FileBaseRepository implements User
     public void delete(UUID userID) {
         try {
             Files.delete(DIRECTORY.resolve(userID.toString() + ".ser"));
+            log.debug("UserStatus delete - by UserID : {} ", userID);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

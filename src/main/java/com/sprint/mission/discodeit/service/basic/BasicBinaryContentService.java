@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
 
+import com.sprint.mission.discodeit.dto.input.BinaryContentInput;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
@@ -13,16 +14,16 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class BasicBinaryContentService implements BinaryContentService {
-    BinaryContentRepository bcr;
+    private final BinaryContentRepository bcr;
 
     @Override
-    public void create(BinaryContent bci){
-        bcr.save(
-                BinaryContent.builder()
-                        .contentID(bci.getContentID())
-                        .authorID(bci.getAuthorID())
-                        .build()
-        );
+    public BinaryContent create(BinaryContentInput bci){
+        BinaryContent bc = BinaryContent.builder()
+                .contentID(bci.getContentID())
+                .authorID(bci.getAuthorID())
+                .build();
+        bcr.save(bc);
+        return bc;
     }
 
     @Override

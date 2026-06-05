@@ -40,13 +40,15 @@ public class FileBaseRepository {
         }
     }
 
+
+    // Todo - pre -> return 2중변환 로직 변경. 변환수 적게 만듦
     static <T> List<T> rawFind(Predicate<T> fn, Path path) throws RuntimeException {
         try {
             if(!Files.exists(path)){
                 Files.createDirectories(path);
             }
             try (Stream<Path> paths = Files.list(path);) {
-                return paths.map(c -> {
+                List<T> pre = paths.map(c -> {
                             try {
                                 return (T) read(path.resolve(c));
                             } catch (IOException e) {
@@ -54,9 +56,15 @@ public class FileBaseRepository {
                                 return null;
                             }
                         })
-                        .filter(Objects::nonNull)
-                        .filter(fn)
-                        .toList();
+                        .filter(Objects::nonNull).toList();
+                if (pre.isEmpty()) {
+                    return pre;
+                } else{
+                    return pre.stream()
+                            .filter(fn)
+                            .toList();
+                }
+
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
