@@ -3,8 +3,12 @@ package com.sprint.mission.discodeit.entity;
 
 import lombok.Getter;
 
+import java.util.UUID;
+
 @Getter
-public class User extends AllApply {
+public class User extends MutableEntity {
+
+	private UUID profileId;
 	
 	String name;
 	String email;

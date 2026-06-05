@@ -3,7 +3,7 @@ package com.sprint.mission.discodeit.entity;
 import lombok.Getter;
 
 @Getter
-public class Channel extends AllApply {
+public class Channel extends MutableEntity {
 
 	String name;
 	String nameDescription;
