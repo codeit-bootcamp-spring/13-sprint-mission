@@ -5,9 +5,7 @@ import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserFindResponse;
 import com.sprint.mission.discodeit.dto.response.UserUpdateResponse;
 import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.repository.BinaryContentRepository;
-import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +23,8 @@ public class BasicUserService implements UserService {
     private final UserRepository userRepository;
     private final BinaryContentRepository binaryContentRepository;
     private final UserStatusRepository userStatusRepository;
+    private final ReadStatusRepository readStatusRepository;
+    private final MessageRepository messageRepository;
 
     //interface
     @Override
@@ -119,6 +119,10 @@ public class BasicUserService implements UserService {
 
             binaryContentId = binaryContent.getId();
         }
+        else {  //업데이트 프로필 사진이 없으면 기존 프로필 사진 삭제
+            //기존 유저 프로필 이미지 삭제
+            deleteProfileImage(request.userId());
+        }
 
         //유저 업데이트
         userTemp.updateUser(request.newName(), request.newEmail(), request.newPassword(), binaryContentId);
@@ -140,6 +144,18 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = userStatusRepository.findUserStatusByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
         userStatusRepository.deleteUserStatus(userStatus.getId());
+
+        //유저가 가입한 채널에 대한 ReadStatus 검색 및 삭제
+        List<ReadStatus> readStatusList = readStatusRepository.findAllReadStatusByUserId(userId);
+        for (ReadStatus readStatus : readStatusList) {
+            readStatusRepository.deleteReadStatusById(readStatus.getId());
+        }
+
+        //유저가 작성한 메세지 검색 및 삭제
+        List<Message> messageList = messageRepository.findAllMessagesByUserId(userId);
+        for (Message message : messageList) {
+            messageRepository.deleteMessageById(message.getId());
+        }
 
         //기존 유저 프로필 이미지 삭제
         deleteProfileImage(userId);

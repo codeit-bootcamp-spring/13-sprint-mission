@@ -1,11 +1,16 @@
 package com.sprint.mission.discodeit;
 
+import com.sprint.mission.discodeit.dto.request.*;
+import com.sprint.mission.discodeit.dto.response.ChannelFindResponse;
+import com.sprint.mission.discodeit.dto.response.UserUpdateResponse;
 import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.jcf.JCFChannelRepository;
 import com.sprint.mission.discodeit.repository.jcf.JCFMessageRepository;
 import com.sprint.mission.discodeit.repository.jcf.JCFUserRepository;
+import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
@@ -19,6 +24,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 
+import java.util.List;
+import java.util.UUID;
+
 @SpringBootApplication
 public class DiscodeitApplication {
 
@@ -29,6 +37,7 @@ public class DiscodeitApplication {
 		UserService userService = context.getBean(UserService.class);
 		ChannelService channelService = context.getBean(ChannelService.class);
 		MessageService messageService = context.getBean(MessageService.class);
+		BinaryContentService binaryContentService = context.getBean(BinaryContentService.class);
 
 
 		System.out.println("\n\nThis is Discodeit Application!");
@@ -39,84 +48,116 @@ public class DiscodeitApplication {
 		 * 반대 버전은 주석 처리해주세요!
 		 */
 		System.out.println("========= 시나리오 짧은 버전 테스트 ==========\n================================");
-		testSmallCaseVersion(userService, channelService, messageService);
+		testSmallCaseVersion(userService, channelService, messageService, binaryContentService);
 
 //        System.out.println("========= 시나리오 긴 버전 테스트 ==========\n================================");
 //        testLargeCaseVersion(userService, channelService, messageService);
 	}
 
-
-
-
 	private static void testSmallCaseVersion(
-			UserService userService, ChannelService channelService, MessageService messageService
+			UserService userService, ChannelService channelService, MessageService messageService, BinaryContentService binaryContentService
 	) {
 
 		//유저 객체들 생성
 		System.out.println("유저 객체들 생성\n");
-		User user1 = userService.createUser("woody", "woody@codeit.com");
-		User user2 = userService.createUser("minjae", "minjae@codeit.com");
+		User user1 = userService.createUser(new UserCreateRequest("woody", "woody@codeit.com", "qwer1234", "data/ExamplePic1.jpg"));
+		User user2 = userService.createUser(new UserCreateRequest("minjae", "minjae@codeit.com", "abcd1234", "data/ExamplePic2.jpg"));
 		System.out.println("==========================================");
 
 		//채널 객체 생성
 		System.out.println("채널 객체 생성\n");
-		Channel channel = channelService.createChannel("CodeIt 부트캠프 채널", user1);
+		Channel privateChannel = channelService.createPrivateChannel(new PrivateChannelCreateRequest(ChannelType.PRIVATE, List.of(user1.getId(), user2.getId())));
+		Channel publicChannel = channelService.createPublicChannel(new PublicChannelCreateRequest(ChannelType.PUBLIC, "CodeIt 부트캠프 채널", "CodeIt 부트캠프 채널입니다~~~~~"));
 		System.out.println("==========================================");
 
-		//메세지 객체 생성
-		System.out.println("메세지 객체 생성\n");
-		Message message1 = messageService.createMessage(user1, channel, "이 채널은 CodeIt 부트캠프 채널입니다.");
+		//user1이 privateChannel에 메세지 생성
+		System.out.println("user1이 privateChannel에 메세지 생성\n");
+		Message message1 = messageService.createMessage(new MessageCreateRequest("이 채널은 CodeIt 부트캠프 채널입니다.", privateChannel.getId(), user1.getId(), List.of("data/ExamplePic3.jpg", "data/ExamplePic4.jpg")));
 		System.out.println("==========================================");
 
-		// user2가 channel 채널에 가입
-		System.out.println("user2가 channel 채널에 가입\n");
-		userService.joinChannel(user2, channel);
+		//user2가 privateChannel에 메세지 생성
+		System.out.println("user2가 privateChannel에 메세지 생성\n");
+		Message message2 = messageService.createMessage(new MessageCreateRequest("안녕하세요, 스프린터 minjae입니다!", privateChannel.getId(), user2.getId(), List.of("data/ExamplePic1.jpg", "data/ExamplePic4.jpg")));
 		System.out.println("==========================================");
 
-		// user2가 channel 채널에서 메세지 작성
-		System.out.println("user2가 channel 채널에서 메세지 작성\n");
-		Message message2 = messageService.createMessage(user2, channel, "안녕하세요, 스프린터 minjae입니다!");
+		//privateChannel에서 작성된 메세지 출력
+		System.out.println("privateChannel에서 작성된 메세지 출력\n");
+		List<Message> messageList = messageService.findAllByChannelId(privateChannel.getId());
+		for (Message message : messageList) {
+			System.out.println("유저: " + userService.findUser(message.getAuthorId()).name() + "\nmessage: " + message.getContent() + "\ncontent: ");
+			for (UUID attachmentId : message.getAttachmentIds()) {
+				System.out.println(binaryContentService.findBinaryContentById(attachmentId).getContentPath() + " ");
+			}
+			System.out.println();
+		}
 		System.out.println("==========================================");
 
-		// channel에서 작성된 메세지 출력
-		System.out.println("channel에서 작성된 메세지 출력\n");
-		messageService.printAllMessages();
-		System.out.println("==========================================");
-
-		// user2 이름 변경
-		System.out.println("user2 이름 변경\n");
-		userService.changeName(user2, "박민재");
+		// user2 정보 변경
+		System.out.println("user2 정보 변경\n");
+		userService.updateUser(new UserUpdateRequest(user2.getId(), "박민재", "박민재@gmail.com", "MyNewPassword", null));
 		System.out.println("==========================================");
 
 		// user2가 작성한 메세지 수정
 		System.out.println("user2가 작성한 메세지 수정\n");
-		messageService.editMessage(message2, user2, "안녕하세요, 이름 바꿨습니다. 스프린터 박민재입니다.");
+		messageService.updateMessage(new MessageUpdateRequest(message2.getId(), "안녕하세요, 이름 바꿨습니다. 스프린터 박민재입니다.", List.of("data/ExamplePic2.jpg")));
 		System.out.println("==========================================");
 
-		// channel에서 작성된 메세지 재출력
-		System.out.println("channel에서 작성된 메세지 재출력\n");
-		messageService.printAllMessages();
+		//privateChannel에서 작성된 메세지 재출력
+		System.out.println("privateChannel에서 작성된 메세지 재출력\n");
+		messageList = messageService.findAllByChannelId(privateChannel.getId());
+		for (Message message : messageList) {
+			System.out.println("유저: " + userService.findUser(message.getAuthorId()).name() + "\nmessage: " + message.getContent() + "\ncontent: ");
+			for (UUID attachmentId : message.getAttachmentIds()) {
+				System.out.println(binaryContentService.findBinaryContentById(attachmentId).getContentPath() + " ");
+			}
+			System.out.println();
+		}
 		System.out.println("==========================================");
 
-		// 채널 정보, 채널에 참가한 유저들 출력
-		System.out.println("채널 정보, 채널에 참가한 유저들 출력\n");
-		channelService.printChannelInfo(channel);
-		channelService.printUsersInfo(channel);
+		//user2가 볼 수 있는 Channel들 조회
+		System.out.println("user2가 볼 수 있는 Channel들 조회\n");
+		List<ChannelFindResponse> responseDTO = channelService.findAllByUserId(user2.getId());
+		for (ChannelFindResponse response : responseDTO) {
+			System.out.print("채널타입: " + response.type() + ", 채널명: " + response.name() + ", 채널 설명: " + response.description() + ", 채널 내 유저: ");
+			for (UUID userId : response.usersId()) {
+				System.out.print(userService.findUser(userId).name() + " ");
+			}
+			System.out.println();
+		}
 		System.out.println("==========================================");
 
-		// user2 삭제
-		System.out.println("user2 삭제\n");
-		user2 = userService.deleteUser(user2);
+		// user1 삭제
+		System.out.println("user1 삭제\n");
+		userService.deleteUser(user1.getId());
 		System.out.println("==========================================");
 
-		// channel 채널에 참가한 유저들 재출력
-		System.out.println("channel 채널에 참가한 유저들 재출력\n");
-		channelService.printUsersInfo(channel);
+		//user2가 볼 수 있는 Channel들 재조회
+		System.out.println("user2가 볼 수 있는 Channel들 재조회\n");
+		responseDTO = channelService.findAllByUserId(user2.getId());
+		for (ChannelFindResponse response : responseDTO) {
+			System.out.print("채널타입: " + response.type() + ", 채널명: " + response.name() + ", 채널 설명: " + response.description() + ", 채널 내 유저: ");
+			for (UUID userId : response.usersId()) {
+				System.out.print(userService.findUser(userId).name() + " ");
+			}
+			System.out.println();
+		}
+		System.out.println("==========================================");
+
+		//privateChannel에서 작성된 메세지 재출력
+		System.out.println("privateChannel에서 작성된 메세지 재출력\n");
+		messageList = messageService.findAllByChannelId(privateChannel.getId());
+		for (Message message : messageList) {
+			System.out.println("유저: " + userService.findUser(message.getAuthorId()).name() + "\nmessage: " + message.getContent() + "\ncontent: ");
+			for (UUID attachmentId : message.getAttachmentIds()) {
+				System.out.println(binaryContentService.findBinaryContentById(attachmentId).getContentPath() + " ");
+			}
+			System.out.println();
+		}
 		System.out.println("==========================================");
 
 	}
 
-
+	/*
 	private static void testLargeCaseVersion(
 			UserService userService, ChannelService channelService, MessageService messageService
 	){
@@ -398,4 +439,6 @@ public class DiscodeitApplication {
 		System.out.println("============================\n");
 
 	}
+
+	 */
 }

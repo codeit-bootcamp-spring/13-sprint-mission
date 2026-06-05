@@ -179,7 +179,7 @@ public class BasicChannelService implements ChannelService {
 
         //가장 최근 메시지가 존재하면 해당 메시지의 시간 정보, 존재하지 않으면 Instant 기본값으로 DTO 생성
         //채널 타입이 PRIVATE이면 usersId를 넣고, 아니면 null을 넣도록 구현
-        return ChannelFindResponse.from(channel, (recentMessage != null) ? recentMessage.getCreatedAt() : Instant.EPOCH, (channel.getType() == ChannelType.PRIVATE) ? usersId : null);
+        return ChannelFindResponse.from(channel, (recentMessage != null) ? recentMessage.getCreatedAt() : Instant.EPOCH, (channel.getType() == ChannelType.PRIVATE) ? usersId : new ArrayList<>());
     }
 
     // 들어온 String 필드가 null 혹은 공백인지 검증하는 메서드

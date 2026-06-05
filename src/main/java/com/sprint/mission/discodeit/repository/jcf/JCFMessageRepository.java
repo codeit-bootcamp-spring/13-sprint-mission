@@ -44,6 +44,13 @@ public class JCFMessageRepository implements MessageRepository {
     }
 
     @Override
+    public List<Message> findAllMessagesByUserId(UUID userId) {
+        return messages.stream()
+                .filter(message -> message.getAuthorId().equals(userId))
+                .toList();
+    }
+
+    @Override
     public void save() {
 
     }

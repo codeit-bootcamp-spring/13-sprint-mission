@@ -55,7 +55,7 @@ public class BasicMessageService implements MessageService {
         }
 
         //메세지 생성
-        Message message = new Message(request.content(), request.authorId(), request.channelId(), binaryContentIdList);
+        Message message = new Message(request.content(), request.channelId(), request.authorId(), binaryContentIdList);
         messageRepository.createMessage(message);
         log.info("메시지: {}가 생성됨.", message.getContent());
 

@@ -204,3 +204,6 @@ public class JCFChannelService implements ChannelService {
         return channel.getUsers().stream().anyMatch(userTemp -> userTemp.getId().equals(user.getId()));
     }
 }
+
+
+ */

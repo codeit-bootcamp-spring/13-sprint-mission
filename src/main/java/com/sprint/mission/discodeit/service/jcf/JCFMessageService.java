@@ -124,3 +124,6 @@ public class JCFMessageService implements MessageService {
         return channel.getUsers().stream().anyMatch(userTemp -> userTemp.getId().equals(user.getId()));
     }
 }
+
+
+ */

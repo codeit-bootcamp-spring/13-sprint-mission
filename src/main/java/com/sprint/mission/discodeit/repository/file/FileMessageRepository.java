@@ -49,6 +49,13 @@ public class FileMessageRepository extends FileRepositoryRoot<Message> implement
     }
 
     @Override
+    public List<Message> findAllMessagesByUserId(UUID userId) {
+        return storage.stream()
+                .filter(message -> message.getAuthorId().equals(userId))
+                .toList();
+    }
+
+    @Override
     public void save() {
         saveToBinary();
     }

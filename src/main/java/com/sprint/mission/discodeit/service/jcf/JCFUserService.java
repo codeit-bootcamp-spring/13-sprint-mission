@@ -168,3 +168,6 @@ public class JCFUserService implements UserService {
         return channel.getUsers().stream().anyMatch(userTemp -> userTemp.getId().equals(user.getId()));
     }
 }
+
+
+ */
