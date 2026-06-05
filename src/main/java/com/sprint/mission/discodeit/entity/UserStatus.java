@@ -38,4 +38,9 @@ public class UserStatus {
 
         return this.lastActiveAt.isAfter(fiveMinuteAgo);
     }
+
+    public void updateActiveTime() {
+        this.lastActiveAt = Instant.now();
+        this.updatedAt = Instant.now();
+    }
 }
