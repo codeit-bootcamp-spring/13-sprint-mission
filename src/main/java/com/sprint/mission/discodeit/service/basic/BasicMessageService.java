@@ -96,6 +96,8 @@ public class BasicMessageService implements MessageService {
             }
         }
 
+        log.info("메시지: {}가 수정됨.\n->{}", messageTemp.getContent(), request.content());
+
         //메시지 업데이트
         messageTemp.updateMessage(request.content(), binaryContentIdList);
         messageRepository.save();

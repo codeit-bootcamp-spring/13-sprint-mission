@@ -20,7 +20,7 @@ public class UserStatus extends EntityRoot implements Serializable {
         super();
 
         this.userId = userId;
-        this.lastAccessTime = Instant.now();
+        this.lastAccessTime = Instant.EPOCH;
     }
 
     //getter

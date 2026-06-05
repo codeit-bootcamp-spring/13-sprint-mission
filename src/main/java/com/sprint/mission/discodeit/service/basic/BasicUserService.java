@@ -124,6 +124,9 @@ public class BasicUserService implements UserService {
             deleteProfileImage(request.userId());
         }
 
+        log.info("유저: {}가 수정됨.", userTemp.getName());
+        log.info("name: {}, email: {}, password: {}\n-> name: {}, email: {}, password: {}", userTemp.getName(), userTemp.getEmail(), userTemp.getPassword(), request.newName(), request.newEmail(), request.newPassword());
+
         //유저 업데이트
         userTemp.updateUser(request.newName(), request.newEmail(), request.newPassword(), binaryContentId);
         userRepository.save();

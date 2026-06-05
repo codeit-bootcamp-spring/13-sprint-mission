@@ -37,6 +37,8 @@ public class BasicAuthService implements AuthService {
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
         userStatus.updateLastAccessTime();
 
+        log.info("유저: {} 로그인 승인.", request.name());
+
         return userTemp;
     }
 
