@@ -101,6 +101,10 @@ public class BasicUserService implements UserService {
         User userTemp = userRepository.findUserById(request.userId())
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
+        //중복된 이름, 이메일로 생성 요청을 한 경우 검증
+        validateNameExists(request.newName());
+        validateEmailExists(request.newEmail());
+
         //프로필 사진 경로 존재 시
         UUID binaryContentId = null;
         if (request.profileImagePath() != null && !request.profileImagePath().isBlank()) {

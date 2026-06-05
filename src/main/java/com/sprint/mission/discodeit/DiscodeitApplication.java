@@ -36,19 +36,12 @@ public class DiscodeitApplication {
 		ReadStatusService readStatusService = context.getBean(ReadStatusService.class);
 		AuthService authService = context.getBean(AuthService.class);
 
+		//application.yaml에서 jcf 혹은 file 테스트 선택하여 진행하기!!!!!!!!!!
 
 		System.out.println("\n\nThis is Discodeit Application!");
-
-		/**
-		 * 테스트 시나리오 버전 선택
-		 * 원하시는 버전의 주석을 해제해주세요!
-		 * 반대 버전은 주석 처리해주세요!
-		 */
-		System.out.println("========= 시나리오 짧은 버전 테스트 ==========\n================================");
+		System.out.println("========= 테스트 ==========\n================================");
 		test(userService, channelService, messageService, binaryContentService, userStatusService, readStatusService, authService);
 
-//        System.out.println("========= 시나리오 긴 버전 테스트 ==========\n================================");
-//        testLargeCaseVersion(userService, channelService, messageService);
 	}
 
 	private static void test(
