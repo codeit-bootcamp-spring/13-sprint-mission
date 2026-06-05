@@ -16,7 +16,10 @@ public class UserStatus extends EntityRoot {
 
     //ctor
     public UserStatus(UUID userId) {
+        super();
+
         this.userId = userId;
+        this.lastAccessTime = Instant.now();
     }
 
     //getter

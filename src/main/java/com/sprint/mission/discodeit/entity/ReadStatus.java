@@ -15,6 +15,8 @@ public class ReadStatus extends EntityRoot {
 
     //ctor
     public ReadStatus(UUID userId, UUID channelId) {
+        super();
+
         this.userId = userId;
         this.channelId = channelId;
         this.lastAccessTime = Instant.now();
