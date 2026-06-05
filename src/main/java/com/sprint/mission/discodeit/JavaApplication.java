@@ -1,14 +1,12 @@
 package com.sprint.mission.discodeit;
 
+import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.repository.ChannelRepository;
-import com.sprint.mission.discodeit.repository.MessageRepository;
-import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
-import com.sprint.mission.discodeit.repository.file.FileMessageRepository;
-import com.sprint.mission.discodeit.repository.file.FileUserRepository;
+import com.sprint.mission.discodeit.repository.*;
+import com.sprint.mission.discodeit.repository.file.*;
 import com.sprint.mission.discodeit.repository.jcf.JCFChannelRepository;
 import com.sprint.mission.discodeit.repository.jcf.JCFMessageRepository;
 import com.sprint.mission.discodeit.repository.jcf.JCFUserRepository;
@@ -28,9 +26,13 @@ import com.sprint.mission.discodeit.service.jcf.JCFUserService;
 import java.util.UUID;
 
 public class JavaApplication {
-    static User setupUser(UserService userService) {
-        User user = userService.create("woody", "woody@codeit.com", "woody1234");
-        return user;
+    static UserResponse setupUser(UserService userService) {
+
+        UserCreateRequest request = new UserCreateRequest(
+                "woody", "woody@codeit.com", "woody1234", null);
+
+
+        return userService.create(request);
     }
 
     static Channel setupChannel(ChannelService channelService) {
@@ -49,14 +51,17 @@ public class JavaApplication {
         ChannelRepository channelRepository = new FileChannelRepository();
         MessageRepository messageRepository = new FileMessageRepository();
 
-        UserService userService = new BasicUserService(userRepository);
+        BinaryContentRepository binaryContentRepository = new FileBinaryContentRepository();
+        UserStatusRepository userStatusRepository = new FileUserStatusRepository();
+        UserService userService = new BasicUserService(userRepository, binaryContentRepository, userStatusRepository);
         ChannelService channelService = new BasicChannelService(channelRepository);
         MessageService messageService = new BasicMessageService(messageRepository, userRepository, channelRepository);
 
-        // 셋업
-        User user = setupUser(userService);
+
+        UserResponse userResponse = setupUser(userService);
         Channel channel = setupChannel(channelService);
-        // 테스트
-        messageCreateTest(messageService, user, channel);
+        User userEntity = userRepository.findById(userResponse.id());
+
+        messageCreateTest(messageService, userEntity, channel);
     }
 }

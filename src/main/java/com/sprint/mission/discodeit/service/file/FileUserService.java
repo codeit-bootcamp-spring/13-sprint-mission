@@ -1,5 +1,8 @@
 package com.sprint.mission.discodeit.service.file;
 
+import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.UserService;
@@ -16,33 +19,33 @@ public class FileUserService implements UserService {
     }
 
     @Override
-    public User create(String username, String email, String password) {
-        User user = new User(username, email, password);
-        return repository.save(user);
+    public UserResponse create(UserCreateRequest request) {
+        return null;
     }
 
     @Override
-    public User findById(UUID id) {
-        return repository.findById(id);
-    }
-
-    @Override
-    public List<User> findAll() {
-        return repository.findAll();
-    }
-
-    @Override
-    public User update(UUID userId, String newUsername, String newEmail, String newPassword) {
-        User user = repository.findById(userId);
-
+    public UserResponse findById(UUID id) {
+        User user = repository.findById(id);
         if (user == null) {
-            throw new IllegalArgumentException("User not found");
+            return null;
         }
-        user.updateProfile(newUsername);
-        repository.save(user);
 
-        return user;
+        return UserResponse.from(user, false);
     }
+
+    @Override
+    public List<UserResponse> findAll() {
+        return repository.findAll().stream()
+                .map(user -> UserResponse.from(user, false))
+                .toList();
+    }
+
+    @Override
+    public UserResponse update(UserUpdateRequest request) {
+        return null;
+    }
+
+
 
     @Override
     public void delete(UUID id) {

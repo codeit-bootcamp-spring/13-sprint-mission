@@ -74,6 +74,21 @@ public class FileUserRepository implements UserRepository {
         saveToFile();
     }
 
+    @Override
+    public User findByUsername(String username) {
+        return null;
+    }
+
+    @Override
+    public User findByEmail(String email) {
+        return null;
+    }
+
+    @Override
+    public User delete(User user) {
+        return null;
+    }
+
     private void saveToFile() {
         try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(filePath))) {
             oos.writeObject(storage);

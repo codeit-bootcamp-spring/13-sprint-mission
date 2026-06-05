@@ -34,4 +34,19 @@ public class JCFUserRepository implements UserRepository {
         data.remove(id);
 
     }
+
+    @Override
+    public User findByUsername(String username) {
+        return null;
+    }
+
+    @Override
+    public User findByEmail(String email) {
+        return null;
+    }
+
+    @Override
+    public User delete(User user) {
+        return null;
+    }
 }

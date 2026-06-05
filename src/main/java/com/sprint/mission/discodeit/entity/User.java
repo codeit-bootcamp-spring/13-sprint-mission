@@ -1,12 +1,16 @@
 package com.sprint.mission.discodeit.entity;
 
-import lombok.Getter;
+import lombok.*;
 
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.UUID;
 
 @Getter
+@ToString
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -18,10 +22,11 @@ public class User implements Serializable {
     private String password;
     private String username;
     private UserStatus status;
+    private UUID profileId;
 
-    public enum UserStatus {
-        ONLINE, OFFLINE, AWAY, DO_NOT_DISTURB
-    }
+//    public enum UserStatus {
+//        ONLINE, OFFLINE, AWAY, DO_NOT_DISTURB
+//    }
 
     public User(String username, String email, String password) {
 
@@ -31,38 +36,22 @@ public class User implements Serializable {
         this.email = email;
         this.password = password;
         this.username = username;
-        this.status = UserStatus.OFFLINE;
+//        this.status = UserStatus.OFFLINE;
+        this.profileId = profileId;
     }
 
+    public void update(String username, String email, String password, UUID profileId) {
 
-    public void updateProfile(String username) {
-        this.username = username;
+        if (username != null) this.username = username;
+        if (email != null) this.email = email;
+        if (password != null) this.password = password;
+        if (profileId != null) this.profileId = profileId;
+
         this.updatedAt = Instant.now();
-    }
 
-    public void updateEmail(String email) {
-        this.email = email;
-        this.updatedAt = Instant.now();
-    }
 
-    public void updatePassword(String password) {
-        this.password = password;
-        this.updatedAt = Instant.now();
-    }
+}
 
-    public void updateStatus(UserStatus status) {
-        this.status = status;
-        this.updatedAt = Instant.now();
+    public void updateProfile(String newUsername) {
     }
-
-    @Override
-    public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", email='" + email + '\'' +
-                ", username='" + username + '\'' +
-                ", status=" + status +
-                '}';
-    }
-
 }

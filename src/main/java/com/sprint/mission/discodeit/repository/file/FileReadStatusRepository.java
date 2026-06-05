@@ -1,4 +1,8 @@
 package com.sprint.mission.discodeit.repository.file;
 
-public class ReadStutusRepository {
+import com.sprint.mission.discodeit.repository.ReadStatusRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public class FileReadStatusRepository implements ReadStatusRepository {
 }
