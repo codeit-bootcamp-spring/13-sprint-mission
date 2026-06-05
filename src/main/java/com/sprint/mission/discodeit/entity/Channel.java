@@ -17,19 +17,25 @@ public class Channel implements Serializable {
     private Instant updatedAt;
     private String name;
     private String description; // 채널 설명
-    private ChannelType type;
+    private String type;
 
     public enum ChannelType {
         PUBLIC, PRIVATE
     }
 
-    public Channel(String name, String description, ChannelType type) {
+    public Channel(String name, String description, String type) {
         this.id = UUID.randomUUID();
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
         this.name = name;
         this.description = description;
         this.type = type;
+    }
+
+    public void update(String name, String description) {
+        if (name != null) this.name = name;
+        if (description != null) this.description = description;
+        this.updatedAt = Instant.now();
     }
 
 
@@ -41,7 +47,7 @@ public class Channel implements Serializable {
         this.description = description;
         this.updatedAt = Instant.now();
     }
-    public void updateType(ChannelType type) {
+    public void updateType(String type) {
         this.type = type;
         this.updatedAt = Instant.now();
     }

@@ -9,14 +9,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Repository
 public class FileChannelRepository implements ChannelRepository {
 
-    private List<Channel> storage;
+    private Map<UUID, Channel> storage = new HashMap<>();
     private final Path filePath;
 
     public FileChannelRepository() {
@@ -27,66 +25,52 @@ public class FileChannelRepository implements ChannelRepository {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        storage = load();
-    }
 
+        if (!Files.exists(filePath)) {
+            this.storage = new HashMap<>();
+        } else {
+            this.storage = load();
+        }
+    }
 
     @Override
     public Channel save(Channel channel) {
-
-        for (int i = 0; i < storage.size(); i++) {
-            if (storage.get(i).getId().equals(channel.getId())) {
-                storage.remove(i);
-                break;
-            }
-        }
-        storage.add(channel);
+        storage.put(channel.getId(), channel);
         saveToFile();
         return channel;
     }
 
     @Override
     public Channel findById(UUID id) {
-        for (Channel channel : storage) {
-            if (channel.getId().equals(id)) {
-                return channel;
-            }
-        }
-        return null;
+        return storage.get(id);
     }
 
     @Override
     public List<Channel> findAll() {
-        return new ArrayList<>(storage);
+        return new ArrayList<>(storage.values());
     }
 
     @Override
     public void delete(UUID id) {
-        for (int i = 0; i < storage.size(); i++) {
-            if (storage.get(i).getId().equals(id)) {
-                storage.remove(i);
-                break;
-            }
-        }
+        storage.remove(id);
         saveToFile();
-
     }
 
     private void saveToFile() {
-        try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(filePath))) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new java.io.FileOutputStream(filePath.toFile()))) {
             oos.writeObject(storage);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private List<Channel> load() {
+    private Map<UUID, Channel> load() {
         if (!Files.exists(filePath)) {
-            return new ArrayList<>();
+            return new HashMap<>();
         }
 
-        try (ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(filePath))) {
-            return (List<Channel>) ois.readObject();
+        try (ObjectInputStream ois = new ObjectInputStream(new java.io.FileInputStream(filePath.toFile()))) {
+            return (Map<UUID, Channel>) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
