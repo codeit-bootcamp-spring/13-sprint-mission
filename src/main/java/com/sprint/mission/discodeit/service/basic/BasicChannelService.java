@@ -98,7 +98,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ChannelUpdateResponse updateChannel(UUID channelId, ChannelUpdateRequest request) {
+    public ChannelUpdateResponse updateChannel(ChannelUpdateRequest request) {
         //입력값 검증 처리하겠습니다
         validateString(request.name());
         validateString(request.description());
@@ -109,7 +109,7 @@ public class BasicChannelService implements ChannelService {
         }
 
         //채널 검색
-        Channel channelTemp = channelRepository.findChannelById(channelId)
+        Channel channelTemp = channelRepository.findChannelById(request.channelId())
                 .orElseThrow(() -> new RuntimeException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
 
         //채널 업데이트

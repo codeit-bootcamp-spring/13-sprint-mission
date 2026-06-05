@@ -71,13 +71,13 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public MessageUpdateResponse updateMessage(UUID messageId, MessageUpdateRequest request) {
+    public MessageUpdateResponse updateMessage(MessageUpdateRequest request) {
         //입력값 검증 처리하겠습니다
-        validateUUID(messageId);
+        validateUUID(request.messageId());
         validateString(request.content());
 
         //메시지 검색
-        Message messageTemp = messageRepository.findMessageById(messageId)
+        Message messageTemp = messageRepository.findMessageById(request.messageId())
                 .orElseThrow(() -> new RuntimeException("에러: 해당 메시지는 데이터파일에 존재하지 않습니다."));
 
         //이전 첨부파일 삭제

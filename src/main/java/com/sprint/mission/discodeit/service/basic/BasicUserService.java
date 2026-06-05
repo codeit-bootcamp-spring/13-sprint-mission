@@ -90,15 +90,15 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public UserUpdateResponse updateUser(UUID userId, UserUpdateRequest request) {
+    public UserUpdateResponse updateUser(UserUpdateRequest request) {
         //입력값 검증 처리하겠습니다
-        validateUUID(userId);
+        validateUUID(request.userId());
         validateString(request.newName());
         validateString(request.newEmail());
         validateString(request.newPassword());
 
         //유저 검색
-        User userTemp = userRepository.findUserById(userId)
+        User userTemp = userRepository.findUserById(request.userId())
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         //프로필 사진 경로 존재 시
@@ -114,7 +114,7 @@ public class BasicUserService implements UserService {
                 binaryContent = new BinaryContent(request.profileImagePath());
                 binaryContentRepository.createBinaryContent(binaryContent);
                 //기존 유저 프로필 이미지 삭제
-                deleteProfileImage(userId);
+                deleteProfileImage(request.userId());
             }
 
             binaryContentId = binaryContent.getId();

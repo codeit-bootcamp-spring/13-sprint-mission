@@ -66,13 +66,13 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public UserStatusUpdateResponse updateUserStatus(UUID userStatusId, UserStatusUpdateRequest request) {
+    public UserStatusUpdateResponse updateUserStatus(UserStatusUpdateRequest request) {
         //입력값 검증 처리하겠습니다
-        validateUUID(userStatusId);
+        validateUUID(request.userStatusId());
         validateUUID(request.userId());
 
         //UserStatus 검색
-        UserStatus userStatusTemp = userStatusRepository.findUserStatusById(userStatusId)
+        UserStatus userStatusTemp = userStatusRepository.findUserStatusById(request.userStatusId())
                 .orElseThrow(() -> new RuntimeException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
 
         //UserStatus 업데이트
@@ -83,7 +83,7 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public UserStatusUpdateResponse updateUserStatusByUserId(UUID userId, UserStatusUpdateRequest request) {
+    public UserStatusUpdateResponse updateUserStatusByUserId(UUID userId) {
         //입력값 검증 처리하겠습니다
         validateUUID(userId);
 

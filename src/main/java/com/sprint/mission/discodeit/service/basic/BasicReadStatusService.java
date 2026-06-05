@@ -73,14 +73,14 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    public ReadStatusUpdateResponse updateReadStatus(UUID readStatusId, ReadStatusUpdateRequest request) {
+    public ReadStatusUpdateResponse updateReadStatus(ReadStatusUpdateRequest request) {
         //입력값 검증 처리하겠습니다
-        validateUUID(readStatusId);
+        validateUUID(request.readStatusId());
         validateUUID(request.userId());
         validateUUID(request.channelId());
 
         //ReadStatus 검색
-        ReadStatus readStatusTemp = readStatusRepository.findReadStatusById(readStatusId)
+        ReadStatus readStatusTemp = readStatusRepository.findReadStatusById(request.readStatusId())
                 .orElseThrow(() -> new RuntimeException("에러: 해당 ReadStatus는 데이터파일에 존재하지 않습니다."));
 
         //ReadStatus 업데이트
