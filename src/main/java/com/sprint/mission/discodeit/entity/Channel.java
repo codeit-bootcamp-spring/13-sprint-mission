@@ -16,6 +16,14 @@ public class Channel extends EntityRoot implements Serializable {
     private String description;
 
     //ctor
+    public Channel(ChannelType type) {
+        super();
+
+        this.type = type;
+        this.name = "private Channel";
+        this.description = "private Channel";
+    }
+
     public Channel(ChannelType type, String name, String description) {
         super();
 

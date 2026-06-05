@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.request.ChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.PrivateChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelFindResponse;
 import com.sprint.mission.discodeit.dto.response.ChannelUpdateResponse;
@@ -29,26 +30,47 @@ public class BasicChannelService implements ChannelService {
     private final MessageRepository messageRepository;
     private final ReadStatusRepository readStatusRepository;
 
+    @Override
+    public Channel createPrivateChannel(PrivateChannelCreateRequest request) {
+        //입력값 검증 처리하겠습니다
+        for (UUID userId : request.userIdList()) {
+            validateUUID(userId);
+        }
+
+        //채널 타입 검증
+        if (request.type() != ChannelType.PRIVATE)
+            throw new RuntimeException("에러: 잘못된 접근입니다.");
+
+        //채널 생성
+        Channel channel = new Channel(request.type());
+        channelRepository.createChannel(channel);
+        log.info("채널: {}가 생성됨.", channel.getName());
+
+        //ReadStatus 생성
+        for (UUID userId : request.userIdList()) {
+            ReadStatus readStatus = new ReadStatus(userId, channel.getId());
+            readStatusRepository.createReadStatus(readStatus);
+            log.info("ReadStatus가 생성됨.");
+        }
+
+        return channel;
+    }
+
     //interface
     @Override
-    public Channel createChannel(ChannelCreateRequest request) {
+    public Channel createPublicChannel(PublicChannelCreateRequest request) {
         //입력값 검증 처리하겠습니다
         validateString(request.name());
         validateString(request.description());
 
+        //채널 타입 검증
+        if (request.type() != ChannelType.PUBLIC)
+            throw new RuntimeException("에러: 잘못된 접근입니다.");
+
         //채널 생성
-        Channel channel;
-        if (request.type() == ChannelType.PUBLIC){  //Channel이 Public일 경우
-            channel = new Channel(request.type(), request.name(), request.description());
-            channelRepository.createChannel(channel);
-            log.info("채널: {}가 생성됨.", channel.getName());
-
-        } else { //Channel이 Private일 경우
-            channel = new Channel(request.type(), null, null);
-            channelRepository.createChannel(channel);
-            log.info("채널: {}가 생성됨.", channel.getName());
-
-        }
+        Channel channel = new Channel(request.type(), request.name(), request.description());
+        channelRepository.createChannel(channel);
+        log.info("채널: {}가 생성됨.", channel.getName());
 
         return channel;
     }
@@ -104,8 +126,8 @@ public class BasicChannelService implements ChannelService {
         validateString(request.description());
 
         //ChannelType 검증
-        if (request.type() == ChannelType.PUBLIC){
-            throw new IllegalArgumentException("에러: PUBLIC 채널은 수정할 수 없습니다.");
+        if (request.type() == ChannelType.PRIVATE) {
+            throw new IllegalArgumentException("에러: PRIVATE 채널은 수정할 수 없습니다.");
         }
 
         //채널 검색
@@ -159,12 +181,14 @@ public class BasicChannelService implements ChannelService {
         //채널 타입이 PRIVATE이면 usersId를 넣고, 아니면 null을 넣도록 구현
         return ChannelFindResponse.from(channel, (recentMessage != null) ? recentMessage.getCreatedAt() : Instant.EPOCH, (channel.getType() == ChannelType.PRIVATE) ? usersId : null);
     }
+
     // 들어온 String 필드가 null 혹은 공백인지 검증하는 메서드
     private void validateString(String str) {
         if (str == null || str.isBlank()) {
             throw new IllegalArgumentException("에러: 입력값이 Null 또는 공백입니다.");
         }
     }
+
     // 들어온 UUID 필드가 null인지 검증하는 메서드
     private void validateUUID(UUID id) {
         if (id == null) {
