@@ -38,6 +38,11 @@ public class FileMessageRepository extends FileBaseRepository implements Message
     }
 
     @Override
+    public List<Message> findByChannelID(UUID channelID) {
+        return find(m -> m.getChannelID().equals(channelID));
+    }
+
+    @Override
     public void delete(UUID id){
         try {
             Files.delete(DIRECTORY.resolve(id.toString() + ".ser"));

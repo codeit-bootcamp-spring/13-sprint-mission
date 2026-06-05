@@ -1,8 +1,5 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.sprint.mission.discodeit.entity.BaseEntity;
-import com.sprint.mission.discodeit.entity.BinaryContent;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,6 +8,8 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+
+// Todo - IOException retry logic and throws.
 public class FileBaseRepository {
 
     static void check(Path path) throws IOException {
@@ -20,7 +19,6 @@ public class FileBaseRepository {
     }
 
     static <T> T read(Path path) throws IOException {
-        check(path);
         try (
                 BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(path));
                 ObjectInputStream ois = new ObjectInputStream(bis)
@@ -43,19 +41,23 @@ public class FileBaseRepository {
     }
 
     static <T> List<T> rawFind(Predicate<T> fn, Path path) throws RuntimeException {
-        try (
-                Stream<Path> paths = Files.list(path)
-        ){
-            return paths.map(c -> {
-                        try {
-                            return (T) read(path.resolve(c));
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            return null;
-                        }})
-                    .filter(Objects::nonNull)
-                    .filter(fn)
-                    .toList();
+        try {
+            if(!Files.exists(path)){
+                Files.createDirectories(path);
+            }
+            try (Stream<Path> paths = Files.list(path);) {
+                return paths.map(c -> {
+                            try {
+                                return (T) read(path.resolve(c));
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                return null;
+                            }
+                        })
+                        .filter(Objects::nonNull)
+                        .filter(fn)
+                        .toList();
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
