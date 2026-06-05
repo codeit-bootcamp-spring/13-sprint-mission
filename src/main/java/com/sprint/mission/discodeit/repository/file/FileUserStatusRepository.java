@@ -12,7 +12,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 @Repository
 @RequiredArgsConstructor
@@ -30,20 +29,7 @@ public class FileUserStatusRepository extends FileBaseRepository implements User
 
     @Override
     public List<UserStatus> find(Predicate<UserStatus> fn) {
-        try (
-                Stream<Path> paths = Files.list(DIRECTORY)
-        ){
-            return paths.map(c -> {
-                        try {
-                            return (UserStatus) read(DIRECTORY.resolve(c));
-                        } catch (IOException | ClassNotFoundException e) {
-                            throw new RuntimeException(e);
-                        }})
-                    .filter(fn)
-                    .toList();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return rawFind(fn,DIRECTORY);
     }
 
     @Override

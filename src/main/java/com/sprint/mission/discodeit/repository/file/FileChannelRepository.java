@@ -12,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
+
 
 @Repository
 public class FileChannelRepository extends FileBaseRepository implements ChannelRepository {
@@ -33,20 +33,17 @@ public class FileChannelRepository extends FileBaseRepository implements Channel
 
     @Override
     public List<Channel> find (Predicate<Channel> fn) {
-        try (
-                Stream<Path> paths = Files.list(DIRECTORY)
-                ){
-                    return paths.map(c -> {
-                        try {
-                            return (Channel) read(DIRECTORY.resolve(c));
-                        } catch (IOException | ClassNotFoundException e) {
-                            throw new RuntimeException(e);
-                        }})
-                            .filter(fn)
-                            .toList();
-        } catch (IOException e) {
-           throw new RuntimeException(e);
-        }
+        return rawFind(fn,DIRECTORY);
+    }
+
+    @Override
+    public List<Channel> findAll() {
+        return find(cnl -> true);
+    }
+
+    @Override
+    public Channel findById(UUID id) {
+        return find(cnl -> cnl.getId().equals(id)).get(0);
     }
 
     @Override

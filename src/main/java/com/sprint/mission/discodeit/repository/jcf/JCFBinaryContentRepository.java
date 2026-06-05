@@ -43,8 +43,8 @@ public class JCFBinaryContentRepository implements BinaryContentRepository {
     }
 
     @Override
-    public BinaryContent findByAuthorID(UUID userID){
-        return find(bc -> bc.getAuthorID().equals(userID)).get(0);
+    public List<BinaryContent> findByAuthorID(UUID userID){
+        return find(bc -> bc.getAuthorID().equals(userID));
     }
 
     @Override

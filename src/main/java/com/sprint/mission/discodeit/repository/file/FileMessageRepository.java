@@ -12,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
+
 
 
 @Repository
@@ -34,20 +34,7 @@ public class FileMessageRepository extends FileBaseRepository implements Message
 
     @Override
     public List<Message> find(Predicate<Message> fn){
-        try (
-                Stream<Path> paths = Files.list(DIRECTORY)
-        ){
-            return paths.map(u -> {
-                        try {
-                            return (Message) read(DIRECTORY.resolve(u));
-                        } catch (IOException | ClassNotFoundException e) {
-                            throw new RuntimeException(e);
-                        }})
-                    .filter(fn)
-                    .toList();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return rawFind(fn,DIRECTORY);
     }
 
     @Override

@@ -36,6 +36,16 @@ public class JCFChannelRepository implements ChannelRepository {
     }
 
     @Override
+    public List<Channel> findAll() {
+        return find(cnl -> true);
+    }
+
+    @Override
+    public Channel findById(UUID id) {
+        return find(cnl -> cnl.getId().equals(id)).get(0);
+    }
+
+    @Override
     public void delete(UUID channel) {
         data.remove(channel);
     }

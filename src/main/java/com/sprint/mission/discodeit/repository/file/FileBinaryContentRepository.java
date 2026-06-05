@@ -30,21 +30,8 @@ public class FileBinaryContentRepository extends FileBaseRepository implements B
     }
 
     @Override
-    public List<BinaryContent> find(Predicate<BinaryContent> fn) {
-        try (
-                Stream<Path> paths = Files.list(DIRECTORY)
-        ){
-            return paths.map(c -> {
-                        try {
-                            return (BinaryContent) read(DIRECTORY.resolve(c));
-                        } catch (IOException | ClassNotFoundException e) {
-                            throw new RuntimeException(e);
-                        }})
-                    .filter(fn)
-                    .toList();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public List<BinaryContent> find(Predicate<BinaryContent> fn){
+        return rawFind(fn,DIRECTORY);
     }
 
     @Override
@@ -53,8 +40,8 @@ public class FileBinaryContentRepository extends FileBaseRepository implements B
     }
 
     @Override
-    public BinaryContent findByAuthorID(UUID userID) {
-        return find(bc -> bc.getAuthorID().equals(userID)).get(0);
+    public List<BinaryContent> findByAuthorID(UUID userID) {
+        return find(bc -> bc.getAuthorID().equals(userID));
     }
 
     @Override
