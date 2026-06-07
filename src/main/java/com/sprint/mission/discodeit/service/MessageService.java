@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service;
 
+import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 
 import java.util.List;
@@ -7,14 +8,14 @@ import java.util.UUID;
 
 public interface MessageService {
 
-    void createMessage(Message message);
+    Message create(String content, UUID channelId, UUID authorId);
 
-    Message findMessage(UUID id);
+    Message find(UUID id);
 
-    List<Message> findAllMessages();
+    List<Message> findAll();
 
-    void updateMessage(UUID id, String content);
+    void update(UUID id, String content);
 
-    void deleteMessage(UUID id);
+    void delete(UUID id);
     
 }

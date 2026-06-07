@@ -17,10 +17,16 @@ public class JCFChannelRepository implements ChannelRepository {
         this.data = new ArrayList<>();
     }
 
+    // 리턴값 변경으로 인한 메소드 생성
     @Override
-    public void save(Channel channel) {
-        data.add(channel);
+    public Channel save(Channel channel) {
+        return null;
     }
+
+    //    @Override
+//    public void save(Channel channel) {
+//        data.add(channel);
+//    }
 
     @Override
     public Channel findById(UUID id) {

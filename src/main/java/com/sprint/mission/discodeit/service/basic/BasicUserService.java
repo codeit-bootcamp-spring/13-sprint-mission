@@ -3,10 +3,12 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.UserService;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 
+@Service
 public class BasicUserService implements UserService {
 
     private final UserRepository userRepository;
@@ -16,22 +18,25 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public void createUser(User user) {
-        userRepository.save(user);
+    public User create(String name, String email, String password) {
+        User user = new User(
+                name, email, password
+        );
+        return userRepository.save(user);
     }
 
     @Override
-    public User findUser(UUID id) {
+    public User find(UUID id) {
         return userRepository.findById(id);
     }
 
     @Override
-    public List<User> findAllUsers() {
+    public List<User> findAll() {
         return userRepository.findAll();
     }
 
     @Override
-    public void updateUser(UUID id, String name, String email, String password) {
+    public void update(UUID id, String name, String email, String password) {
         User updatedUser = userRepository.findById(id);
         updatedUser.update(name, email, password);
 
@@ -39,7 +44,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public void deleteUser(UUID id) {
+    public void delete(UUID id) {
         userRepository.delete(id);
     }
 

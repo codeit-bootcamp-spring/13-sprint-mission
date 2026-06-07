@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
+import org.springframework.stereotype.Repository;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -10,6 +11,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 
+@Repository
 public class FileMessageRepository implements MessageRepository {
 
     // messages 디렉토리 경로
@@ -36,7 +38,7 @@ public class FileMessageRepository implements MessageRepository {
     }
 
     @Override
-    public void save(Message message) {
+    public Message save(Message message) {
         Path filePath = directory.resolve(message.getId() + ".ser");
 
         try (FileOutputStream fos = new FileOutputStream(filePath.toFile());
@@ -45,6 +47,7 @@ public class FileMessageRepository implements MessageRepository {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return message;
     }
 
     @Override

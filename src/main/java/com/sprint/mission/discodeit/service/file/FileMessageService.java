@@ -36,16 +36,22 @@ public class FileMessageService implements MessageService {
         }
     }
 
+    // 매개변수 변경으로 인한 오류로 빈 메서드 생성
     @Override
-    public void createMessage(Message message) {
-        Path filePath =
-                directory.resolve(message.getId() + ".ser");
-
-        save(filePath, message);
+    public Message create(String content, UUID channelId, UUID userId) {
+        return new Message(content, channelId, userId);
     }
 
+    //    @Override
+//    public void create(Message message) {
+//        Path filePath =
+//                directory.resolve(message.getId() + ".ser");
+//
+//        save(filePath, message);
+//    }
+
     @Override
-    public Message findMessage(UUID id) {
+    public Message find(UUID id) {
         Path filePath =
                 directory.resolve("Message " + id + ".ser");
         if (!Files.exists(filePath)) {
@@ -61,7 +67,7 @@ public class FileMessageService implements MessageService {
     }
 
     @Override
-    public List<Message> findAllMessages() {
+    public List<Message> findAll() {
         if (Files.exists(directory)) {
             try {
                 List<Message> list = Files.list(directory)
@@ -87,8 +93,8 @@ public class FileMessageService implements MessageService {
     }
 
     @Override
-    public void updateMessage(UUID id, String content) {
-        Message message = this.findMessage(id);
+    public void update(UUID id, String content) {
+        Message message = this.find(id);
         if (message == null) {
             return;
         }
@@ -101,7 +107,7 @@ public class FileMessageService implements MessageService {
     }
 
     @Override
-    public void deleteMessage(UUID id) {
+    public void delete(UUID id) {
         Path filePath = directory.resolve("Message " + id + ".ser");
 
         try {

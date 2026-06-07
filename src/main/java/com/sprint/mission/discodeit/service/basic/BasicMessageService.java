@@ -3,10 +3,12 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.service.MessageService;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 
+@Service
 public class BasicMessageService implements MessageService {
 
     private final MessageRepository messageRepository;
@@ -15,22 +17,25 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public void createMessage(Message message) {
-        messageRepository.save(message);
+    public Message create(String content, UUID channelId, UUID authorId) {
+        Message message = new Message(
+                content, channelId, authorId
+        );
+        return messageRepository.save(message);
     }
 
     @Override
-    public Message findMessage(UUID id) {
+    public Message find(UUID id) {
         return messageRepository.findById(id);
     }
 
     @Override
-    public List<Message> findAllMessages() {
+    public List<Message> findAll() {
         return  messageRepository.findAll();
     }
 
     @Override
-    public void updateMessage(UUID id, String content) {
+    public void update(UUID id, String content) {
         Message message = messageRepository.findById(id);
         message.update(content);
 
@@ -38,7 +43,7 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public void deleteMessage(UUID id) {
+    public void delete(UUID id) {
         messageRepository.delete(id);
     }
 

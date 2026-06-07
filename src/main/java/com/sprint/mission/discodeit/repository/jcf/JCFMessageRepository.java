@@ -16,10 +16,16 @@ public class JCFMessageRepository implements MessageRepository {
         this.data = new ArrayList<>();
     }
 
+    // 리턴값 변경으로 인한 메서드 생성
     @Override
-    public void save(Message message) {
-        data.add(message);
+    public Message save(Message message) {
+        return null;
     }
+
+    //    @Override
+//    public void save(Message message) {
+//        data.add(message);
+//    }
 
     @Override
     public Message findById(UUID id) {

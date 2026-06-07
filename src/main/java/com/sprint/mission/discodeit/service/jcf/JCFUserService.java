@@ -13,16 +13,22 @@ public class JCFUserService implements UserService {
         this.data = new ArrayList<>();
     }
 
-    // 생성
+    // 매개변수 변경으로 인한 오류로 빈 메서드 생성
     @Override
-    public void createUser(User user) {
-        // 저장 로직
-        data.add(user);
+    public User create(String name, String email, String password) {
+        return new User(name, email, password);
     }
+
+    // 생성
+//    @Override
+//    public void create(User user) {
+//        // 저장 로직
+//        data.add(user);
+//    }
 
     // 조회
     @Override
-    public User findUser(UUID id) {
+    public User find(UUID id) {
         for (User user : data) {
             if (user.getId().equals(id)) {
                 // 저장 로직
@@ -34,7 +40,7 @@ public class JCFUserService implements UserService {
 
     // 모두 조회
     @Override
-    public List<User> findAllUsers() {
+    public List<User> findAll() {
         if (!data.isEmpty()) {
             // 저장 롲직
             return data;
@@ -45,7 +51,7 @@ public class JCFUserService implements UserService {
     // 수정
     // 비즈니스 로직은 사용자 정보를 수정하는 규칙을 처리하는 코드
     @Override
-    public void updateUser(UUID id, String username, String email, String password) {
+    public void update(UUID id, String username, String email, String password) {
         for (User user : data) {
             // 비즈니스 로직
             if (user.getId().equals(id)) {
@@ -59,7 +65,7 @@ public class JCFUserService implements UserService {
     }
 
     // 삭제
-    public void deleteUser(UUID id) {
+    public void delete(UUID id) {
         for (User user : data) {
             if (user.getId().equals(id)) {
                 // 저장 로직

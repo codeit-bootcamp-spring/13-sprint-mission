@@ -27,7 +27,59 @@ public class JavaApplication {
 
     public static void main(String[] args) {
 
+        System.out.println("============================= JCFService 테스트 ============================");
 
+        UserRepository jcfUserRepository = new JCFUserRepository();
+        UserService jcfUserService = new BasicUserService(jcfUserRepository);
+
+        // 생성
+        User user = jcfUserService.create("혜령", "gpfud09@gmail.com", "1111@@");
+
+        // 단일 조회
+        System.out.println(jcfUserService.find(user.getId()));
+
+        // 전체 조회
+        System.out.println(jcfUserService.findAll());
+
+        // 수정 후 조회
+        jcfUserService.update(user.getId(), "조혜령", "new@gmail.com", "2222@@"
+        );
+        System.out.println(jcfUserService.find(user.getId()));
+
+        // 삭제
+        jcfUserService.delete(user.getId());
+
+        // 삭제 후 전체 조회
+        System.out.println(jcfUserService.findAll());
+
+        System.out.println("============================ FileService 테스트 ============================");
+
+        UserRepository fileUserRepository = new FileUserRepository();
+        UserService fileUserService = new BasicUserService(fileUserRepository);
+
+        // 생성
+        User user2 = fileUserService.create("영경", "young@gmail.com", "3333@@");
+
+        // 단일 조회
+        System.out.println(fileUserService.find(user2.getId()));
+
+        // 전체 조회
+        System.out.println(fileUserService.findAll());
+
+        // 수정 후 조회
+        fileUserService.update(
+                user2.getId(),
+                "김영경",
+                "updated@gmail.com",
+                "4444@@"
+        );
+        System.out.println(fileUserService.find(user2.getId()));
+
+        // 삭제
+        fileUserService.delete(user2.getId());
+
+        // 삭제 후 전체 조회
+        System.out.println(fileUserService.findAll());
     }
 
 }

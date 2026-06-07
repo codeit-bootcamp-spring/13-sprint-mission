@@ -36,16 +36,22 @@ public class FileChannelService implements ChannelService {
         }
     }
 
+    // 매개변수 변경으로 인한 오류로 빈 메서드 생성
     @Override
-    public void createChannel(Channel channel) {
-        Path filePath =
-                directory.resolve(channel.getId() + ".ser");
-
-        save(filePath, channel);
+    public Channel create(String name, Channel.ChannelType channelType, String description) {
+        return null;
     }
 
+    //    @Override
+//    public void create(Channel channel) {
+//        Path filePath =
+//                directory.resolve(channel.getId() + ".ser");
+//
+//        save(filePath, channel);
+//    }
+
     @Override
-    public Channel findChannel(UUID id) {
+    public Channel find(UUID id) {
         Path filePath =
                 directory.resolve("Channel " + id + ".ser");
         if (!Files.exists(filePath)) {
@@ -61,7 +67,7 @@ public class FileChannelService implements ChannelService {
     }
 
     @Override
-    public List<Channel> findAllChannels() {
+    public List<Channel> findAll() {
         if (Files.exists(directory)) {
             try {
                 List<Channel> list = Files.list(directory)
@@ -87,8 +93,8 @@ public class FileChannelService implements ChannelService {
     }
 
     @Override
-    public void updateChannel(UUID id, String name, Channel.ChannelType type, String description) {
-        Channel channel = findChannel(id);
+    public void update(UUID id, String name, Channel.ChannelType type, String description) {
+        Channel channel = find(id);
         if (channel == null) {
             return;
         }
@@ -101,7 +107,7 @@ public class FileChannelService implements ChannelService {
     }
 
     @Override
-    public void deleteChannel(UUID id) {
+    public void delete(UUID id) {
         Path filePath = directory.resolve("Channel " + id + ".ser");
 
         try {

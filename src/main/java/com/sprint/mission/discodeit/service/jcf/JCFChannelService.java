@@ -17,15 +17,21 @@ public class JCFChannelService implements ChannelService {
         this.data = new ArrayList<>();
     }
 
-    // 생성
+    // 매개변수 변경으로 인한 오류로 빈 메서드 생성
     @Override
-    public void createChannel(Channel ch) {
-        data.add(ch);
+    public Channel create(String name, Channel.ChannelType channelType, String description) {
+        return new Channel(name, channelType, description);
     }
+
+    // 생성
+//    @Override
+//    public void create(Channel ch) {
+//        data.add(ch);
+//    }
 
     // 조회
     @Override
-    public Channel findChannel(UUID id) {
+    public Channel find(UUID id) {
         for (Channel ch : data) {
             if (ch.getId().equals(id)) {
                 return ch;
@@ -36,7 +42,7 @@ public class JCFChannelService implements ChannelService {
 
     // 모두 조회
     @Override
-    public List<Channel> findAllChannels() {
+    public List<Channel> findAll() {
         if (!data.isEmpty()) {
             return data;
         }
@@ -45,7 +51,7 @@ public class JCFChannelService implements ChannelService {
 
     // 수정
     @Override
-    public void updateChannel(UUID id, String name, Channel.ChannelType type, String description) {
+    public void update(UUID id, String name, Channel.ChannelType type, String description) {
         for (Channel ch : data) {
             if (ch.getId().equals(id)) {
                 ch.update(name, type, description);
@@ -57,7 +63,7 @@ public class JCFChannelService implements ChannelService {
 
     // 삭제
     @Override
-    public void deleteChannel(UUID id) {
+    public void delete(UUID id) {
         for (Channel channel : data) {
             if (channel.getId().equals(id)) {
                 data.remove(channel);

@@ -3,10 +3,12 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 
+@Service
 public class BasicChannelService implements ChannelService {
 
     private final ChannelRepository channelRepository;
@@ -16,22 +18,23 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public void createChannel(Channel channel) {
-        channelRepository.save(channel);
+    public Channel create(String name, Channel.ChannelType channelType, String description) {
+        Channel channel = new Channel(name, channelType, description);
+        return channelRepository.save(channel);
     }
 
     @Override
-    public Channel findChannel(UUID id) {
+    public Channel find(UUID id) {
         return channelRepository.findById(id);
     }
 
     @Override
-    public List<Channel> findAllChannels() {
+    public List<Channel> findAll() {
         return channelRepository.findAll();
     }
 
     @Override
-    public void updateChannel(UUID id, String name, Channel.ChannelType type, String description) {
+    public void update(UUID id, String name, Channel.ChannelType type, String description) {
         Channel channel = channelRepository.findById(id);
         channel.update(name, type, description);
 
@@ -39,7 +42,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public void deleteChannel(UUID id) {
+    public void delete(UUID id) {
         channelRepository.delete(id);
     }
 }

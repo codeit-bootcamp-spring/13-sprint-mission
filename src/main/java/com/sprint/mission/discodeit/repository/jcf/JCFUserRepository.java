@@ -16,10 +16,16 @@ public class JCFUserRepository implements UserRepository {
         this.data = new ArrayList<>();
     }
 
+    // 리턴값 변경으로 인한 메서드 생성
     @Override
-    public void save(User user) {
-        data.add(user);
+    public User save(User user) {
+        return null;
     }
+
+    //    @Override
+//    public void save(User user) {
+//        data.add(user);
+//    }
 
     @Override
     public User findById(UUID id) {
