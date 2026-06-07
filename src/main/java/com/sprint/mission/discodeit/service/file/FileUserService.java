@@ -38,8 +38,8 @@ public class FileUserService implements UserService {
 
     // 매개변수 변경으로 인한 오류로 빈 메서드 생성
     @Override
-    public void create(String name, String email, String password) {
-
+    public User create(String name, String email, String password) {
+        return null;
     }
 
     //    @Override
