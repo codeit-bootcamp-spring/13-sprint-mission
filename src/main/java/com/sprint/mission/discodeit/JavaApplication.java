@@ -3,12 +3,18 @@ package com.sprint.mission.discodeit;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
+import com.sprint.mission.discodeit.repository.file.FileMessageRepository;
 import com.sprint.mission.discodeit.repository.file.FileUserRepository;
 import com.sprint.mission.discodeit.repository.jcf.JCFUserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.service.basic.BasicChannelService;
+import com.sprint.mission.discodeit.service.basic.BasicMessageService;
 import com.sprint.mission.discodeit.service.basic.BasicUserService;
 import com.sprint.mission.discodeit.service.file.FileChannelService;
 import com.sprint.mission.discodeit.service.file.FileMessageService;
@@ -25,61 +31,37 @@ import static com.sprint.mission.discodeit.entity.Channel.ChannelType.PUBLIC;
 
 public class JavaApplication {
 
+    static User setupUser(UserService userService) {
+        User user = userService.create("woody", "woody@codeit.com", "woody1234");
+        return user;
+    }
+
+    static Channel setupChannel(ChannelService channelService) {
+        Channel channel = channelService.create("공지", Channel.ChannelType.PUBLIC , "공지 채널입니다.");
+        return channel;
+    }
+
+    static void messageCreateTest(MessageService messageService, Channel channel, User author) {
+        Message message = messageService.create("안녕하세요.", channel.getId(), author.getId());
+        System.out.println("메시지 생성: " + message.getId());
+    }
+
     public static void main(String[] args) {
 
-        System.out.println("============================= JCFService 테스트 ============================");
+        UserRepository userRepository = new FileUserRepository();
+        ChannelRepository channelRepository = new FileChannelRepository();
+        MessageRepository messageRepository = new FileMessageRepository();
 
-        UserRepository jcfUserRepository = new JCFUserRepository();
-        UserService jcfUserService = new BasicUserService(jcfUserRepository);
+        UserService userService = new BasicUserService(userRepository);
+        ChannelService channelService = new BasicChannelService(channelRepository);
+        MessageService messageService = new BasicMessageService(messageRepository);
 
-        // 생성
-        User user = jcfUserService.create("혜령", "gpfud09@gmail.com", "1111@@");
+        // 셋업
+        User user = setupUser(userService);
+        Channel channel = setupChannel(channelService);
+        // 테스트
+        messageCreateTest(messageService, channel, user);
 
-        // 단일 조회
-        System.out.println(jcfUserService.find(user.getId()));
-
-        // 전체 조회
-        System.out.println(jcfUserService.findAll());
-
-        // 수정 후 조회
-        jcfUserService.update(user.getId(), "조혜령", "new@gmail.com", "2222@@"
-        );
-        System.out.println(jcfUserService.find(user.getId()));
-
-        // 삭제
-        jcfUserService.delete(user.getId());
-
-        // 삭제 후 전체 조회
-        System.out.println(jcfUserService.findAll());
-
-        System.out.println("============================ FileService 테스트 ============================");
-
-        UserRepository fileUserRepository = new FileUserRepository();
-        UserService fileUserService = new BasicUserService(fileUserRepository);
-
-        // 생성
-        User user2 = fileUserService.create("영경", "young@gmail.com", "3333@@");
-
-        // 단일 조회
-        System.out.println(fileUserService.find(user2.getId()));
-
-        // 전체 조회
-        System.out.println(fileUserService.findAll());
-
-        // 수정 후 조회
-        fileUserService.update(
-                user2.getId(),
-                "김영경",
-                "updated@gmail.com",
-                "4444@@"
-        );
-        System.out.println(fileUserService.find(user2.getId()));
-
-        // 삭제
-        fileUserService.delete(user2.getId());
-
-        // 삭제 후 전체 조회
-        System.out.println(fileUserService.findAll());
     }
 
 }
