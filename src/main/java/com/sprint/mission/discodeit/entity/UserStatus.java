@@ -1,7 +1,5 @@
 package com.sprint.mission.discodeit.entity;
 
-import lombok.*;
-
 import java.time.*;
 import java.util.*;
 
@@ -18,22 +16,25 @@ public class UserStatus extends BaseEntity {
 
     public UserStatus(UUID userId) {
         super();
-        if (userId == null) {
-            throw new IllegalArgumentException("유저아이디가 생성되지 않았습니다");
-        }
+        validateUserId(userId);
         this.userId = userId;
         this.lastOnlineAt = null;
     }
 
-
-    public void setLastOnlineAt() {
-        if(isOnline()) {
-            this.lastOnlineAt = Instant.now();
+    private void validateUserId(UUID userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("유저아이디가 없습니다. 확인해주세요");
         }
+    }
+
+
+    public void markOnline() {
+        this.lastOnlineAt = Instant.now();
         setUpdatedAt();
     }
 
 
+    // 현재 사용자가 온라인에 접속중인지 확인하는 메서드
     public boolean isOnline() {
         if (lastOnlineAt == null) return false;
         Instant now = Instant.now();
