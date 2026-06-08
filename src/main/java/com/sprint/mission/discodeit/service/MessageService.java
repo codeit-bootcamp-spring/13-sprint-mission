@@ -6,16 +6,9 @@ import java.util.List;
 import java.util.UUID;
 
 public interface MessageService {
-    //필드를 활용해 생성, 조회, 수정, 삭제하는 메소드를 구현하세요.
-    void create(Message message);//생성
-
-    Message read(UUID id);//조회
-
-    List<Message> readAll();
-
-    void update(UUID id, String message);
-
-    void delete(UUID id);
-
-
+    Message create(String content, UUID channelId, UUID authorId);
+    Message find(UUID messageId);
+    List<Message> findAll();
+    Message update(UUID messageId, String newContent);
+    void delete(UUID messageId);
 }
