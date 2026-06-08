@@ -14,65 +14,70 @@ import java.util.*;
 @Repository
 public class FileChannelRepository implements ChannelRepository {
 
-    private Map<UUID, Channel> storage = new HashMap<>();
+    private Map<UUID, Channel> database;
     private final Path filePath;
 
     public FileChannelRepository() {
-        this.filePath = Path.of("data/channels.ser");
+        this.filePath = Path.of("data", "channel.ser");
 
         try {
             Files.createDirectories(filePath.getParent());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("데이터 디렉토리 생성 실패", e);
         }
 
-        if (!Files.exists(filePath)) {
-            this.storage = new HashMap<>();
-        } else {
-            this.storage = load();
-        }
+        this.database = load();
     }
 
     @Override
     public Channel save(Channel channel) {
-        storage.put(channel.getId(), channel);
+        database.put(channel.getId(), channel);
         saveToFile();
         return channel;
     }
 
     @Override
-    public Channel findById(UUID id) {
-        return storage.get(id);
+    public Optional<Channel> findById(UUID id) {
+        return Optional.ofNullable(database.get(id));
     }
 
     @Override
     public List<Channel> findAll() {
-        return new ArrayList<>(storage.values());
+        return new ArrayList<>(database.values());
     }
 
     @Override
     public void delete(UUID id) {
-        storage.remove(id);
+        database.remove(id);
         saveToFile();
     }
 
     private void saveToFile() {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new java.io.FileOutputStream(filePath.toFile()))) {
-            oos.writeObject(storage);
+        try (ObjectOutputStream oos =
+                     new ObjectOutputStream(Files.newOutputStream(filePath))) {
+
+            oos.writeObject(database);
+
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("파일 저장 실패", e);
         }
     }
 
+
+    @SuppressWarnings("unchecked")
     private Map<UUID, Channel> load() {
+
         if (!Files.exists(filePath)) {
             return new HashMap<>();
         }
 
-        try (ObjectInputStream ois = new ObjectInputStream(new java.io.FileInputStream(filePath.toFile()))) {
+        try (ObjectInputStream ois =
+                     new ObjectInputStream(Files.newInputStream(filePath))) {
+
             return (Map<UUID, Channel>) ois.readObject();
+
         } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("파일 로드 실패", e);
         }
     }
 }

@@ -7,29 +7,29 @@ import java.util.*;
 
 public class JCFMessageRepository implements MessageRepository {
 
-    private final Map<UUID, Message> data = new HashMap<>();
+    private final Map<UUID, Message> database = new HashMap<>();
 
 
     @Override
     public Message save(Message message) {
 
-        data.put(message.getId(), message);
+        database.put(message.getId(), message);
 
         return message;
     }
 
     @Override
-    public Message findById(UUID id) {
-        return data.get(id);
+    public Optional<Message> findById(UUID id) {
+        return Optional.ofNullable(database.get(id));
     }
 
     @Override
     public List<Message> findAll() {
-        return new ArrayList<>(data.values());
+        return new ArrayList<>(database.values());
     }
 
     @Override
     public void delete(UUID id) {
-        data.remove(id);
+        database.remove(id);
     }
 }

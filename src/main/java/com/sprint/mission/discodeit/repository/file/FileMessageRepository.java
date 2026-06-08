@@ -9,91 +9,75 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Repository
 public class FileMessageRepository implements MessageRepository {
 
-    private List<Message> storage;
+    private Map<UUID, Message> database;
     private final Path filePath;
 
     public FileMessageRepository() {
-
-        this.filePath = Path.of("data/messages.ser");
+        this.filePath = Path.of("data", "message.ser");
 
         try {
             Files.createDirectories(filePath.getParent());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("데이터 디렉토리 생성 실패", e);
         }
 
-        storage = load();
+        this.database = load();
     }
-
 
     @Override
     public Message save(Message message) {
-
-        for (int i = 0; i < storage.size(); i++) {
-            if (storage.get(i).getId().equals(message.getId())) {
-                storage.remove(i);
-                break;
-            }
-        }
-
-        storage.add(message);
+        database.put(message.getId(), message);
         saveToFile();
         return message;
     }
 
     @Override
-    public Message findById(UUID id) {
-        for (Message message : storage) {
-            if (message.getId().equals(id)) {
-                return message;
-            }
-        }
-
-        return null;
+    public Optional<Message> findById(UUID id) {
+        return Optional.ofNullable(database.get(id));
     }
 
     @Override
     public List<Message> findAll() {
-        return new ArrayList<>(storage);
+        return new ArrayList<>(database.values());
     }
 
     @Override
     public void delete(UUID id) {
-        for (int i = 0; i < storage.size(); i++) {
-            if (storage.get(i).getId().equals(id)) {
-                storage.remove(i);
-                break;
-            }
-        }
-
+        database.remove(id);
         saveToFile();
-
     }
+
 
     private void saveToFile() {
-        try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(filePath))) {
-            oos.writeObject(storage);
+        try (ObjectOutputStream oos =
+                     new ObjectOutputStream(Files.newOutputStream(filePath))) {
+
+            oos.writeObject(database);
+
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("파일 저장 실패", e);
         }
     }
 
-    private List<Message> load() {
+    @SuppressWarnings("unchecked")
+    private Map<UUID, Message> load() {
+
         if (!Files.exists(filePath)) {
-            return new ArrayList<>();
+            return new HashMap<>();
         }
 
-        try (ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(filePath))) {
-            return (List<Message>) ois.readObject();
+        try (ObjectInputStream ois =
+                     new ObjectInputStream(Files.newInputStream(filePath))) {
+
+            return (Map<UUID, Message>) ois.readObject();
+
         } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("파일 로드 실패", e);
         }
     }
 }
