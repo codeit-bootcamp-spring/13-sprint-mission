@@ -13,7 +13,7 @@ public record UserCreateRequest(
     }
 
     private static void validate(String value, String fieldName){
-        if (value == null || value.isEmpty()){
+        if (value == null || value.isBlank()){
             throw new IllegalArgumentException(fieldName + "을 입력해주세요.");
         }
     }
