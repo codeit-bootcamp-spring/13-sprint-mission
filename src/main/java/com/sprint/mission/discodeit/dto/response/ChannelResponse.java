@@ -5,19 +5,26 @@ import com.sprint.mission.discodeit.entity.*;
 import java.time.*;
 import java.util.*;
 
-public record ChannelResponse (
+public record ChannelResponse(
+        UUID id,
+        Instant createdAt,
+        Instant updatedAt,
         String name,
         String description,
         ChannelType type,
         Instant lastMessageAt,
         List<UUID> userIds
-
 ) {
 
-    public static ChannelResponse from(Channel channel,
-                                       Instant lastMessageAt,
-                                       List<UUID> userIds){
+    public static ChannelResponse from(
+            Channel channel,
+            Instant lastMessageAt,
+            List<UUID> userIds
+    ) {
         return new ChannelResponse(
+                channel.getId(),
+                channel.getCreatedAt(),
+                channel.getUpdatedAt(),
                 channel.getName(),
                 channel.getDescription(),
                 channel.getType(),
@@ -25,5 +32,4 @@ public record ChannelResponse (
                 userIds
         );
     }
-
 }

@@ -7,53 +7,36 @@ import java.time.*;
 import java.util.*;
 
 public record UserRequest(
-        UUID id,
-        Instant createdAt,
-        Instant updatedAt,
         String userName,
         String email,
         String password,
-        UserStatus status
+        MultipartFile profileImage
         ) {
 
-
-    public record Create(
-            String userName,
+    public record CreateUserRequest(
+            String username,
             String email,
             String password,
             MultipartFile profileImage
     ) {
     }
 
-    public record FindById(UUID id){
+    public record ProfileImageRequest(
+            String fileName,
+            String contentType,
+            byte[] data
+    ) {
     }
 
-
-    public record FindAll(){
+    public record UpdateUserRequest(
+            UUID id,
+            String username,
+            String email,
+            String password,
+            MultipartFile profileImage
+    ) {
     }
 
-    public record Update(
-        UUID id,
-        String userName,
-        String email,
-        String password
-    ){
-    }
-
-    public record Delete(UUID id){
-    }
-
-    public static UserRequest from(Update updateDto, Instant originalCreatedAt, UserStatus originalStatus) {
-        return new UserRequest(
-                updateDto.id(),
-                originalCreatedAt, // 기존 생성일 유지
-                Instant.now(),     // 수정일은 지금 시간으로
-                updateDto.userName(),
-                updateDto.email(),
-                updateDto.password(),
-                originalStatus
-        );
-    }
 }
 
 
