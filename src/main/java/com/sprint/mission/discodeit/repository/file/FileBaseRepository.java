@@ -70,4 +70,8 @@ public class FileBaseRepository {
             throw new RuntimeException(e);
         }
     }
+
+    static Path filePath(Path path,String dir,String fileName){
+        return path.resolve(dir + fileName + ".ser");
+    }
 }

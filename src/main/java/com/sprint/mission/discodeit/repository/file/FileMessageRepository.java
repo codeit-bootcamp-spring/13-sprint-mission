@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.repository.file;
 
+import com.sprint.mission.discodeit.DiscodeitConfig;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,14 +26,12 @@ import java.util.function.Predicate;
 public class FileMessageRepository extends FileBaseRepository implements MessageRepository {
     private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","message");
 
-//    public FileMessageRepository() {
-//        super();
-//    }
+    private final DiscodeitConfig dic;
 
     @Override
     public void save(Message msg) {
         try {
-            write(DIRECTORY.resolve(msg.getId()+ ".ser"), msg);
+            write(dic.getFilePath().resolve("message").resolve(msg.getId()+ ".ser"), msg);
             log.debug("Message created - {}", msg.getId());
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -41,7 +40,7 @@ public class FileMessageRepository extends FileBaseRepository implements Message
 
     @Override
     public List<Message> find(Predicate<Message> fn){
-        return rawFind(fn,DIRECTORY);
+        return rawFind(fn,dic.getFilePath().resolve("message"));
     }
 
     @Override
@@ -52,7 +51,7 @@ public class FileMessageRepository extends FileBaseRepository implements Message
     @Override
     public void delete(UUID id){
         try {
-            Files.delete(DIRECTORY.resolve(id.toString() + ".ser"));
+            Files.delete(dic.getFilePath().resolve("message").resolve(id.toString() + ".ser"));
             log.debug("Message deleted - {}", id);
         } catch (IOException e) {
             throw new RuntimeException(e);

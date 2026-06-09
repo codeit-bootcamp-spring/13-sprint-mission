@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.repository.file;
 
+import com.sprint.mission.discodeit.DiscodeitConfig;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,10 +24,12 @@ import java.util.function.Predicate;
 public class FileReadStatusRepository extends FileBaseRepository implements ReadStatusRepository {
     private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","readstatus");
 
+    private final DiscodeitConfig dic;
+
     @Override
     public void save(ReadStatus rs) {
         try {
-            write(DIRECTORY.resolve(rs.getId()+ ".ser"), rs);
+            write(dic.getFilePath().resolve("readstatus").resolve(rs.getId()+ ".ser"), rs);
             log.debug("ReadStatus create - {}", rs.getId());
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -35,7 +38,7 @@ public class FileReadStatusRepository extends FileBaseRepository implements Read
 
     @Override
     public List<ReadStatus> find(Predicate<ReadStatus> fn) {
-        return rawFind(fn,DIRECTORY);
+        return rawFind(fn,dic.getFilePath().resolve("readstatus"));
     }
 
     @Override
@@ -51,7 +54,7 @@ public class FileReadStatusRepository extends FileBaseRepository implements Read
     @Override
     public void delete(UUID id) {
         try {
-            Files.delete(DIRECTORY.resolve(id.toString() + ".ser"));
+            Files.delete(dic.getFilePath().resolve("readstatus").resolve(id.toString() + ".ser"));
             log.debug("ReadStatus delete - {}", id);
         } catch (IOException e) {
             throw new RuntimeException(e);

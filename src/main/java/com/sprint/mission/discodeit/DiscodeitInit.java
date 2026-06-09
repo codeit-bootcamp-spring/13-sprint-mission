@@ -59,7 +59,7 @@ public class DiscodeitInit implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        log.info(dci.getFilePath());
+        log.info(dci.getFilePath().toString());
         log.info(dci.getRepoType());
         // test
         // 리소스 준비

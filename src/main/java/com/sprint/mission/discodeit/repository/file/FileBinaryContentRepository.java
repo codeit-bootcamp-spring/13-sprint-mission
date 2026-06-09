@@ -1,10 +1,10 @@
 package com.sprint.mission.discodeit.repository.file;
 
+
 import com.sprint.mission.discodeit.DiscodeitConfig;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
@@ -24,11 +24,12 @@ import java.util.function.Predicate;
 public class FileBinaryContentRepository extends FileBaseRepository implements BinaryContentRepository {
     private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","binarycontent");
 
+    private final DiscodeitConfig dic;
 
     @Override
     public void save(BinaryContent bc) {
         try {
-            write(DIRECTORY.resolve(bc.getId()+ ".ser"), bc);
+            write(dic.getFilePath().resolve("binarycontent").resolve(bc.getId()+ ".ser"), bc);
             log.debug("BinaryContent created - {}",bc.getId());
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -37,7 +38,7 @@ public class FileBinaryContentRepository extends FileBaseRepository implements B
 
     @Override
     public List<BinaryContent> find(Predicate<BinaryContent> fn){
-        return rawFind(fn,DIRECTORY);
+        return rawFind(fn,dic.getFilePath().resolve("binarycontent"));
     }
 
     @Override
@@ -53,7 +54,7 @@ public class FileBinaryContentRepository extends FileBaseRepository implements B
     @Override
     public void delete(UUID id) {
         try {
-            Files.delete(DIRECTORY.resolve(id.toString() + ".ser"));
+            Files.delete(dic.getFilePath().resolve("binarycontent").resolve(id.toString() + ".ser"));
             log.debug("BinaryContent deleted - {}",id);
         } catch (IOException e) {
             throw new RuntimeException(e);

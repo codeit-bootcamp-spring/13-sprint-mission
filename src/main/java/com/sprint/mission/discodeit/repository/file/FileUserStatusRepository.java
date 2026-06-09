@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.repository.file;
 
+import com.sprint.mission.discodeit.DiscodeitConfig;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,10 +23,12 @@ import java.util.function.Predicate;
 public class FileUserStatusRepository extends FileBaseRepository implements UserStatusRepository {
     private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","userstatus");
 
+    private final DiscodeitConfig dic;
+
     @Override
     public void save(UserStatus ust) {
         try {
-            write(DIRECTORY.resolve(ust.getId()+ ".ser"), ust);
+            write(dic.getFilePath().resolve("userstatus").resolve(ust.getId()+ ".ser"), ust);
             log.debug("UserStatus create - by UserID : {}" ,ust.getUserID());
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -34,7 +37,7 @@ public class FileUserStatusRepository extends FileBaseRepository implements User
 
     @Override
     public List<UserStatus> find(Predicate<UserStatus> fn) {
-        return rawFind(fn,DIRECTORY);
+        return rawFind(fn,dic.getFilePath().resolve("userstatus"));
     }
 
     @Override
@@ -55,7 +58,7 @@ public class FileUserStatusRepository extends FileBaseRepository implements User
     @Override
     public void delete(UUID userID) {
         try {
-            Files.delete(DIRECTORY.resolve(userID.toString() + ".ser"));
+            Files.delete(dic.getFilePath().resolve("userstatus").resolve(userID.toString() + ".ser"));
             log.debug("UserStatus delete - by UserID : {} ", userID);
         } catch (IOException e) {
             throw new RuntimeException(e);

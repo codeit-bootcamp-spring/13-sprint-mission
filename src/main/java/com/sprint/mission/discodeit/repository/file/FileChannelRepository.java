@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.repository.file;
 
+import com.sprint.mission.discodeit.DiscodeitConfig;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,14 +25,12 @@ import java.util.function.Predicate;
 public class FileChannelRepository extends FileBaseRepository implements ChannelRepository {
     private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","channel");
 
-//    public FileChannelRepository() {
-//        super();
-//    }
+    private final DiscodeitConfig dic;
 
     @Override
     public void save(Channel cnl) throws RuntimeException {
         try {
-            write(DIRECTORY.resolve(cnl.getId()+ ".ser"), cnl);
+            write(dic.getFilePath().resolve("channel").resolve(cnl.getId()+ ".ser"), cnl);
             log.debug("Channel created - {}",cnl.getId());
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -40,7 +39,7 @@ public class FileChannelRepository extends FileBaseRepository implements Channel
 
     @Override
     public List<Channel> find (Predicate<Channel> fn) {
-        return rawFind(fn,DIRECTORY);
+        return rawFind(fn,dic.getFilePath().resolve("channel"));
     }
 
     @Override
@@ -60,7 +59,7 @@ public class FileChannelRepository extends FileBaseRepository implements Channel
     @Override
     public void delete(UUID cnl) {
         try {
-            Files.delete(DIRECTORY.resolve(cnl.toString() + ".ser"));
+            Files.delete(dic.getFilePath().resolve("channel").resolve(cnl.toString() + ".ser"));
             log.debug("Channel deleted - {}",cnl);
         } catch (IOException e) {
             throw new RuntimeException(e);

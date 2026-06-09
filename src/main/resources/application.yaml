@@ -8,5 +8,5 @@ logging:
 
 discodeit:
   repository:
-    type: jcf
+    type: file
     path: "/home/latte/test"
