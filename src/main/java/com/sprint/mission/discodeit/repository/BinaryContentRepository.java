@@ -11,4 +11,12 @@ public interface BinaryContentRepository {
 
     BinaryContent findByUserId(UUID id);
 
+    void create(BinaryContent binaryContent);
+
+    List<BinaryContent> findAllByIdIn(List<UUID> ids);
+
+    BinaryContent find(UUID id);
+
+    void delete(UUID id);
+
 }
