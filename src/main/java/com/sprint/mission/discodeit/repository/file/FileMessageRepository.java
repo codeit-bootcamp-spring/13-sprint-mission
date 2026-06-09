@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.repository.file;
 
+import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
 import org.springframework.stereotype.*;
@@ -45,7 +46,7 @@ public class FileMessageRepository implements MessageRepository {
     }
 
     @Override
-    public List<Message> findAll() {
+    public List<MessageResponse> findAll() {
         return new ArrayList<>(messages);
     }
 

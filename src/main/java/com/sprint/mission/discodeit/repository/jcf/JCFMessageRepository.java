@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.repository.jcf;
 
+import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
@@ -36,7 +37,7 @@ public class JCFMessageRepository implements MessageRepository {
     }
 
     @Override
-    public List<Message> findAll() {
+    public List<MessageResponse> findAll() {
         return new ArrayList<>(data.values());
     }
 
