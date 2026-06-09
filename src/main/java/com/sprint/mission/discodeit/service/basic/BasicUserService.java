@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.UserService;
@@ -25,7 +26,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public User read(UUID id) {
+    public UserResponse find(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("유저 ID를 찾을 수가 없습니다.");
         }
@@ -40,7 +41,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public List<User> readAll() {
+    public List<UserResponse> findAll() {
         return repository.findAll();
     }
 

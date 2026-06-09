@@ -26,4 +26,10 @@ public record MessageRequest(
             List<AttachmentRequest> attachments
     ) {
     }
+
+    public record UpdateMessageRequest(
+            String content,
+            List<MultipartFile> attachments
+    ) {
+    }
 }

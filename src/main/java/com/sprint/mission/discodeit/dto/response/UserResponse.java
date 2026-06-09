@@ -9,16 +9,15 @@ public record UserResponse(
         UUID id,
         String userName,
         String email,
-        boolean onlineStatus,
-        Instant lastOnlineAt) {
+        boolean online
+        ) {
 
     public static UserResponse from(User user, UserStatus userStatus) {
         return new UserResponse(
                 user.getId(),
                 user.getUserName(),
                 user.getEmail(),
-                userStatus.isOnline(),
-                userStatus.getLastOnlineAt()
+                userStatus != null && userStatus.isOnline()
         );
     }
 }
