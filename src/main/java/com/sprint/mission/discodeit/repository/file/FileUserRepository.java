@@ -53,9 +53,9 @@ public class FileUserRepository implements UserRepository {
     }
 
     @Override
-    public User findById(UUID userId) {
+    public Optional<User> findById(UUID userId) {
         Map<UUID, User> data = loadFromFile();
-        return data.get(userId);
+        return Optional.ofNullable(data.get(userId));
     }
 
     @Override
