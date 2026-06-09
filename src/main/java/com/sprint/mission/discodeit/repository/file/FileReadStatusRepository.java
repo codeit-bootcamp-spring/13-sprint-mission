@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.util.function.Predicate;
 
 
 @Repository
+@ConditionalOnProperty(name = "discodeit.repository.type",havingValue = "file")
 @RequiredArgsConstructor
 @Slf4j
 public class FileReadStatusRepository extends FileBaseRepository implements ReadStatusRepository {

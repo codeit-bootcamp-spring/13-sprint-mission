@@ -32,6 +32,8 @@ public class DiscodeitInit implements CommandLineRunner {
     UserStatusService uss;
     BinaryContentService bcs;
 
+    DiscodeitConfig dci;
+
 
     public DiscodeitInit(
             ChannelService cs,
@@ -40,7 +42,8 @@ public class DiscodeitInit implements CommandLineRunner {
             AuthService auth,
             ReadStatusService rss,
             UserStatusService uss,
-            BinaryContentService bcs
+            BinaryContentService bcs,
+            DiscodeitConfig dci
             ) {
         this.cs = cs;
         this.us = us;
@@ -49,14 +52,15 @@ public class DiscodeitInit implements CommandLineRunner {
         this.rss = rss;
         this.uss = uss;
         this.bcs = bcs;
+        this.dci = dci;
     }
 
-    // Todo - 장기간 디버깅 시, 메모리 부족 에러 원인 찾기
-    // Todo - msg : Streaming write failed writing file a target machine: NotEnoughSpace(where=/tmp/EX0ARX/gradle-api-9.3.0.jar.part, message=No space left)
     // Todo - 클래스 버전 변경 이유 찾기.
 
     @Override
     public void run(String... args) throws Exception {
+        log.info(dci.getFilePath());
+        log.info(dci.getRepoType());
         // test
         // 리소스 준비
         try {

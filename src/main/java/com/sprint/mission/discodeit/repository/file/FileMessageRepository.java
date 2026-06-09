@@ -2,7 +2,9 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 
@@ -17,13 +19,15 @@ import java.util.function.Predicate;
 
 
 @Repository
+@ConditionalOnProperty(name = "discodeit.repository.type",havingValue = "file")
+@RequiredArgsConstructor
 @Slf4j
 public class FileMessageRepository extends FileBaseRepository implements MessageRepository {
     private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","message");
 
-    public FileMessageRepository() {
-        super();
-    }
+//    public FileMessageRepository() {
+//        super();
+//    }
 
     @Override
     public void save(Message msg) {

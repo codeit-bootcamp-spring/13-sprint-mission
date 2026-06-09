@@ -4,7 +4,9 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
@@ -17,13 +19,15 @@ import java.util.function.Predicate;
 
 
 @Repository
+@ConditionalOnProperty(name = "discodeit.repository.type",havingValue = "file")
+@RequiredArgsConstructor
 @Slf4j
 public class FileUserRepository extends FileBaseRepository implements UserRepository {
     private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","user");
 
-    public FileUserRepository() {
-        super();
-    }
+//    public FileUserRepository() {
+//        super();
+//    }
 
     @Override
     public void save(User user){

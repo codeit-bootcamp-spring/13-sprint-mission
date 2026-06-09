@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 @Repository
+@ConditionalOnProperty(name = "discodeit.repository.type",havingValue = "file")
 @RequiredArgsConstructor
 @Slf4j
 public class FileUserStatusRepository extends FileBaseRepository implements UserStatusRepository {

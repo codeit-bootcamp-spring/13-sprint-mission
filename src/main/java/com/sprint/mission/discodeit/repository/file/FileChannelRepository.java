@@ -2,7 +2,9 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
@@ -16,13 +18,15 @@ import java.util.function.Predicate;
 
 
 @Repository
+@ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
+@RequiredArgsConstructor
 @Slf4j
 public class FileChannelRepository extends FileBaseRepository implements ChannelRepository {
     private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","channel");
 
-    public FileChannelRepository() {
-        super();
-    }
+//    public FileChannelRepository() {
+//        super();
+//    }
 
     @Override
     public void save(Channel cnl) throws RuntimeException {
@@ -44,7 +48,6 @@ public class FileChannelRepository extends FileBaseRepository implements Channel
         return find(cnl -> true);
     }
 
-    // Todo - NullPointerException handle in fn
     @Override
     public Channel findById(UUID id) {
         try {

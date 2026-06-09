@@ -2,26 +2,21 @@ package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
+
+@Repository
+@RequiredArgsConstructor
+@ConditionalOnProperty(name="discodeit.repository.type", havingValue = "jcf", matchIfMissing = true)
 public class JCFChannelRepository implements ChannelRepository {
-    private final HashMap<UUID, Channel> data;
-
-    private static class JCR {
-        private static final JCFChannelRepository INSTANCE = new JCFChannelRepository();
-    }
-
-    private JCFChannelRepository() {
-        data = new HashMap<>();
-    }
-
-    public static JCFChannelRepository getInstance() {
-        return JCR.INSTANCE;
-    }
+    private final HashMap<UUID, Channel> data = new HashMap<>();
 
     @Override
     public void save(Channel cnl) {
@@ -42,7 +37,11 @@ public class JCFChannelRepository implements ChannelRepository {
 
     @Override
     public Channel findById(UUID id) {
-        return find(cnl -> cnl.getId().equals(id)).get(0);
+        try {
+            return find(cnl -> cnl.getId().equals(id)).get(0);
+        } catch (IndexOutOfBoundsException e) {
+            return null;
+        }
     }
 
     @Override

@@ -5,3 +5,8 @@ spring:
 logging:
   level:
     root: INFO
+
+discodeit:
+  repository:
+    type: jcf
+    path: "/home/latte/test"

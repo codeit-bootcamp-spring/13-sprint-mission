@@ -2,6 +2,9 @@ package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Repository;
 
 import java.util.HashSet;
 import java.util.List;
@@ -9,20 +12,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 
-public class JCFReadStatusReppository implements ReadStatusRepository {
-    private final Set<ReadStatus> data;
 
-    private JCFReadStatusReppository() {
-        data = new HashSet<>();
-    }
 
-    private static class JRR{
-        private static final JCFReadStatusReppository INSTANCE = new JCFReadStatusReppository();
-    }
-
-    public static JCFReadStatusReppository getInstance() {
-        return JRR.INSTANCE;
-    }
+@Repository
+@RequiredArgsConstructor
+@ConditionalOnProperty(name="discodeit.repository.type",havingValue = "jcf", matchIfMissing = true)
+public class JCFReadStatusRepository implements ReadStatusRepository {
+    private final Set<ReadStatus> data = new HashSet<>();
 
     @Override
     public void save(ReadStatus readStatus){
@@ -38,7 +34,11 @@ public class JCFReadStatusReppository implements ReadStatusRepository {
 
     @Override
     public ReadStatus findByID(UUID id){
-        return find(rs -> rs.getId().equals(id)).get(0);
+        try {
+            return find(rs -> rs.getId().equals(id)).get(0);
+        } catch (IndexOutOfBoundsException e) {
+            return null;
+        }
     }
 
     @Override

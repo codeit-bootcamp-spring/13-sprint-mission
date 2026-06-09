@@ -2,24 +2,21 @@ package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
+
+@Repository
+@RequiredArgsConstructor
+@ConditionalOnProperty(name="discodeit.repository.type",havingValue = "jcf", matchIfMissing = true)
 public class JCFUserRepository implements UserRepository {
-    private final HashMap<UUID, User> data;
-
-    private static class JUR{
-        private static final JCFUserRepository INSTANCE = new JCFUserRepository();
-    }
-
-    private JCFUserRepository() { data = new HashMap<>();}
-
-    public static JCFUserRepository getInstance() {
-        return JUR.INSTANCE;
-    }
+    private final HashMap<UUID, User> data = new HashMap<>();
 
     @Override
     public void save(User user) {
@@ -40,7 +37,11 @@ public class JCFUserRepository implements UserRepository {
 
     @Override
     public User findByEmail(String email){
-        return find(u -> u.getEmail().equals(email)).get(0);
+        try {
+            return find(u -> u.getEmail().equals(email)).get(0);
+        } catch (IndexOutOfBoundsException e) {
+            return null;
+        }
     }
 
     @Override
