@@ -19,7 +19,7 @@ public class Channel implements Serializable {
     private ChannelType channelType;
     private String description;
 
-    //공개 채널
+    //PUBLIC
     public Channel(String name, String description) {
         this.channelId = UUID.randomUUID();
         this.name = name;
@@ -29,13 +29,11 @@ public class Channel implements Serializable {
         this.channelType = channelType.PUBLIC;
     }
 
-    //비공개 채널
-    public Channel(String name, String description, ChannelType channelType) {
+    //PRIVATE
+    public Channel(ChannelType channelType) {
         this.channelId = UUID.randomUUID();
-        this.name = name;
         this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
-        this.description = description;
         this.channelType = channelType;
     }
 
