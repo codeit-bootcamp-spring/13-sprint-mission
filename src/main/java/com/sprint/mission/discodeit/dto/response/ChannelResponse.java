@@ -7,8 +7,6 @@ import java.util.*;
 
 public record ChannelResponse(
         UUID id,
-        Instant createdAt,
-        Instant updatedAt,
         String name,
         String description,
         ChannelType type,
@@ -23,8 +21,6 @@ public record ChannelResponse(
     ) {
         return new ChannelResponse(
                 channel.getId(),
-                channel.getCreatedAt(),
-                channel.getUpdatedAt(),
                 channel.getName(),
                 channel.getDescription(),
                 channel.getType(),

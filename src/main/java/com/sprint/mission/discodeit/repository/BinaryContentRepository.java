@@ -8,4 +8,7 @@ import java.util.*;
 @Repository
 public interface BinaryContentRepository {
     List<BinaryContent> findAllByMessageId(UUID id);
+
+    BinaryContent findByUserId(UUID id);
+
 }

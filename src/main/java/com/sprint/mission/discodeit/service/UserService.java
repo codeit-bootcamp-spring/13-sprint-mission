@@ -10,7 +10,7 @@ import java.util.*;
 
 public interface UserService {
 
-    User create(UserRequest.CreateUserRequest request);
+    UserResponse create(UserRequest.CreateUserRequest request);
 
     UserResponse find(UUID id);
 

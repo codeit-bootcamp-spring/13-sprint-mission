@@ -1,8 +1,9 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.*;
 import org.springframework.stereotype.*;
@@ -15,16 +16,28 @@ import java.util.UUID;
 public class BasicUserService implements UserService {
 
     private final UserRepository repository;
+    private final UserStatusRepository userStatusRepository;
+    private final BinaryContentRepository binaryContentRepository;
 
     @Override
-    public User create(String userName, String email, String passWord) {
-        User user = new User(userName, email, passWord);
+    public UserResponse create(UserRequest.CreateUserRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("유저 생성 요청은 필수입니다.");
+        }
+
+        User user = new User(
+                request.username(),
+                request.email(),
+                request.password()
+        );
 
         repository.create(user);
 
-        return user;
-    }
+        UserStatus userStatus = new UserStatus(user.getId());
+        userStatusRepository.create(userStatus);
 
+        return UserResponse.from(user, userStatus, null);
+    }
     @Override
     public UserResponse find(UUID id) {
         if (id == null) {
@@ -37,31 +50,50 @@ public class BasicUserService implements UserService {
             throw new IllegalArgumentException("존재하지 않는 유저 ID입니다.");
         }
 
-        return user;
+        UserStatus userStatus = userStatusRepository.findByUserId(id);
+        BinaryContent profile = binaryContentRepository.findByUserId(id);
+
+        return UserResponse.from(user, userStatus, profile);
+
     }
 
     @Override
     public List<UserResponse> findAll() {
-        return repository.findAll();
+        return repository.findAll().stream()
+                .map (user -> {
+                UserStatus userStatus = userStatusRepository.findByUserId(user.getId());
+                BinaryContent profile = binaryContentRepository.findByUserId(user.getId());
+
+            return UserResponse.from(user, userStatus, profile);
+        }).toList();
     }
 
     @Override
-    public User update(
-            UUID id,
-            String userName,
-            String email,
-            String passWord
-    ) {
+    public UserResponse update(UUID id, UserRequest.UpdateUserRequest request) {
+        if (id == null) {
+            throw new IllegalArgumentException("유저 ID는 필수입니다.");
+        }
+
+        if (request == null) {
+            throw new IllegalArgumentException("유저 수정 요청은 필수입니다.");
+        }
 
         User user = repository.find(id);
 
-        user.updateUserName(userName);
-        user.updateEmail(email);
-        user.updatePassWord(passWord);
+        if (user == null) {
+            throw new IllegalArgumentException("존재하지 않는 유저 ID입니다.");
+        }
+
+        user.updateUserName(request.username());
+        user.updateEmail(request.email());
+        user.updatePassWord(request.password());
 
         repository.update(id, user);
 
-        return user;
+        UserStatus userStatus = userStatusRepository.findByUserId(id);
+        BinaryContent profile = binaryContentRepository.findByUserId(id);
+
+        return UserResponse.from(user, userStatus, profile);
     }
 
     @Override
