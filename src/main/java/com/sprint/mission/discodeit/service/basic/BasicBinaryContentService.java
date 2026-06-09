@@ -8,9 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,9 +24,6 @@ public class BasicBinaryContentService implements BinaryContentService {
     public BinaryContent createBinaryContent(BinaryContentCreateRequest request) {
         //입력값 검증 처리하겠습니다
         validateString(request.contentPath());
-
-        //요청받은 Content경로가 유효한지 검증
-        validateContentPath(request.contentPath());
 
         //BinaryContent 생성
         BinaryContent binaryContent = new BinaryContent(request.contentPath());
@@ -54,6 +48,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     public List<BinaryContent> findAllBinaryContentByIdIn(List<UUID> binaryContentIds) {
         //입력값 검증 처리하겠습니다
+        validateList(binaryContentIds);
         for (UUID binaryContentId : binaryContentIds) {
             validateUUID(binaryContentId);
         }
@@ -92,11 +87,10 @@ public class BasicBinaryContentService implements BinaryContentService {
             throw new IllegalArgumentException("에러: 입력값이 Null입니다.");
         }
     }
-
-    //요청받은 Content경로가 유효한지 검증하는 메서드
-    private void validateContentPath(String path) {
-        if (!Files.exists(Path.of(path))) {
-            throw new IllegalArgumentException("에러: ContentPath가 유효하지 않습니다.");
+    // 들어온 List<UUID> 필드가 null인지 검증하는 메서드
+    private void validateList(List<UUID> ids) {
+        if (ids == null) {
+            throw new IllegalArgumentException("에러: 입력값이 Null입니다.");
         }
     }
 }

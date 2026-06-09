@@ -72,7 +72,6 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = userStatusRepository.findUserStatusByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
 
-//        log.info(userTemp.toString());
         return UserFindResponse.from(userTemp, userStatus.isUserOnline());
     }
 
@@ -101,31 +100,35 @@ public class BasicUserService implements UserService {
         User userTemp = userRepository.findUserById(request.userId())
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
-        //중복된 이름, 이메일로 생성 요청을 한 경우 검증
-        validateNameExists(request.newName());
-        validateEmailExists(request.newEmail());
+        //중복된 이름, 이메일로 수정 요청을 한 경우 검증
+        if (!userTemp.getName().equals(request.newName())) {
+            validateNameExists(request.newName());
+        }
+        if (!userTemp.getEmail().equals(request.newEmail())) {
+            validateEmailExists(request.newEmail());
+        }
 
         //프로필 사진 경로 존재 시
         UUID binaryContentId = null;
         if (request.profileImagePath() != null && !request.profileImagePath().isBlank()) {
-            //BinaryContent 검색
+            //기존 BinaryContent 검색
             BinaryContent binaryContent = binaryContentRepository.findBinaryContentByContentPath(request.profileImagePath())
                     .orElse(null);
 
-            //BinaryContent 없으면
+            //기존 BinaryContent 없으면
             if (binaryContent == null) {
                 //binaryContent 생성
                 binaryContent = new BinaryContent(request.profileImagePath());
                 binaryContentRepository.createBinaryContent(binaryContent);
                 //기존 유저 프로필 이미지 삭제
-                deleteProfileImage(request.userId());
+                deleteProfileImage(userTemp);
             }
 
+            //기존 BinaryContent id 반환
             binaryContentId = binaryContent.getId();
-        }
-        else {  //업데이트 프로필 사진이 없으면 기존 프로필 사진 삭제
+        } else {  //업데이트 프로필 사진이 없으면 기존 프로필 사진 삭제
             //기존 유저 프로필 이미지 삭제
-            deleteProfileImage(request.userId());
+            deleteProfileImage(userTemp);
         }
 
         log.info("유저: {}가 수정됨.", userTemp.getName());
@@ -161,11 +164,14 @@ public class BasicUserService implements UserService {
         //유저가 작성한 메세지 검색 및 삭제
         List<Message> messageList = messageRepository.findAllMessagesByUserId(userId);
         for (Message message : messageList) {
+            for (UUID attachmentId : message.getAttachmentIds()) {
+                binaryContentRepository.deleteBinaryContent(attachmentId);
+            }
             messageRepository.deleteMessageById(message.getId());
         }
 
         //기존 유저 프로필 이미지 삭제
-        deleteProfileImage(userId);
+        deleteProfileImage(userTemp);
 
         //유저 삭제
         userRepository.deleteUser(userId);
@@ -175,31 +181,35 @@ public class BasicUserService implements UserService {
 
 
     //유저의 현재 프로필 이미지가 존재한다면 삭제하기
-    private void deleteProfileImage(UUID userId) {
-        UUID binaryContentId = userRepository.findUserById(userId).get().getProfileId();
+    private void deleteProfileImage(User user) {
+        UUID binaryContentId = user.getProfileId();
 
         if (binaryContentId != null) {
             binaryContentRepository.deleteBinaryContent(binaryContentId);
         }
     }
+
     // 들어온 String 필드가 null 혹은 공백인지 검증하는 메서드
     private void validateString(String str) {
         if (str == null || str.isBlank()) {
             throw new IllegalArgumentException("에러: 입력값이 Null 또는 공백입니다.");
         }
     }
+
     // 들어온 UUID 필드가 null인지 검증하는 메서드
     private void validateUUID(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("에러: 입력값이 Null입니다.");
         }
     }
+
     // 들어온 이름 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateNameExists(String name) {
         if (userRepository.existsUserByName(name)) {
             throw new RuntimeException("이름: " + name + "은 이미 사용중입니다.");
         }
     }
+
     // 들어온 이메일 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateEmailExists(String email) {
         if (userRepository.existsUserByEmail(email)) {

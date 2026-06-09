@@ -6,9 +6,7 @@ import com.sprint.mission.discodeit.dto.request.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelFindResponse;
 import com.sprint.mission.discodeit.dto.response.ChannelUpdateResponse;
 import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.repository.ChannelRepository;
-import com.sprint.mission.discodeit.repository.MessageRepository;
-import com.sprint.mission.discodeit.repository.ReadStatusRepository;
+import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +26,9 @@ public class BasicChannelService implements ChannelService {
     //필드
     private final ChannelRepository channelRepository;
     private final MessageRepository messageRepository;
+    private final UserRepository userRepository;
     private final ReadStatusRepository readStatusRepository;
+    private final BinaryContentRepository binaryContentRepository;
 
     @Override
     public Channel createPrivateChannel(PrivateChannelCreateRequest request) {
@@ -48,6 +48,9 @@ public class BasicChannelService implements ChannelService {
 
         //ReadStatus 생성
         for (UUID userId : request.userIdList()) {
+            // 유저 존재하는지 검증
+            validateUserExists(userId);
+
             ReadStatus readStatus = new ReadStatus(userId, channel.getId());
             readStatusRepository.createReadStatus(readStatus);
             log.info("ReadStatus가 생성됨.");
@@ -124,6 +127,7 @@ public class BasicChannelService implements ChannelService {
         //입력값 검증 처리하겠습니다
         validateString(request.name());
         validateString(request.description());
+        validateUUID(request.channelId());
 
         //ChannelType 검증
         if (request.type() == ChannelType.PRIVATE) {
@@ -151,7 +155,13 @@ public class BasicChannelService implements ChannelService {
                 .orElseThrow(() -> new RuntimeException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
 
         //채널 내 메시지 삭제
-        messageRepository.deleteMessagesByChannelId(channelTemp.getId());
+        List<Message> messageList = messageRepository.findAllMessagesByChannelId(channelId);
+        for (Message message : messageList) {
+            for (UUID attachmentId : message.getAttachmentIds()) {
+                binaryContentRepository.deleteBinaryContent(attachmentId);
+            }
+            messageRepository.deleteMessageById(message.getId());
+        }
 
         //채널 참조하는 ReadStatus 삭제
         readStatusRepository.deleteReadStatusByChannelId(channelTemp.getId());
@@ -188,11 +198,16 @@ public class BasicChannelService implements ChannelService {
             throw new IllegalArgumentException("에러: 입력값이 Null 또는 공백입니다.");
         }
     }
-
     // 들어온 UUID 필드가 null인지 검증하는 메서드
     private void validateUUID(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("에러: 입력값이 Null입니다.");
+        }
+    }
+    // 들어온 userId 필드가 레포지터리에 존재하는지 검증하는 메서드
+    private void validateUserExists(UUID userId) {
+        if (!userRepository.existsUserById(userId)) {
+            throw new RuntimeException("유저: " + userId + "이 존재하지 않습니다.");
         }
     }
 }

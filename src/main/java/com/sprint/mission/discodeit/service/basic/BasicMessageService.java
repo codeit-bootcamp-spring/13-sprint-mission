@@ -4,9 +4,7 @@ import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.MessageUpdateResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
-import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
@@ -45,12 +43,14 @@ public class BasicMessageService implements MessageService {
 
         //첨부파일 추가 작업
         List<UUID> binaryContentIdList = new ArrayList<>();
-        for (String attachmentPath : request.attachmentPathList()) {
-            if (attachmentPath != null && !attachmentPath.isBlank()) {
-                //binaryContent 생성
-                BinaryContent binaryContent = new BinaryContent(attachmentPath);
-                binaryContentRepository.createBinaryContent(binaryContent);
-                binaryContentIdList.add(binaryContent.getId());
+        if (request.attachmentPathList() != null) {
+            for (String attachmentPath : request.attachmentPathList()) {
+                if (attachmentPath != null && !attachmentPath.isBlank()) {
+                    //binaryContent 생성
+                    BinaryContent binaryContent = new BinaryContent(attachmentPath);
+                    binaryContentRepository.createBinaryContent(binaryContent);
+                    binaryContentIdList.add(binaryContent.getId());
+                }
             }
         }
 
@@ -87,12 +87,14 @@ public class BasicMessageService implements MessageService {
 
         //첨부파일 추가 작업
         List<UUID> binaryContentIdList = new ArrayList<>();
-        for (String attachmentPath : request.attachmentPathList()) {
-            if (attachmentPath != null && !attachmentPath.isBlank()) {
-                //binaryContent 생성
-                BinaryContent binaryContent = new BinaryContent(attachmentPath);
-                binaryContentRepository.createBinaryContent(binaryContent);
-                binaryContentIdList.add(binaryContent.getId());
+        if (request.attachmentPathList() != null) {
+            for (String attachmentPath : request.attachmentPathList()) {
+                if (attachmentPath != null && !attachmentPath.isBlank()) {
+                    //binaryContent 생성
+                    BinaryContent binaryContent = new BinaryContent(attachmentPath);
+                    binaryContentRepository.createBinaryContent(binaryContent);
+                    binaryContentIdList.add(binaryContent.getId());
+                }
             }
         }
 
