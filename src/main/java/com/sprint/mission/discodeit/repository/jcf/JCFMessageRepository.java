@@ -13,6 +13,10 @@ public class JCFMessageRepository implements MessageRepository {
 
     @Override
     public Message create(Message message) {
+        if(message == null || message.getContent() == null ||
+                "".equals(message.getContent().trim()) || message.getContent().trim().isEmpty()) {
+            throw new IllegalArgumentException("메세지 내용은 비어있을 수 없습니다.");
+        }
         messages.add(message);
         return message;
     }

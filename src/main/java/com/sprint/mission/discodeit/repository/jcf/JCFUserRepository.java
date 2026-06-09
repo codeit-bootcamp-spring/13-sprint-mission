@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class JCFUserRepository implements UserRepository {
@@ -18,10 +19,10 @@ public class JCFUserRepository implements UserRepository {
     }
 
     @Override
-    public User findById(UUID id) {
+    public Optional<User> findById(UUID id) {
         return users.stream()
                 .filter(u -> u.getId().equals(id))
-                .findFirst().orElse(null);
+                .findFirst();
     }
     @Override
     public List<User> findAll() {
@@ -30,10 +31,8 @@ public class JCFUserRepository implements UserRepository {
 
     @Override
     public void update(User inputUser) {
-        User foundUser = findById(inputUser.getId());
-        if (foundUser != null) {
-            foundUser.updateName(inputUser);
-        }
+        findById(inputUser.getId())
+                .ifPresent(u -> u.updateName(inputUser));
     }
 
     @Override

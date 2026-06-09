@@ -6,41 +6,58 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.file.FileChannelService;
-import com.sprint.mission.discodeit.service.file.FileMessageService;
-import com.sprint.mission.discodeit.service.file.FileUserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.Scanner;
 
 @SpringBootApplication
+@Slf4j
 public class DiscodeitApplication {
 
 	public static void main(String[] args) {
 
-		SpringApplication.run(DiscodeitApplication.class, args);
+		ConfigurableApplicationContext context = SpringApplication.run(DiscodeitApplication.class, args);
 
-		// <기존 데이터 등록
-		UserService userService = new FileUserService(); // 2차 미션 때는 File로 갈아 끼우기
-		ChannelService channelService = new FileChannelService();
-		MessageService messageService = new FileMessageService();
+		// 서비스 초기화
+		// TODO context에서 Bean을 조회하여 각 서비스 구현체 할당 코드 작성하세요.
+		// <기존 데이터 등록>
+		UserService userService = context.getBean(UserService.class);
+		ChannelService channelService = context.getBean(ChannelService.class);
+		MessageService messageService = context.getBean(MessageService.class);
+
 		Scanner scanner = new Scanner(System.in); // 키보드 입력기
 
-		SampleData.loadSampleNames(); // 기존 데이터 먼저 준비
-		SampleData.loadChannelTitles(); // 기존 데이터 먼저 준비
+		// 기존 데이터 먼저 준비
+		SampleData.loadSampleNames();
+		SampleData.loadChannelTitles();
 		SampleData.loadMessages();
 
-		for (String name : SampleData.names) { // 기존 데이터 먼저 등록
-			userService.create(new User(name));
+		// 기존 데이터 먼저 등록
+		if (userService.findAll().isEmpty()) {
+			for (String name : SampleData.names) {
+				userService.create(new User(name));
+			}
 		}
-		// <기존 채널 등록>
-		for (String title : SampleData.titles) { // 기존 데이터 먼저 등록
-			channelService.create(new Channel(title));
+		if (channelService.findAll().isEmpty()) {
+			for (String title : SampleData.titles) {
+				channelService.create(new Channel(title));
+			}
 		}
-		for (String message : SampleData.messages) {
-			messageService.create(new Message(message));
+		if (messageService.findAll().isEmpty()) {
+			for (String message : SampleData.messages) {
+				messageService.create(new Message(message));
+			}
 		}
+
+
+		log.info("=== 스프링 미션 3 기본 테스트 요구사항 실행 ===");
+		User testUser = setupUser(userService);
+		Channel testChannel = setupChannel(channelService);
+		Message testMessage = setupMessage(messageService);
+		log.info("======================================\n");
 
 		boolean running = true;
 
@@ -68,6 +85,22 @@ public class DiscodeitApplication {
 			}
 		}
 
+	}
+
+	private static User setupUser(UserService userService) {
+		User user = userService.create(new User("테스트 유저"));
+		log.info("-> 테스트 유저 등록 완료: {}", user.getUsername());
+		return user;
+	}
+	private static Channel setupChannel(ChannelService channelService) {
+		Channel channel = channelService.create(new Channel("테스트 채널"));
+		log.info("-> 테스트 채널 등록 완료: {}", channel.getChannelTitles());
+		return channel;
+	}
+	private static Message setupMessage(MessageService messageService) {
+		Message message = messageService.create(new Message("테스트 메세지"));
+		log.info("-> 테스트 메세지 등록 완료: {}", message.getContent());
+		return message;
 	}
 
 }
