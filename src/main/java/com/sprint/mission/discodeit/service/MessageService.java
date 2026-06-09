@@ -1,21 +1,24 @@
 package com.sprint.mission.discodeit.service;
 
+import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface MessageService {
 
     //(C)생성
-    Message createContent(String content, UUID channelId, UUID authorId);
+    Message create(MessageCreateRequest request);
     //(R)조회 단건
-    Message findByMessage(UUID messageId);
+    Message findById(UUID messageId);
     //(R)조회 다수[특정 채널 메시지 조회]
-    List<Message> findAllByMessage(UUID channelId);
+    List<Message> findAllByChannelId(UUID channelId);
     //(U)수정
-    Message updateContent(UUID messageId, String content);
+    Message update(UUID messageId, MessageUpdateRequest request);
     //(D)삭제
-    void deleteMessage(UUID messageId);
+    void delete(UUID messageId);
 }
