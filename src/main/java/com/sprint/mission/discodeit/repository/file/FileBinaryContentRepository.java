@@ -37,6 +37,7 @@ public class FileBinaryContentRepository implements BinaryContentRepository {
         }
     }
 
+    //파일 불러오기
     private Map<UUID, BinaryContent> loadFromFile(){
         if (!Files.exists(filePath)){
             return new HashMap<>();
