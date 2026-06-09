@@ -10,8 +10,6 @@ import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -21,8 +19,6 @@ import java.util.function.Predicate;
 @RequiredArgsConstructor
 @Slf4j
 public class FileUserStatusRepository extends FileBaseRepository implements UserStatusRepository {
-    private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","userstatus");
-
     private final DiscodeitConfig dic;
 
     @Override

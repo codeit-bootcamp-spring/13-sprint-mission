@@ -58,7 +58,7 @@ public class DiscodeitInit implements CommandLineRunner {
     // Todo - 클래스 버전 변경 이유 찾기.
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         log.info(dci.getFilePath().toString());
         log.info(dci.getRepoType());
         // test

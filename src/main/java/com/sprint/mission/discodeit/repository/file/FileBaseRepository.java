@@ -47,7 +47,7 @@ public class FileBaseRepository {
             if(!Files.exists(path)){
                 Files.createDirectories(path);
             }
-            try (Stream<Path> paths = Files.list(path);) {
+            try (Stream<Path> paths = Files.list(path)) {
                 List<T> pre = paths.map(c -> {
                             try {
                                 return (T) read(path.resolve(c));

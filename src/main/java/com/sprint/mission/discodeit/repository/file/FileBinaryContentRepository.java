@@ -11,8 +11,6 @@ import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -22,8 +20,6 @@ import java.util.function.Predicate;
 @ConditionalOnProperty(name = "discodeit.repository.type",havingValue = "file")
 @Slf4j
 public class FileBinaryContentRepository extends FileBaseRepository implements BinaryContentRepository {
-    private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","binarycontent");
-
     private final DiscodeitConfig dic;
 
     @Override

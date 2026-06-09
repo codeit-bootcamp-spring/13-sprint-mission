@@ -11,8 +11,6 @@ import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -24,8 +22,6 @@ import java.util.function.Predicate;
 @RequiredArgsConstructor
 @Slf4j
 public class FileMessageRepository extends FileBaseRepository implements MessageRepository {
-    private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"),"data","message");
-
     private final DiscodeitConfig dic;
 
     @Override
