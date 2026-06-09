@@ -4,29 +4,31 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.UUID;
 
 @Getter
 @NoArgsConstructor
-public class UserStatus {
+public class UserStatus implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private UUID id;
     private Instant createdAt;
     private Instant updatedAt;
     //
-    private UUID userId;
+    private User user;
     private Instant lastActiveAt;
-    private boolean isOnline;
 
     @Builder
     public UserStatus(
             UUID id, Instant createdAt, Instant updatedAt,
-            UUID userId, Instant lastActiveAt) {
+            User user, Instant lastActiveAt) {
         this.id = id;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-        this.userId = userId;
+        this.user = user;
         this.lastActiveAt = lastActiveAt;
     }
 
@@ -42,5 +44,9 @@ public class UserStatus {
     public void updateActiveTime() {
         this.lastActiveAt = Instant.now();
         this.updatedAt = Instant.now();
+    }
+
+    public boolean isUser(UUID userId) {
+        return user != null && user.getId().equals(userId);
     }
 }

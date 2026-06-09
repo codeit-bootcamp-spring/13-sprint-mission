@@ -31,12 +31,12 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     public UserStatusResponse create(UserStatusCreateRequest request) {
-        if (userRepository.findById(request.userId()) == null) {
-            throw new IllegalArgumentException("존재하지 않는 유저입니다.");
-        }
+        User user = userRepository.findById(request.userId())
+                .orElseThrow(() ->new IllegalArgumentException("존재하지 않는 유저입니다."));
+
 
         boolean isAlreadyExist = userStatusRepository.findAll().stream()
-                .anyMatch(us -> us.getUserId().equals(request.userId()));
+                .anyMatch(us -> us.isUser(request.userId()));
 
         if (isAlreadyExist) {
             throw new IllegalArgumentException("이미 상태 정보가 존재하는 유저입니다.");
@@ -46,7 +46,7 @@ public class BasicUserStatusService implements UserStatusService {
                 .id(UUID.randomUUID())
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
-                .userId(request.userId())
+                .user(user)
                 .lastActiveAt(Instant.now())
                 .build();
 
@@ -84,7 +84,7 @@ public class BasicUserStatusService implements UserStatusService {
     @Override
     public UserStatusResponse updateByUserId(UUID userId, String statusName) {
         UserStatus userStatus = userStatusRepository.findAll().stream()
-                .filter(us -> us.getUserId().equals(userId))
+                .filter(us -> us.isUser(userId))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 상태 정보입니다."));
 
@@ -109,7 +109,7 @@ public class BasicUserStatusService implements UserStatusService {
                 userStatus.getId(),
                 userStatus.getCreatedAt(),
                 userStatus.getUpdatedAt(),
-                userStatus.getUserId(),
+                userStatus.getUser().getId(),
                 currentStatus
         );
     }

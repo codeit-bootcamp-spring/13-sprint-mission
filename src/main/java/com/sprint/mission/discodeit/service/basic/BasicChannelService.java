@@ -9,13 +9,13 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -67,13 +67,13 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public ChannelResponse findById(UUID id) {
-        Channel channel = channelRepository.findById(id);
+        Optional<Channel> channel = channelRepository.findById(id);
 
-        if (channel == null) {
+        if (channel.isEmpty()) {
             throw new IllegalArgumentException("존재하지 않는 채널입니다.");
         }
 
-        return convertToResponse(channel);
+        return convertToResponse(channel.orElse(null));
     }
 
     @Override
@@ -100,23 +100,21 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public ChannelResponse update(ChannelUpdateRequest request) {
-        Channel channel = channelRepository.findById(request.id());
-        if (channel == null) {
+        Optional<Channel> channel = channelRepository.findById(request.id());
+        if (channel.isEmpty()) {
             throw new IllegalArgumentException("존재하지 않는 채널입니다.");
         }
-        if ("PRIVATE".equals(channel.getType())) {
+        if ("PRIVATE".equals(channel.get().getType())) {
             throw new IllegalArgumentException("PRIVATE 채널은 수정할 수 없습니다.");
         }
-        channel.update(request.name(), request.description());
-        channelRepository.save(channel);
+        channel.get().update(request.name(), request.description());
+        channelRepository.save(channel.orElse(null));
 
-        return convertToResponse(channel);
+        return convertToResponse(channel.orElse(null));
     }
 
     @Override
     public void delete(UUID id) {
-        channelRepository.delete(id);
-
         List<Message> messages = messageRepository.findAll().stream()
                 .filter(m -> m.getChannelId().equals(id))
                 .toList();
@@ -129,6 +127,7 @@ public class BasicChannelService implements ChannelService {
         for (ReadStatus readStatus : readStatuses) {
             readStatusRepository.delete(readStatus.getId());
         }
+        channelRepository.delete(id);
     }
 
     private ChannelResponse convertToResponse(Channel channel) {

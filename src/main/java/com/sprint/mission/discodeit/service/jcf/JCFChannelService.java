@@ -1,5 +1,9 @@
 package com.sprint.mission.discodeit.service.jcf;
 
+import com.sprint.mission.discodeit.dto.request.ChannelUpdateRequest;
+import com.sprint.mission.discodeit.dto.request.PrivateChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.response.ChannelResponse;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.service.ChannelService;
 
@@ -7,45 +11,33 @@ import java.util.*;
 
 public class JCFChannelService implements ChannelService {
 
-    private final Map<UUID, Channel> data;
-
-    public JCFChannelService() {
-        this.data = new HashMap<>();
+    @Override
+    public ChannelResponse createPublicChannel(PublicChannelCreateRequest request) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public Channel create(Channel.ChannelType type, String name, String description) {
-        Channel channel = new Channel(name, description, type);
-        data.put(channel.getId(), channel);
-        return channel;
+    public ChannelResponse createPrivateChannel(PrivateChannelCreateRequest request) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public Channel findById(UUID id) {
-        return data.get(id);
+    public ChannelResponse findById(UUID id) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<Channel> findAll() {
-        return new ArrayList<>(data.values());
+    public List<ChannelResponse> findAllByUserId(UUID userId) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public Channel update(UUID channelId, String newName, String newDescription) {
-        Channel channel = data.get(channelId);
-
-        if (channel == null) {
-            throw new IllegalArgumentException("Channel not found");
-        }
-        channel.updateName(newName);
-        channel.updateDescription(newDescription);
-        return channel;
+    public ChannelResponse update(ChannelUpdateRequest request) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void delete(UUID id) {
-        data.remove(id);
+        throw new UnsupportedOperationException();
     }
-
-
 }

@@ -18,7 +18,6 @@ public class Message implements Serializable {
     private String content;
     private UUID channelId;
     private UUID authorId;
-    private List<UUID> attachmentIds; // 첨부파일 id
 
     public Message(UUID authorId, UUID channelId, String content) {
         this.id = UUID.randomUUID();

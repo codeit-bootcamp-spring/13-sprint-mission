@@ -10,15 +10,18 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Primary
 public class BasicUserService implements UserService {
 
     private final UserRepository userRepository;
@@ -27,18 +30,17 @@ public class BasicUserService implements UserService {
 
     @Override
     public UserResponse create(UserCreateRequest request) {
-        User existingUserByName = userRepository.findByUsername(request.username());
-        if (existingUserByName != null) {
+
+        if (userRepository.findByUsername(request.username()).isPresent()) {
             throw new IllegalArgumentException("이미 존재하는 유저 이름입니다.");
         }
 
-        User existingUserEmail = userRepository.findByEmail(request.email());
-        if (existingUserEmail != null) {
+        if (userRepository.findByEmail(request.email()).isPresent()) {
             throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
         }
 
         UUID profileId = request.profileId();
-        if (profileId != null && binaryContentRepository.findById(profileId) == null) {
+        if (profileId != null && binaryContentRepository.findById(profileId).isEmpty()) {
             throw new NoSuchElementException("존재하지 않는 프로필 이미지입니다.");
         }
 
@@ -55,25 +57,22 @@ public class BasicUserService implements UserService {
 
         UserStatus userStatus = UserStatus.builder()
                 .id(UUID.randomUUID())
-                .userId(user.getId())
+                .user(user)
                 .lastActiveAt(Instant.now())
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
         userStatusRepository.save(userStatus);
 
-        return UserResponse.from(user, true);
-
+        return UserResponse.from(user, userStatus.isOnline());
     }
 
     @Override
     public UserResponse findById(UUID userId) {
-        User user = userRepository.findById(userId);
-        if (user == null) {
-            throw new NoSuchElementException("유저를 찾을 수 없습니다.");
-        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("유저를 찾을 수 없습니다."));
 
-        UserStatus userStatus = userStatusRepository.findByUserId(userId);
+        UserStatus userStatus = userStatusRepository.findByUserId(userId).orElse(null);
         boolean isOnLine = (userStatus != null) && userStatus.isOnline();
 
         return UserResponse.from(user, isOnLine);
@@ -84,7 +83,7 @@ public class BasicUserService implements UserService {
     public List<UserResponse> findAll() {
         return userRepository.findAll().stream()
                 .map( user -> {
-                    UserStatus status = userStatusRepository.findByUserId(user.getId());
+                    UserStatus status = userStatusRepository.findByUserId(user.getId()).orElse(null);
                     boolean isOnLine = (status != null) && status.isOnline();
                     return UserResponse.from(user, isOnLine);
                 })
@@ -93,21 +92,27 @@ public class BasicUserService implements UserService {
 
     @Override
     public UserResponse update(UserUpdateRequest request) {
-        User user = userRepository.findById(request.id());
-        if (user == null) {
-            throw new NoSuchElementException("유저를 찾을 수 없습니다.");
+
+        User user = userRepository.findById(request.id())
+                .orElseThrow(() -> new NoSuchElementException("유저를 찾을 수 없습니다."));
+
+        if (request.username() != null
+                && !request.username().equals(user.getUsername())
+                && userRepository.findByUsername(request.username()).isPresent()) {
+            throw new IllegalArgumentException("이미 존재하는 유저 이름입니다.");
         }
 
-        user.update(
-                request.username() != null ? request.username() : user.getUsername(),
-                request.email() != null ? request.email() : user.getEmail(),
-                request.password() != null ? request.password() : user.getPassword(),
-                request.profileId() != null ? request.profileId() : user.getProfileId()
-        );
+        if (request.email() != null
+                && !request.email().equals(user.getEmail())
+                && userRepository.findByEmail(request.email()).isPresent()) {
+            throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
+        }
+
+        user.update(request.username(), request.email(), request.password(), request.profileId());
 
         userRepository.save(user);
 
-        UserStatus userStatus = userStatusRepository.findByUserId(user.getId());
+        UserStatus userStatus = userStatusRepository.findByUserId(user.getId()).orElse(null);
         boolean isOnLine = (userStatus != null) && userStatus.isOnline();
 
         return UserResponse.from(user, isOnLine);
@@ -115,15 +120,14 @@ public class BasicUserService implements UserService {
 
     @Override
     public void delete(UUID userId) {
-        User user = userRepository.findById(userId);
-        if (user == null) {
-            throw new NoSuchElementException(userId + " 유저를 찾을 수 없습니다.");
-        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException(userId + " 유저를 찾을 수 없습니다."));
+
 
         if (user.getProfileId() != null) {
             binaryContentRepository.delete(user.getProfileId());
         }
-        UserStatus userStatus = userStatusRepository.findByUserId(userId);
+        UserStatus userStatus = userStatusRepository.findByUserId(userId).orElse(null);
         if (userStatus != null) {
             userStatusRepository.delete(userStatus.getId());
         }

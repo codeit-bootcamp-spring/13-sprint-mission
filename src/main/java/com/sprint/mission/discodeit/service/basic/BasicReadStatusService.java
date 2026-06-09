@@ -43,7 +43,7 @@ public class BasicReadStatusService implements ReadStatusService {
                 .anyMatch(rs -> rs.getUserId().equals(request.userId())
                         && rs.getChannelId().equals(request.channelId()));
 
-        if (!isAlreadyExist) {
+        if (isAlreadyExist) {
             throw new IllegalArgumentException("이미 해당 채널에 참여 중인 유저입니다.");
         }
 

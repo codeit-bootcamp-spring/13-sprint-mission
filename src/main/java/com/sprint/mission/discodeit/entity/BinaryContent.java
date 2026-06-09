@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -11,16 +12,24 @@ public class BinaryContent {
 
     private UUID id;
     private Instant createdAt;
-
     private UUID messageId;
 
-    private BinaryContent(UUID id, Instant createdAt) {
+    private String fileName;
+    private String fileUrl;
+    private Long fileSize;
+
+    @Builder
+    private BinaryContent(UUID id, Instant createdAt, UUID messageId
+            , String fileName, String fileUrl, Long fileSize) {
         this.id = id;
         this.createdAt = createdAt;
-        this.messageId = null;
-    }
-    public void updateMessageId(UUID messageId) {
+        this.fileName = fileName;
+        this.fileUrl = fileUrl;
+        this.fileSize = fileSize;
         this.messageId = messageId;
     }
 
+    public void updateMessageId(UUID messageId) {
+        this.messageId = messageId;
+    }
 }

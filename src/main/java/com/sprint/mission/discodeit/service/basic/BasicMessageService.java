@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -31,10 +32,10 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public MessageResponse create(MessageCreateRequest request) {
-        if (userRepository.findById(request.userId()) == null) {
+        if (userRepository.findById(request.userId()).isEmpty()) {
             throw new IllegalArgumentException("유저를 찾을 수 없습니다.");
         }
-        if (channelRepository.findById(request.channelId()) == null) {
+        if (channelRepository.findById(request.channelId()).isEmpty()) {
             throw new IllegalArgumentException("채널을 찾을 수 없습니다.");
         }
 
@@ -43,11 +44,11 @@ public class BasicMessageService implements MessageService {
 
         if (request.binaryContentIds() != null && !request.binaryContentIds().isEmpty()) {
             for (UUID binaryId : request.binaryContentIds()) {
-                BinaryContent binaryContent = binaryContentRepository.findById(binaryId);
-                if (binaryContent != null) {
+                binaryContentRepository.findById(binaryId).ifPresent(binaryContent -> {
                     binaryContent.updateMessageId(message.getId());
                     binaryContentRepository.save(binaryContent);
-                }
+                });
+
             }
         }
 
@@ -66,16 +67,16 @@ public class BasicMessageService implements MessageService {
     @Override
     public MessageResponse update(MessageUpdateRequest request) {
 
-        Message message = messageRepository.findById(request.id());
+        Optional<Message> message = messageRepository.findById(request.id());
 
-        if (message == null) {
+        if (message.isEmpty()) {
             throw new NoSuchElementException("존재하지 않는 메세지입니다.");
         }
 
-        message.updateContent(request.content());
-        messageRepository.save(message);
+        message.get().updateContent(request.content());
+        messageRepository.save(message.orElse(null));
 
-        return convertToResponse(message);
+        return convertToResponse(message.orElse(null));
 
     }
 

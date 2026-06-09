@@ -21,7 +21,7 @@ public class User implements Serializable {
     private String email;
     private String password;
     private String username;
-    private UserStatus status;
+//    private UserStatus status;
     private UUID profileId;
 
 //    public enum UserStatus {
@@ -52,6 +52,6 @@ public class User implements Serializable {
 
 }
 
-    public void updateProfile(String newUsername) {
-    }
+//    public void updateProfile(String newUsername) {
+//    }
 }

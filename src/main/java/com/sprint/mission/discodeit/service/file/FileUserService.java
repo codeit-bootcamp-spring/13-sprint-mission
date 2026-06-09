@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.UserService;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class FileUserService implements UserService {
@@ -25,12 +26,12 @@ public class FileUserService implements UserService {
 
     @Override
     public UserResponse findById(UUID id) {
-        User user = repository.findById(id);
-        if (user == null) {
+        Optional<User> user = repository.findById(id);
+        if (user.isEmpty()) {
             return null;
         }
 
-        return UserResponse.from(user, false);
+        return UserResponse.from(user.orElse(null), false);
     }
 
     @Override
