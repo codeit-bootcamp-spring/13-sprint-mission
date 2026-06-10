@@ -11,21 +11,28 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.List;
+
 @SpringBootApplication
 public class DiscodeitApplication {
 
 	static User setupUser(UserService userService) {
-		User user = userService.create("woody", "woody@codeit.com", "woody1234");
-		return user;
+		try {
+			User user = userService.create("woody", "woody@codeit.com", "woody1234", null);
+			return user;
+		} catch (IllegalArgumentException e) {
+			System.out.println("이미 존재하는 유저: " + e.getMessage());
+			return null;
+		}
 	}
 
 	static Channel setupChannel(ChannelService channelService) {
-		Channel channel = channelService.create(ChannelType.PUBLIC, "공지", "공지 채널입니다.");
+		Channel channel = channelService.createPublic("공지", "공지 채널입니다.");
 		return channel;
 	}
 
 	static void messageCreateTest(MessageService messageService, Channel channel, User author) {
-		Message message = messageService.create("안녕하세요.", channel.getId(), author.getId());
+		Message message = messageService.create("안녕하세요.", channel.getId(), author.getId(), List.of());
 		System.out.println("메시지 생성: " + message.getId());
 	}
 
@@ -37,7 +44,9 @@ public class DiscodeitApplication {
 		MessageService messageService = context.getBean(MessageService.class);
 
 		User user = setupUser(userService);
-		Channel channel = setupChannel(channelService);
-		messageCreateTest(messageService, channel, user);
+		if (user != null) {
+			Channel channel = setupChannel(channelService);
+			messageCreateTest(messageService, channel, user);
+		}
 	}
 }
