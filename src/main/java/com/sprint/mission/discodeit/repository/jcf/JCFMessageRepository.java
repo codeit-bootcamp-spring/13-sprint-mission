@@ -10,15 +10,11 @@ import java.util.*;
 public class JCFMessageRepository implements MessageRepository {
 
     private final Map<UUID, Message> data;
-    private final ChannelService channelService;
-    private final UserService userService;
 
     public JCFMessageRepository(UserService userService,
                              ChannelService channelService) {
 
         this.data = new HashMap<>();
-        this.userService = userService;
-        this.channelService = channelService;
     }
 
     @Override
@@ -37,8 +33,10 @@ public class JCFMessageRepository implements MessageRepository {
     }
 
     @Override
-    public List<MessageResponse> findAll() {
-        return new ArrayList<>(data.values());
+    public List<Message> findAllByChannelId(UUID channelId) {
+        return data.values().stream()
+                .filter(message -> message.getChannelId().equals(channelId))
+                .toList();
     }
 
     @Override
