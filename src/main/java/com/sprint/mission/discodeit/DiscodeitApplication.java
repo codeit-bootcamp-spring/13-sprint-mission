@@ -2,12 +2,8 @@ package com.sprint.mission.discodeit;
 
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
-import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.repository.file.*;
 import com.sprint.mission.discodeit.service.*;
-import com.sprint.mission.discodeit.service.basic.*;
-import com.sprint.mission.discodeit.service.file.*;
 import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.*;
 import org.springframework.context.*;
@@ -19,7 +15,6 @@ import java.util.*;
 public class DiscodeitApplication {
 
     public static void main(String[] args) {
-
         ConfigurableApplicationContext context = SpringApplication.run(DiscodeitApplication.class, args);
 
         UserService userService =
@@ -56,8 +51,8 @@ public class DiscodeitApplication {
 
         MessageResponse message2 = messageService.create(
                 new MessageRequest.CreateMessageRequest(
-                        channel2.id(),
                         user2.id(),
+                        channel2.id(),
                         "잘부탁드립니다.",
                         List.of()
                 )
@@ -91,6 +86,7 @@ public class DiscodeitApplication {
     private static UserResponse runUserScenario(UserService userService) {
         System.out.println();
         System.out.println("=== User 테스트 ===");
+        System.out.println();
 
         UserResponse user1 = userService.create(new UserRequest.CreateUserRequest(
                 "신혜선",
@@ -99,7 +95,9 @@ public class DiscodeitApplication {
                 null
         ));
 
-        System.out.println("생성 후 조회:");
+        System.out.println();
+        System.out.println("1. 생성 후 조회");
+        System.out.println();
         System.out.println(userService.find(user1.id()));
 
         userService.update(
@@ -113,7 +111,8 @@ public class DiscodeitApplication {
         );
 
 
-        System.out.println("수정 후 조회:");
+        System.out.println("2. 수정 후 조회");
+        System.out.println();
         System.out.println(userService.find(user1.id()));
 
         return user1;
@@ -122,6 +121,7 @@ public class DiscodeitApplication {
     private static ChannelResponse runChannelScenario(ChannelService channelService) {
         System.out.println();
         System.out.println("=== Channel 테스트 ===");
+        System.out.println();
 
         ChannelResponse channel = channelService.createPublicChannel(
                 new ChannelRequest.CreatePublicChannel(
@@ -130,7 +130,8 @@ public class DiscodeitApplication {
                 )
         );
 
-        System.out.println("생성 후 조회:");
+        System.out.println("1. 생성 후 조회");
+        System.out.println();
         System.out.println(channelService.find(channel.id()));
 
         return channel;
@@ -143,17 +144,18 @@ public class DiscodeitApplication {
     ) {
         System.out.println();
         System.out.println("=== Message 테스트 ===");
+        System.out.println();
 
         MessageResponse message = messageService.create(
                 new MessageRequest.CreateMessageRequest(
-                        channel.id(),
                         user.id(),
+                        channel.id(),
                         "안녕하세요",
                         List.of()
                 )
         );
-
-        System.out.println("생성 후 조회:");
+        System.out.println("1. 생성 후 조회:");
+        System.out.println();
         System.out.println(messageService.find(message.id()));
 
         messageService.update(
@@ -164,7 +166,8 @@ public class DiscodeitApplication {
                 )
         );
 
-        System.out.println("수정 후 조회:");
+        System.out.println("2. 수정 후 조회:");
+        System.out.println();
         System.out.println(messageService.find(message.id()));
 
         return message;
@@ -198,6 +201,7 @@ public class DiscodeitApplication {
     ) {
         System.out.println();
         System.out.println("=== 전체 조회 ===");
+        System.out.println();
 
         System.out.println("=== 유저 정보 ===");
         userService.findAll().forEach(System.out::println);

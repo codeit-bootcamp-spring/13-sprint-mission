@@ -177,4 +177,4 @@ public class JavaApplication {
         System.out.println("=== 메세지 정보 ===");
         messageService.readAll().forEach(System.out::println);
     }
-}
+} */

@@ -2,11 +2,12 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
+import org.springframework.stereotype.*;
 
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
-
+@Repository
 public class FileReadStatusRepository implements ReadStatusRepository {
 
     private final List<ReadStatus> readStatuses = new ArrayList<>();

@@ -6,10 +6,11 @@ package com.sprint.mission.discodeit.entity;
 
 import lombok.*;
 
+import java.io.*;
 import java.time.*;
 import java.util.*;
 @Getter
-public class BinaryContent {
+public class BinaryContent implements Serializable {
 
     private final UUID id;
     private final UUID userId;

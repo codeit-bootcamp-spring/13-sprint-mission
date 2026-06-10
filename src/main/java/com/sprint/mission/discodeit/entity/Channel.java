@@ -14,9 +14,15 @@ public class Channel extends BaseEntity implements Serializable {
 
     public Channel(String name, String description, ChannelType type) {
         super();
-        validateName(name); // 채널 이름
-        validateDescription(description); // 채널 설명
         validateType(type);
+
+        if (type == ChannelType.PUBLIC) {
+            validateName(name);
+            validateDescription(description);
+        } else if (type == ChannelType.PRIVATE) {
+            this.name = null;
+            this.description = null;
+        }
     }
 
     private void validateDescription(String description) {
@@ -59,8 +65,13 @@ public class Channel extends BaseEntity implements Serializable {
     }
 
     public void update(String name, String description, ChannelType type) {
-        updateName(name);
-        updateDescription(description);
+        validateType(type);
+
+        if (type == ChannelType.PUBLIC) {
+            updateName(name);
+            updateDescription(description);
+        }
+
         updateType(type);
     }
 

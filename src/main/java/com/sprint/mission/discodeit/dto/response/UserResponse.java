@@ -36,4 +36,27 @@ public record UserResponse(
                 profile == null ? null : ProfileResponse.from(profile)
         );
     }
+
+    @Override
+    public String toString() {
+        return """
+                User
+                ====================
+                ID      : %s
+                Name    : %s
+                Email   : %s
+                Online  : %s
+                Profile : %s
+                ====================
+                """
+                .formatted(
+                        id,
+                        userName,
+                        email,
+                        online,
+                        profile == null ? "없음" : profile.fileName()
+                );
+    }
+
+
 }

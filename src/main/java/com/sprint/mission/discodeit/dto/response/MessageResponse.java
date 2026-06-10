@@ -36,4 +36,25 @@ public record MessageResponse(
                attachments.stream().map(AttachmentResponse::from).toList()
        );
     }
+
+    @Override
+    public String toString() {
+        return """
+            Message
+            ====================
+            ID          : %s
+            Channel ID  : %s
+            Author ID   : %s
+            Content     : %s
+            Attachments : %s
+            ====================
+            """
+                .formatted(
+                        id,
+                        channelId,
+                        authorId,
+                        content,
+                        attachments == null ? "[]" : attachments
+                );
+    }
 }

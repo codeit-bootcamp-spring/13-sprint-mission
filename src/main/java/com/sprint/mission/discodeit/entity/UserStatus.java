@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.entity;
 
 import lombok.*;
 
+import java.io.*;
 import java.time.*;
 import java.util.*;
 
@@ -11,7 +12,7 @@ import java.util.*;
 // 마지막 접속 시간이 현재 시간으로부터 5분 이내이면 현재 접속 중인 유저로 간주합니다.
 
 @Getter
-public class UserStatus extends BaseEntity {
+public class UserStatus extends BaseEntity implements Serializable {
 
     private final UUID userId;
     private Instant lastOnlineAt;
