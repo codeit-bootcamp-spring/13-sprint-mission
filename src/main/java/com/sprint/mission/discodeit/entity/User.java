@@ -11,13 +11,13 @@ import java.util.UUID;
 public class User implements Serializable {//
     private static final long serialVersionUID = 1L;
 
-
     private UUID id;
     private Long createdAt;
     private Long updatedAt;
     private String userName;
     private String password;
     private String email;
+    private UUID profileId;
 
 
     public User(String username, String password, String email) {//유저가 입력한 문자열을 받아서 {}를 실행
@@ -27,7 +27,10 @@ public class User implements Serializable {//
         this.userName = username;//(String username)로 받은 정보를 할당
         this.password = password;
         this.email = email;
+    }
 
+    public void updateProfileId(UUID profileId) {
+        this.profileId = profileId;
     }
 
     public void update(String newUsername, String newEmail, String newPassword) {

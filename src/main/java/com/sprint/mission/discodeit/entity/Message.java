@@ -4,6 +4,8 @@ import lombok.Getter;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 @Getter
 public class Message implements Serializable {
@@ -15,6 +17,8 @@ public class Message implements Serializable {
     private String content;
     private UUID authorId;
     private UUID channelId;
+    private List<UUID> attachmentIds;
+
 
 
     public Message(String message, UUID authorId,  UUID channelId) {
@@ -24,6 +28,11 @@ public class Message implements Serializable {
         this.content = message;//메세지 내용이
         this.authorId = authorId;//글쓴 사람
         this.channelId = channelId;//작성한 채널
+        this.attachmentIds = new ArrayList<>();
+    }
+
+    public void updateAttachmentIds(List<UUID> attachmentIds) {
+        this.attachmentIds = attachmentIds;
     }
 
     public void updateMessage(String newMessage) {
