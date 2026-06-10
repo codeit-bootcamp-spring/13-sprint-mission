@@ -12,8 +12,8 @@ public class Message implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private UUID id;
-    private Long createdAt;
-    private Long updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
     private String content;
     private UUID authorId;
     private UUID channelId;
@@ -23,7 +23,7 @@ public class Message implements Serializable {
 
     public Message(String message, UUID authorId,  UUID channelId) {
         this.id = UUID.randomUUID();//쓴 글에 고유 id
-        this.createdAt = Instant.now().getEpochSecond(); //글쓴 시간
+        this.createdAt = Instant.now(); //글쓴 시간
         this.updatedAt = this.createdAt;//최초 업데이트 시간
         this.content = message;//메세지 내용이
         this.authorId = authorId;//글쓴 사람
@@ -42,7 +42,7 @@ public class Message implements Serializable {
            anyValueUpdated = true;
        }
        if(anyValueUpdated) {
-           this.updatedAt = Instant.now().getEpochSecond();
+           this.updatedAt = Instant.now();
        }
 
 

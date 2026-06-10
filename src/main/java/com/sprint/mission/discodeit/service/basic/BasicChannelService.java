@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.ChannelDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
+import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
@@ -45,7 +46,7 @@ public class BasicChannelService implements ChannelService {
                 .orElseThrow(() -> new NoSuchElementException("Channel with id " + channelId + " not found"));
         Instant lastMessageAt = messageRepository.findAll().stream()
                 .filter(m -> m.getChannelId().equals(channelId))
-                .map(m -> Instant.ofEpochSecond(m.getCreatedAt()))
+                .map(Message::getCreatedAt)
                 .max(Instant::compareTo)
                 .orElse(null);
         List<UUID> participantIds = null;

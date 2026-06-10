@@ -12,8 +12,8 @@ public class User implements Serializable {//
     private static final long serialVersionUID = 1L;
 
     private UUID id;
-    private Long createdAt;
-    private Long updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
     private String userName;
     private String password;
     private String email;
@@ -22,7 +22,7 @@ public class User implements Serializable {//
 
     public User(String username, String password, String email) {//유저가 입력한 문자열을 받아서 {}를 실행
         this.id = UUID.randomUUID(); //randomUUID();이 만든 무작위 번호 할당
-        this.createdAt = Instant.now().getEpochSecond(); //String username를 입력한 유닉스 타임 할당
+        this.createdAt = Instant.now(); //String username를 입력한 유닉스 타임 할당
         this.updatedAt = this.createdAt; //수정 시간을 유닉스타임과 같게 함.
         this.userName = username;//(String username)로 받은 정보를 할당
         this.password = password;
@@ -48,7 +48,7 @@ public class User implements Serializable {//
             anyValueUpdated = true;
         }
         if (anyValueUpdated) {
-            this.updatedAt = Instant.now().getEpochSecond();
+            this.updatedAt = Instant.now();
         }
 
     }

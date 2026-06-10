@@ -10,15 +10,15 @@ public class Channel implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private UUID id;
-    private Long createdAt;
-    private Long updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
     private ChannelType type;
     private String channelName;
     private String description;
 
     public Channel(ChannelType type, String chName, String description) {
         this.id = UUID.randomUUID();
-        this.createdAt = Instant.now().getEpochSecond();
+        this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
         this.type = type;
         this.channelName = chName;
@@ -37,7 +37,7 @@ public class Channel implements Serializable {
             anyValueUpdated = true;
         }
         if (anyValueUpdated) {
-            this.updatedAt = Instant.now().getEpochSecond();
+            this.updatedAt = Instant.now();
         }
     }
 }
