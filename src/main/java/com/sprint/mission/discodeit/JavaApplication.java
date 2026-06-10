@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit;
 
+import com.sprint.mission.discodeit.dto.MessageCreateRequest;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
@@ -38,7 +39,9 @@ public class JavaApplication {
     }
 
     static void messageCreateTest(MessageService messageService, Channel channel, User author) {
-        Message message = messageService.create("안녕하세요.", channel.getId(), author.getId(), List.of());
+        Message message = messageService.create(
+                new MessageCreateRequest("안녕하세요.", channel.getId(), author.getId(), List.of())
+        );
         System.out.println("메시지 생성: " + message.getId());
     }
 

@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.MessageUpdateRequest;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -23,19 +24,20 @@ public class BasicMessageService implements MessageService {
     private final BinaryContentRepository binaryContentRepository;
 
     @Override
-    public Message create(String content, UUID channelId, UUID authorId, List<UUID> attachmentIds) {
-        if (!channelRepository.existsById(channelId)) {
-            throw new NoSuchElementException("Channel not found with id " + channelId);
+    public Message create(MessageCreateRequest request) {
+        if (!channelRepository.existsById(request.channelId())) {
+            throw new NoSuchElementException("Channel not found with id " + request.channelId());
         }
-        if (!userRepository.existsById(authorId)) {
-            throw new NoSuchElementException("Author not found with id " + authorId);
+        if (!userRepository.existsById(request.authorId())) {
+            throw new NoSuchElementException("Author not found with id " + request.authorId());
         }
-        Message message = new Message(content, authorId, channelId);
-        if (attachmentIds != null && !attachmentIds.isEmpty()) {
-            message.updateAttachmentIds(attachmentIds);
+        Message message = new Message(request.content(), request.authorId(), request.channelId());
+        if (request.attachmentIds() != null && !request.attachmentIds().isEmpty()) {
+            message.updateAttachmentIds(request.attachmentIds());
         }
         return messageRepository.save(message);
     }
+
 
     @Override
     public Message find(UUID messageId) {
