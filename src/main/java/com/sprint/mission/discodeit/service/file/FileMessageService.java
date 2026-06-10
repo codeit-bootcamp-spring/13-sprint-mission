@@ -3,45 +3,47 @@ package com.sprint.mission.discodeit.service.file;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.service.MessageService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 
+@Service
+@RequiredArgsConstructor
 public class FileMessageService implements MessageService {
 
-    private final MessageRepository repository;
-
-    public FileMessageService(MessageRepository repository) {
-        this.repository = repository;
-    }
+    private final MessageRepository messageRepository;
 
     @Override
     public Message create(Message message) {
-        return repository.save(message);
+        return messageRepository.save(message);
     }
 
     @Override
     public Message find(UUID id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+        return messageRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("메시지를 찾을 수 없습니다."));
     }
 
     @Override
     public List<Message> findAll() {
-        return repository.findAll();
+        return messageRepository.findAll();
     }
 
     @Override
     public Message update(UUID id, String content) {
 
         Message message = find(id);
+
         message.update(content);
 
-        return repository.save(message);
+        return messageRepository.save(message);
     }
 
     @Override
     public void delete(UUID id) {
-        repository.delete(id);
+        messageRepository.delete(id);
     }
 }

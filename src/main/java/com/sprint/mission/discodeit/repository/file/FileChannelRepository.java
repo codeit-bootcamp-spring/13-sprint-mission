@@ -1,33 +1,42 @@
 package com.sprint.mission.discodeit.repository.file;
+
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import org.springframework.stereotype.Repository;
 
 import java.io.*;
 import java.util.*;
 
+@Repository
 public class FileChannelRepository implements ChannelRepository {
+
     private final File file;
     private Map<UUID, Channel> data;
-    public FileChannelRepository(String path) {
-        this.file = new File(path);
+
+    public FileChannelRepository() {
+        this.file = new File("channels.dat");
         this.data = load();
     }
 
-    @Override public Channel save(Channel channel) {
+    @Override
+    public Channel save(Channel channel) {
         data.put(channel.getId(), channel);
         saveToFile();
         return channel;
     }
 
-    @Override public Optional<Channel> findById(UUID id) {
+    @Override
+    public Optional<Channel> findById(UUID id) {
         return Optional.ofNullable(data.get(id));
     }
 
-    @Override public List<Channel> findAll() {
+    @Override
+    public List<Channel> findAll() {
         return new ArrayList<>(data.values());
     }
 
-    @Override public void delete(UUID id) {
+    @Override
+    public void delete(UUID id) {
         data.remove(id);
         saveToFile();
     }
@@ -36,9 +45,7 @@ public class FileChannelRepository implements ChannelRepository {
         try (ObjectOutputStream oos =
                      new ObjectOutputStream(new FileOutputStream(file))) {
             oos.writeObject(data);
-        }
-
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -49,11 +56,9 @@ public class FileChannelRepository implements ChannelRepository {
         }
 
         try (ObjectInputStream ois =
-                     new ObjectInputStream( new FileInputStream(file))) {
+                     new ObjectInputStream(new FileInputStream(file))) {
             return (Map<UUID, Channel>) ois.readObject();
-        }
-
-        catch (IOException | ClassNotFoundException e) {
+        } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
