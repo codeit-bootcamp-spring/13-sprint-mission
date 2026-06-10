@@ -11,14 +11,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-@Repository
 public class FileReadStatusRepository implements ReadStatusRepository {
 
     private Map<UUID, ReadStatus> database;
     private final Path filePath;
 
-    public FileReadStatusRepository() {
-        this.filePath = Path.of("data", "readStatus.ser");
+    public FileReadStatusRepository(String fileDirectory) {
+        this.filePath = Path.of(fileDirectory, "readStatus.ser");
 
         try {
             Files.createDirectories(filePath.getParent());

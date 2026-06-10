@@ -11,14 +11,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-@Repository
+
 public class FileMessageRepository implements MessageRepository {
 
     private Map<UUID, Message> database;
     private final Path filePath;
 
-    public FileMessageRepository() {
-        this.filePath = Path.of("data", "message.ser");
+    public FileMessageRepository(String fileDirectory) {
+        this.filePath = Path.of(fileDirectory, "message.ser");
 
         try {
             Files.createDirectories(filePath.getParent());

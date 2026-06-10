@@ -12,14 +12,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-@Repository
 public class FileUserStatusRepository implements UserStatusRepository {
 
     private Map<UUID, UserStatus> database;
     private final Path filePath;
 
-    public FileUserStatusRepository() {
-        this.filePath = Path.of("data", "userStatus.ser");
+    public FileUserStatusRepository(String fileDirectory) {
+        this.filePath = Path.of(fileDirectory, "userStatus.ser");
 
         try {
             Files.createDirectories(filePath.getParent());

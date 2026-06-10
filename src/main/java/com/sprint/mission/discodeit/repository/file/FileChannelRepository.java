@@ -11,14 +11,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-@Repository
 public class FileChannelRepository implements ChannelRepository {
 
     private Map<UUID, Channel> database;
     private final Path filePath;
 
-    public FileChannelRepository() {
-        this.filePath = Path.of("data", "channel.ser");
+    public FileChannelRepository(String fileDirectory) {
+        this.filePath = Path.of(fileDirectory, "channel.ser");
 
         try {
             Files.createDirectories(filePath.getParent());

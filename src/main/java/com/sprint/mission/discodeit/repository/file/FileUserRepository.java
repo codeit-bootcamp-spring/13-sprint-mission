@@ -9,15 +9,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-@Repository
-public class FileUserRepository implements UserRepository { // 💡 2. 인터페이스 적용
+public class FileUserRepository implements UserRepository {
 
     private final Map<UUID, User> database; // 💡 1. 타입 변경
     private final Path filePath;
 
-    public FileUserRepository() {
-        // 💡 3. 파일명을 user.ser로 변경!
-        this.filePath = Path.of("data", "user.ser");
+    public FileUserRepository(String fileDirectory) {
+        this.filePath = Path.of(fileDirectory, "user.ser");
 
         try {
             Files.createDirectories(filePath.getParent());
