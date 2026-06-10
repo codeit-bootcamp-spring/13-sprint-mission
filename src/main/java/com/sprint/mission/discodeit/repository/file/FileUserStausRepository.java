@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
@@ -17,8 +18,9 @@ public class FileUserStausRepository implements UserStatusRepository {
     private final Path filePath;
 
     //디렉토리 생성
-    public FileUserStausRepository(){
-        this.filePath = Path.of("data/user_status.ser");
+    public FileUserStausRepository(
+            @Value("${discodeit.repository.file-directory:.discodeit}") String fileDirectory){
+        this.filePath = Path.of(fileDirectory).resolve("user_status.ser");
         if (!Files.exists(filePath.getParent())) {
             try {
                 Files.createDirectories(filePath.getParent());

@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
@@ -16,8 +17,9 @@ public class FileUserRepository implements UserRepository {
 
     private final Path filePath;
 
-    public FileUserRepository() {
-        this.filePath = Path.of("data/users.ser");
+    public FileUserRepository(
+            @Value("${discodeit.repository.file-directory:.discodeit}")String fileDirectory) {
+        this.filePath = Path.of(fileDirectory).resolve("users.ser");
         if (!Files.exists(filePath.getParent())){
             try {
                 Files.createDirectories(filePath.getParent());

@@ -1,8 +1,11 @@
 package com.sprint.mission.discodeit;
 
-import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.dto.channel.ChannelResponse;
+import com.sprint.mission.discodeit.dto.channel.PublicChannelRequest;
+import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.user.UserResponse;
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
@@ -14,14 +17,21 @@ import org.springframework.context.ConfigurableApplicationContext;
 public class DiscodeitApplication {
 
 	//user, channel, content 생성 테스트
-	static User setupUser(UserService userService) {
-		return userService.createUser("박경석", "aaa@gmail.com", "1234");
+	static UserResponse setupUser(UserService userService) {
+		return userService.createUser(
+				new UserCreateRequest("박경석", "aaa@gmail.com", "1234"), null
+		);
 	}
-	static Channel setupChannel(ChannelService channelService) {
-		return channelService.createChannel("소개채널", "본인을 소개 해주세요!");
+	static ChannelResponse setupChannel(ChannelService channelService) {
+		return channelService.createPublicChannel(
+				new PublicChannelRequest("소개채널", "본인을 소개 해주세요!")
+		);
+
 	}
-	static void messageCreateTest(MessageService messageService, Channel channel, User author) {
-		Message message = messageService.createContent("안녕하세요!", channel.getChannelId(), author.getUserId());
+	static void messageCreateTest(MessageService messageService, ChannelResponse channel, UserResponse user) {
+		Message message = messageService.create(
+				new MessageCreateRequest(channel.id(), user.id(), "안녕하세요",null)
+		);
 		System.out.println(message);
 	}
 
@@ -32,8 +42,8 @@ public class DiscodeitApplication {
 		ChannelService channelService = context.getBean(ChannelService.class);
 		MessageService messageService = context.getBean(MessageService.class);
 
-		User user = setupUser(userService);
-		Channel channel = setupChannel(channelService);
+		UserResponse user = setupUser(userService);
+		ChannelResponse channel = setupChannel(channelService);
 		messageCreateTest(messageService, channel, user);
 	}
 }

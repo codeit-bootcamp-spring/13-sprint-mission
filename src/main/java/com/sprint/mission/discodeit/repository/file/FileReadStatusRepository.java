@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
@@ -17,8 +18,10 @@ public class FileReadStatusRepository implements ReadStatusRepository {
     private final Path filePath;
 
     //디렉토리 생성
-    public FileReadStatusRepository(){
-        this.filePath = Path.of("data/read_status.ser");
+    public FileReadStatusRepository(
+            @Value("${discodeit.repository.file-directory:.discodeit}") String fileDirectory
+    ){
+        this.filePath = Path.of(fileDirectory).resolve("read_status.ser");
         if (!Files.exists(filePath.getParent())) {
             try {
                 Files.createDirectories(filePath.getParent());
