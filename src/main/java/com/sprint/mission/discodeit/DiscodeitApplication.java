@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit;
 
+import com.sprint.mission.discodeit.dto.request.*;
+import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.repository.file.*;
@@ -16,158 +18,195 @@ import java.util.*;
 @SpringBootApplication
 public class DiscodeitApplication {
 
-	public static void main(String[] args) {
+    public static void main(String[] args) {
 
-		ConfigurableApplicationContext context = SpringApplication.run(DiscodeitApplication.class, args);
+        ConfigurableApplicationContext context = SpringApplication.run(DiscodeitApplication.class, args);
 
-		UserService userService =
-				context.getBean(UserService.class);
+        UserService userService =
+                context.getBean(UserService.class);
 
-		ChannelService channelService =
-				context.getBean(ChannelService.class);
+        ChannelService channelService =
+                context.getBean(ChannelService.class);
 
-		MessageService messageService =
-				context.getBean(MessageService.class);
+        MessageService messageService =
+                context.getBean(MessageService.class);
 
-		printFileStatus();
+        printFileStatus();
 
-		User user1 = runUserScenario(userService);
-		Channel channel1 = runChannelScenario(channelService);
+        UserResponse user1 = runUserScenario(userService);
+        ChannelResponse channel1 = runChannelScenario(channelService);
+        MessageResponse message1 = runMessageScenario(
+                messageService,
+                user1,
+                channel1
+        );
 
-		Message message1 = runMessageScenario(
-				messageService,
-				user1,
-				channel1
-		);
+       UserResponse user2 =  userService.create(new UserRequest.CreateUserRequest(
+                "강동원",
+                "kando99@naver.com",
+                "1234zxc",
+                null));
 
-		User user2 = userService.create("강동원", "dongwontuna1982@yuha.com", "KDW810118");
-		Channel channel2 = channelService.create("Python", "Python 같이 공부해요", ChannelType.PRIVATE);
-		Message message2 = messageService.create(
-				"잘부탁드립니다.",
-				channel2.getId(),
-				user2.getId()
-		);
+        ChannelResponse channel2 =
+                channelService.createPrivateChannel(
+                        new ChannelRequest.CreatePrivateChannel(
+                                List.of(user1.id(), user2.id())
+                        )
+                );
 
-		printAllData(userService, channelService, messageService);
+        MessageResponse message2 = messageService.create(
+                new MessageRequest.CreateMessageRequest(
+                        channel2.id(),
+                        user2.id(),
+                        "잘부탁드립니다.",
+                        List.of()
+                )
+        );
 
-		runDeleteScenario(
-				userService,
-				channelService,
-				messageService,
-				user2,
-				channel2,
-				message2
-		);
+        printAllData(userService, channelService, messageService, channel1);
 
-		System.out.println();
-		System.out.println("=== 삭제 후 조회 ===");
-		printAllData(userService, channelService, messageService);
-	}
+        runDeleteScenario(
+                userService,
+                channelService,
+                messageService,
+                user2,
+                channel2,
+                message2
+        );
 
-	private static void printFileStatus() {
-		System.out.println("현재 실행 위치: " + Paths.get("").toAbsolutePath());
-		System.out.println("users.ser 위치: " + Paths.get("data/users.ser").toAbsolutePath());
+        System.out.println();
+        System.out.println("=== 삭제 후 조회 ===");
+        printAllData(userService, channelService, messageService, channel1);
+    }
 
-		System.out.println("users.ser = " + Files.exists(Paths.get("data/users.ser")));
-		System.out.println("channels.ser = " + Files.exists(Paths.get("data/channels.ser")));
-		System.out.println("messages.ser = " + Files.exists(Paths.get("data/messages.ser")));
-	}
+    private static void printFileStatus() {
+        System.out.println("현재 실행 위치: " + Paths.get("").toAbsolutePath());
+        System.out.println("users.ser 위치: " + Paths.get("data/users.ser").toAbsolutePath());
 
-	private static User runUserScenario(UserService userService) {
-		System.out.println();
-		System.out.println("=== User 테스트 ===");
+        System.out.println("users.ser = " + Files.exists(Paths.get("data/users.ser")));
+        System.out.println("channels.ser = " + Files.exists(Paths.get("data/channels.ser")));
+        System.out.println("messages.ser = " + Files.exists(Paths.get("data/messages.ser")));
+    }
 
-		User user = userService.create("신혜선", "shinhyesun@yuha.com", "abcd1234");
+    private static UserResponse runUserScenario(UserService userService) {
+        System.out.println();
+        System.out.println("=== User 테스트 ===");
 
-		System.out.println("생성 후 조회:");
-		System.out.println(userService.read(user.getId()));
+        UserResponse user1 = userService.create(new UserRequest.CreateUserRequest(
+                "신혜선",
+                "shinhyesun@yuha.com",
+                "abcd1234",
+                null
+        ));
 
-		user.updateEmail("SYS1234@yuha.com");
-		userService.update(user.getId(), user.getUserName(), user.getEmail(), user.getPassWord());
+        System.out.println("생성 후 조회:");
+        System.out.println(userService.find(user1.id()));
 
-		System.out.println("수정 후 조회:");
-		System.out.println(userService.read(user.getId()));
-
-		return user;
-	}
-
-	private static Channel runChannelScenario(ChannelService channelService) {
-		System.out.println();
-		System.out.println("=== Channel 테스트 ===");
-
-		Channel channel = channelService.create(
-				"JavaSpring",
-				"같이 공부해요",
-				ChannelType.PUBLIC
-		);
+        userService.update(
+                user1.id(),
+                new UserRequest.UpdateUserRequest(
+                        user1.userName(),
+                        "SYS1234@yuha.com",
+                        "abcd1234",
+                        null
+                )
+        );
 
 
-		System.out.println("생성 후 조회:");
-		System.out.println(channelService.read(channel.getId()));
+        System.out.println("수정 후 조회:");
+        System.out.println(userService.find(user1.id()));
 
-		return channel;
-	}
+        return user1;
+    }
 
-	private static Message runMessageScenario(
-			MessageService messageService,
-			User user,
-			Channel channel
-	) {
-		System.out.println();
-		System.out.println("=== Message 테스트 ===");
+    private static ChannelResponse runChannelScenario(ChannelService channelService) {
+        System.out.println();
+        System.out.println("=== Channel 테스트 ===");
 
-		Message message = messageService.create(
-				"안녕하세요",
-				channel.getId(),
-				user.getId()
-		);
+        ChannelResponse channel = channelService.createPublicChannel(
+                new ChannelRequest.CreatePublicChannel(
+                        "JavaSpring",
+                        "같이 공부해요"
+                )
+        );
 
-		System.out.println("생성 후 조회:");
-		System.out.println(messageService.read(message.getId()));
+        System.out.println("생성 후 조회:");
+        System.out.println(channelService.find(channel.id()));
 
-		messageService.update(message.getId(), "수정된 메시지입니다.");
+        return channel;
+    }
 
-		System.out.println("수정 후 조회:");
-		System.out.println(messageService.read(message.getId()));
+    private static MessageResponse runMessageScenario(
+            MessageService messageService,
+            UserResponse user,
+            ChannelResponse channel
+    ) {
+        System.out.println();
+        System.out.println("=== Message 테스트 ===");
 
-		return message;
-	}
+        MessageResponse message = messageService.create(
+                new MessageRequest.CreateMessageRequest(
+                        channel.id(),
+                        user.id(),
+                        "안녕하세요",
+                        List.of()
+                )
+        );
 
-	private static void runDeleteScenario(
-			UserService userService,
-			ChannelService channelService,
-			MessageService messageService,
-			User user,
-			Channel channel,
-			Message message
-	) {
-		System.out.println();
-		System.out.println("=== 삭제 테스트 ===");
+        System.out.println("생성 후 조회:");
+        System.out.println(messageService.find(message.id()));
 
-		System.out.println("삭제 유저: " + userService.read(user.getId()));
-		System.out.println("삭제 채널: " + channelService.read(channel.getId()));
-		System.out.println("삭제 메시지: " + messageService.read(message.getId()));
+        messageService.update(
+                message.id(),
+                new MessageRequest.UpdateMessageRequest(
+                        "수정된 메시지입니다.",
+                        List.of()
+                )
+        );
 
-		messageService.delete(message.getId());
-		channelService.delete(channel.getId());
-		userService.delete(user.getId());
-	}
+        System.out.println("수정 후 조회:");
+        System.out.println(messageService.find(message.id()));
 
-	private static void printAllData(
-			UserService userService,
-			ChannelService channelService,
-			MessageService messageService
-	) {
-		System.out.println();
-		System.out.println("=== 전체 조회 ===");
+        return message;
+    }
 
-		System.out.println("=== 유저 정보 ===");
-		userService.readAll().forEach(System.out::println);
+    private static void runDeleteScenario(
+            UserService userService,
+            ChannelService channelService,
+            MessageService messageService,
+            UserResponse user,
+            ChannelResponse channel,
+            MessageResponse message
+    ) {
+        System.out.println();
+        System.out.println("=== 삭제 테스트 ===");
 
-		System.out.println("=== 채널 정보 ===");
-		channelService.readAll().forEach(System.out::println);
+        System.out.println("삭제 유저: " + userService.find(user.id()));
+        System.out.println("삭제 채널: " + channelService.find(channel.id()));
+        System.out.println("삭제 메시지: " + messageService.find(message.id()));
 
-		System.out.println("=== 메세지 정보 ===");
-		messageService.readAll().forEach(System.out::println);
-	}
+        messageService.delete(message.id());
+        channelService.delete(channel.id());
+        userService.delete(user.id());
+    }
+
+    private static void printAllData(
+            UserService userService,
+            ChannelService channelService,
+            MessageService messageService,
+            ChannelResponse channel
+    ) {
+        System.out.println();
+        System.out.println("=== 전체 조회 ===");
+
+        System.out.println("=== 유저 정보 ===");
+        userService.findAll().forEach(System.out::println);
+
+        System.out.println("=== 채널 정보 ===");
+        channelService.findAll().forEach(System.out::println);
+
+        System.out.println("=== 메세지 정보 ===");
+        messageService.findAllByChannelId(channel.id())
+                .forEach(System.out::println);
+    }
 }

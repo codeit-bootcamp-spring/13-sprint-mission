@@ -29,7 +29,6 @@ public record UserRequest(
     }
 
     public record UpdateUserRequest(
-            UUID id,
             String username,
             String email,
             String password,
