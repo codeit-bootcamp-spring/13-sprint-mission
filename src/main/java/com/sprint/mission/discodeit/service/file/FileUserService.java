@@ -9,16 +9,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class FileUserService implements UserService {
 
-    private final Path directory = Paths.get(System.getProperty("user.dir"));
-    private final Path filePath = directory.resolve("users.ser");
+    // 주소 설정, 변수를 대문자로
+    private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"));
+    private final Path filePath = DIRECTORY.resolve("users.ser");
 
     public  FileUserService() {
         try {
-            Files.createDirectories(directory);
+            Files.createDirectories(DIRECTORY);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -55,14 +57,14 @@ public class FileUserService implements UserService {
     }
 
     @Override
-    public User findById(UUID id) {
+    public Optional<User> findById(UUID id) {
         List<User> foundUser = readFile();
         for (User user : foundUser) {
             if (user.getId().equals(id)) {
-                return user;
+                return Optional.ofNullable(user);
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     @Override

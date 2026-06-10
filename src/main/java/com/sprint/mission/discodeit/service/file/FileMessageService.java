@@ -13,13 +13,13 @@ import java.util.List;
 
 public class FileMessageService implements MessageService {
 
-    // 주소 설정
-    private final Path directory = Paths.get(System.getProperty("user.dir"), "data");
-    private final Path filePath = directory.resolve("messages.ser");
+    // 주소 설정, 변수를 대문자로
+    private final Path DIRECTORY = Paths.get(System.getProperty("user.dir"), "data");
+    private final Path filePath = DIRECTORY.resolve("messages.ser");
 
     public FileMessageService() {
         try {
-            Files.createDirectories(directory);
+            Files.createDirectories(DIRECTORY);
         } catch (IOException e) {
             e.printStackTrace();
         }

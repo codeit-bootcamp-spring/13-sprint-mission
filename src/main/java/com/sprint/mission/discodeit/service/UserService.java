@@ -3,12 +3,13 @@ package com.sprint.mission.discodeit.service;
 import com.sprint.mission.discodeit.entity.User;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface UserService {
 
     User create(User user); // 유저 생성하는 기능 (추상 메서드 선언)
-    User findById(UUID id);
+    Optional<User> findById(UUID id);
     List<User> findAll();
     void update(User user);
     void delete(UUID id);

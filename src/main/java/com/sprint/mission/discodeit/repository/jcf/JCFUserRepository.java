@@ -24,6 +24,7 @@ public class JCFUserRepository implements UserRepository {
                 .filter(u -> u.getId().equals(id))
                 .findFirst();
     }
+
     @Override
     public List<User> findAll() {
         return users;

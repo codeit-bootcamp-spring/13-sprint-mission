@@ -23,8 +23,11 @@ public class JCFMessageRepository implements MessageRepository {
 
     @Override
     public Message findByContent(String content) {
+        if (content == null || "".equals(content.trim()) || content.trim().isEmpty()) {
+            return null;
+        }
         return messages.stream()
-                .filter(m -> m.getContent().equals(content))
+                .filter(m -> content.equals(m.getContent()))
                 .findFirst().orElse(null);
     }
 
