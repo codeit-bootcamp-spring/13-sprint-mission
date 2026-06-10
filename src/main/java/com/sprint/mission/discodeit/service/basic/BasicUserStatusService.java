@@ -68,12 +68,13 @@ public class BasicUserStatusService implements UserStatusService {
             throw new IllegalArgumentException("삭제할 아이디가 없습니다.");
         }
 
-        UserStatus userStatus = userStatusRepository.delete(id);
+        UserStatus userStatus = userStatusRepository.find(id);
 
         if (userStatus == null) {
             throw new IllegalArgumentException("삭제할 유저의 상태 정보가 없습니다.");
         }
 
+        userStatusRepository.delete(id);
     }
 
     @Override

@@ -11,9 +11,7 @@ public class JCFMessageRepository implements MessageRepository {
 
     private final Map<UUID, Message> data;
 
-    public JCFMessageRepository(UserService userService,
-                             ChannelService channelService) {
-
+    public JCFMessageRepository() {
         this.data = new HashMap<>();
     }
 
