@@ -1,80 +1,54 @@
 package com.sprint.mission.discodeit.service.jcf;
 
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.jcf.JCFUserRepository;
 import com.sprint.mission.discodeit.service.UserService;
 import java.util.*;
 
 //UserService를 실제로 동작시키는 JCF(컬렉션) 기방 구현체
 public class JCFUserService implements UserService {
 
-    private final UserRepository repository;
+    private final Map<UUID, User> data; //사용자의 데이터를 저장하는 map
 
-    public JCFUserService() {
-        this.repository = new JCFUserRepository();
-    }
+    public JCFUserService() {this.data = new HashMap<>();} //서비스 객체 생성 시 사용자 저장소(HashMapa)를 초기화함
 
-    @Override
-    public void create(User user) {
-        repository.save(user);
-    }
-    @Override
-    public User read(UUID id) {
-        return repository.findById(id);
-    }
-    @Override
-    public List<User> readAll() {
-        return repository.findAll();
+    @Override //사용자 생성
+    public User create(String username, String email, String password) {
+        User user = new User(username, email, password); //새로운 User 객체 생성
+        this.data.put(user.getId(), user); //UUID를 key로 사용하여 저장
+        return user; //생성된 사용자 반환
     }
 
-    @Override
-    public void update(User user) {
-        repository.save(user);
+    @Override //사용자 단건조회
+    public User find(UUID UserId) {
+        User UserNullable = this.data.get(UserId); //map에서 사용자 조회
+
+        return Optional.ofNullable(UserNullable)
+                .orElseThrow(() -> new NoSuchElementException("User with id " +  UserId + " not found"));
     }
 
-    @Override
-    public void delete(UUID id) {
-        repository.delete(id);
+    @Override //전체 사용자 조회
+    public List<User> findAll() {
+        return this.data.values().stream().toList();
     }
-    /*
-    // 자바에서 데이터를 저장할 곳(여기선 Map 사용), final로 (UUID(키)-User(값) 쌍을 저장하는 Map. 반드시 final로 선언)
-    private final Map<UUID, User> data;
 
-    //생성자에서 date(Map) 객체를 초기화
-    public JCFUserService() {
-            this.data = new HashMap<>();
+    @Override //사용자 수정
+    public User update(UUID userId, String newUsername, String newEmail, String newPassword) {
+        User userNullable = this.data.get(userId);
+        User user = Optional.ofNullable(userNullable)
+                .orElseThrow(() -> new NoSuchElementException("User with id " + userId + " not found"));
+        user.update(newUsername,newEmail,newPassword);
+
+        return user;
+    }
+
+    @Override //사용자 삭제
+    public void delete(UUID userId) {
+        if(!this.data.containsKey(userId)){ //존재 여부 확인
+            throw new NoSuchElementException("User with id " + userId + " not found");
         }
-
-        //사용자 추가
-        @Override
-        public void create(User user) {
-            data.put(user.getId(), user);
-        }
-
-        //사용자 한 명(id로) 조회
-        @Override
-        public User read(UUID id) {
-            return data.get(id);
-        }
-
-        //전체 사용자 목록 반환
-        @Override
-        public List<User> readAll() {
-            return new ArrayList<>(data.values());
-        }
-
-        //사용자 정보 수정 (id로 덮어쓰기)
-        @Override
-        public void update(User user) {
-            data.put(user.getId(), user);
-        }
-
-        //사용자 삭제 (id로)
-        @Override
-        public void delete(UUID id) {
-            data.remove(id);
-        } */
+        this.data.remove(userId);
+    }
 }
+
 
 

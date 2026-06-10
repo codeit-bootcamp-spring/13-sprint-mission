@@ -1,80 +1,52 @@
 package com.sprint.mission.discodeit.service.jcf;
 
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.repository.MessageRepository;
-import com.sprint.mission.discodeit.repository.jcf.JCFMessageRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 //MessageService를 실제로 동작시키는 JCF(컬렉션) 기반 구현체
 public class JCFMessageService implements MessageService {
 
-    private final MessageRepository repository;
+    private final Map<UUID, Message> data; //메시지 데이터를 저장하는 메모리 저장소
 
-    public JCFMessageService() {
-        this.repository = new JCFMessageRepository();
+    public JCFMessageService() {this.data = new HashMap<>();}
+
+    @Override //메시지 생성
+    public Message create(String content, UUID channelId, UUID authorId) {
+        Message message = new Message(content, channelId, authorId);
+        this.data.put(message.getId(), message);
+        return message;
     }
 
-    @Override
-    public void create(Message message) {
-        repository.save(message);
-    }
-    @Override
-    public Message read(UUID id) {
-        return repository.findById(id);
-    }
-    @Override
-    public List<Message> readAll() {
-        return repository.findAll();
+    @Override // 메시지 단건조회
+    public Message find(UUID messageId) {
+        Message messageNullable = this.data.get(messageId);
+
+        return Optional.ofNullable(messageNullable)
+                .orElseThrow(()-> new NoSuchElementException("Message with id "  + messageId + " not found"));
     }
 
-    @Override
-    public void update(Message message) {
-        repository.save(message);
+    @Override //전체 메시지 조회
+    public List<Message> findAll() {
+        return this.data.values().stream().toList();
     }
 
-    @Override
-    public void delete(UUID id) {
-        repository.delete(id);
+    @Override //메시지 수정
+    public Message update(UUID messageId, String newContent) {
+        Message messageNullable = this.data.get(messageId);
+        Message message = Optional.ofNullable(messageNullable)
+                .orElseThrow(()-> new NoSuchElementException("Message with id " + messageId + " not found"));
+        message.update(newContent);
+        return message;
     }
 
-   /* //UUID(키)-User(값) 쌍을 저장하는 Map. 반드시 final로 선언
-    private final Map<UUID, Message> data;
-
-    //생성자에서 date(Map) 객체를 조회
-    public JCFMessageService(){
-        this.data = new HashMap<>();
+    @Override //메시지 삭제
+    public void delete(UUID messageId) {
+        if (!this.data.containsKey(messageId)) {
+            throw new NoSuchElementException("Message with id " + messageId + " not found");
+        }
+        this.data.remove(messageId);
     }
-
-    //메시지 추가
-    @Override
-    public void create(Message message){
-        data.put(message.getId(), message);
-    }
-
-    //메시지 한 개 (id로) 조회
-    @Override
-    public Message read(UUID id){
-        return data.get(id);
-    }
-
-    //전체 메시지 목록 반환
-    @Override
-    public List<Message> readAll() {
-        return new ArrayList<>(data.values());
-    }
-
-    //메시지 정보 수정 (id로 덮어쓰기)
-    @Override
-    public void update(Message message){
-        data.put(message.getId(), message);
-    }
-
-    //메시지 삭제(id로)
-    @Override
-    public void delete(UUID id){
-        data.remove(id);
-    } */
 }
+
