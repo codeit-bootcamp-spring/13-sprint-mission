@@ -37,11 +37,17 @@ public class UserStatus extends BaseEntity {
     }
 
 
+
     // 현재 사용자가 온라인에 접속중인지 확인하는 메서드
     public boolean isOnline() {
         if (lastOnlineAt == null) return false;
         Instant now = Instant.now();
         return !lastOnlineAt.isBefore(now.minus(Duration.ofMinutes(5)));
+    }
+
+    public void updateLastOnlineAt(Instant lastOnlineAt) {
+        this.lastOnlineAt = lastOnlineAt;
+        setUpdatedAt();
     }
 
 }

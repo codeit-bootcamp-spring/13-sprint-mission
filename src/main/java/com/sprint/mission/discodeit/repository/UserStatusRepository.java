@@ -9,8 +9,15 @@ import java.util.*;
 public interface UserStatusRepository {
 
 
-    public UserStatus findByUserId(UUID id);
+     UserStatus findByUserId(UUID id);
 
     void create(UserStatus userStatus);
 
+    UserStatus find(UUID id);
+
+    List<UserStatus> findAll();
+
+    UserStatus delete(UUID id);
+
+    void update(UserStatus userStatus);
 }

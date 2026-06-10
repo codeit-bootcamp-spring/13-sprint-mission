@@ -5,4 +5,5 @@ import java.time.*;
 public record UpdateUserStatusRequest(
         Instant lastOnlineTime
 ) {
+
 }
