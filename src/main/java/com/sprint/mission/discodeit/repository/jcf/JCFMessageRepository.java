@@ -3,40 +3,28 @@ package com.sprint.mission.discodeit.repository.jcf;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 //메시지를 메모리(ArrayList)에 저장하는 Repository
 public class JCFMessageRepository implements MessageRepository {
-    //메시지 저장 리스트
-    private final List<Message> messages = new ArrayList<>();
+    private final Map<UUID, Message> data;
+    public JCFMessageRepository() {this.data = new HashMap<>();}
 
-    //메시지 저장
+    @Override //메시지 저장
     public Message save(Message message) {
-        messages.add(message);
+        this.data.put(message.getId(), message);
         return message;
     }
 
-    //id로 메시지 조회
-    public Message findById(UUID id) {
-        for (Message m : messages) {
-            if (m.getId().equals(id))
-                return m;
-        }
-        return null;
-    }
+    @Override //id로 메시지 조회
+    public Optional<Message> findById(UUID id) {return Optional.ofNullable(this.data.get(id));}
 
     @Override
-    public List<Message> findAll() {
-        return new ArrayList<>(messages);
-    }
+    public List<Message> findAll() {return this.data.values().stream().toList();}
 
     @Override
-    public void delete(UUID id) {
+    public boolean existsById(UUID id) {return this.data.containsKey(id);}
 
-        messages.removeIf(
-                message -> message.getId().equals(id)
-        );
-    }
+    @Override
+    public void deleteById(UUID id) {this.data.remove(id);}
 }

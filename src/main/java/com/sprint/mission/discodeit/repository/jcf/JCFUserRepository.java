@@ -3,44 +3,30 @@ package com.sprint.mission.discodeit.repository.jcf;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 //java collection Framework(ArrayList)를 이용한 User 저장소 구현체
 public class JCFUserRepository implements UserRepository {
-    //사용자 데이터를 메모리에 저장하는 리스트
-    private final List<User> users = new ArrayList<>();
+    private Map<UUID, User> data;
+    private JCFUserRepository() {this.data = new HashMap<>();}
 
-    //사용자 저장
+    @Override
     public User save(User user){
-        users.add(user);
+        this.data.put(user.getId(), user);
         return user;
     }
 
-    //id로 사용자 조회
-    public User findById(UUID id){
-        //모든 사용자르 순회하며 id 비교
-        for (User user : users) {
-            if (user.getId().equals(id)) {
-                return user;
-            }
-        }
-        return null;
-    }
+    @Override
+    public Optional<User> findById(UUID id){return Optional.ofNullable(this.data.get(id));}
 
     @Override
     public List<User> findAll() {
-        return new ArrayList<>(users);
+        return this.data.values().stream().toList();
     }
 
     @Override
-    public void delete(UUID id) {
+    public boolean existsById(UUID id){return this.data.containsKey(id);}
 
-        users.removeIf(
-                user -> user.getId().equals(id)
-        );
-    }
-
-
+    @Override
+    public void deleteById(UUID id) {this.data.remove(id);}
 }

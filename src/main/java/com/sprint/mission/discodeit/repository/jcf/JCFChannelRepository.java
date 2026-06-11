@@ -3,40 +3,28 @@ package com.sprint.mission.discodeit.repository.jcf;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 //메모리(ArrayList)에 채널 정보를 저장하는 Repository
 public class JCFChannelRepository implements ChannelRepository {
-    //채널 저장 리스트
-    private final List<Channel> channels = new ArrayList<>();
+   private final Map<UUID, Channel> data;
+   public JCFChannelRepository() {this.data = new HashMap<>();}
 
-    //채널 저장
+    @Override //채널 저장
     public Channel save(Channel channel) {
-        channels.add(channel);
+        this.data.put(channel.getId(), channel);
         return channel;
     }
 
-    //id로 채널 조회
-    public Channel findById(UUID id) {
-        for (Channel c : channels) {
-            if (c.getId().equals(id))
-                return c;
-        }
-        return null;
-    }
+    @Override //id로 채널 조회
+    public Optional<Channel> findById(UUID id) {return Optional.ofNullable(this.data.get(id));}
 
     @Override
-    public List<Channel> findAll() {
-        return new ArrayList<>(channels);
-    }
+    public List<Channel> findAll() { return this.data.values().stream().toList();}
 
     @Override
-    public void delete(UUID id) {
+    public boolean existsById(UUID id) {return this.data.containsKey(id);}
 
-        channels.removeIf(
-                message -> message.getId().equals(id)
-        );
-    }
+    @Override
+    public void deleteById(UUID id) {this.data.remove(id);}
 }

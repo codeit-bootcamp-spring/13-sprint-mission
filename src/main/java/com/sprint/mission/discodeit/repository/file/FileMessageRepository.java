@@ -3,74 +3,94 @@ package com.sprint.mission.discodeit.repository.file;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 
+import java.awt.*;
 import java.io.*;
-import java.util.ArrayList;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 //메시지 정보를 파일(message.dat)에 저장하는 Repository
 public class FileMessageRepository implements MessageRepository {
-    private final String filePath = "messages.dat"; //메시지 저장 파일
-    private List<Message> messages = new ArrayList<>(); //메모리 메시지 목록
+    private final Path DIRECTORY;
+    private final String EXTENSION = ".ser";
 
     public FileMessageRepository() {
-        load();
-    } //생성 시 파일 데이터 로드
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file=data-map", Message.class.getSimpleName());
+        if (Files.notExists(DIRECTORY)) {
+            try {
+                Files.createDirectories(DIRECTORY);
+            }catch (IOException e){
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
-    //메시지 파일
+    private Path resolvePath(UUID id){ return DIRECTORY.resolve(id + EXTENSION); }
+
     @Override
     public Message save(Message message) {
-        messages.add(message);
-        saveToFile();
+        Path path = resolvePath(message.getId());
+        try(
+                FileOutputStream fos = new FileOutputStream(path.toFile());
+                ObjectOutputStream oos = new ObjectOutputStream(fos)
+        ) {
+            oos.writeObject(message);
+        }catch (IOException e) {throw new RuntimeException(e);}
         return message;
     }
 
-    //id로 메시지 조회
     @Override
-    public Message findById(UUID id){
-        for (Message message : messages) {
-            if (message.getId().equals(id))
-                return message;
+    public Optional<Message> findById(UUID id) {
+        Message messageNullable = null;
+        Path path = resolvePath(id);
+        if (Files.exists(path)) {
+            try (
+                    FileInputStream fis = new FileInputStream(path.toFile());
+                    ObjectInputStream ois = new ObjectInputStream(fis)
+            ) {
+                messageNullable = (Message) ois.readObject();
+            } catch (IOException | ClassNotFoundException e) {throw new RuntimeException(e);}
         }
-        return null;
+        return Optional.ofNullable(messageNullable);
     }
 
-    //파일 저장
-    private void saveToFile() {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))){
-            oos.writeObject(messages);
+    @Override
+    public List<Message> findAll(){
+        try {
+            return Files.list(DIRECTORY)
+                    .filter(path -> path.toString().endsWith(EXTENSION))
+                    .map(path -> {
+                        try (
+                                FileInputStream fis = new FileInputStream(path.toFile());
+                                ObjectInputStream ois = new ObjectInputStream(fis)
+                        ){
+                            return (Message) ois.readObject();
+                        }catch (IOException | ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .toList();
         } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    //파일 데이터 읽기
-    @SuppressWarnings("unchecked")
-    private void load() {
-        File file = new File(filePath);
-        if (!file.exists()) {
-            messages = new ArrayList<>();
-            return;
-        }
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
-            messages = (List<Message>) ois.readObject();
-        } catch (Exception e) {
-            messages = new ArrayList<>();
+            throw new RuntimeException(e);
         }
     }
 
     @Override
-    public List<Message> findAll() {
-        return new ArrayList<>(messages);
+    public boolean existsById(UUID id) {
+        Path path = resolvePath(id);
+        return Files.exists(path);
     }
 
     @Override
-    public void delete(UUID id) {
-
-        messages.removeIf(
-                user -> user.getId().equals(id)
-        );
-
-        saveToFile();
+    public void deleteById(UUID id) {
+        Path path = resolvePath(id);
+        try {
+            Files.delete(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

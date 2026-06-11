@@ -1,77 +1,133 @@
 package com.sprint.mission.discodeit.service.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.repository.ChannelRepository;
-import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
+import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.service.ChannelService;
 
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.UUID;
 
 //파일 IO 기반 서비스처럼 보이지만,
 //실제 동작은 JCFChannelService에 모두 "위임"하는 클래스
 public class FileChannelService implements ChannelService {
-    private final ChannelRepository repository;
+    private final Path DIRECTORY;
+    private final String EXTENSION = ".ser";
 
     public FileChannelService() {
-        this.repository = new FileChannelRepository();
-    }
-    @Override
-    public void create(Channel channel) {
-        repository.save(channel);
-    }
-
-    @Override
-    public Channel read(UUID id) {
-        return repository.findById(id);
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", Channel.class.getSimpleName());
+        if (Files.notExists(DIRECTORY)) {
+            try {
+                Files.createDirectories(DIRECTORY);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
+    private Path resolvePath(UUID id) { return DIRECTORY.resolve(id + EXTENSION); }
+
     @Override
-    public List<Channel> readAll() {
-        return repository.findAll();
+    public Channel create(ChannelType type, String name, String description) {
+        Channel channel = new Channel(type, name, description);
+        Path path = resolvePath(channel.getId());
+        try (
+                FileOutputStream fos = new FileOutputStream(path.toFile());
+                ObjectOutputStream oos = new ObjectOutputStream(fos);
+        ) {
+            oos.writeObject(channel);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return channel;
     }
 
     @Override
-    public void update(Channel channel) {
-        repository.save(channel);
+    public Channel find(UUID channelId) {
+        Channel channelNullable = null;
+        Path path = resolvePath(channelId);
+        if (Files.exists(path)) {
+            try (
+                    FileInputStream fis = new FileInputStream(path.toFile());
+                    ObjectInputStream ois = new ObjectInputStream(fis)
+            ) {
+                channelNullable = (Channel) ois.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return Optional.ofNullable(channelNullable)
+                .orElseThrow(()->new NoSuchElementException("Channel with id " + channelId + " not found"));
     }
 
     @Override
-    public void delete(UUID id) {
-        repository.delete(id);
+    public List<Channel> findAll() {
+        try {
+            return Files.list(DIRECTORY)
+                    .filter(path -> path.toString().endsWith(EXTENSION))
+                    .map(path -> {
+                        try(
+                                FileInputStream fis = new FileInputStream(path.toFile());
+                                ObjectInputStream ois = new ObjectInputStream(fis)
+                        ){
+                            return (Channel) ois.readObject();
+                        }catch (IOException | ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .toList();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
+    @Override
+    public Channel update(UUID channelId, String newName, String newDescription) {
+        Channel channelNullable = null;
+        Path path = resolvePath(channelId);
+        if (Files.exists(path)) {
+            try (
+                    FileInputStream fis = new FileInputStream(path.toFile());
+                    ObjectInputStream ois = new ObjectInputStream(fis)
+            ) {
+                channelNullable = (Channel) ois.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        Channel channel = Optional.ofNullable(channelNullable)
+                .orElseThrow(()->new NoSuchElementException("Channel with id " + channelId + " not found"));
+        channel.update(newName,newDescription);
 
+        try (
+                FileOutputStream fis = new FileOutputStream(path.toFile());
+                ObjectOutputStream oos = new ObjectOutputStream(fis)
+        ){
+            oos.writeObject(channel);
+        }catch (IOException e){
+            throw new RuntimeException(e);
+        }
 
-    /* private final JCFChannelService jcfChannelService; //실제로 모든 작업을 담당하는 JCFChannelServic
-    //생성자에서 JCFChannelService를 받아 옴
-    public FileChannelService(JCFChannelService jcfChannelService) {
-        this.jcfChannelService = jcfChannelService;
+        return channel;
     }
 
-    //채널 생성 시 JCFChannelService의 create를 호출해서 처리
     @Override
-    public void create(Channel channel) {
-        jcfChannelService.create(channel);
+    public void delete(UUID channelId) {
+        Path path = resolvePath(channelId);
+        if (Files.notExists(path)) {
+            throw new NoSuchElementException("Channel with id " + channelId + " not found");
+        }
+        try {
+            Files.delete(path);
+        }catch (IOException e){
+            throw new RuntimeException(e);
+        }
     }
 
-    //채널 단일 조회 시 JCFChannelService의 read를 호출해서 처리
-    @Override
-    public Channel read(UUID id) {
-        return jcfChannelService.read(id);
-    }
-
-    //모든 채널 조회 시 JCFChannelService의 readAll를 호출
-    @Override
-    public List<Channel> readAll() {return jcfChannelService.readAll();}
-
-    //채널 수정 시 JCFChannelService의 update를 호출
-    @Override
-    public void update(Channel channel) {jcfChannelService.update(channel);}
-
-    //채널 삭제 시 JCFChannelService의 delete를 호출
-    @Override
-    public void delete(UUID id) {
-        jcfChannelService.delete(id);
-    } */
 }
