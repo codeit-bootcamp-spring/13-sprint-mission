@@ -4,9 +4,13 @@ import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
+import org.springframework.boot.autoconfigure.condition.*;
+import org.springframework.stereotype.*;
 
 import java.util.*;
 
+@Repository
+@ConditionalOnProperty(name = "discodeit.repository.type", matchIfMissing = true, havingValue = "jcf")
 public class JCFMessageRepository implements MessageRepository {
 
     private final Map<UUID, Message> data;

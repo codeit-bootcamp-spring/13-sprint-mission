@@ -40,7 +40,7 @@ public record UserResponse(
     @Override
     public String toString() {
         return """
-                User
+                유저 정보
                 ====================
                 ID      : %s
                 Name    : %s

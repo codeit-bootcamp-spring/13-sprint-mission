@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.repository.file;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
+import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.stereotype.*;
 
 import java.io.*;
@@ -10,6 +11,7 @@ import java.nio.file.*;
 import java.util.*;
 
 @Repository
+@ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
 public class FileMessageRepository implements MessageRepository {
 
     private final List<Message> messages = new ArrayList<>();

@@ -40,7 +40,7 @@ public record MessageResponse(
     @Override
     public String toString() {
         return """
-            Message
+            메세지 정보
             ====================
             ID          : %s
             Channel ID  : %s

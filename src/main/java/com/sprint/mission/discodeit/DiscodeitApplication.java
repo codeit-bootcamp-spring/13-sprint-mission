@@ -2,8 +2,8 @@ package com.sprint.mission.discodeit;
 
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
-import com.sprint.mission.discodeit.repository.file.*;
 import com.sprint.mission.discodeit.service.*;
+import com.sprint.mission.discodeit.repository.*;
 import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.*;
 import org.springframework.context.*;
@@ -25,6 +25,21 @@ public class DiscodeitApplication {
 
         MessageService messageService =
                 context.getBean(MessageService.class);
+
+
+        UserRepository userRepository =
+                context.getBean(UserRepository.class);
+
+        ChannelRepository channelRepository =
+                context.getBean(ChannelRepository.class);
+
+        MessageRepository messageRepository =
+                context.getBean(MessageRepository.class);
+
+        System.out.println("=== 현재 등록된 Repository Bean ===");
+        System.out.println("UserRepository = " + userRepository.getClass().getSimpleName());
+        System.out.println("ChannelRepository = " + channelRepository.getClass().getSimpleName());
+        System.out.println("MessageRepository = " + messageRepository.getClass().getSimpleName());
 
         printFileStatus();
 
@@ -76,11 +91,18 @@ public class DiscodeitApplication {
 
     private static void printFileStatus() {
         System.out.println("현재 실행 위치: " + Paths.get("").toAbsolutePath());
-        System.out.println("users.ser 위치: " + Paths.get("data/users.ser").toAbsolutePath());
 
-        System.out.println("users.ser = " + Files.exists(Paths.get("data/users.ser")));
-        System.out.println("channels.ser = " + Files.exists(Paths.get("data/channels.ser")));
-        System.out.println("messages.ser = " + Files.exists(Paths.get("data/messages.ser")));
+        System.out.println(".discodeit/users.ser 위치: "
+                + Paths.get(".discodeit/users.ser").toAbsolutePath());
+
+        System.out.println("users.ser = "
+                + Files.exists(Paths.get(".discodeit/users.ser")));
+
+        System.out.println("channels.ser = "
+                + Files.exists(Paths.get(".discodeit/channels.ser")));
+
+        System.out.println("messages.ser = "
+                + Files.exists(Paths.get(".discodeit/messages.ser")));
     }
 
     private static UserResponse runUserScenario(UserService userService) {
@@ -203,13 +225,10 @@ public class DiscodeitApplication {
         System.out.println("=== 전체 조회 ===");
         System.out.println();
 
-        System.out.println("=== 유저 정보 ===");
         userService.findAll().forEach(System.out::println);
 
-        System.out.println("=== 채널 정보 ===");
         channelService.findAll().forEach(System.out::println);
 
-        System.out.println("=== 메세지 정보 ===");
         messageService.findAllByChannelId(channel.id())
                 .forEach(System.out::println);
     }

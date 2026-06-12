@@ -32,7 +32,7 @@ public record ChannelResponse(
     @Override
     public String toString() {
         return """
-            Channel
+            채널 정보
             ====================
             ID          : %s
             Name        : %s
