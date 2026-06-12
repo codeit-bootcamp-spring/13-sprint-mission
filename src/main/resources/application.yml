@@ -5,5 +5,5 @@ spring:
 #파일 저장 방식 변경 설정
 discodeit:
   repository:
-    type: file #jcf
+    type: jcf #file
     file-directory: data
