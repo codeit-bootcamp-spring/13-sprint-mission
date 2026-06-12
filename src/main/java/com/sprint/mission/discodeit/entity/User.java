@@ -12,16 +12,21 @@ public class User extends MutableEntity {
 	
 	String name;
 	String email;
+	String password;
 	
-	public User(String name, String email) {
+	public User(String name, String email, String password, UUID profileId) {
 		super();
 		this.name = name;
 		this.email = email;
+		this.password = password;
+		this.profileId = profileId;
 	}
-	
-	public void renew(String name, String email) {
+
+	public void renew(String name, String email, String password, UUID profileId) {
 		this.name = name;
 		this.email = email;
+		this.password = password;
+		this.profileId = profileId;
 		updateTime();
 	}
 

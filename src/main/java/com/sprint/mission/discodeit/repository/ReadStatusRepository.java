@@ -8,8 +8,8 @@ import java.util.UUID;
 public interface ReadStatusRepository {
     void save(ReadStatus readStatus);
     ReadStatus findById(UUID id );
-    Collection<ReadStatus> findByAllUserId(UUID userId);
-    void delete(UUID userid);
+    Collection<ReadStatus> findAllByUserId(UUID userId);
+    void delete(UUID id);
 
 
 
