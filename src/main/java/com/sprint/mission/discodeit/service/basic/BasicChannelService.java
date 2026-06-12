@@ -13,6 +13,7 @@ import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BasicChannelService implements ChannelService {
 
     private final ChannelRepository channelRepository;
@@ -37,6 +39,7 @@ public class BasicChannelService implements ChannelService {
         }
         Channel channel = new Channel(request.name(), request.description());
         channelRepository.save(channel);
+        log.info("PUBLIC 채널 생성 - 채널명: {}, 채널설명: {}", channel.getName(), channel.getDescription());
         return new ChannelResponse(
                 channel.getChannelId(),
                 channel.getChannelType(),
@@ -56,6 +59,7 @@ public class BasicChannelService implements ChannelService {
             ReadStatus readStatus = new ReadStatus(userId, channel.getChannelId());
             readStatusRepository.save(readStatus);
         });
+        log.info("PRIVATE 채널 생성 - 채널 참여자: {}", request.participantIds());
         return  new ChannelResponse(
                 channel.getChannelId(),
                 channel.getChannelType(),
@@ -67,7 +71,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ChannelResponse findByChannel(UUID channelId) {
+    public ChannelResponse findByChannelId(UUID channelId) {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널입니다."));
         List<UUID> participantIds = null;
@@ -83,6 +87,8 @@ public class BasicChannelService implements ChannelService {
                 .map(Message::getCreatedAt)
                 .max(Comparator.naturalOrder())
                 .orElse(null);
+
+        log.info("채널 조회 - 채널명: {}",channel.getName());
 
         return new ChannelResponse(
                 channel.getChannelId(),
@@ -111,8 +117,10 @@ public class BasicChannelService implements ChannelService {
         allChannels.addAll(publicChannels);
         allChannels.addAll(privateChannels);
 
+        log.info("전체 채널 조회 완료: {}", allChannels);
+
         return allChannels.stream()
-                .map(channel -> findByChannel(channel.getChannelId()))
+                .map(channel -> findByChannelId(channel.getChannelId()))
                 .collect(Collectors.toList());
 
     }
@@ -127,8 +135,17 @@ public class BasicChannelService implements ChannelService {
         if (request.name() != null && !request.name().isBlank()) channel.updateChannel(request.name());
         if (request.description() != null && !request.description().isBlank()) channel.updateChannelDescription(request.description());
 
+        log.info("채널 수정 완료- 채널id: {}, 채널명: {} ,채널설명: {}", channel.getChannelId(), channel.getName(), channel.getDescription());
+
         channelRepository.save(channel);
-        return findByChannel(ChannelId);
+        return new ChannelResponse(
+                channel.getChannelId(),
+                channel.getChannelType(),
+                channel.getName(),
+                channel.getDescription(),
+                null,
+                null
+        );
     }
 
     @Override
@@ -140,5 +157,6 @@ public class BasicChannelService implements ChannelService {
                         .forEach(message -> messageRepository.deleteById(message.getMessageId()));
         readStatusRepository.deleteByChannelId(channel.getChannelId());
         channelRepository.deleteById(channel.getChannelId());
+        log.info("채널 삭제 완료 - 채널id: {}, 채널명: {}", channel.getChannelId(), channel.getName());
     }
 }

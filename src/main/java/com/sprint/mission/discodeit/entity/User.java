@@ -22,13 +22,14 @@ public class User implements Serializable {
     private UUID profileId;
 
 
-    public User (String name, String email, String password) {
+    public User (String name, String email, String password,  UUID profileId) {
         this.userId = UUID.randomUUID();
         this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
         this.name = name;
         this.email = email;
         this.password = password;
+        this.profileId = profileId;
     }
 
     //이름 수정

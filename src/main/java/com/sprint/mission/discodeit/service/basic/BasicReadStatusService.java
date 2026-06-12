@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusCreateRequest;
+import com.sprint.mission.discodeit.dto.readstatus.ReadStatusResponse;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,9 +24,18 @@ public class BasicReadStatusService implements ReadStatusService {
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
 
+    private ReadStatusResponse toResponse(ReadStatus readStatus){
+        return new ReadStatusResponse(
+                readStatus.getId(),
+                readStatus.getUserId(),
+                readStatus.getChannelId(),
+                readStatus.getLastReadAt()
+        );
+    }
+
     //생성
     @Override
-    public ReadStatus create(ReadStatusCreateRequest request) {
+    public ReadStatusResponse create(ReadStatusCreateRequest request) {
         userRepository.findById(request.userId())
                 .orElseThrow(()-> new NoSuchElementException("존재하지 않는 사용자 입니다."));
         channelRepository.findById(request.channelId())
@@ -40,29 +51,34 @@ public class BasicReadStatusService implements ReadStatusService {
 
         ReadStatus readStatus = new ReadStatus(request.userId(), request.channelId());
         readStatusRepository.save(readStatus);
-        return readStatus;
+        return toResponse(readStatus);
     }
+    //조회
     @Override
-    public ReadStatus find(UUID id) {
-        return readStatusRepository.findById(id)
-                .orElseThrow(()-> new NoSuchElementException("존재하지 않는 ReadStatus입니다."));
+    public ReadStatusResponse find(UUID id) {
+        ReadStatus readStatus = readStatusRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 ReadStatus입니다."));
+        return toResponse(readStatus);
     }
 
     //전체 조회
     @Override
-    public List<ReadStatus> findAllByUserId(UUID userId) {
-        return readStatusRepository.findAllByUserId(userId);
+    public List<ReadStatusResponse> findAllByUserId(UUID userId) {
+        List<ReadStatus> allByUserId = readStatusRepository.findAllByUserId(userId);
+        return allByUserId.stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     //수정
     @Override
-    public ReadStatus update(UUID id, ReadStatusUpdateRequest request) {
+    public ReadStatusResponse update(UUID id, ReadStatusUpdateRequest request) {
         ReadStatus readStatus = readStatusRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 ReadStatus입니다."));
         readStatus.updateLastReadAt(request.lastReadAt());
 
         readStatusRepository.save(readStatus);
-        return readStatus;
+        return toResponse(readStatus);
     }
 
     //삭제

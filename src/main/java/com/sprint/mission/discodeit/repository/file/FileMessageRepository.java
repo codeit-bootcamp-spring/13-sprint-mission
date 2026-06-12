@@ -77,14 +77,6 @@ public class FileMessageRepository implements MessageRepository {
     }
 
     @Override
-    public List<Message> findAllByUserId(UUID userId) {
-        Map<UUID, Message> data = loadFromFile();
-        return data.values().stream()
-                .filter(message -> message.getAuthorId().equals(userId))
-                .collect(Collectors.toList());
-    }
-
-    @Override
     public void deleteById(UUID id) {
         Map<UUID, Message> data = loadFromFile();
         data.remove(id);

@@ -13,6 +13,7 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,12 +24,25 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BasicUserService implements UserService {
 
     private final UserRepository userRepository;
     private final UserStatusRepository userStatusRepository;
     private final BinaryContentRepository binaryContentRepository;
     private final ReadStatusRepository readStatusRepository;
+
+    private UserResponse toResponse(User user, UserStatus userStatus) {
+        return new UserResponse(
+                user.getUserId(),
+                user.getName(),
+                user.getEmail(),
+                user.getProfileId(),
+                userStatus.isOnline()
+        );
+    }
+
+
 
     @Override
     public UserResponse createUser(UserCreateRequest userCreateRequest,
@@ -50,34 +64,32 @@ public class BasicUserService implements UserService {
         //프로필 이미지 처리
         UUID profileId = null;
         if (profileRequest != null) {
-            BinaryContent profile = new BinaryContent(null, profileRequest.fileName(), profileRequest.fileSize(),
+            BinaryContent profile = new BinaryContent(profileRequest.fileName(), profileRequest.fileSize(),
                     profileRequest.contentType(),profileRequest.bytes());
             binaryContentRepository.save(profile);
             profileId = profile.getId();
         }
-        User user = new User(userCreateRequest.name(), userCreateRequest.email(), userCreateRequest.password());
+        User user = new User(userCreateRequest.name(), userCreateRequest.email(), userCreateRequest.password(),profileId);
         userRepository.save(user);
 
         UserStatus userStatus = new UserStatus(user.getUserId());
         userStatusRepository.save(userStatus);
-
-        return new UserResponse(user.getUserId(), user.getName(), user.getEmail(), profileId, userStatus.isOnline());
+        log.info("유저 생성 완료 - name: {}, userId: {}", userCreateRequest.name(), user.getUserId());
+        return  toResponse(user, userStatus);
 
     }
 
     @Override
-    public UserResponse findByUser(UUID userId) {
+    public UserResponse findByUserId(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자 입니다."));
 
-        UserStatus userStatus = userStatusRepository.findById(userId).get();
+        UserStatus userStatus = userStatusRepository.findByUserId(userId)
+                .orElseThrow(()-> new NoSuchElementException("존재하지 않는 UserStatus입니다."));
 
-        return new UserResponse(
-                user.getUserId(),
-                user.getName(),
-                user.getEmail(),
-                user.getProfileId(),
-                userStatus.isOnline());
+        log.info("유저 조회 - name: {}", user.getName());
+
+        return toResponse(user, userStatus);
     }
 
     @Override
@@ -86,13 +98,12 @@ public class BasicUserService implements UserService {
         if (users.isEmpty()) {
             throw new NoSuchElementException("사용자가 존재하지 않습니다.");
         }
-
+        log.info("전체 유저 조회 완료 - 총 {}명", users.size());
         return  users.stream()
                 .map(user -> {
-                    UserStatus userStatus = userStatusRepository.findById(user.getUserId()).get();
-                    return new UserResponse(
-                            user.getUserId(), user.getName(), user.getEmail(), user.getProfileId(), userStatus.isOnline()
-                    );
+                    UserStatus userStatus = userStatusRepository.findByUserId(user.getUserId())
+                            .orElseThrow(()-> new NoSuchElementException("존재하지 않는 UserStatus입니다."));
+                    return  toResponse(user, userStatus);
                 })
                 .collect(Collectors.toList());
     }
@@ -108,7 +119,7 @@ public class BasicUserService implements UserService {
                 binaryContentRepository.delete(user.getProfileId());
             }
             BinaryContent profile = new BinaryContent(
-                    userId, profileRequest.fileName(), profileRequest.fileSize(), profileRequest.contentType(),profileRequest.bytes());
+                    profileRequest.fileName(), profileRequest.fileSize(), profileRequest.contentType(),profileRequest.bytes());
             binaryContentRepository.save(profile);
             user.updateUserProfileId(profile.getId());
         }
@@ -118,14 +129,12 @@ public class BasicUserService implements UserService {
         if (userUpdateRequest.password() != null) user.updateUserPassword(userUpdateRequest.password());
         userRepository.save(user);
 
-        UserStatus userStatus = userStatusRepository.findById(userId).get();
-        return new UserResponse(
-                user.getUserId(),
-                user.getName(),
-                user.getEmail(),
-                user.getProfileId(),
-                userStatus.isOnline()
-        );
+        UserStatus userStatus = userStatusRepository.findByUserId(userId)
+                .orElseThrow(()-> new NoSuchElementException("존재하지 않는 UserStatus입니다."));
+
+        log.info("유저 수정 완료 -  name: {}, userId: {}", user.getName(), user.getUserId());
+
+        return toResponse(user, userStatus);
     }
 
     @Override
@@ -138,5 +147,6 @@ public class BasicUserService implements UserService {
         userStatusRepository.deleteById(user.getUserId());
         readStatusRepository.deleteByUserId(userId);
         userRepository.deleteById(userId);
+        log.info("유저 삭제 - name: {}, userId: {}", user.getName(), user.getUserId());
     }
 }

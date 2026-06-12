@@ -17,9 +17,9 @@ public interface ChannelService {
     ChannelResponse createPrivateChannel(PrivateChannelRequest request);
 
     //채널단건 조회
-    ChannelResponse findByChannel(UUID channelId);
+    ChannelResponse findByChannelId(UUID channelId);
 
-    //사욪자 전체 채널 조회
+    //사용자 전체 채널 조회
     List<ChannelResponse> findAllByUserId(UUID id);
 
     //수정

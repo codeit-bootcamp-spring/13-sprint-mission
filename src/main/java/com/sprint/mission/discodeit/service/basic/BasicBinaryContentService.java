@@ -1,7 +1,9 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
+import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.ContentType;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import lombok.RequiredArgsConstructor;
@@ -19,31 +21,42 @@ public class BasicBinaryContentService implements BinaryContentService {
 
     private final BinaryContentRepository binaryContentRepository;
 
+    private BinaryContentResponse toResponse(BinaryContent binaryContent) {
+        return new BinaryContentResponse(
+                binaryContent.getId(),
+                binaryContent.getCreatedAt(),
+                binaryContent.getFileName(),
+                binaryContent.getFileSize(),
+                binaryContent.getContentType()
+        );
+    }
+
+
     @Override
-    public BinaryContent create(BinaryContentCreateRequest request) {
+    public BinaryContentResponse create(BinaryContentCreateRequest request) {
         BinaryContent binaryContent = new BinaryContent(
-                request.userId(),
                 request.fileName(),
                 request.fileSize(),
                 request.contentType(),
                 request.bytes()
         );
         binaryContentRepository.save(binaryContent);
-        return binaryContent;
+        return toResponse(binaryContent);
     }
 
     @Override
-    public BinaryContent find(UUID id) {
+    public BinaryContentResponse find(UUID id) {
         BinaryContent findByContent = binaryContentRepository
                 .find(id).orElseThrow(() -> new NoSuchElementException("존재하지 않는 content 입니다."));
-        return  findByContent;
+        return toResponse(findByContent);
     }
 
     @Override
-    public List<BinaryContent> findAllByIdIn(List<UUID> ids) {
+    public List<BinaryContentResponse> findAllByIdIn(List<UUID> ids) {
         return ids.stream()
-                .map(id -> binaryContentRepository.find(id).
-                        orElseThrow(() -> new NoSuchElementException("존재하지 않는 content 입니다.")))
+                .map(id ->
+                        toResponse(binaryContentRepository.find(id)
+                                .orElseThrow(()-> new NoSuchElementException("존재하지 않는 content 입니다."))))
                 .collect(Collectors.toList());
     }
 

@@ -14,7 +14,7 @@ public interface UserService {
     UserResponse createUser(UserCreateRequest userRequest,
                             BinaryContentCreateRequest profileRequest);
     //(R)조회 단건
-    UserResponse findByUser(UUID userId);
+    UserResponse findByUserId(UUID userId);
     //(R)조회 다수
     List<UserResponse> findAllUser();
     //(U)수정
