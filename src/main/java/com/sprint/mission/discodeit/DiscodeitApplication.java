@@ -17,6 +17,7 @@ public class DiscodeitApplication {
 	public static void main(String[] args) {
 		ConfigurableApplicationContext context = SpringApplication.run(DiscodeitApplication.class, args);
 
+		/*
 		// 서비스 초기화
 		UserService userService = context.getBean(UserService.class);
 		ChannelService channelService = context.getBean(ChannelService.class);
@@ -31,7 +32,7 @@ public class DiscodeitApplication {
 		System.out.println("\n\nThis is Discodeit Application!");
 		System.out.println("========= 테스트 ==========\n================================");
 		test(userService, channelService, messageService, binaryContentService, userStatusService, readStatusService, authService);
-
+		*/
 	}
 
 	private static void test(

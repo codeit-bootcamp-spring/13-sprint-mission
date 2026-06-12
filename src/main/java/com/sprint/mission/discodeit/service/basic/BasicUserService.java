@@ -5,6 +5,8 @@ import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserFindResponse;
 import com.sprint.mission.discodeit.dto.response.UserUpdateResponse;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.exception.DuplicateResourceException;
+import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -30,9 +32,9 @@ public class BasicUserService implements UserService {
     @Override
     public User createUser(UserCreateRequest request) {
         //입력값 검증 처리하겠습니다
-        validateString(request.name());
-        validateString(request.email());
-        validateString(request.password());
+//        validateString(request.name());
+//        validateString(request.email());
+//        validateString(request.password());
 
         //중복된 이름, 이메일로 생성 요청을 한 경우 검증
         validateNameExists(request.name());
@@ -62,15 +64,15 @@ public class BasicUserService implements UserService {
     @Override
     public UserFindResponse findUser(UUID userId) {
         //입력값 검증 처리하겠습니다
-        validateUUID(userId);
+//        validateUUID(userId);
 
         //유저 검색
         User userTemp = userRepository.findUserById(userId)
-                .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         //유저 상태 검색
         UserStatus userStatus = userStatusRepository.findUserStatusByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
 
         return UserFindResponse.from(userTemp, userStatus.isUserOnline());
     }
@@ -91,14 +93,14 @@ public class BasicUserService implements UserService {
     @Override
     public UserUpdateResponse updateUser(UserUpdateRequest request) {
         //입력값 검증 처리하겠습니다
-        validateUUID(request.userId());
-        validateString(request.newName());
-        validateString(request.newEmail());
-        validateString(request.newPassword());
+//        validateUUID(request.userId());
+//        validateString(request.newName());
+//        validateString(request.newEmail());
+//        validateString(request.newPassword());
 
         //유저 검색
         User userTemp = userRepository.findUserById(request.userId())
-                .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         //중복된 이름, 이메일로 수정 요청을 한 경우 검증
         if (!userTemp.getName().equals(request.newName())) {
@@ -144,15 +146,15 @@ public class BasicUserService implements UserService {
     @Override
     public void deleteUser(UUID userId) {
         //입력값 검증 처리하겠습니다
-        validateUUID(userId);
+//        validateUUID(userId);
 
         //유저 검색
         User userTemp = userRepository.findUserById(userId)
-                .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         //유저 상태 검색 및 삭제
         UserStatus userStatus = userStatusRepository.findUserStatusByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
         userStatusRepository.deleteUserStatus(userStatus.getId());
 
         //유저가 가입한 채널에 대한 ReadStatus 검색 및 삭제
@@ -206,14 +208,14 @@ public class BasicUserService implements UserService {
     // 들어온 이름 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateNameExists(String name) {
         if (userRepository.existsUserByName(name)) {
-            throw new RuntimeException("이름: " + name + "은 이미 사용중입니다.");
+            throw new DuplicateResourceException("이름: " + name + "은 이미 사용중입니다.");
         }
     }
 
     // 들어온 이메일 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateEmailExists(String email) {
         if (userRepository.existsUserByEmail(email)) {
-            throw new RuntimeException("이메일: " + email + "은 이미 사용중입니다.");
+            throw new DuplicateResourceException("이메일: " + email + "은 이미 사용중입니다.");
         }
     }
 }

@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     public BinaryContent createBinaryContent(BinaryContentCreateRequest request) {
         //입력값 검증 처리하겠습니다
-        validateString(request.contentPath());
+//        validateString(request.contentPath());
 
         //BinaryContent 생성
         BinaryContent binaryContent = new BinaryContent(request.contentPath());
@@ -36,11 +37,11 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     public BinaryContent findBinaryContentById(UUID binaryContentId) {
         //입력값 검증 처리하겠습니다
-        validateUUID(binaryContentId);
+//        validateUUID(binaryContentId);
 
         //BinaryContent 검색
         BinaryContent binaryContentTemp = binaryContentRepository.findBinaryContentById(binaryContentId)
-                .orElseThrow(() -> new RuntimeException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
 
         return binaryContentTemp;
     }
@@ -48,9 +49,9 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     public List<BinaryContent> findAllBinaryContentByIdIn(List<UUID> binaryContentIds) {
         //입력값 검증 처리하겠습니다
-        validateList(binaryContentIds);
+//        validateList(binaryContentIds);
         for (UUID binaryContentId : binaryContentIds) {
-            validateUUID(binaryContentId);
+//            validateUUID(binaryContentId);
         }
 
         //BinaryContent들 검색
@@ -62,11 +63,11 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     public void deleteBinaryContent(UUID binaryContentId) {
         //입력값 검증 처리하겠습니다
-        validateUUID(binaryContentId);
+//        validateUUID(binaryContentId);
 
         //BinaryContent 검색
         BinaryContent binaryContentTemp = binaryContentRepository.findBinaryContentById(binaryContentId)
-                .orElseThrow(() -> new RuntimeException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
 
         binaryContentRepository.deleteBinaryContent(binaryContentId);
 

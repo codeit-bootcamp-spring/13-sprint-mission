@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.MessageUpdateResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
@@ -33,9 +34,9 @@ public class BasicMessageService implements MessageService {
     @Override
     public Message createMessage(MessageCreateRequest request) {
         //입력값 검증 처리하겠습니다
-        validateString(request.content());
-        validateUUID(request.authorId());
-        validateUUID(request.channelId());
+//        validateString(request.content());
+//        validateUUID(request.authorId());
+//        validateUUID(request.channelId());
 
         //존재하는 유저, 채널인지 검증
         validateUserExists(request.authorId());
@@ -65,7 +66,7 @@ public class BasicMessageService implements MessageService {
     @Override
     public List<Message> findAllByChannelId(UUID channelId) {
         //입력값 검증 처리하겠습니다
-        validateUUID(channelId);
+//        validateUUID(channelId);
 
         return messageRepository.findAllMessagesByChannelId(channelId);
     }
@@ -73,12 +74,12 @@ public class BasicMessageService implements MessageService {
     @Override
     public MessageUpdateResponse updateMessage(MessageUpdateRequest request) {
         //입력값 검증 처리하겠습니다
-        validateUUID(request.messageId());
-        validateString(request.content());
+//        validateUUID(request.messageId());
+//        validateString(request.content());
 
         //메시지 검색
         Message messageTemp = messageRepository.findMessageById(request.messageId())
-                .orElseThrow(() -> new RuntimeException("에러: 해당 메시지는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 메시지는 데이터파일에 존재하지 않습니다."));
 
         //이전 첨부파일 삭제
         for (UUID attachmentId : messageTemp.getAttachmentIds()) {
@@ -110,11 +111,11 @@ public class BasicMessageService implements MessageService {
     @Override
     public void deleteMessage(UUID messageId) {
         //입력값 검증 처리하겠습니다
-        validateUUID(messageId);
+//        validateUUID(messageId);
 
         //메시지 검색
         Message messageTemp = messageRepository.findMessageById(messageId)
-                .orElseThrow(() -> new RuntimeException("에러: 해당 메시지는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 메시지는 데이터파일에 존재하지 않습니다."));
 
         //첨부파일 삭제
         for (UUID attachmentId : messageTemp.getAttachmentIds()) {
@@ -143,13 +144,13 @@ public class BasicMessageService implements MessageService {
     // 들어온 userId 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateUserExists(UUID userId) {
         if (!userRepository.existsUserById(userId)) {
-            throw new RuntimeException("유저: " + userId + "이 존재하지 않습니다.");
+            throw new ObjectNotFoundException("유저: " + userId + "이 존재하지 않습니다.");
         }
     }
     // 들어온 channelId필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateChannelExists(UUID channelId) {
         if (!channelRepository.existsChannelById(channelId)) {
-            throw new RuntimeException("채널: " + channelId + "이 존재하지 않습니다.");
+            throw new ObjectNotFoundException("채널: " + channelId + "이 존재하지 않습니다.");
         }
     }
 }

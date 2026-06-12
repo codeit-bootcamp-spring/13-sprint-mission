@@ -26,6 +26,8 @@ public class ReadStatus extends EntityRoot implements Serializable {
     //updateMethod
     public void updateLastAccessTime() {
         this.lastAccessTime = Instant.now();
+
+        updateUpdatedAt();
     }
 
 
