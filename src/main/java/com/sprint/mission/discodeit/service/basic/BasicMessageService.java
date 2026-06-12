@@ -34,7 +34,7 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public List<Message> findallByChannelId(UUID cannelID){
-        return mr.find(m -> m.getChannelID().equals(cannelID));
+        return mr.findByChannelID(cannelID);
     }
 
     @Override
