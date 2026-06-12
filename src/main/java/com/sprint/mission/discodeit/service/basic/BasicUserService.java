@@ -66,17 +66,19 @@ public class BasicUserService implements UserService {
 
     @Override
     public UserOutput getUserById(UUID id){
-        User user;
         try {
-            user = fur.find((c) -> c.getId().equals(id)).get(0);
+            User user = fur.findByID(id);
             UserStatus ust = usr.findByUserID(user.getId());
+
             return UserOutput.builder()
                     .name(user.getName())
                     .email(user.getEmail())
                     .online(ust.online())
                     .build();
+
         } catch (IndexOutOfBoundsException e) {
-            throw new RuntimeException(e);
+            log.warn(e.getMessage());
+            return null;
         }
     }
 

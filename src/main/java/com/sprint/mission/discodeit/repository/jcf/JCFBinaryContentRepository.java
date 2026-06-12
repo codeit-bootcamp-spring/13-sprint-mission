@@ -33,11 +33,8 @@ public class JCFBinaryContentRepository implements BinaryContentRepository {
 
     @Override
     public BinaryContent findByID(UUID id){
-        try{
-            return find(bc -> bc.getId().equals(id)).get(0);
-        } catch (IndexOutOfBoundsException e){
-            return null;
-        }
+        List<BinaryContent> res = find(bc -> bc.getId().equals(id));
+        return res.isEmpty() ? null : res.get(0);
     }
 
     @Override

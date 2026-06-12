@@ -68,6 +68,7 @@ public class DiscodeitInit implements CommandLineRunner {
                     new Login("test@email.com","password"),
                     new UserProfile("김철수",null)
             );
+
             UserOutput cuser = auth.login(new Login("test@email.com","password"));
             log.info("{}",cuser);
 

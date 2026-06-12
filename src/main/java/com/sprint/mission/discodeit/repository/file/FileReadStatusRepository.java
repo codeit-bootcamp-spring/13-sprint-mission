@@ -24,12 +24,7 @@ public class FileReadStatusRepository extends FileBaseRepository implements Read
 
     @Override
     public void save(ReadStatus rs) {
-        try {
-            write(dic.getFilePath().resolve("readstatus").resolve(rs.getId()+ ".ser"), rs);
-            log.debug("ReadStatus create - {}", rs.getId());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        write(dic.getFilePath().resolve("readstatus").resolve(rs.getId()+ ".ser"), rs);
     }
 
     @Override
@@ -39,7 +34,8 @@ public class FileReadStatusRepository extends FileBaseRepository implements Read
 
     @Override
     public ReadStatus findByID(UUID id) {
-        return find(rs -> rs.getId().equals(id)).get(0);
+        List<ReadStatus> res = find(rs -> rs.getId().equals(id));
+        return res.isEmpty() ? null : res.get(0);
     }
 
     @Override
@@ -49,13 +45,6 @@ public class FileReadStatusRepository extends FileBaseRepository implements Read
 
     @Override
     public void delete(UUID id) {
-        try {
-            Files.delete(dic.getFilePath().resolve("readstatus").resolve(id.toString() + ".ser"));
-            log.debug("ReadStatus delete - {}", id);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        delete(dic.getFilePath().resolve("readstatus").resolve(id.toString() + ".ser"));
     }
-
-
 }

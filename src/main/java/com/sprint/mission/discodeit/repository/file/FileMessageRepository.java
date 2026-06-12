@@ -26,12 +26,7 @@ public class FileMessageRepository extends FileBaseRepository implements Message
 
     @Override
     public void save(Message msg) {
-        try {
-            write(dic.getFilePath().resolve("message").resolve(msg.getId()+ ".ser"), msg);
-            log.debug("Message created - {}", msg.getId());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        write(dic.getFilePath().resolve("message").resolve(msg.getId()+ ".ser"), msg);
     }
 
     @Override
@@ -46,11 +41,6 @@ public class FileMessageRepository extends FileBaseRepository implements Message
 
     @Override
     public void delete(UUID id){
-        try {
-            Files.delete(dic.getFilePath().resolve("message").resolve(id.toString() + ".ser"));
-            log.debug("Message deleted - {}", id);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        delete(dic.getFilePath().resolve("message").resolve(id.toString() + ".ser"));
     }
 }

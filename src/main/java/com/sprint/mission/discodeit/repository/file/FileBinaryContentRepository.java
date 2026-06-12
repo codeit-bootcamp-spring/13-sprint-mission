@@ -24,12 +24,10 @@ public class FileBinaryContentRepository extends FileBaseRepository implements B
 
     @Override
     public void save(BinaryContent bc) {
-        try {
-            write(dic.getFilePath().resolve("binarycontent").resolve(bc.getId()+ ".ser"), bc);
-            log.debug("BinaryContent created - {}",bc.getId());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+            write(dic.getFilePath()
+                    .resolve("binarycontent")
+                    .resolve(bc.getId()+ ".ser"),
+                    bc);
     }
 
     @Override
@@ -39,7 +37,8 @@ public class FileBinaryContentRepository extends FileBaseRepository implements B
 
     @Override
     public BinaryContent findByID(UUID id) {
-        return find(bc -> bc.getId().equals(id)).get(0);
+        List<BinaryContent> res = find(bc -> bc.getId().equals(id));
+        return res.isEmpty() ? null : res.get(0);
     }
 
     @Override
@@ -49,12 +48,7 @@ public class FileBinaryContentRepository extends FileBaseRepository implements B
 
     @Override
     public void delete(UUID id) {
-        try {
-            Files.delete(dic.getFilePath().resolve("binarycontent").resolve(id.toString() + ".ser"));
-            log.debug("BinaryContent deleted - {}",id);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        delete(dic.getFilePath().resolve("binarycontent").resolve(id.toString() + ".ser"));
     }
 
 }

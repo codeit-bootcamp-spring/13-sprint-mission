@@ -34,11 +34,8 @@ public class JCFReadStatusRepository implements ReadStatusRepository {
 
     @Override
     public ReadStatus findByID(UUID id){
-        try {
-            return find(rs -> rs.getId().equals(id)).get(0);
-        } catch (IndexOutOfBoundsException e) {
-            return null;
-        }
+        List<ReadStatus> res = find(rs -> rs.getId().equals(id));
+        return res.isEmpty() ? null : res.get(0);
     }
 
     @Override

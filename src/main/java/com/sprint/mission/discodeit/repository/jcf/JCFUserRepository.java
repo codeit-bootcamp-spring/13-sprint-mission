@@ -37,11 +37,8 @@ public class JCFUserRepository implements UserRepository {
 
     @Override
     public User findByEmail(String email){
-        try {
-            return find(u -> u.getEmail().equals(email)).get(0);
-        } catch (IndexOutOfBoundsException e) {
-            return null;
-        }
+        List<User> res = find(u -> u.getEmail().equals(email));
+        return !res.isEmpty() ?  res.get(0) : null;
     }
 
     @Override

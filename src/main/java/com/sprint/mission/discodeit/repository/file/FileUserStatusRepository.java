@@ -23,12 +23,7 @@ public class FileUserStatusRepository extends FileBaseRepository implements User
 
     @Override
     public void save(UserStatus ust) {
-        try {
-            write(dic.getFilePath().resolve("userstatus").resolve(ust.getId()+ ".ser"), ust);
-            log.debug("UserStatus create - by UserID : {}" ,ust.getUserID());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        write(dic.getFilePath().resolve("userstatus").resolve(ust.getId()+ ".ser"), ust);
     }
 
     @Override
@@ -43,22 +38,19 @@ public class FileUserStatusRepository extends FileBaseRepository implements User
 
     @Override
     public UserStatus findByID(UUID id) {
-        return find(us -> us.getId().equals(id)).get(0);
+        List<UserStatus> res = find(us -> us.getId().equals(id));
+        return res.isEmpty() ? null : res.get(0);
     }
 
     @Override
     public UserStatus findByUserID(UUID userID) {
-        return find(us -> us.getUserID().equals(userID)).get(0);
+        List<UserStatus> res = find(us -> us.getUserID().equals(userID));
+        return res.isEmpty() ? null : res.get(0);
     }
 
     @Override
     public void delete(UUID userID) {
-        try {
-            Files.delete(dic.getFilePath().resolve("userstatus").resolve(userID.toString() + ".ser"));
-            log.debug("UserStatus delete - by UserID : {} ", userID);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        delete(dic.getFilePath().resolve("userstatus").resolve(userID.toString() + ".ser"));
     }
 
 }

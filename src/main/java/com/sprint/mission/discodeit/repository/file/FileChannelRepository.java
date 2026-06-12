@@ -24,12 +24,7 @@ public class FileChannelRepository extends FileBaseRepository implements Channel
 
     @Override
     public void save(Channel cnl) throws RuntimeException {
-        try {
-            write(dic.getFilePath().resolve("channel").resolve(cnl.getId()+ ".ser"), cnl);
-            log.debug("Channel created - {}",cnl.getId());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        write(dic.getFilePath().resolve("channel").resolve(cnl.getId()+ ".ser"), cnl);
     }
 
     @Override
@@ -44,20 +39,12 @@ public class FileChannelRepository extends FileBaseRepository implements Channel
 
     @Override
     public Channel findById(UUID id) {
-        try {
-            return find(cnl -> cnl.getId().equals(id)).get(0);
-        } catch(IndexOutOfBoundsException e){
-            return null;
-        }
+        List<Channel> res = find(cnl -> cnl.getId().equals(id));
+        return res.isEmpty() ? null : res.get(0);
     }
 
     @Override
     public void delete(UUID cnl) {
-        try {
-            Files.delete(dic.getFilePath().resolve("channel").resolve(cnl.toString() + ".ser"));
-            log.debug("Channel deleted - {}",cnl);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        delete(dic.getFilePath().resolve("channel").resolve(cnl.toString() + ".ser"));
     }
 }

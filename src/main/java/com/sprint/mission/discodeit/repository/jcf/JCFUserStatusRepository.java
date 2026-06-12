@@ -36,20 +36,14 @@ public class JCFUserStatusRepository implements UserStatusRepository {
 
     @Override
     public UserStatus findByID(UUID id) {
-        try {
-            return find(us -> us.getId().equals(id)).get(0);
-        } catch (IndexOutOfBoundsException e) {
-            return null;
-        }
+        List<UserStatus> res = find(us -> us.getId().equals(id));
+        return res.isEmpty() ? null : res.get(0);
     }
 
     @Override
     public UserStatus findByUserID(UUID userID) {
-        try {
-            return find(us -> us.getUserID().equals(userID)).get(0);
-        } catch (IndexOutOfBoundsException e) {
-            return null;
-        }
+        List<UserStatus> res = find(us -> us.getUserID().equals(userID));
+        return res.isEmpty() ? null : res.get(0);
     }
 
     @Override

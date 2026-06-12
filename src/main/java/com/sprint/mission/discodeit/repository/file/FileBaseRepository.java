@@ -29,20 +29,35 @@ public class FileBaseRepository {
         }
     }
 
-    static <T> void write(Path path,T entity) throws IOException {
-        check(path);
+    static <T> void write(Path path,T entity) {
+        try {
+            check(path);
+        } catch(IOException e){
+            throw new RuntimeException(e);
+        }
+
         try (
                 ObjectOutputStream oos = new ObjectOutputStream(
                         new BufferedOutputStream(Files.newOutputStream(path))
                 )
         ){
             oos.writeObject(entity);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static void delete(Path path){
+        try {
+            Files.delete(path);
+        } catch(IOException e){
+            throw new RuntimeException(e);
         }
     }
 
 
     // Todo - pre -> return 2중변환 로직 변경. 변환수 적게 만듦
-    static <T> List<T> rawFind(Predicate<T> fn, Path path) throws RuntimeException {
+    static <T> List<T> rawFind(Predicate<T> fn, Path path) {
         try {
             if(!Files.exists(path)){
                 Files.createDirectories(path);
@@ -69,9 +84,5 @@ public class FileBaseRepository {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    static Path filePath(Path path,String dir,String fileName){
-        return path.resolve(dir + fileName + ".ser");
     }
 }

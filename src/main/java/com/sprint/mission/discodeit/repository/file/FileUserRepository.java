@@ -27,12 +27,7 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
 
     @Override
     public void save(User user){
-        try {
-            write(dic.getFilePath().resolve("user").resolve(user.getId()+ ".ser"), user);
-            log.debug("User create - {}", user.getId());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        write(dic.getFilePath().resolve("user").resolve(user.getId()+ ".ser"), user);
     }
 
     @Override
@@ -42,29 +37,17 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
 
     @Override
     public User findByID(UUID id){
-        try{
-            return find(u -> u.getId().equals(id)).get(0);
-        } catch (IndexOutOfBoundsException e){
-            return null;
-        }
-
+        List<User> res =  find(u -> u.getId().equals(id));
+        return res.isEmpty() ? null : res.get(0);
     }
     @Override
     public User findByEmail(String email){
-        try {
-            return find(u -> u.getEmail().equals(email)).get(0);
-        } catch (IndexOutOfBoundsException e){
-            return null;
-        }
+        List<User> res = find(u -> u.getEmail().equals(email));
+        return res.isEmpty() ? null : res.get(0);
     }
 
     @Override
     public void delete(UUID id){
-        try {
-            Files.delete(dic.getFilePath().resolve("user").resolve(id.toString() + ".ser"));
-            log.debug("User deleted - {}", id);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        delete(dic.getFilePath().resolve("user").resolve(id.toString() + ".ser"));
     }
 }

@@ -37,11 +37,8 @@ public class JCFChannelRepository implements ChannelRepository {
 
     @Override
     public Channel findById(UUID id) {
-        try {
-            return find(cnl -> cnl.getId().equals(id)).get(0);
-        } catch (IndexOutOfBoundsException e) {
-            return null;
-        }
+        List<Channel> res = find(cnl -> cnl.getId().equals(id));
+        return res.isEmpty() ? null : res.get(0);
     }
 
     @Override
