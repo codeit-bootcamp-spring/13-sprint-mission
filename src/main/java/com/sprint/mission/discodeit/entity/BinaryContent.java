@@ -33,3 +33,4 @@ public class BinaryContent {
         this.messageId = messageId;
     }
 }
+
