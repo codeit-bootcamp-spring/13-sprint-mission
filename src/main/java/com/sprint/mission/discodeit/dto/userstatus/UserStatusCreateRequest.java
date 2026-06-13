@@ -8,7 +8,7 @@ public record UserStatusCreateRequest(
 )
 {
     public UserStatusCreateRequest {
-        validate(userId, "ID");
+        validate(userId, "사용자 ID");
     }
 
     private static void validate(UUID value, String fieldName) {

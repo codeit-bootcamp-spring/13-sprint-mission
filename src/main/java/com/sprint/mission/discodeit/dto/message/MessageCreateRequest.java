@@ -14,11 +14,19 @@ public record MessageCreateRequest(
 )
 {
     public MessageCreateRequest {
+        validate(channelId, "채널 id");
+        validate(authorId, "작성자 id");
         validate(content, "메시지");
     }
 
-    private static void validate(String content, String fieldName) {
-        if (content == null || content.isBlank()) {
+    private void validate(UUID validate, String fieldName){
+        if(validate == null){
+            throw new IllegalArgumentException(fieldName + "는 필수 값 입니다.");
+        }
+    }
+
+    private static void validate(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(fieldName + "을 입력해주세요.");
         }
     }

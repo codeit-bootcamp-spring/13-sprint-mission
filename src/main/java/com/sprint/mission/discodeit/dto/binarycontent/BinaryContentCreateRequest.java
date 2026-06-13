@@ -2,8 +2,6 @@ package com.sprint.mission.discodeit.dto.binarycontent;
 
 import com.sprint.mission.discodeit.entity.ContentType;
 
-import java.util.Arrays;
-import java.util.UUID;
 
 public record BinaryContentCreateRequest(
         String fileName,

@@ -37,7 +37,7 @@ public class JCFUserStatusRepository implements UserStatusRepository {
     }
 
     @Override
-    public void deleteById(UUID userId) {
-        data.remove(userId);
+    public void deleteById(UUID id) {
+        data.remove(id);
     }
 }

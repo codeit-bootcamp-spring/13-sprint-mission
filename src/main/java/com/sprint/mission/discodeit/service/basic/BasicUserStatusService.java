@@ -84,7 +84,7 @@ public class BasicUserStatusService implements UserStatusService {
         return toResponse(userStatus);
     }
 
-    //삭재
+    //삭제
     @Override
     public void delete(UUID id) {
         userStatusRepository.findById(id)

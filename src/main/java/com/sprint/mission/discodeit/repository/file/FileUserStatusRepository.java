@@ -13,12 +13,12 @@ import java.util.*;
 
 @Repository
 @ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
-public class FileUserStausRepository implements UserStatusRepository {
+public class FileUserStatusRepository implements UserStatusRepository {
 
     private final Path filePath;
 
     //디렉토리 생성
-    public FileUserStausRepository(
+    public FileUserStatusRepository(
             @Value("${discodeit.repository.file-directory:.discodeit}") String fileDirectory){
         this.filePath = Path.of(fileDirectory).resolve("user_status.ser");
         if (!Files.exists(filePath.getParent())) {
@@ -81,9 +81,9 @@ public class FileUserStausRepository implements UserStatusRepository {
 
     //삭제
     @Override
-    public void deleteById(UUID userId) {
+    public void deleteById(UUID id) {
         Map<UUID, UserStatus> data = loadFromFile();
-        data.remove(userId);
+        data.remove(id);
         saveToFile(data);
     }
 }

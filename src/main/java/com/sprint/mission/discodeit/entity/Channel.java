@@ -26,7 +26,7 @@ public class Channel implements Serializable {
         this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
         this.description = description;
-        this.channelType = channelType.PUBLIC;
+        this.channelType = ChannelType.PUBLIC;
     }
 
     //PRIVATE
@@ -44,11 +44,6 @@ public class Channel implements Serializable {
 
     public void updateChannelDescription(String description) {
         this.description = description;
-        this.updatedAt = Instant.now();
-    }
-
-    public void updateIsChannelType(ChannelType ChannelType) {
-        this.channelType = ChannelType;
         this.updatedAt = Instant.now();
     }
 }

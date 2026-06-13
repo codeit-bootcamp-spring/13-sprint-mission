@@ -4,8 +4,6 @@ import com.sprint.mission.discodeit.dto.channel.ChannelResponse;
 import com.sprint.mission.discodeit.dto.channel.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.channel.PrivateChannelRequest;
 import com.sprint.mission.discodeit.dto.channel.PublicChannelRequest;
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.ChannelType;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +23,6 @@ public interface ChannelService {
     //수정
     ChannelResponse updateChannel(UUID channelId, ChannelUpdateRequest request);
 
-    //사제
+    //삭제
     void deleteChannel(UUID channelId);
 }

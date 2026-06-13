@@ -117,7 +117,7 @@ public class BasicChannelService implements ChannelService {
         allChannels.addAll(publicChannels);
         allChannels.addAll(privateChannels);
 
-        log.info("전체 채널 조회 완료: {}", allChannels);
+        log.info("전체 채널 조회 완료: {}", allChannels.size());
 
         return allChannels.stream()
                 .map(channel -> findByChannelId(channel.getChannelId()))

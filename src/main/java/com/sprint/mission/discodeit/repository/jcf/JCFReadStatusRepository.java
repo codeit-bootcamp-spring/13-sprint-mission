@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 @ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "jcf", matchIfMissing = true)
@@ -34,7 +35,7 @@ public class JCFReadStatusRepository implements ReadStatusRepository {
     public List<ReadStatus> findAllByUserId(UUID userId) {
         return data.values().stream()
                 .filter(rs -> rs.getUserId().equals(userId))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override

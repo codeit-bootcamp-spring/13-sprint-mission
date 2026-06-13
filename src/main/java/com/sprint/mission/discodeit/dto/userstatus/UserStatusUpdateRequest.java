@@ -8,7 +8,7 @@ public record UserStatusUpdateRequest(
 
 {
     public UserStatusUpdateRequest {
-        validate(lastAccessedAt, "userStatus");
+        validate(lastAccessedAt, "마지막 접속 시간");
     }
 
     private static void  validate(Instant value, String fieldName) {

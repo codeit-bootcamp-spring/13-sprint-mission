@@ -9,8 +9,8 @@ public record MessageUpdateRequest(
     }
 
 
-    private static void  validate(String content, String fieldName){
-        if (content == null || content.isBlank()) {
+    private static void  validate(String value, String fieldName){
+        if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(fieldName + "을 입력해주세요.");
         }
     }

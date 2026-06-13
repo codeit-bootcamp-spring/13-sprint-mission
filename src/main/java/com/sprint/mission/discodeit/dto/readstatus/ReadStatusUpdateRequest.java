@@ -8,7 +8,7 @@ public record ReadStatusUpdateRequest(
 )
 {
     public ReadStatusUpdateRequest {
-        validate(lastReadAt, "ReadStatus");
+        validate(lastReadAt, "마지막 읽은 시간");
     }
 
     private static void  validate(Instant validate, String fieldName) {

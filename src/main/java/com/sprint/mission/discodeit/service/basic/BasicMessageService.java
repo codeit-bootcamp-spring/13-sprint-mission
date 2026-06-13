@@ -47,9 +47,9 @@ public class BasicMessageService implements MessageService {
     //메시지, 첨부파일 생성
     @Override
     public MessageResponse create(MessageCreateRequest request) {
-        Channel channelById = channelRepository.findById(request.channelId())
+        channelRepository.findById(request.channelId())
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널입니다."));
-        User userById = userRepository.findById(request.authorId())
+        userRepository.findById(request.authorId())
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자입니다."));
 
         List<UUID> attachmentIds = new ArrayList<>();

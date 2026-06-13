@@ -10,6 +10,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 @ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
@@ -72,7 +73,7 @@ public class FileReadStatusRepository implements ReadStatusRepository {
         Map<UUID, ReadStatus> data = loadFromFile();
         return data.values().stream()
                 .filter(rs -> rs.getChannelId().equals(channelId))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -80,7 +81,7 @@ public class FileReadStatusRepository implements ReadStatusRepository {
         Map<UUID, ReadStatus> data = loadFromFile();
         return data.values().stream()
                 .filter(rs -> rs.getUserId().equals(userId))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override
