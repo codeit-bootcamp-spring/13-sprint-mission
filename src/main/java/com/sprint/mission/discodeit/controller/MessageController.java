@@ -29,12 +29,11 @@ public class MessageController {
     }
 
     //특정 채널의 메시지 목록 조회
-    //스프린트 3에서 DTO로 묶으라는 지시가 없어서 생List로 반환
     @RequestMapping(value = "/{channelId}", method = RequestMethod.GET)
-    public List<Message> findMessagesByChannel(@PathVariable UUID channelId) {
+    public ResponseEntity<List<Message>> findMessagesByChannel(@PathVariable UUID channelId) {
         List<Message> responseList = messageService.findAllByChannelId(channelId);
 
-        return responseList;
+        return ResponseEntity.ok().body(responseList);
     }
 
     //메시지 수정

@@ -31,10 +31,10 @@ public class ReadStatusController {
 
     //특정 사용자의 메시지 수신 정보 조회
     @RequestMapping(value = "/{userId}", method = RequestMethod.GET)
-    public List<ReadStatus> findReadStatusByUser(@PathVariable UUID userId) {
+    public ResponseEntity<List<ReadStatus>> findReadStatusByUser(@PathVariable UUID userId) {
         List<ReadStatus> responseList = readStatusService.findAllReadStatusByUserId(userId);
 
-        return responseList;
+        return ResponseEntity.ok().body(responseList);
     }
 
     //특정 채널의 메시지 수신 정보 수정
