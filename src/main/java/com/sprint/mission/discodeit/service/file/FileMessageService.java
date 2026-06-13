@@ -28,12 +28,10 @@ public class FileMessageService implements MessageService {
     @Override
     public Message create(UUID userId, UUID channelId, String content) {
         if (userService.read(userId) == null) {
-            System.out.println("계정이 존재하지 않습니다.");
-            return null;
+            throw new IllegalArgumentException("존재하지 않는 계정입니다.");
         }
         if (channelService.read(channelId) == null) {
-            System.out.println("채널이 존재하지 않습니다.");
-            return null;
+            throw new IllegalArgumentException("존재하지 않는 채널입니다.");
         }
 
         Message message = new Message(userId, channelId, content);
@@ -46,7 +44,7 @@ public class FileMessageService implements MessageService {
     public Message read(UUID id) {
         Message message = messageRepository.read(id);
         if (message == null) {
-            System.out.println("메시지가 작성되지 않았습니다.");
+            throw new IllegalArgumentException("존재하지 않는 메시지입니다.");
         }
         return message;
     }

@@ -13,14 +13,14 @@ public class User implements Serializable {
     private String email;
     private String pw;
 
-    public User(String userName, String pw, String email) {
+    public User(String userName, String email, String pw) {
         this.id = UUID.randomUUID();
         this.createdAt = System.currentTimeMillis();
         this.updatedAt = createdAt;
 
         this.userName = userName;
-        this.pw = pw;
         this.email = email;
+        this.pw = pw;
     }
 
     public UUID getId() {
@@ -58,8 +58,8 @@ public class User implements Serializable {
     public String toString() {
         return "User{" +
                 "userName='" + userName + '\'' +
-                ", pw='" + pw + '\'' +
                 ", email='" + email + '\'' +
+                ", pw='" + pw + '\'' +
                 '}';
     }
 }

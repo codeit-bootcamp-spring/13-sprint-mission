@@ -32,7 +32,7 @@ public class FileChannelService implements ChannelService {
     public Channel read(UUID id) {
         Channel channel = channelRepository.read(id);
         if (channel == null) {
-            System.out.println("채널이 존재하지 않습니다.");
+            throw new IllegalArgumentException("존재하지 않는 채널입니다.");
         }
         return channel;
     }

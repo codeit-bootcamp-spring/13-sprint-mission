@@ -18,8 +18,8 @@ public class FileUserService implements UserService {
     }
 
     @Override
-    public User create(String userName, String pw, String email) {
-        User user = new User(userName, pw, email);
+    public User create(String userName, String email, String pw) {
+        User user = new User(userName, email, pw);
         userRepository.create(user);
         System.out.println(userName + " 계정이 생성되었습니다!");
         return user;
@@ -30,7 +30,7 @@ public class FileUserService implements UserService {
         User user = userRepository.read(id);
 
         if (user == null) {
-            System.out.println("계정이 존재하지 않습니다.");
+            throw new IllegalArgumentException("존재하지 않는 계정입니다.");
         }
         return user;
     }
@@ -41,11 +41,11 @@ public class FileUserService implements UserService {
     }
 
     @Override
-    public void update(UUID id, String userName, String pw, String email) {
+    public void update(UUID id, String userName, String email, String pw) {
         User user = userRepository.read(id);
 
         if (user != null) {
-            user.update(userName, pw, email);
+            user.update(userName, email, pw);
             userRepository.update(user);
         } else {
             System.out.println("수정할 계정이 존재하지 않습니다.");

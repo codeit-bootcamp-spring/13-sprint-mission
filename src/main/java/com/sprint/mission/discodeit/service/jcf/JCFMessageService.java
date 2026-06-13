@@ -23,12 +23,10 @@ public class JCFMessageService implements MessageService {
     @Override
     public Message create(UUID userId, UUID channelId, String content) {
         if(userService.read(userId)==null) {
-            System.out.println("계정이 존재하지 않습니다.");
-            return null;
+            throw new IllegalArgumentException("존재하지 않는 계정입니다.");
         }
         if(channelService.read(channelId)==null) {
-            System.out.println("채널이 존재하지 않습니다.");
-            return null;
+            throw new IllegalArgumentException("존재하지 않는 채널입니다.");
         }
         Message message = new Message(userId, channelId, content);
         data.put(message.getId(), message);

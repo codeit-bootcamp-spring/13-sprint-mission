@@ -16,12 +16,9 @@ import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.file.FileChannelService;
 import com.sprint.mission.discodeit.service.file.FileMessageService;
 import com.sprint.mission.discodeit.service.file.FileUserService;
-import com.sprint.mission.discodeit.service.jcf.JCFChannelService;
 import com.sprint.mission.discodeit.service.jcf.JCFMessageService;
-import com.sprint.mission.discodeit.service.jcf.JCFUserService;
 
 import java.util.List;
-import java.util.Scanner;
 import java.util.UUID;
 
 public class JavaApplication {
@@ -36,10 +33,10 @@ public class JavaApplication {
 
         System.out.println("========= [ 1. 등   록 ] =========");
         System.out.println(" 1) 유저 등록 ");
-        User user1 = userService.create("이예은", "aaa123", "aaa@aaa.com");
-        User user2 = userService.create("강다연", "bbb456", "bbb@bbb.com");
-        User user3 = userService.create("장준서", "ccc789", "ccc@ccc.com");
-        User user4 = userService.create("함지원", "ddd012", "ddd@ddd.com");
+        User user1 = userService.create("이예은", "aaa@aaa.com", "aaa123");
+        User user2 = userService.create("강다연", "bbb@bbb.com", "bbb456");
+        User user3 = userService.create("장준서", "ccc@ccc.com", "ccc789");
+        User user4 = userService.create("함지원", "ddd@ddd.com", "ddd012");
         System.out.println("--------------------------------");
 
         System.out.println(" 2) 채널 등록");
@@ -76,7 +73,7 @@ public class JavaApplication {
 
 
         System.out.println("========= [ 3. 수   정 ] =========");
-        userService.update(user1.getId(),"이에은", "yeaheun123", "aaa@naver.com");
+        userService.update(user1.getId(),"이에은", "aaa@naver.com", "yeaheun123");
         channelService.update(channel1.getId(), ChannelType.PUBLIC, "자유게시판", "자유롭게 사용 가능~");
         messageService.update(message1.getId(), "안녕! 나는 이예은이라고해~");
         System.out.println(" 유저 수정 확인: "+user1.toString());
@@ -89,16 +86,28 @@ public class JavaApplication {
         userService.delete(user4.getId());
         channelService.delete(channel3.getId());
         messageService.delete(message3.getId());
-        userService.read(user4.getId());
-        channelService.read(channel3.getId());
-        messageService.read(message3.getId());
+        try {
+            userService.read(user4.getId());
+        } catch (IllegalArgumentException e) {
+            System.out.println("삭제 성공: "+e.getMessage());
+        }
+        try {
+            channelService.read(channel3.getId());
+        } catch (IllegalArgumentException e) {
+            System.out.println("삭제 성공: "+e.getMessage());
+        }
+        try {
+            messageService.read(message3.getId());
+        } catch (IllegalArgumentException e) {
+            System.out.println("삭제 성공: "+e.getMessage());
+        }
         System.out.println();
 
         System.out.println("========= [ 5. 서비스 간 의존성 주입 ] =========");
         MessageService messageServiceDI = new JCFMessageService(userService, channelService);
 
         System.out.println(" 1) 정상 데이터 테스트 ");
-        User realUser = userService.create("홍길동", "pw123", "hong@gmail.com");
+        User realUser = userService.create("홍길동", "hong@gmail.com", "pw123");
         Channel realChannel = channelService.create(ChannelType.PUBLIC, "자바게시판", "자바 질문하는 곳");
         Message msg1 = messageServiceDI.create(realUser.getId(), realChannel.getId(), "안녕하세요! 자바 질문 있습니다.");
         if (msg1 != null) {
@@ -107,16 +116,18 @@ public class JavaApplication {
 
         System.out.println(" 2) 유저 실패 데이터 테스트 ");
         UUID fakeUserId = UUID.randomUUID();
-        Message msg2 = messageServiceDI.create(fakeUserId, realChannel.getId(), "가짜 유저 id 입니다.");
-        if (msg2 == null) {
-            System.out.println("가짜 유저 차단");
+        try {
+            messageServiceDI.create(fakeUserId, realChannel.getId(), "가짜 유저 id 입니다.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("가짜 유저 차단: "+e.getMessage());
         }
 
         System.out.println(" 3) 채널 실패 데이터 테스트 ");
         UUID fakeChannelId = UUID.randomUUID();
-        Message msg3 = messageServiceDI.create(realUser.getId(), fakeChannelId, "가짜 채널 id 입니다.");
-        if (msg3 == null) {
-            System.out.println("가짜 채널 차단");
+        try {
+            messageServiceDI.create(realUser.getId(), fakeChannelId, "가짜 채널 id 입니다.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("가짜 채널 차단: "+e.getMessage());
         }
     }
 }

@@ -13,8 +13,8 @@ public class JCFUserService implements UserService {
     }
 
     @Override
-    public User create(String userName, String pw, String email) {
-        User user = new User(userName, pw, email);
+    public User create(String userName, String email, String pw) {
+        User user = new User(userName, email, pw);
         data.put(user.getId(), user);
         System.out.println(userName + "님의 계정이 생성되었습니다!");
         return user;
@@ -35,10 +35,10 @@ public class JCFUserService implements UserService {
     }
 
     @Override
-    public void update(UUID id, String userName, String pw, String email) {
+    public void update(UUID id, String userName, String email, String pw) {
         if(data.containsKey(id)){
             User user = data.get(id);
-            user.update(userName, pw, email);
+            user.update(userName, email, pw);
         }
     }
 

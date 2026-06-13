@@ -74,7 +74,7 @@ public class FileUserRepository implements UserRepository {
 
         for (User u : users) {
             if (u.getId().equals(user.getId())) {
-                u.update(user.getUserName(), user.getPw(), user.getEmail());
+                u.update(user.getUserName(), user.getEmail(), user.getPw());
                 break;
             }
         }
