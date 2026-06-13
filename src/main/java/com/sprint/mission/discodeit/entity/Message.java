@@ -1,16 +1,20 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
+
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.UUID;
 
+@Getter
 public class Message implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     private final UUID id; // [요구사항] id는 생성자에서 초기화 // [요구사항] 내부에서 초기화
     private String content; // 이름은 밖에서 받아옴
-    private final Long createdAt; // [요구사항] createdAt은 생성자에서 초기화 // [요구사항] 내부에서 초기화
-    private Long updatedAt; // 처음 생성 시엔 수정 시간도 생성 시간과 같음
+    private final Instant createdAt; // [요구사항] createdAt은 생성자에서 초기화 // [요구사항] 내부에서 초기화
+    private Instant updatedAt; // 처음 생성 시엔 수정 시간도 생성 시간과 같음
     private final UUID authorId;
     private final UUID channelId;
     private final String updateContent;
@@ -18,7 +22,7 @@ public class Message implements Serializable {
     public Message(String content) {
         this.id = UUID.randomUUID();
         this.content = content;
-        this.createdAt = System.currentTimeMillis();
+        this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
         this.authorId = null;
         this.channelId = null;
@@ -27,35 +31,7 @@ public class Message implements Serializable {
 
     public void updateContent(Message requestMessage) {
         this.content = requestMessage.getContent();
-        this.updatedAt = System.currentTimeMillis();
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public UUID getChannelId() {
-        return channelId;
-    }
-
-    public Long getCreatedAt() {
-        return createdAt;
-    }
-
-    public Long getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public UUID getAuthorId() {
-        return authorId;
-    }
-
-    public String getUpdateContent() {
-        return updateContent;
+        this.updatedAt = Instant.now();
     }
 
 
