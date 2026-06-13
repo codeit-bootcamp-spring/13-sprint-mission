@@ -47,10 +47,11 @@ public class FileUserRepository implements UserRepository {
     }
 
     @Override
-    public void create(User user) {
+    public User create(User user) {
         List<User> users = loadFile();
         users.add(user);
         saveFile(users);
+        return user;
     }
 
     @Override

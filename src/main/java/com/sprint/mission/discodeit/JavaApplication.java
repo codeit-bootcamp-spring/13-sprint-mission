@@ -13,6 +13,9 @@ import com.sprint.mission.discodeit.repository.file.FileUserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.service.basic.BasicChannelService;
+import com.sprint.mission.discodeit.service.basic.BasicMessageService;
+import com.sprint.mission.discodeit.service.basic.BasicUserService;
 import com.sprint.mission.discodeit.service.file.FileChannelService;
 import com.sprint.mission.discodeit.service.file.FileMessageService;
 import com.sprint.mission.discodeit.service.file.FileUserService;
@@ -27,9 +30,9 @@ public class JavaApplication {
         ChannelRepository channelRepository = new FileChannelRepository("data/channels.ser");
         MessageRepository messageRepository = new FileMessageRepository("data/messages.ser");
 
-        UserService userService = new FileUserService(userRepository);
-        ChannelService channelService = new FileChannelService(channelRepository);
-        MessageService messageService = new FileMessageService(messageRepository, userService, channelService);
+        UserService userService = new BasicUserService(userRepository);
+        ChannelService channelService = new BasicChannelService(channelRepository);
+        MessageService messageService = new BasicMessageService(messageRepository, userRepository, channelRepository);
 
         System.out.println("========= [ 1. 등   록 ] =========");
         System.out.println(" 1) 유저 등록 ");
@@ -104,7 +107,7 @@ public class JavaApplication {
         System.out.println();
 
         System.out.println("========= [ 5. 서비스 간 의존성 주입 ] =========");
-        MessageService messageServiceDI = new JCFMessageService(userService, channelService);
+        MessageService messageServiceDI = new BasicMessageService(messageRepository, userRepository, channelRepository);
 
         System.out.println(" 1) 정상 데이터 테스트 ");
         User realUser = userService.create("홍길동", "hong@gmail.com", "pw123");

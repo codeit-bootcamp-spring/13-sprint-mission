@@ -47,10 +47,11 @@ public class FileChannelRepository implements ChannelRepository {
     }
 
     @Override
-    public void create(Channel channel) {
+    public Channel create(Channel channel) {
         List<Channel> channels = loadFile();
         channels.add(channel);
         saveFile(channels);
+        return channel;
     }
 
     @Override

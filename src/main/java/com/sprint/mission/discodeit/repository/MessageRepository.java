@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface MessageRepository {
-    void create(Message message);
+    Message create(Message message);
 
     Message read(UUID id);
 

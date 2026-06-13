@@ -12,8 +12,9 @@ public class JCFChannelRepository implements ChannelRepository {
     private final Map<UUID, Channel> data = new HashMap<>();
 
     @Override
-    public void create(Channel channel) {
+    public Channel create(Channel channel) {
         data.put(channel.getId(), channel);
+        return channel;
     }
 
     @Override

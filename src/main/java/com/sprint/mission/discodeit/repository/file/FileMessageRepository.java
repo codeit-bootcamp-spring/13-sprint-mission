@@ -1,7 +1,6 @@
 package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 
 import java.io.*;
@@ -48,10 +47,11 @@ public class FileMessageRepository implements MessageRepository {
     }
 
     @Override
-    public void create(Message message) {
+    public Message create(Message message) {
         List<Message> messages = loadFile();
         messages.add(message);
         saveFile(messages);
+        return message;
     }
 
     @Override
