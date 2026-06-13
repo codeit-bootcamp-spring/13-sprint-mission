@@ -9,13 +9,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-//파일(Users.dat)에 사용자 데이터를 저장하는 Repository (프로그램이 종료되어도 데이터가 유지됨)
+//파일(Users.dat)에 사용자 데이터를 저장하는 파일 저장방식 구현체 (프로그램이 종료되어도 데이터가 유지됨)
 public class FileUserRepository implements UserRepository {
     private final Path DIRECTORY;
     private final String EXTENSION = ".ser";
 
     public FileUserRepository() {
-        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file=data-map", User.class.getSimpleName());
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", User.class.getSimpleName());
         if (Files.notExists(DIRECTORY)) {
             try {
                 Files.createDirectories(DIRECTORY);
@@ -27,26 +27,26 @@ public class FileUserRepository implements UserRepository {
 
     private Path resolvePath(UUID id){ return DIRECTORY.resolve(id + EXTENSION); }
 
-    @Override
+    @Override //사용자 생성
     public User save(User user) {
         Path path = resolvePath(user.getId());
        try(
-               FileOutputStream fos = new FileOutputStream(path.toFile());
-               ObjectOutputStream oos = new ObjectOutputStream(fos)
+               FileOutputStream fos = new FileOutputStream(path.toFile()); //파일 출력 스트림
+               ObjectOutputStream oos = new ObjectOutputStream(fos) //객체 직렬화 출력 스트림
                ) {
-           oos.writeObject(user);
+           oos.writeObject(user); //User 객체를 파일로 저장
        }catch (IOException e) {throw new RuntimeException(e);}
         return user;
     }
 
-    @Override
+    @Override //id로 사용자 조회
     public Optional<User> findById(UUID id) {
         User userNullable = null;
         Path path = resolvePath(id);
         if (Files.exists(path)) {
             try (
-                    FileInputStream fis = new FileInputStream(path.toFile());
-                    ObjectInputStream ois = new ObjectInputStream(fis)
+                    FileInputStream fis = new FileInputStream(path.toFile()); //파일 읽기 스트림
+                    ObjectInputStream ois = new ObjectInputStream(fis) //객체 역질렬화 스트림
                     ) {
                 userNullable = (User) ois.readObject();
             } catch (IOException | ClassNotFoundException e) {throw new RuntimeException(e);}
@@ -54,7 +54,7 @@ public class FileUserRepository implements UserRepository {
         return Optional.ofNullable(userNullable);
     }
 
-    @Override
+    @Override //전체 사용자 조회
     public List<User> findAll(){
         try {
             return Files.list(DIRECTORY)
@@ -75,13 +75,13 @@ public class FileUserRepository implements UserRepository {
         }
     }
 
-    @Override
+    @Override //사용자 존재 여부 확인
     public boolean existsById(UUID id) {
         Path path = resolvePath(id);
         return Files.exists(path);
     }
 
-    @Override
+    @Override //사용자 삭제
     public void deleteById(UUID id) {
         Path path = resolvePath(id);
         try {
