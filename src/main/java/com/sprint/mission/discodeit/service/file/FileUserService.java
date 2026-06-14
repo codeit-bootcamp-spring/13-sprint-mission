@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.service.file;
 
+import com.sprint.mission.discodeit.dto.request.UserRequest;
+import com.sprint.mission.discodeit.dto.request.UserResponse;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.UserService;
 
@@ -49,38 +51,49 @@ public class FileUserService implements UserService {
     }
 
     @Override
-    public User create(User user) {
+    public UserResponse create(UserRequest dto) {
         List<User> foundUser = readFile();
-        foundUser.add(user);
+        User newUser = new User(dto.username(), dto.email(), dto.password());
+        foundUser.add(foundUser.get(0));
         saveFile(foundUser);
-        return user;
+        return new UserResponse(newUser.getId(), newUser.getUsername(), newUser.getEmail(), true);
     }
 
     @Override
-    public Optional<User> findById(UUID id) {
+    public Optional<UserResponse> findById(UUID id) {
         List<User> foundUser = readFile();
         for (User user : foundUser) {
             if (user.getId().equals(id)) {
-                return Optional.ofNullable(user);
+                UserResponse response = new UserResponse(user.getId(), user.getUsername(), user.getEmail(), true);
+                return Optional.of(response);
             }
         }
         return Optional.empty();
     }
 
     @Override
-    public List<User> findAll() {
-        return readFile();
+    public List<UserResponse> findAll() {
+        List<User> foundUser = readFile();
+        List<UserResponse> responseList = new ArrayList<>();
+        for (User user : foundUser) {
+            responseList.add(new UserResponse(user.getId(), user.getUsername(), user.getEmail(), true));
+        }
+        return responseList;
     }
 
     @Override
-    public void update(User inputUser) {
+    public UserResponse update(UUID id, UserRequest dto) {
         List<User> foundUser = readFile();
+        User updatedUser = null;
         for (User user : foundUser) {
-            if (user.getId().equals(inputUser.getId())) {
-                user.updateName(inputUser);
+            if (user.getId().equals(id)) {
+                user.update(dto.username(), dto.password(), dto.email());
+                if (!dto.profileImageName().equals(updatedUser.getProfileImageId())) {}
+                user.updateProfileId(UUID.randomUUID());
                 break;
             }
         }
+        return null;
     }
 
     @Override

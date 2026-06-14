@@ -1,8 +1,9 @@
 package com.sprint.mission.discodeit;
 
+import com.sprint.mission.discodeit.dto.request.UserRequest;
+import com.sprint.mission.discodeit.dto.request.UserResponse;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
@@ -38,7 +39,13 @@ public class DiscodeitApplication {
 		// 기존 데이터 먼저 등록
 		if (userService.findAll().isEmpty()) {
 			for (String name : SampleData.names) {
-				userService.create(new User(name));
+				UserRequest sampleRequest = new UserRequest(
+						name,
+						name + "@codeit.com",
+						"password123!",
+						null
+				);
+				userService.create(sampleRequest);
 			}
 		}
 		if (channelService.findAll().isEmpty()) {
@@ -54,7 +61,7 @@ public class DiscodeitApplication {
 
 
 		log.info("=== 스프링 미션 3 기본 테스트 요구사항 실행 ===");
-		User testUser = setupUser(userService);
+		UserResponse testUser = setupUser(userService);
 		Channel testChannel = setupChannel(channelService);
 		Message testMessage = setupMessage(messageService);
 		log.info("======================================\n");
@@ -87,9 +94,9 @@ public class DiscodeitApplication {
 
 	}
 
-	private static User setupUser(UserService userService) {
-		User user = userService.create(new User("테스트 유저"));
-		log.info("-> 테스트 유저 등록 완료: {}", user.getUsername());
+	private static UserResponse setupUser(UserService userService) {
+		UserResponse user = userService.create(new UserRequest("테스트 유저", "테스트 이메일", "테스트 패스워드", "테스트 프로필이미지"));
+		log.info("-> 테스트 유저 등록 완료: {}", user.username());
 		return user;
 	}
 	private static Channel setupChannel(ChannelService channelService) {

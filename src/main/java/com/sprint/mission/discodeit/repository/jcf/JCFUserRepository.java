@@ -33,7 +33,7 @@ public class JCFUserRepository implements UserRepository {
     @Override
     public void update(User inputUser) {
         findById(inputUser.getId())
-                .ifPresent(u -> u.updateName(inputUser));
+                .ifPresent(u -> u.update(inputUser.getUsername(), inputUser.getPassword(), inputUser.getEmail()));
     }
 
     @Override

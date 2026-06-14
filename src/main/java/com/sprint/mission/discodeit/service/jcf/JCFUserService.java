@@ -1,10 +1,13 @@
 package com.sprint.mission.discodeit.service.jcf;
 
+import com.sprint.mission.discodeit.dto.request.UserRequest;
+import com.sprint.mission.discodeit.dto.request.UserResponse;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.UserService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 // [구현체] 기획서대로 실제로 일하는 주체
 public class JCFUserService implements UserService {
@@ -17,36 +20,47 @@ public class JCFUserService implements UserService {
         this.data = new ArrayList<User>(); // 창고 생성 (생성자)
     }
 
-    public User create(User user) { // 매개변수 선언, 유저 생성하는 기능 구현
+    @Override
+    public UserResponse create(UserRequest dto) { // 매개변수 선언, 유저 생성하는 기능 구현
+        User user = new User(dto.username(),  dto.password(), dto.email());
         data.add(user); // 창고에 넣기 (진짜 등록)
-        return user;
+        return new UserResponse(user.getId(), user.getUsername(), user.getEmail(), true);
     }
 
-    public User findById(UUID id) { // 단건 조회
+    @Override
+    public Optional<UserResponse> findById(UUID id) { // 단건 조회
         for (User foundUser : data) {
             if (foundUser.getId().equals(id)) {
-                return foundUser;
+                return Optional.of(new UserResponse(foundUser.getId(), foundUser.getUsername(), null, true));
             }
         }
-        return null;
+        return Optional.empty();
     }
 
-    public List<User> findAll() { // 전체 조회
-        return data;
-    }
-
-    public void update(User requestUser) {
-        User foundUser = findById(requestUser.getId());
-        if (foundUser != null) {
-            foundUser.updateName(requestUser);
+    @Override
+    public List<UserResponse> findAll() { // 전체 조회
+        List<UserResponse> responses = new ArrayList<>();
+        for (User foundUser : data) {
+            responses.add(new UserResponse(foundUser.getId(), foundUser.getUsername(), null, true));
         }
+        return responses;
     }
 
+    @Override
+    public UserResponse update(UUID id, UserRequest dto) {
+        for (User foundUser : data) {
+            if (foundUser.getId().equals(id)) {
+                foundUser.update(dto.username(),  dto.email(), dto.password());
+                return new UserResponse(foundUser.getId(), foundUser.getUsername(),null, true);
+            }
+        }
+        throw new IllegalArgumentException("User not found");
+
+    }
+
+    @Override
     public void delete(UUID id) {
-        User foundUser = findById(id);
-        if (foundUser != null) {
-            data.remove(foundUser);
-        }
+        data.removeIf(user -> user.getId().equals(id));
     }
 
 }
