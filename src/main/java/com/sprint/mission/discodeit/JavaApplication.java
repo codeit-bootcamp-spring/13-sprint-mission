@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit;
 
 import com.sprint.mission.discodeit.dto.request.ChannelPublicRequest;
+import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserRequest;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.service.ChannelService;
@@ -10,7 +11,9 @@ import com.sprint.mission.discodeit.service.file.FileChannelService;
 import com.sprint.mission.discodeit.service.file.FileMessageService;
 import com.sprint.mission.discodeit.service.file.FileUserService;
 
+import java.util.Collections;
 import java.util.Scanner;
+import java.util.UUID;
 
 public class JavaApplication {
 
@@ -43,7 +46,17 @@ public class JavaApplication {
             channelService.createPublicChannel(sampleChannel);
         }
         for (String message : SampleData.messages) {
-            messageService.create(new Message(message));
+            UUID tempChannelId = UUID.randomUUID();
+            UUID tempSenderId = UUID.randomUUID();
+
+            MessageCreateRequest sampleMessageRequest = new MessageCreateRequest(
+                    tempChannelId,
+                    tempSenderId,
+                    message,
+                    Collections.emptyList()
+            );
+
+            messageService.create(sampleMessageRequest);
         }
 
         boolean running = true;

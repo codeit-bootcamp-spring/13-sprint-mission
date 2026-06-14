@@ -1,8 +1,10 @@
 package com.sprint.mission.discodeit;
 
 import com.sprint.mission.discodeit.dto.request.ChannelPublicRequest;
+import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelResponse;
 import com.sprint.mission.discodeit.dto.request.UserRequest;
+import com.sprint.mission.discodeit.dto.response.MessageResponse;
 import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.service.ChannelService;
@@ -13,6 +15,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.Collections;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -57,9 +60,18 @@ public class DiscodeitApplication {
 				channelService.createPublicChannel(new ChannelPublicRequest(title, "샘플 설명"));
 			}
 		}
-		if (messageService.findAll().isEmpty()) {
+		if (messageService.findAllByChannelId(systemUserId).isEmpty()) {
 			for (String message : SampleData.messages) {
-				messageService.create(new Message(message));
+				UUID tempChannelId = UUID.randomUUID();
+				UUID tempSenderId = UUID.randomUUID();
+
+				MessageCreateRequest sampleMessageRequest = new MessageCreateRequest(
+						tempChannelId,
+						tempSenderId,
+						message,
+						Collections.emptyList()
+				);
+				messageService.create(sampleMessageRequest);
 			}
 		}
 
@@ -67,7 +79,7 @@ public class DiscodeitApplication {
 		log.info("=== 스프링 미션 3 기본 테스트 요구사항 실행 ===");
 		UserResponse testUser = setupUser(userService);
 		ChannelResponse testChannel = setupChannel(channelService);
-		Message testMessage = setupMessage(messageService);
+		MessageResponse testMessage = setupMessage(messageService);
 		log.info("======================================\n");
 
 		boolean running = true;
@@ -108,10 +120,21 @@ public class DiscodeitApplication {
 		log.info("-> 테스트 채널 등록 완료: {}", channel.name());
 		return channel;
 	}
-	private static Message setupMessage(MessageService messageService) {
-		Message message = messageService.create(new Message("테스트 메세지"));
-		log.info("-> 테스트 메세지 등록 완료: {}", message.getContent());
+	private static MessageResponse setupMessage(MessageService messageService) {
+		UUID tempChannelId = UUID.randomUUID();
+		UUID tempSenderId = UUID.randomUUID();
+
+		MessageCreateRequest testRequest = new MessageCreateRequest(
+				tempChannelId,
+				tempSenderId,
+				"테스트 메세지",
+				Collections.emptyList()
+		);
+
+		MessageResponse message = messageService.create(testRequest);
+		log.info("-> 테스트 메세지 등록 완료: {}", message.content());
 		return message;
 	}
+
 
 }
