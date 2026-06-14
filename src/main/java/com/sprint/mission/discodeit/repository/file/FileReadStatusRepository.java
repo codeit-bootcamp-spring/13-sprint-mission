@@ -71,4 +71,15 @@ public class FileReadStatusRepository implements ReadStatusRepository {
         saveReadStatusRepo();
 
     }
+
+    @Override
+    public ReadStatus findByUserIdAndChannelId(UUID userId, UUID channelId) {
+        for (ReadStatus readStatus : readStatusRepo.values()) {
+            if (readStatus.getUserId().equals(userId)
+                    && readStatus.getChannelId().equals(channelId)) {
+                return readStatus;
+            }
+        }
+        return null;
+    }
 }
