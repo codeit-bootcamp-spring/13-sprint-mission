@@ -3,7 +3,10 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.UserRequest;
 import com.sprint.mission.discodeit.dto.request.UserResponse;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,16 +20,36 @@ import java.util.UUID;
 public class BasicUserService implements UserService {
 
     private final UserRepository userRepository;
-//    private final UserStatusRepository userStatusRepository;
-//    private final BinaryContentRepository binaryContentRepository;
+    private final UserStatusRepository userStatusRepository;
+    private final BinaryContentRepository binaryContentRepository;
 
     @Override
     public UserResponse create(UserRequest dto) {
+
         // [요구사항] username과 email 중복 검사 로직 수행
+        List<User> users = userRepository.findAll();
+        for (User existingUser : users) {
+            if (existingUser.getUsername().equals(dto.username())) {
+                throw new IllegalArgumentException("이미 사용 중인 이름입니다.");
+            }
+            if (existingUser.getEmail().equals(dto.email())) {
+                throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+            }
+        }
+
         User user = new User(dto.username(), dto.email(),  dto.password());
-        userRepository.create(user);
-        // [요구사항] UserStatus(접속 상태) 상자도 세트로 같이 생성해서 저장
+
         // [요구사항] 선택적으로 프로필 이미지를 같이 등록
+        if (dto.profileImageName() != null && !dto.profileImageName().isEmpty()) {
+            user.updateProfileId(UUID.randomUUID());
+        }
+
+        userRepository.create(user);
+
+        // [요구사항] UserStatus(접속 상태) 상자도 세트로 같이 생성해서 저장
+        UserStatus userStatus = new UserStatus(user.getId());
+        userStatusRepository.create(userStatus);
+
         return new UserResponse(user.getId(),user.getUsername(),user.getEmail(),true);
     }
 
@@ -58,6 +81,15 @@ public class BasicUserService implements UserService {
 
     @Override
     public void delete(UUID id) {
+        
+        // [요구사항] 관련된 도메인도 같이 삭제 (BinaryContent, UserStatus)
+        User user = userRepository.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("해당 사용자를 찾을 수 없습니다."));
+        userStatusRepository.delete(id);
+        if (user.getProfileImageId() != null) {
+            binaryContentRepository.delete(user.getProfileImageId());
+        }
+
         userRepository.delete(id);
     }
 
