@@ -65,7 +65,7 @@ public class FileUserRepository implements UserRepository {
     @Override
     public void delete(String id) {
         List<User> users = findAll(); // 전체 목록 호출
-        // 입력받은 id와 일치하지 않는 사용자만 남기기
+        // 입력받은 id와 일치하지 않는 사용자만 남기기 (해당 id는 삭제)
         boolean removed = users.removeIf(user -> user.getId().equals(id));
 
         if (removed) {
