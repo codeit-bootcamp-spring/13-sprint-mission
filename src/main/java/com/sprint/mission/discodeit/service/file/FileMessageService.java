@@ -1,5 +1,8 @@
 package com.sprint.mission.discodeit.service.file;
 
+import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.MessageResponse;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.service.MessageService;
 
@@ -7,8 +10,9 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class FileMessageService implements MessageService {
@@ -51,48 +55,77 @@ public class FileMessageService implements MessageService {
 
     // 메세지 생성
     @Override
-    public Message create(Message message) {
+    public MessageResponse create(MessageCreateRequest dto) {
         List<Message> messages = readFile(); // 파일에서 기존 데이터 꺼냄
+        Message message = new Message(dto.content());
         messages.add(message); // 새 메세지 상자 추가
         saveFile(messages); // 최종본 파일에 데이터 저장
-        return message;
+        return new MessageResponse(
+                message.getId(), dto.channelId(), dto.senderId(),
+                dto.content(), Collections.emptyList(), Instant.now(), Instant.now()
+        );
     }
 
     @Override
-    public Message findByContent(String content) { // 단건 조회
+    public Optional<MessageResponse> findById(UUID id) {// 단건 조회
         List<Message> messages = readFile();
         for (Message foundMessage : messages) {
-            if (foundMessage.getContent().equals(content)) {
-                return foundMessage;
+            if (foundMessage.getId().equals(id)) {
+                return Optional.of(new MessageResponse(
+                        foundMessage.getId(), foundMessage.getChannelId(), foundMessage.getAuthorId(),
+                        foundMessage.getContent(), Collections.emptyList(), Instant.now(), Instant.now()
+                ));
             }
         }
-        return null;
+        return Optional.empty();
     }
 
-    public List<Message> findAll() { // 전체 조회
-        return readFile();
+    @Override
+    public List<MessageResponse> findAll(UUID channelId) { // 전체 조회
+        return readFile().stream()
+                .filter(m -> m.getChannelId().equals(channelId))
+                .map(m -> new MessageResponse(
+                        m.getId(), m.getChannelId(), m.getAuthorId(),
+                        m.getContent(), Collections.emptyList(), Instant.now(), Instant.now()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<MessageResponse> findAllByChannelId(UUID channelId) {
+        return readFile().stream()
+                .filter(m -> m.getChannelId().equals(channelId))
+                .map(m -> new MessageResponse(
+                        m.getId(), m.getChannelId(), m.getAuthorId(),
+                        m.getContent(), Collections.emptyList(), Instant.now(), Instant.now()
+                ))
+                .collect(Collectors.toList());
     }
 
     // 메세지 수정
     @Override
-    public void update(Message requestMessage) {
+    public MessageResponse update(UUID id, MessageUpdateRequest dto) {
         List<Message> messages = readFile();
         for (Message foundMessage : messages) {
-            if (foundMessage.getContent().equals(requestMessage.getContent())) {
-                foundMessage.updateContent(requestMessage);
+            if (foundMessage.getId().equals(id)) {
+                foundMessage.updateContent(new Message(dto.content()));
+                saveFile(messages);
                 break;
             }
         }
+        return new MessageResponse(
+                id, UUID.randomUUID(), UUID.randomUUID(),
+                dto.content(), Collections.emptyList(), Instant.now(), Instant.now()
+        );
     }
 
     // 메세지 삭제
     @Override
-    public void delete(String content) {
+    public void delete(UUID id) {
         List<Message> foundMessage = readFile();
-        foundMessage.removeIf(m->m.getContent().equals(content));
+        foundMessage.removeIf(m->m.getId().equals(id));
         saveFile(foundMessage);
     }
-
 
 }
 

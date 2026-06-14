@@ -5,6 +5,8 @@ import com.sprint.mission.discodeit.repository.MessageRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 public class JCFMessageRepository implements MessageRepository {
 
@@ -14,7 +16,7 @@ public class JCFMessageRepository implements MessageRepository {
     @Override
     public Message create(Message message) {
         if(message == null || message.getContent() == null ||
-                "".equals(message.getContent().trim()) || message.getContent().trim().isEmpty()) {
+                message.getContent().trim().isEmpty()) {
             throw new IllegalArgumentException("메세지 내용은 비어있을 수 없습니다.");
         }
         messages.add(message);
@@ -22,8 +24,18 @@ public class JCFMessageRepository implements MessageRepository {
     }
 
     @Override
+    public Optional<Message> findById(UUID id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return messages.stream()
+                .filter(m -> id.equals(m.getId()))
+                .findFirst();
+    }
+
+    @Override
     public Message findByContent(String content) {
-        if (content == null || "".equals(content.trim()) || content.trim().isEmpty()) {
+        if (content == null || content.trim().isEmpty()) {
             return null;
         }
         return messages.stream()
@@ -47,8 +59,15 @@ public class JCFMessageRepository implements MessageRepository {
     }
 
     @Override
-    public void delete(String content) {
-        messages.removeIf(m -> m.getContent().equals(content));
+    public void delete(UUID id) {
+        messages.removeIf(m -> m.getId().equals(id));
+    }
+
+    @Override
+    public void deleteByChannelId(UUID channelId) {
+        if (channelId != null) {
+            messages.removeIf(m -> m.getChannelId() != null && m.getChannelId().equals(channelId));
+        }
     }
 }
 /*

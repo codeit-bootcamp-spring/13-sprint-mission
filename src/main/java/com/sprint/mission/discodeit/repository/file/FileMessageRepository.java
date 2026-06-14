@@ -10,6 +10,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public class FileMessageRepository implements MessageRepository {
@@ -47,6 +49,16 @@ public class FileMessageRepository implements MessageRepository {
     }
 
     @Override
+    public Optional<Message> findById(UUID id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return readFile().stream()
+                .filter(m -> id.equals(m.getId()))
+                .findFirst();
+    }
+
+    @Override
     public Message findByContent(String content) {
         return readFile().stream()
                 .filter(m -> m.getContent().equals(content))
@@ -69,9 +81,19 @@ public class FileMessageRepository implements MessageRepository {
     }
 
     @Override
-    public void delete(String content) {
+    public void delete(UUID id) {
         List<Message> messages = readFile();
-        messages.removeIf(m -> m.getContent().equals(content));
+        messages.removeIf(m -> m.getId().equals(id));
+        saveFile(messages);
+    }
+
+    @Override
+    public void deleteByChannelId(UUID channelId) {
+        if (channelId == null) {
+            return;
+        }
+        List<Message> messages = readFile();
+        messages.removeIf(m -> m.getChannelId() != null && m.getChannelId().equals(channelId));
         saveFile(messages);
     }
 
