@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit;
 
+import com.sprint.mission.discodeit.dto.request.ChannelPublicRequest;
 import com.sprint.mission.discodeit.dto.request.UserRequest;
-import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
@@ -38,7 +38,9 @@ public class JavaApplication {
         }
         // <기존 채널 등록>
         for (String title : SampleData.titles) { // 기존 데이터 먼저 등록
-            channelService.create(new Channel(title));
+            ChannelPublicRequest sampleChannel = new ChannelPublicRequest(title, "샘플 채널 설명");
+//            channelService.createPrivateChannel(new Channel(title));
+            channelService.createPublicChannel(sampleChannel);
         }
         for (String message : SampleData.messages) {
             messageService.create(new Message(message));

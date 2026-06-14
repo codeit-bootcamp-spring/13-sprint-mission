@@ -1,8 +1,9 @@
 package com.sprint.mission.discodeit;
 
+import com.sprint.mission.discodeit.dto.request.ChannelPublicRequest;
+import com.sprint.mission.discodeit.dto.request.ChannelResponse;
 import com.sprint.mission.discodeit.dto.request.UserRequest;
 import com.sprint.mission.discodeit.dto.request.UserResponse;
-import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
@@ -13,6 +14,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.Scanner;
+import java.util.UUID;
 
 @SpringBootApplication
 @Slf4j
@@ -31,6 +33,8 @@ public class DiscodeitApplication {
 
 		Scanner scanner = new Scanner(System.in); // 키보드 입력기
 
+		UUID systemUserId = UUID.randomUUID();
+
 		// 기존 데이터 먼저 준비
 		SampleData.loadSampleNames();
 		SampleData.loadChannelTitles();
@@ -48,9 +52,9 @@ public class DiscodeitApplication {
 				userService.create(sampleRequest);
 			}
 		}
-		if (channelService.findAll().isEmpty()) {
+		if (channelService.findAll(systemUserId).isEmpty()) {
 			for (String title : SampleData.titles) {
-				channelService.create(new Channel(title));
+				channelService.createPublicChannel(new ChannelPublicRequest(title, "샘플 설명"));
 			}
 		}
 		if (messageService.findAll().isEmpty()) {
@@ -62,7 +66,7 @@ public class DiscodeitApplication {
 
 		log.info("=== 스프링 미션 3 기본 테스트 요구사항 실행 ===");
 		UserResponse testUser = setupUser(userService);
-		Channel testChannel = setupChannel(channelService);
+		ChannelResponse testChannel = setupChannel(channelService);
 		Message testMessage = setupMessage(messageService);
 		log.info("======================================\n");
 
@@ -99,9 +103,9 @@ public class DiscodeitApplication {
 		log.info("-> 테스트 유저 등록 완료: {}", user.username());
 		return user;
 	}
-	private static Channel setupChannel(ChannelService channelService) {
-		Channel channel = channelService.create(new Channel("테스트 채널"));
-		log.info("-> 테스트 채널 등록 완료: {}", channel.getChannelTitles());
+	private static ChannelResponse setupChannel(ChannelService channelService) {
+		ChannelResponse channel = channelService.createPublicChannel(new ChannelPublicRequest("테스트 채널", "테스트 설명"));
+		log.info("-> 테스트 채널 등록 완료: {}", channel.name());
 		return channel;
 	}
 	private static Message setupMessage(MessageService messageService) {

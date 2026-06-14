@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.repository;
 import com.sprint.mission.discodeit.entity.Message;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface MessageRepository {
 
@@ -11,6 +12,7 @@ public interface MessageRepository {
     List<Message> findAll();
     void update(Message requestMessage);
     void delete(String content);
+    void deleteByChannelId(UUID channelId);
 }
 /*
 레포지토리 설계 및 구현
