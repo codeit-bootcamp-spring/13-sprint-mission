@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.service.jcf;
 
 import com.sprint.mission.discodeit.dto.request.ChannelPrivateRequest;
 import com.sprint.mission.discodeit.dto.request.ChannelPublicRequest;
-import com.sprint.mission.discodeit.dto.request.ChannelResponse;
+import com.sprint.mission.discodeit.dto.response.ChannelResponse;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.service.ChannelService;
 

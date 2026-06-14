@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.service;
 
 import com.sprint.mission.discodeit.dto.request.UserRequest;
-import com.sprint.mission.discodeit.dto.request.UserResponse;
+import com.sprint.mission.discodeit.dto.response.UserResponse;
 
 import java.util.List;
 import java.util.Optional;
