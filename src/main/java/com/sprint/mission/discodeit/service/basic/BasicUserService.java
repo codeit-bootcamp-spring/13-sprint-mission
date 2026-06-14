@@ -63,6 +63,9 @@ public class BasicUserService implements UserService {
     @Override
     public UserResponse findById(UUID id) {
         User user = userRepository.findById(id);
+        if (user == null) {
+            return null;
+        }
         return toResponse(user);
     }
 
@@ -123,7 +126,7 @@ public class BasicUserService implements UserService {
     }
 
     private UserResponse toResponse(User user) {
-        UserStatus userStatus = userStatusRepository.findById(user.getId());
+        UserStatus userStatus = userStatusRepository.findByUserId(user.getId());
 
         boolean isOnline = userStatus != null && userStatus.isOnline();
 

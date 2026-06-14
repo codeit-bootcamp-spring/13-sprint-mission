@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import java.io.*;
@@ -40,8 +41,11 @@ public class FileChannelRepository implements ChannelRepository {
 
     }
 
-    public FileChannelRepository() {
-        this.channelFileRepo = new File("data/repository-channel.json");
+    public FileChannelRepository(
+            @Value("${discodeit.repository.file-directory}") String fileDirectory
+    ) {
+        this.channelFileRepo = new File(fileDirectory, "repository-channel.json");
+
         this.channelsRepo = loadChannelsRepo();
     }
 

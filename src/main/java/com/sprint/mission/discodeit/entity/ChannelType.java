@@ -4,7 +4,6 @@ import lombok.Getter;
 
 @Getter
     public enum ChannelType {
-        TEXT,
-        VOICE,
-        DIRECT_MESSAGE
+        PUBLIC,
+        PRIVATE
     }

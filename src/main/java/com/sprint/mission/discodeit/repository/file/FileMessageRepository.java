@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 
@@ -39,8 +40,10 @@ public class FileMessageRepository implements MessageRepository {
     }
 
 
-    public FileMessageRepository() {
-        this.messageFileRepo = new File("data/repository-message.json");
+    public FileMessageRepository(
+            @Value("${discodeit.repository.file-directory}") String fileDirectory
+    ) {
+        this.messageFileRepo = new File(fileDirectory, "repository-message.json");
         this.messagesRepo = loadMessagesRepo();
 }
 
@@ -64,5 +67,18 @@ public class FileMessageRepository implements MessageRepository {
     public void delete(UUID id) {
         messagesRepo.remove(id);
         saveMessagesRepo();
+    }
+
+    @Override
+    public Collection<Message> findAllByChannelId(UUID channelId) {
+        List<Message> result = new ArrayList<>();
+
+        for (Message message : messagesRepo.values()) {
+            if (message.getChannel().getId().equals(channelId)) {
+                result.add(message);
+            }
+        }
+
+        return result;
     }
 }

@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import java.io.*;
@@ -23,8 +24,10 @@ public class FileBinaryContentRepository  implements BinaryContentRepository {
         }
     }
 
-    public FileBinaryContentRepository() {
-        this.binaryContentFile = new File("data/repository-binary-content.json");
+    public FileBinaryContentRepository(
+            @Value("${discodeit.repository.file-directory}") String fileDirectory
+    ) {
+        this.binaryContentFile = new File(fileDirectory, "repository-binary-content.json");
         this.binaryContentsRepo = loadBinaryContentsRepo();
     }
 

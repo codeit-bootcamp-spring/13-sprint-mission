@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import java.io.*;
@@ -35,8 +36,10 @@ public class FileUserRepository implements UserRepository {
         }
     }
 
-    public FileUserRepository() {
-        this.file = new File("data/repository-user.json");
+    public FileUserRepository(
+            @Value("${discodeit.repository.file-directory}") String fileDirectory
+    ) {
+        this.file = new File(fileDirectory, "repository-user.json");
         this.users = loadUserRepo();
     }
 

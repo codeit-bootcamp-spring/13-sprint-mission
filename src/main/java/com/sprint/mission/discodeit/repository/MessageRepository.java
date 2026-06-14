@@ -10,5 +10,6 @@ public interface MessageRepository {
     Message findById(UUID id);
     Collection<Message> findAll();
     void delete(UUID id);
+    Collection<Message> findAllByChannelId(UUID channelId);
 
 }

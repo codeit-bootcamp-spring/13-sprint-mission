@@ -29,7 +29,6 @@ public class BasicReadStatusService implements ReadStatusService {
         if (userRepository.findById(request.userId()) == null) {
             throw new IllegalArgumentException("User not found");
         }
-
         if (channelRepository.findById(request.channelId()) == null) {
             throw new IllegalArgumentException("Channel not found");
         }

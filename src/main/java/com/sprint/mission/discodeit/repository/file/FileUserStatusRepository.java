@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import java.io.*;
@@ -22,8 +23,10 @@ public class FileUserStatusRepository implements UserStatusRepository {
             return new HashMap<>();}
     }
 
-    public FileUserStatusRepository() {
-        this.userStatusFile = new File("data/repository-user-status.json");
+    public FileUserStatusRepository(
+            @Value("${discodeit.repository.file-directory}") String fileDirectory
+    ) {
+        this.userStatusFile = new File(fileDirectory, "repository-user-status.json");
         this.userStatusRepo = loadUserStatusRepo();
     }
 

@@ -26,7 +26,7 @@ public class BasicUserStatusService implements UserStatusService {
         if (userRepository.findById(request.userId())==null) {
             throw new IllegalArgumentException("User not found");
         }
-        if (userRepository.findById(request.userId()) != null) {
+        if (userStatusRepository.findByUserId(request.userId()) != null) {
             throw new IllegalArgumentException("UserStatus already exists");
         }
 

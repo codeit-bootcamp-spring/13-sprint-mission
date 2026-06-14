@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import java.io.*;
@@ -22,8 +23,10 @@ public class FileReadStatusRepository implements ReadStatusRepository {
             return new HashMap<>();}
     }
 
-    public FileReadStatusRepository() {
-        this.readStatusFile = new File("data/repository-read-status.json");
+    public FileReadStatusRepository(
+            @Value("${discodeit.repository.file-directory}") String fileDirectory
+    ) {
+        this.readStatusFile = new File(fileDirectory, "repository-read-status.json");
         this.readStatusRepo = loadReadStatusRepo();
     }
 
@@ -81,5 +84,18 @@ public class FileReadStatusRepository implements ReadStatusRepository {
             }
         }
         return null;
+    }
+
+    @Override
+    public Collection<ReadStatus> findAllByChannelId(UUID channelId) {
+        List<ReadStatus> result = new ArrayList<>();
+
+        for (ReadStatus readStatus : readStatusRepo.values()) {
+            if (readStatus.getChannelId().equals(channelId)) {
+                result.add(readStatus);
+            }
+        }
+
+        return result;
     }
 }

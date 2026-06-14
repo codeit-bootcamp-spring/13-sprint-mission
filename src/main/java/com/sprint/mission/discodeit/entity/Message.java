@@ -9,25 +9,26 @@ import java.util.UUID;
 
 public class Message extends MutableEntity {
 
-	private List<UUID> messageId;
+	private List<UUID> attachmentIds;
 
 	String content;
 	User author;
 	Channel channel;
 	
-	public Message(String content,User author,Channel channel) {
+	public Message(String content,User author,Channel channel, List<UUID> attachmentIds) {
 		super();
 		this.content = content;
 		this.author = author;
 		this.channel = channel;
+		this.attachmentIds = attachmentIds;
 	}
 	
 	public void author(User author) {
 		this.author = author;
 	}
 	public void update(String content) {
-		// [생각해볼 점] 밖에서 channel.getType()을 확인한 후 이 함수를 호출하게 됩니다.
 		this.content = content;
+
 		updateTime();
 	}
 	
