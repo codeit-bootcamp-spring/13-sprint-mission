@@ -2,6 +2,8 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Repository;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -12,10 +14,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
+@Repository
 public class FileChannelRepository implements ChannelRepository {
     private final Path path;
 
-    public FileChannelRepository(String path) {
+    public FileChannelRepository(@Value("${file.path.channel}") String path) {
         this.path = Paths.get(path);
     }
 

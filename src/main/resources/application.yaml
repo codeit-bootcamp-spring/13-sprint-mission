@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: discodeit
+
+file:
+  path:
+    user: data/users.ser
+    channel: data/channel.ser
+    message: data/message.ser
