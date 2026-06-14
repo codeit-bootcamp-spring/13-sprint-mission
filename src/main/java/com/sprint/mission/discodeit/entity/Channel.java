@@ -1,9 +1,12 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
+
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.UUID;
 
+@Getter
 // ##채팅방(채널) 정보를 담는 클래스
 public class Channel implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -24,19 +27,6 @@ public class Channel implements Serializable {
         this.name = name; //채널 이름 저장
         this.description = description; //채널 설명저장
     }
-
-    //각 필드를 반환하는 getter 함수
-    //정보 꺼내는 함수도 있어요
-    public UUID getId() {return id;}
-    public Long getCreatedAt() {return createdAt;}
-    public Long getUpdatedAt() {return updatedAt;}
-
-    public ChannelType getType() {
-        return type;
-    }
-
-    public String getName() {return name;}
-    public String getDescription() {return description;}
 
     //이름을 수정하는 update 함수 (수정 시 update도 갱신)
     public void update(String newName, String newDescription) {

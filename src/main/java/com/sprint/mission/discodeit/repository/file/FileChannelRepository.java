@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import org.springframework.stereotype.Repository;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Repository
 //ChannelRepository 인터페이스의 파일 기반(File I/o) 구현체
 public class FileChannelRepository implements ChannelRepository {
     private final Path DIRECTORY; //Channel 파일들이 저장될 디렉토리 경로

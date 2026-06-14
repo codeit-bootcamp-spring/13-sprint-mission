@@ -1,9 +1,12 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
+
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.UUID;
 
+@Getter
 // ##사용자 정보를 담는 클래스
 public class User implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -26,15 +29,6 @@ public class User implements Serializable {
         this.email = email; //사용자 이메일 저장
         this.password = password; //사용자 비밀번호 저장
     }
-
-    //각 필드에 받환하는 getter 함수
-    //Getter 함수 : 값을 꺼내줌
-    public UUID getId() { return id; } //사용자 ID 반환
-    public Long getCreatedAt() {return createdAt;} //생성 시간 반환
-    public Long getUpdatedAt() {return updatedAt;} //수정 시간 반환
-    public String getName() {return username;} // 사용자 이름 반환
-    public String getEmail() {return email;} // 이메일 반환
-    public String getPassword() {return password;} // 비밀번호 반환
 
     //이름을 수정하는 update 함수 (수정 시 update도 갱신)
     //update 함수 : 값을 바꿔중

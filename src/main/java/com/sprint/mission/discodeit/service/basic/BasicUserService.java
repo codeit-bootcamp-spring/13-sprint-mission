@@ -3,16 +3,18 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
+@Service
+@RequiredArgsConstructor
 //Service 계층 구현체. 실제 데이터 저장은 Repository에 위임함
 public class BasicUserService implements UserService {
     private final UserRepository userRepository; //사용자 저장소
-
-    public BasicUserService(UserRepository userRepository) { this.userRepository = userRepository; } //생성자 주입
 
     @Override //사용자 생성
     public User create(String username, String email,String password) {
