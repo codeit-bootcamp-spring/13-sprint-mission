@@ -49,9 +49,9 @@ public class UserController {
     }
 
     //사용자의 온라인 상태 업데이트
-    @RequestMapping(value = "/{id}/status", method = RequestMethod.PATCH)
-    public ResponseEntity<UserStatusUpdateResponse> updateUserStatus(@PathVariable UUID id, @Valid @RequestBody UserStatusUpdateRequest request){
-        UserStatusUpdateResponse response = userStatusService.updateUserStatusByUserId(id);
+    @RequestMapping(value = "/{userId}/status", method = RequestMethod.PATCH)
+    public ResponseEntity<UserStatusUpdateResponse> updateUserStatusByUser(@PathVariable UUID userId){
+        UserStatusUpdateResponse response = userStatusService.updateUserStatusByUserId(userId);
 
         return ResponseEntity.ok().body(response);
     }
