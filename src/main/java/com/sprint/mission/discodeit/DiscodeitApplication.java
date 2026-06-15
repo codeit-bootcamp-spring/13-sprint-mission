@@ -1,31 +1,24 @@
 package com.sprint.mission.discodeit;
 
-import com.sprint.mission.discodeit.dto.request.ChannelPublicRequest;
-import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
-import com.sprint.mission.discodeit.dto.response.ChannelResponse;
-import com.sprint.mission.discodeit.dto.request.UserRequest;
-import com.sprint.mission.discodeit.dto.response.MessageResponse;
-import com.sprint.mission.discodeit.dto.response.UserResponse;
-import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.service.ChannelService;
-import com.sprint.mission.discodeit.service.MessageService;
-import com.sprint.mission.discodeit.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ConfigurableApplicationContext;
-
-import java.util.Collections;
-import java.util.Scanner;
-import java.util.UUID;
-
 @SpringBootApplication
 @Slf4j
 public class DiscodeitApplication {
 
 	public static void main(String[] args) {
 
-		ConfigurableApplicationContext context = SpringApplication.run(DiscodeitApplication.class, args);
+		SpringApplication.run(DiscodeitApplication.class, args);
+		log.info("서버가 실행되었습니다.");
+
+	}
+
+
+}
+
+/* 기존 코드
+ConfigurableApplicationContext context = SpringApplication.run(DiscodeitApplication.class, args);
 
 		// 서비스 초기화
 		// TODO context에서 Bean을 조회하여 각 서비스 구현체 할당 코드 작성하세요.
@@ -134,7 +127,4 @@ public class DiscodeitApplication {
 		MessageResponse message = messageService.create(testRequest);
 		log.info("-> 테스트 메세지 등록 완료: {}", message.content());
 		return message;
-	}
-
-
-}
+ */
