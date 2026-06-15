@@ -1,5 +1,6 @@
 package com.sprint.mission;
 
+import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
@@ -11,6 +12,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.Optional;
 import java.util.Scanner;
 
 @SpringBootApplication
@@ -26,7 +28,8 @@ public class DiscodeitApplication {
         System.out.print("비밀번호 입력(예시: woody1234): ");
         String password = scanner.nextLine();
 
-        User user = userService.create(username, email, password);
+        UserCreateRequest request = new UserCreateRequest(username, email, password);
+        User user = userService.create(request,Optional.empty());
         return user;
     }
 

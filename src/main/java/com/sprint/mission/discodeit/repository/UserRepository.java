@@ -10,7 +10,11 @@ import java.util.List;
 public interface UserRepository {
     User save(User user); //사용자 저장
     Optional<User> findById(UUID id); //Id를 이용하여 사용자 조회
+    Optional<User> findByUsername(String username);
     List<User> findAll(); //전체 사용자 조회
     boolean existsById(UUID id); //사용자 존재 여부 확인
     void deleteById(UUID id); //사용자 삭제
+    boolean existsByUsername(String username);
+    boolean existsByEmail(String email);
+
 }
