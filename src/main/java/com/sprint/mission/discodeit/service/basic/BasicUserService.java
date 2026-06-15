@@ -6,13 +6,16 @@ import com.sprint.mission.discodeit.dto.response.UserFindResponse;
 import com.sprint.mission.discodeit.dto.response.UserUpdateResponse;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.DuplicateResourceException;
+import com.sprint.mission.discodeit.exception.FileException;
 import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,7 +33,7 @@ public class BasicUserService implements UserService {
 
     //interface
     @Override
-    public User createUser(UserCreateRequest request) {
+    public User createUser(UserCreateRequest request, MultipartFile file) {
         //입력값 검증 처리하겠습니다
 //        validateString(request.name());
 //        validateString(request.email());
@@ -40,13 +43,23 @@ public class BasicUserService implements UserService {
         validateNameExists(request.name());
         validateEmailExists(request.email());
 
-        //프로필 사진 경로 존재 시
         UUID binaryContentId = null;
-        if (request.profileImagePath() != null && !request.profileImagePath().isBlank()) {
-            //binaryContent 생성
-            BinaryContent binaryContent = new BinaryContent(request.profileImagePath());
-            binaryContentRepository.createBinaryContent(binaryContent);
-            binaryContentId = binaryContent.getId();
+        //프로필 사진 파일 존재 시
+        if (file != null && !file.isEmpty()) {
+            try {
+                //binaryContent 생성
+                BinaryContent binaryContent = new BinaryContent(
+                        file.getOriginalFilename(),
+                        (long) file.getBytes().length,
+                        file.getContentType(),
+                        file.getBytes()
+                );
+                binaryContentRepository.createBinaryContent(binaryContent);
+                binaryContentId = binaryContent.getId();
+
+            } catch (IOException e) {
+                throw new FileException(e.getMessage());
+            }
         }
 
         //유저 생성
@@ -91,7 +104,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public UserUpdateResponse updateUser(UserUpdateRequest request) {
+    public UserUpdateResponse updateUser(UserUpdateRequest request, MultipartFile file) {
         //입력값 검증 처리하겠습니다
 //        validateUUID(request.userId());
 //        validateString(request.newName());
@@ -110,27 +123,28 @@ public class BasicUserService implements UserService {
             validateEmailExists(request.newEmail());
         }
 
-        //프로필 사진 경로 존재 시
-        UUID binaryContentId = null;
-        if (request.profileImagePath() != null && !request.profileImagePath().isBlank()) {
-            //기존 BinaryContent 검색
-            BinaryContent binaryContent = binaryContentRepository.findBinaryContentByContentPath(request.profileImagePath())
-                    .orElse(null);
-
-            //기존 BinaryContent 없으면
-            if (binaryContent == null) {
-                //binaryContent 생성
-                binaryContent = new BinaryContent(request.profileImagePath());
-                binaryContentRepository.createBinaryContent(binaryContent);
-                //기존 유저 프로필 이미지 삭제
-                deleteProfileImage(userTemp);
+        UUID binaryContentId = userTemp.getProfileId();
+        //프로필 사진 파일 존재 시
+        if (file != null && !file.isEmpty()) {
+            //기존 프로필 이미지 삭제
+            if (binaryContentId != null) {
+                binaryContentRepository.deleteBinaryContent(binaryContentId);
             }
 
-            //기존 BinaryContent id 반환
-            binaryContentId = binaryContent.getId();
-        } else {  //업데이트 프로필 사진이 없으면 기존 프로필 사진 삭제
-            //기존 유저 프로필 이미지 삭제
-            deleteProfileImage(userTemp);
+            try {
+                //binaryContent 생성
+                BinaryContent binaryContent = new BinaryContent(
+                        file.getOriginalFilename(),
+                        (long) file.getBytes().length,
+                        file.getContentType(),
+                        file.getBytes()
+                );
+                binaryContentRepository.createBinaryContent(binaryContent);
+                binaryContentId = binaryContent.getId();
+
+            } catch (IOException e) {
+                throw new FileException(e.getMessage());
+            }
         }
 
         log.info("유저: {}가 수정됨.", userTemp.getName());

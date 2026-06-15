@@ -30,13 +30,6 @@ public class JCFBinaryContentRepository implements BinaryContentRepository {
     }
 
     @Override
-    public Optional<BinaryContent> findBinaryContentByContentPath(String contentPath) {
-        return binaryContents.stream()
-                .filter(binaryContent -> binaryContent.getContentPath().equals(contentPath))
-                .findFirst();
-    }
-
-    @Override
     public Optional<BinaryContent> findBinaryContentById(UUID binaryContentId) {
         return binaryContents.stream()
                 .filter(binaryContent -> binaryContent.getId().equals(binaryContentId))

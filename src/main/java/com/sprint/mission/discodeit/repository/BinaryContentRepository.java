@@ -10,7 +10,6 @@ import java.util.UUID;
 public interface BinaryContentRepository {
 
     void createBinaryContent(BinaryContent binaryContent);
-    Optional<BinaryContent> findBinaryContentByContentPath(String contentPath);
     Optional<BinaryContent> findBinaryContentById(UUID binaryContentId);
     List<BinaryContent> findAllBinaryContentByIdIn(List<UUID> binaryContentIds);
     void deleteBinaryContent(UUID id);

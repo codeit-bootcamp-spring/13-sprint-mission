@@ -1,11 +1,8 @@
 package com.sprint.mission.discodeit.dto.request;
 
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.User;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-import java.util.List;
 import java.util.UUID;
 
 public record MessageCreateRequest(
@@ -17,8 +14,7 @@ public record MessageCreateRequest(
         UUID channelId,
 
         @NotNull(message = "authorId는 필수입니다.")
-        UUID authorId,
+        UUID authorId
 
-        List<String> attachmentPathList
 ) {
 }

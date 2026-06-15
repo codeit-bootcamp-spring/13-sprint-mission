@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -22,8 +23,10 @@ public class MessageController {
 
     //메시지 생성
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity<Void> createMessage(@Valid @RequestBody MessageCreateRequest request) {
-        messageService.createMessage(request);
+    public ResponseEntity<Void> createMessage(@Valid @ModelAttribute MessageCreateRequest request,
+                                              @RequestParam(value = "files", required = false) List<MultipartFile> files) {
+
+        messageService.createMessage(request, files);
 
         return ResponseEntity.ok().build();
     }
@@ -38,8 +41,11 @@ public class MessageController {
 
     //메시지 수정
     @RequestMapping(value = "/{id}", method = RequestMethod.PATCH)
-    public ResponseEntity<MessageUpdateResponse> updateMessage(@PathVariable UUID id, @Valid @RequestBody MessageUpdateRequest request) {
-        MessageUpdateResponse response = messageService.updateMessage(request);
+    public ResponseEntity<MessageUpdateResponse> updateMessage(@PathVariable UUID id,
+                                                               @Valid @ModelAttribute MessageUpdateRequest request,
+                                                               @RequestParam(value = "files", required = false) List<MultipartFile> files) {
+
+        MessageUpdateResponse response = messageService.updateMessage(request, files);
 
         return ResponseEntity.ok().body(response);
     }

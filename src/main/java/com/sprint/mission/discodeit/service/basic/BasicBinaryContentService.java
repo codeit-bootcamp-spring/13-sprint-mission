@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.exception.FileException;
 import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,10 +28,21 @@ public class BasicBinaryContentService implements BinaryContentService {
         //입력값 검증 처리하겠습니다
 //        validateString(request.contentPath());
 
-        //BinaryContent 생성
-        BinaryContent binaryContent = new BinaryContent(request.contentPath());
-        binaryContentRepository.createBinaryContent(binaryContent);
-        log.info("BinaryContent가 생성됨.");
+        BinaryContent binaryContent;
+        try {
+            //binaryContent 생성
+            binaryContent = new BinaryContent(
+                    request.file().getOriginalFilename(),
+                    (long) request.file().getBytes().length,
+                    request.file().getContentType(),
+                    request.file().getBytes()
+            );
+            binaryContentRepository.createBinaryContent(binaryContent);
+            log.info("BinaryContent가 생성됨.");
+
+        } catch (IOException e) {
+            throw new FileException(e.getMessage());
+        }
 
         return binaryContent;
     }

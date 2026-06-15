@@ -1,7 +1,6 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
-import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserFindResponse;
 import com.sprint.mission.discodeit.dto.response.UserStatusUpdateResponse;
@@ -12,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,8 +26,10 @@ public class UserController {
 
     //사용자 등록
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity<Void> createUser(@Valid @RequestBody UserCreateRequest request){
-        userService.createUser(request);
+    public ResponseEntity<Void> createUser(@Valid @ModelAttribute UserCreateRequest request,
+                                           @RequestParam(value = "file", required = false) MultipartFile file) {
+
+        userService.createUser(request, file);
 
         return ResponseEntity.ok().build();
     }
@@ -35,15 +37,18 @@ public class UserController {
     //모든 사용자를 조회
     @RequestMapping(value = "/findAll", method = RequestMethod.GET)
     public ResponseEntity<List<UserFindResponse>> findAll(){
-        List<UserFindResponse> responseList= userService.findAllUsers();
+        List<UserFindResponse> responseList = userService.findAllUsers();
 
         return ResponseEntity.ok().body(responseList);
     }
 
     //사용자 정보 수정
     @RequestMapping(value = "/{id}", method = RequestMethod.PATCH)
-    public ResponseEntity<UserUpdateResponse> updateUser(@PathVariable UUID id, @Valid @RequestBody UserUpdateRequest request){
-        UserUpdateResponse response = userService.updateUser(request);
+    public ResponseEntity<UserUpdateResponse> updateUser(@PathVariable UUID id,
+                                                         @Valid @ModelAttribute UserUpdateRequest request,
+                                                         @RequestParam(value = "file", required = false) MultipartFile file) {
+
+        UserUpdateResponse response = userService.updateUser(request, file);
 
         return ResponseEntity.ok().body(response);
     }

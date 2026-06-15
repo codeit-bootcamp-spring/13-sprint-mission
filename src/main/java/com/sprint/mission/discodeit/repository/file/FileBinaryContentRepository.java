@@ -32,13 +32,6 @@ public class FileBinaryContentRepository extends FileRepositoryRoot<BinaryConten
     }
 
     @Override
-    public Optional<BinaryContent> findBinaryContentByContentPath(String contentPath) {
-        return storage.stream()
-                .filter(binaryContent -> binaryContent.getContentPath().equals(contentPath))
-                .findFirst();
-    }
-
-    @Override
     public Optional<BinaryContent> findBinaryContentById(UUID binaryContentId) {
         return storage.stream()
                 .filter(binaryContent -> binaryContent.getId().equals(binaryContentId))

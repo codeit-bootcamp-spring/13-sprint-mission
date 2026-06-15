@@ -31,6 +31,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().build();
     }
 
+    //FileException 예외 발생했을 때 처리
+    @ExceptionHandler(FileException.class)
+    public ResponseEntity<Void> handleFileException(FileException e) {
+        log.warn(e.getMessage());
+        return ResponseEntity.internalServerError().build();
+    }
+
     //MethodArgumentNotValidException 예외 발생했을 때 처리
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Void> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {

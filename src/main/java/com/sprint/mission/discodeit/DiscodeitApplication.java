@@ -34,7 +34,7 @@ public class DiscodeitApplication {
 		test(userService, channelService, messageService, binaryContentService, userStatusService, readStatusService, authService);
 		*/
 	}
-
+	/*
 	private static void test(
 			UserService userService,
 			ChannelService channelService,
@@ -171,5 +171,7 @@ public class DiscodeitApplication {
 		System.out.println("==========================================");
 
 	}
+
+	 */
 
 }
