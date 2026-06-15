@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.controller;
 
 
 import com.sprint.mission.discodeit.dto.input.LoginInput;
+import com.sprint.mission.discodeit.dto.output.UserOutput;
 import com.sprint.mission.discodeit.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,11 +20,10 @@ public class AuthController {
     private final AuthService as;
 
     @RequestMapping(value = "/login", method = RequestMethod.POST)
-    public String login(
+    public UserOutput login(
             @RequestBody LoginInput loginInput
     ){
-        as.login(loginInput);
-        return "";
+        return as.login(loginInput);
     }
 
 
