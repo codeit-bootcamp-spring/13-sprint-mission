@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.repository.file;
 
 
 
-import com.sprint.mission.discodeit.DiscodeitConfig;
+import com.sprint.mission.discodeit.config.DiscodeitConfig;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +41,12 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
     @Override
     public User findByEmail(String email){
         List<User> res = find(u -> u.getEmail().equals(email));
+        return res.isEmpty() ? null : res.get(0);
+    }
+
+    @Override
+    public User findByName(String name){
+        List<User> res =  find(u -> u.getName().equals(name));
         return res.isEmpty() ? null : res.get(0);
     }
 

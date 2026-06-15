@@ -42,6 +42,12 @@ public class JCFUserRepository implements UserRepository {
     }
 
     @Override
+    public User findByName(String name){
+        List<User> res = find(u -> u.getName().equals(name));
+        return !res.isEmpty() ?  res.get(0) : null;
+    }
+
+    @Override
     public void delete(UUID id){
         data.remove(id);
     }

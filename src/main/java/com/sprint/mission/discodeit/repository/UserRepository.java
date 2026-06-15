@@ -12,5 +12,6 @@ public interface UserRepository {
     List<User> find(Predicate<User> fn);
     User findByID(UUID id);
     User findByEmail(String email);
+    User findByName(String name);
     void delete(UUID id);
 }

@@ -1,7 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.input.Login;
-import com.sprint.mission.discodeit.dto.input.UserProfile;
+import com.sprint.mission.discodeit.dto.input.CreateUserInput;
 import com.sprint.mission.discodeit.dto.output.BinaryObjectOutput;
 import com.sprint.mission.discodeit.dto.output.UserOutput;
 import com.sprint.mission.discodeit.entity.BinaryContent;
@@ -30,9 +29,9 @@ public class BasicUserService implements UserService {
     private final BinaryContentRepository bcr;
 
     @Override
-    public void createUser(Login lgn, UserProfile upf){
-        boolean check =  fur.findByEmail(lgn.getEmail()) != null
-                || fur.find(u -> u.getName().equals(upf.getName())) != null;
+    public void createUser(CreateUserInput cui){
+        boolean check =  fur.findByEmail(cui.getEmail()) != null
+                || fur.find(u -> u.getName().equals(cui.getName())) != null;
 
         if (!check){
             log.debug("User create cancel - same name or email detached.");
@@ -40,9 +39,9 @@ public class BasicUserService implements UserService {
         }
 
         User user = User.builder()
-                .email(lgn.getEmail())
-                .password(lgn.getPassword())
-                .name(upf.getName())
+                .email(cui.getEmail())
+                .password(cui.getPassword())
+                .name(cui.getName())
                 .build();
         fur.save(user);
 
@@ -54,11 +53,11 @@ public class BasicUserService implements UserService {
         usr.save(ust);
 
 
-        if (upf.getThumbnail() != null){
+        if (cui.getThumbnail() != null){
             bcr.save(
                     BinaryContent.builder()
                             .authorID(user.getId())
-                            .contentID(upf.getThumbnail())
+                            .contentID(cui.getThumbnail())
                             .build()
             );
         }
@@ -116,7 +115,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public void updateProfileImage(UUID id, UserProfile upf) {
+    public void updateProfileImage(UUID id, CreateUserInput upf) {
         // check user exist.
         if (!fur.find(c -> c.getId().equals(id)).isEmpty()) return;
 
