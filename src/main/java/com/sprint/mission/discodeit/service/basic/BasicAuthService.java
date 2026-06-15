@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.input.Login;
+import com.sprint.mission.discodeit.dto.input.LoginInput;
 import com.sprint.mission.discodeit.dto.output.UserOutput;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
@@ -18,11 +18,11 @@ public class BasicAuthService implements AuthService {
     private final UserStatusRepository usr;
 
     @Override
-    public UserOutput login(Login login){
+    public UserOutput login(LoginInput loginInput){
         User user;
         try {
-            user = ur.findByEmail(login.getEmail());
-            if (!user.getPassword().equals(login.getPassword())) throw new RuntimeException("Invalid email or password");
+            user = ur.findByEmail(loginInput.getEmail());
+            if (!user.getPassword().equals(loginInput.getPassword())) throw new RuntimeException("Invalid email or password");
         } catch (NullPointerException e){
             throw new RuntimeException("no user in database");
         }

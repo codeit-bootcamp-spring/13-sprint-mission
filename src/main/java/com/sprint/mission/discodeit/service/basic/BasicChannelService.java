@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.input.ChannelProfile;
+import com.sprint.mission.discodeit.dto.input.CreatePrivateChannelInput;
+import com.sprint.mission.discodeit.dto.input.CreatePublicChannelInput;
 import com.sprint.mission.discodeit.dto.output.ChannelOutput;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -23,15 +24,15 @@ public class BasicChannelService implements ChannelService {
     private final ReadStatusRepository rsr;
 
     @Override
-    public void createPublicChannel(ChannelProfile cnp){
-        cr.save(new Channel(cnp.getName(), cnp.getDescription(), ChannelType.PUBLIC));
+    public void createPublicChannel(CreatePublicChannelInput cpb){
+        cr.save(new Channel(cpb.getName(), cpb.getDescription(), ChannelType.PUBLIC));
     }
 
     @Override
-    public void createPrivateChannel(UUID userID){
+    public void createPrivateChannel(CreatePrivateChannelInput cpv){
         Channel cnl = new Channel("", "", ChannelType.PRIVATE);
         cr.save(cnl);
-        rsr.save(new ReadStatus(userID,cnl.getId()));
+        rsr.save(new ReadStatus(UUID.fromString(cpv.getId()),cnl.getId()));
     }
 
     @Override
@@ -74,7 +75,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public void updateChannelInfo(UUID id, ChannelProfile cnp) throws RuntimeException {
+    public void updateChannelInfo(UUID id, CreatePublicChannelInput cnp) throws RuntimeException {
         Channel cnl = cr.find(c -> c.getId().equals(id)).get(0);
 
         if (cnl.getType().equals(ChannelType.PRIVATE)) throw new RuntimeException("Private channel");

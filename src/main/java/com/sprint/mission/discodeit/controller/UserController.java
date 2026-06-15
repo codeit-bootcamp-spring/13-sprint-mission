@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit.controller;
 
 
 import com.sprint.mission.discodeit.dto.input.CreateUserInput;
-import com.sprint.mission.discodeit.dto.input.CreateUserStatusInput;
 import com.sprint.mission.discodeit.dto.input.UpdateUserInput;
 import com.sprint.mission.discodeit.dto.input.UpdateUserStatusInput;
 import com.sprint.mission.discodeit.service.basic.BasicUserService;
@@ -14,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @RestController
@@ -54,11 +54,11 @@ public class UserController {
     }
 
 
-    @RequestMapping(value = "/state", method = RequestMethod.POST)
-    public String userState(
-            @RequestBody UpdateUserStatusInput uusi
-    ){
-            buss.updateByUserID(uusi);
+    @RequestMapping(value = "/state", method = RequestMethod.GET)
+    public String userState(){
+            buss.updateByUserID(UpdateUserStatusInput.builder()
+                            .lastLoginTime(Instant.now())
+                            .build());
             return "";
     }
 
