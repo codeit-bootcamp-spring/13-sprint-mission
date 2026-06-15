@@ -22,13 +22,14 @@ public class UserController {
     public UserResponse createUser(@RequestBody UserRequest userRequest) {
         return userService.create(userRequest);
     }
-
-    // 2. 특정 사용자 (단건) 조회
+/*
+    // 2. 특정 사용자 (단건) 조회 -> ?
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
     public UserResponse getUser(@PathVariable UUID id) {
         return userService.findById(id)
                 .orElseThrow(() -> new DiscodeitException.UserNotFoundException("해당 사용자를 찾을 수 없습니다."));
     }
+ */
 
     // 3. 전체 사용자 조회
     @RequestMapping(method = RequestMethod.GET)
@@ -46,6 +47,14 @@ public class UserController {
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
     public void deleteUser(@PathVariable UUID id) {
         userService.delete(id);
+    }
+
+    // 6.
+    // [ ] 사용자의 온라인 상태를 업데이트할 수 있다.
+    @RequestMapping(value = "/{id}/status", method = RequestMethod.PATCH)
+    public UserResponse updateUserStatus
+    (@PathVariable UUID id, @RequestBody UserRequest request) {
+        return userService.update(id, request);
     }
 }
 

@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.exception;
 
+import com.sprint.mission.discodeit.dto.response.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;

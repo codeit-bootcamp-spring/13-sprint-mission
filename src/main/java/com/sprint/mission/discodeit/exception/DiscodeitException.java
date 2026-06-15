@@ -20,6 +20,7 @@ public abstract class DiscodeitException extends RuntimeException{
             return "해당 사용자를 찾을 수 없습니다.";
         }
     }
+
     public static class ChannelNotFoundException extends DiscodeitException{
         public ChannelNotFoundException(String message){
             super(message);
@@ -45,6 +46,20 @@ public abstract class DiscodeitException extends RuntimeException{
         @Override
         public String getErrorDescription() {
             return "해당 메세지를 찾을 수 없습니다";
+        }
+    }
+
+    public static class FileNotFoundException extends DiscodeitException{
+        public FileNotFoundException(String message){
+            super(message);
+        }
+        @Override
+        public String getErrorType() {
+            return "FILE_ERROR";
+        }
+        @Override
+        public String getErrorDescription() {
+            return "해당 파일을 찾을 수 없습니다.";
         }
     }
 }

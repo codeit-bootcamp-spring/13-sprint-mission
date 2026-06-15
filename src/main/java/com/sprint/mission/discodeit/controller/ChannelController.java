@@ -40,12 +40,13 @@ public class ChannelController {
     }
 
     // 3. 전체 채널 조회
+    // [ ] 특정 사용자가 볼 수 있는 모든 채널 목록을 조회할 수 있다.
     @RequestMapping(method = RequestMethod.GET)
     public List<ChannelResponse> getAllChannels (@RequestParam UUID userId) {
         return channelService.findAll(userId);
     }
 
-    // 4. 채널 이름 수정
+    // 4. 채널 이름 수정 (공개 채널만 가능)
     @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
     public ChannelResponse updateChannel
     (@PathVariable UUID id, @RequestBody ChannelPublicRequest channelRequest) {
