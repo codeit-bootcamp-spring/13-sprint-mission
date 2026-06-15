@@ -4,6 +4,7 @@ package com.sprint.mission.discodeit.controller;
 import com.sprint.mission.discodeit.dto.input.CreateUserInput;
 import com.sprint.mission.discodeit.dto.input.UpdateUserInput;
 import com.sprint.mission.discodeit.dto.input.UpdateUserStatusInput;
+import com.sprint.mission.discodeit.dto.output.UserOutput;
 import com.sprint.mission.discodeit.service.basic.BasicUserService;
 import com.sprint.mission.discodeit.service.basic.BasicUserStatusService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -22,8 +24,8 @@ import java.util.UUID;
 @RequestMapping({"/api/user","/api/v1/user"})
 public class UserController {
 
-    private BasicUserService bus;
-    private BasicUserStatusService buss;
+    private final BasicUserService bus;
+    private final BasicUserStatusService buss;
 
     @RequestMapping(value = "/regist", method = RequestMethod.POST)
     public void regist(
@@ -48,18 +50,16 @@ public class UserController {
 
 
     @RequestMapping(value = "findAll",method = RequestMethod.GET)
-    public String allUsers(){
-        this.bus.getUserList();
-        return "";
+    public List<UserOutput> allUsers(){
+        return this.bus.getUserList();
     }
 
 
     @RequestMapping(value = "/state", method = RequestMethod.GET)
-    public String userState(){
+    public void userState(){
             buss.updateByUserID(UpdateUserStatusInput.builder()
                             .lastLoginTime(Instant.now())
                             .build());
-            return "";
     }
 
 
