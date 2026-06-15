@@ -25,10 +25,6 @@ public class BasicAuthService implements AuthService {
     //interface
     @Override
     public User login(LoginRequest request) {
-        //입력값 검증 처리하겠습니다
-//        validateString(request.name());
-//        validateString(request.password());
-
         //유저 검색
         User userTemp = userRepository.findUserByNameAndPassword(request.name(), request.password())
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
@@ -43,10 +39,4 @@ public class BasicAuthService implements AuthService {
         return userTemp;
     }
 
-    // 들어온 String 필드가 null 혹은 공백인지 검증하는 메서드
-    private void validateString(String str) {
-        if (str == null || str.isBlank()) {
-            throw new IllegalArgumentException("에러: 입력값이 Null 또는 공백입니다.");
-        }
-    }
 }

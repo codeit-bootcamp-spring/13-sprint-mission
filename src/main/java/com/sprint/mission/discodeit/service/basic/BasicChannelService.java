@@ -34,11 +34,6 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public Channel createPrivateChannel(PrivateChannelCreateRequest request) {
-        //입력값 검증 처리하겠습니다
-        for (UUID userId : request.userIdList()) {
-//            validateUUID(userId);
-        }
-
         //채널 타입 검증
         if (request.type() != ChannelType.PRIVATE)
             throw new WrongTypeException("에러: 잘못된 접근입니다.");
@@ -64,10 +59,6 @@ public class BasicChannelService implements ChannelService {
     //interface
     @Override
     public Channel createPublicChannel(PublicChannelCreateRequest request) {
-        //입력값 검증 처리하겠습니다
-//        validateString(request.name());
-//        validateString(request.description());
-
         //채널 타입 검증
         if (request.type() != ChannelType.PUBLIC)
             throw new WrongTypeException("에러: 잘못된 접근입니다.");
@@ -82,9 +73,6 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public ChannelFindResponse findChannel(UUID channelId) {
-        //입력값 검증 처리하겠습니다
-//        validateUUID(channelId);
-
         //채널 검색
         Channel channelTemp = channelRepository.findChannelById(channelId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
@@ -94,9 +82,6 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public List<ChannelFindResponse> findAllByUserId(UUID userId) {
-        //입력값 검증 처리하겠습니다
-//        validateUUID(userId);
-
         //반환할 리스트
         List<ChannelFindResponse> channelFindResponseList = new ArrayList<>();
 
@@ -126,11 +111,6 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public ChannelUpdateResponse updateChannel(ChannelUpdateRequest request) {
-        //입력값 검증 처리하겠습니다
-//        validateString(request.name());
-//        validateString(request.description());
-//        validateUUID(request.channelId());
-
         //ChannelType 검증
         if (request.type() == ChannelType.PRIVATE) {
             throw new WrongTypeException("에러: PRIVATE 채널은 수정할 수 없습니다.");
@@ -149,9 +129,6 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public void deleteChannel(UUID channelId) {
-        //입력값 검증 처리하겠습니다
-//        validateUUID(channelId);
-
         //채널 검색
         Channel channelTemp = channelRepository.findChannelById(channelId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
@@ -194,18 +171,7 @@ public class BasicChannelService implements ChannelService {
         return ChannelFindResponse.from(channel, (recentMessage != null) ? recentMessage.getCreatedAt() : Instant.EPOCH, (channel.getType() == ChannelType.PRIVATE) ? usersId : new ArrayList<>());
     }
 
-    // 들어온 String 필드가 null 혹은 공백인지 검증하는 메서드
-    private void validateString(String str) {
-        if (str == null || str.isBlank()) {
-            throw new IllegalArgumentException("에러: 입력값이 Null 또는 공백입니다.");
-        }
-    }
-    // 들어온 UUID 필드가 null인지 검증하는 메서드
-    private void validateUUID(UUID id) {
-        if (id == null) {
-            throw new IllegalArgumentException("에러: 입력값이 Null입니다.");
-        }
-    }
+
     // 들어온 userId 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateUserExists(UUID userId) {
         if (!userRepository.existsUserById(userId)) {

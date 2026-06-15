@@ -32,10 +32,6 @@ public class BasicReadStatusService implements ReadStatusService {
     //interface
     @Override
     public ReadStatus createReadStatus(ReadStatusCreateRequest request) {
-        //입력값 검증 처리하겠습니다
-//        validateUUID(request.userId());
-//        validateUUID(request.channelId());
-
         //존재하는 유저, 채널인지 검증
         validateUserExists(request.userId());
         validateChannelExists(request.channelId());
@@ -53,9 +49,6 @@ public class BasicReadStatusService implements ReadStatusService {
 
     @Override
     public ReadStatus findReadStatus(UUID readStatusId) {
-        //입력값 검증 처리하겠습니다
-//        validateUUID(readStatusId);
-
         //ReadStatus 검색
         ReadStatus readStatusTemp = readStatusRepository.findReadStatusById(readStatusId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 ReadStatus는 데이터파일에 존재하지 않습니다."));
@@ -65,9 +58,6 @@ public class BasicReadStatusService implements ReadStatusService {
 
     @Override
     public List<ReadStatus> findAllReadStatusByUserId(UUID userId) {
-        //입력값 검증 처리하겠습니다
-//        validateUUID(userId);
-
         //ReadStatus들 검색
         List<ReadStatus> readStatusList = readStatusRepository.findAllReadStatusByUserId(userId);
 
@@ -76,11 +66,6 @@ public class BasicReadStatusService implements ReadStatusService {
 
     @Override
     public ReadStatusUpdateResponse updateReadStatus(ReadStatusUpdateRequest request) {
-        //입력값 검증 처리하겠습니다
-//        validateUUID(request.readStatusId());
-//        validateUUID(request.userId());
-//        validateUUID(request.channelId());
-
         //ReadStatus 검색
         ReadStatus readStatusTemp = readStatusRepository.findReadStatusById(request.readStatusId())
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 ReadStatus는 데이터파일에 존재하지 않습니다."));
@@ -94,9 +79,6 @@ public class BasicReadStatusService implements ReadStatusService {
 
     @Override
     public void deleteReadStatus(UUID readStatusId) {
-        //입력값 검증 처리하겠습니다
-//        validateUUID(readStatusId);
-
         //ReadStatus 검색
         ReadStatus readStatusTemp = readStatusRepository.findReadStatusById(readStatusId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 ReadStatus는 데이터파일에 존재하지 않습니다."));
@@ -108,12 +90,6 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
 
-    // 들어온 UUID 필드가 null인지 검증하는 메서드
-    private void validateUUID(UUID id) {
-        if (id == null) {
-            throw new IllegalArgumentException("에러: 입력값이 Null입니다.");
-        }
-    }
     // 들어온 userId 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateUserExists(UUID userId) {
         if (!userRepository.existsUserById(userId)) {

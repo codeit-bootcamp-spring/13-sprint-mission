@@ -30,9 +30,6 @@ public class BasicUserStatusService implements UserStatusService {
     //interface
     @Override
     public UserStatus createUserStatus(UserStatusCreateRequest request) {
-        //입력값 검증 처리하겠습니다
-        //validateUUID(request.userId());
-
         //존재하는 유저인지 검증
         validateUserExists(request.userId());
 
@@ -49,9 +46,6 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     public UserStatus findUserStatusById(UUID userStatusId) {
-        //입력값 검증 처리하겠습니다
-        //validateUUID(userStatusId);
-
         //UserStatus 검색
         UserStatus userStatusTemp = userStatusRepository.findUserStatusById(userStatusId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
@@ -69,10 +63,6 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     public UserStatusUpdateResponse updateUserStatus(UserStatusUpdateRequest request) {
-        //입력값 검증 처리하겠습니다
-        //validateUUID(request.userStatusId());
-        //validateUUID(request.userId());
-
         //UserStatus 검색
         UserStatus userStatusTemp = userStatusRepository.findUserStatusById(request.userStatusId())
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
@@ -86,9 +76,6 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     public UserStatusUpdateResponse updateUserStatusByUserId(UUID userId) {
-        //입력값 검증 처리하겠습니다
-        //validateUUID(userId);
-
         //UserStatus 검색
         UserStatus userStatusTemp = userStatusRepository.findUserStatusByUserId(userId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
@@ -102,9 +89,6 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     public void deleteUserStatus(UUID userStatusId) {
-        //입력값 검증 처리하겠습니다
-        //validateUUID(userStatusId);
-
         //UserStatus 검색
         UserStatus userStatusTemp = userStatusRepository.findUserStatusById(userStatusId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
@@ -115,12 +99,6 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
 
-    // 들어온 UUID 필드가 null인지 검증하는 메서드
-    private void validateUUID(UUID id) {
-        if (id == null) {
-            throw new IllegalArgumentException("에러: 입력값이 Null입니다.");
-        }
-    }
     // 들어온 userId 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateUserExists(UUID userId) {
         if (!userRepository.existsUserById(userId)) {
