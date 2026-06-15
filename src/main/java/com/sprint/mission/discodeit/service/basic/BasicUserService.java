@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.input.CreateUserInput;
+import com.sprint.mission.discodeit.dto.input.UpdateUserInput;
 import com.sprint.mission.discodeit.dto.output.BinaryObjectOutput;
 import com.sprint.mission.discodeit.dto.output.UserOutput;
 import com.sprint.mission.discodeit.entity.BinaryContent;
@@ -101,35 +102,41 @@ public class BasicUserService implements UserService {
                 .build();
     }
 
+
+    /**
+     * update functions
+     *
+     */
+
     @Override
-    public void updateProfileInfo(UUID id, String name, String pw){
+    public void update(UpdateUserInput uui){
         // name duplicate check.
-        if (!fur.find(c -> c.getName().equals(name)).isEmpty()) return;
+        if (fur.findByName(uui.getName()) != null) return;
 
-        User user = fur.find(c -> c.getId().equals(id)).get(0);
+        updateUserProfile(uui.getId(), uui.getName(), uui.getPw());
+        if (uui.getThumbnail() != null) updateThumbnail(uui.getId(),uui.getThumbnail());
+    }
+
+    private void updateUserProfile(String id, String name, String password){
+        User user = fur.findByID(UUID.fromString(id));
         user.setName(name);
-        user.setPassword(pw);
-        user.setUpdatedAt();
-
+        user.setPassword(password);
         fur.save(user);
     }
 
-    @Override
-    public void updateProfileImage(UUID id, CreateUserInput upf) {
-        // check user exist.
-        if (!fur.find(c -> c.getId().equals(id)).isEmpty()) return;
-
-        bcr.delete(bcr.findByAuthorID(id).get(0).getId());
+    private void updateThumbnail(String authorID, String thumbID){
+        if (fur.findByID(UUID.fromString(authorID)) != null) return;
+        bcr.delete(UUID.fromString(authorID));
         bcr.save(
                 BinaryContent.builder()
-                        .contentID(upf.getThumbnail())
-                        .authorID(id)
+                        .authorID(UUID.fromString(authorID))
+                        .contentID(UUID.fromString(thumbID))
                         .build()
         );
     }
 
     @Override
-    public void deleteUser(UUID id){
+    public void delete(UUID id){
         fur.delete(id);
         usr.delete(usr.findByUserID(id).getId());
         if (!bcr.findByAuthorID(id).isEmpty()) {
