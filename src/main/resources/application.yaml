@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: discodeit
+
+logging:
+  level:
+    root: INFO
+
+discodeit:
+  repository:
+    type: file
+    path: "/home/latte/test"

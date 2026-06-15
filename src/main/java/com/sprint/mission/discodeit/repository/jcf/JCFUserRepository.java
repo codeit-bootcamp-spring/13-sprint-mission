@@ -2,58 +2,48 @@ package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
+
+@Repository
+@RequiredArgsConstructor
+@ConditionalOnProperty(name="discodeit.repository.type",havingValue = "jcf", matchIfMissing = true)
 public class JCFUserRepository implements UserRepository {
-    private final HashMap<UUID, User> data;
+    private final HashMap<UUID, User> data = new HashMap<>();
 
-    private static class JUR{
-        private static final JCFUserRepository INSTANCE = new JCFUserRepository();
-    }
-
-    private JCFUserRepository() { data = new HashMap<>();}
-
-    public static JCFUserRepository open() {
-        return JUR.INSTANCE;
+    @Override
+    public void save(User user) {
+        data.put(user.getId(), user);
     }
 
     @Override
-    public void create(String name, String id, String pw){
-        for (int i = 0; i < 3; i ++){
-            User user = new User(name, id, pw);
-            if (!this.data.containsKey(user.getId())) {
-                data.put(user.getId(), user);
-                break;
-            }
-        }
-    }
-
-    @Override
-    public ArrayList<User> select(Predicate<User> fn){
-         return new ArrayList<>(data.values().stream()
+    public List<User> find(Predicate<User> fn){
+         return data.values().stream()
                 .filter(fn)
-                .toList());
+                .toList();
     }
 
     @Override
-    public void update(UUID id, String name, String userID, String pw){
-        User user = data.get(id);
-        user.setName(name);
-        user.setUserId(userID);
-        user.setUserPw(pw);
-        user.setUpdatedAt(System.currentTimeMillis());
+    public User findByID(UUID id){
+        return data.get(id);
+    }
+
+    @Override
+    public User findByEmail(String email){
+        List<User> res = find(u -> u.getEmail().equals(email));
+        return !res.isEmpty() ?  res.get(0) : null;
     }
 
     @Override
     public void delete(UUID id){
         data.remove(id);
     }
-
-    // File * Repository 와의 호환성을 위한 더미 메서드
-    public void close(){}
 
 }

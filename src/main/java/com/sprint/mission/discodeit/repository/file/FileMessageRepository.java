@@ -1,67 +1,43 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.DiscodeitConfig;
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.MessageRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Repository;
 
-
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
+
+
+@Repository
+@ConditionalOnProperty(name = "discodeit.repository.type",havingValue = "file")
+@RequiredArgsConstructor
+@Slf4j
 public class FileMessageRepository extends FileBaseRepository implements MessageRepository {
-    private final HashMap<UUID, Message> data = new HashMap<>();
-    private final Path path;
+    private final DiscodeitConfig dic;
 
-    private FileMessageRepository(Path path) {
-        super();
-        this.path = path;
-        HashMap<UUID, Message> fData = load(path);
-        for (UUID k : fData.keySet()){
-            this.data.put(k, fData.get(k));
-        }
+    @Override
+    public void save(Message msg) {
+        write(dic.getFilePath().resolve("message").resolve(msg.getId()+ ".ser"), msg);
     }
 
     @Override
-    public void create(User user, Channel channel, String data){
-        for (int i = 0; i < 3; i ++){
-            Message msg = new Message(user.getId(), channel.getId(), data);
-            if (!this.data.containsKey(msg.getId())) {
-                this.data.put(msg.getId(), msg);
-                break;
-            }
-        }
+    public List<Message> find(Predicate<Message> fn){
+        return rawFind(fn,dic.getFilePath().resolve("message"));
     }
 
     @Override
-    public ArrayList<Message> select(Predicate<Message> fn){
-        return new ArrayList<> (this.data.values().stream()
-                .filter(fn)
-                .toList());
-    }
-
-
-    @Override
-    public void update(UUID id, String data){
-        Message msg = this.data.get(id);
-        msg.setMessages(data);
-        msg.setUpdatedAt(System.currentTimeMillis());
-
+    public List<Message> findByChannelID(UUID channelID) {
+        return find(m -> m.getChannelID().equals(channelID));
     }
 
     @Override
     public void delete(UUID id){
-        this.data.remove(id);
-    }
-
-    public static FileMessageRepository open(Path path){
-        return new FileMessageRepository(path);
-    }
-
-    public void close(){
-        save(data,path);
+        delete(dic.getFilePath().resolve("message").resolve(id.toString() + ".ser"));
     }
 }

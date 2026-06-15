@@ -1,81 +1,88 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.sprint.mission.discodeit.entity.BaseEntity;
-
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.UUID;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
+
+// Todo - IOException retry logic and throws.
 public class FileBaseRepository {
-    public FileBaseRepository(){}
 
-    private static void checkDirectory(Path file){
-        if (!Files.exists(file.getParent())) {
-            try {
-                Files.createDirectories(file.getParent());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        if (!Files.exists(file)) {
-            try {
-                Files.createFile(file);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+    static void check(Path path) throws IOException {
+        if(!Files.exists(path.getParent())){
+            Files.createDirectories(path.getParent());
         }
     }
 
-    static <T extends BaseEntity> HashMap<UUID,T> load(Path path) {
-        checkDirectory(path);
-
-        HashMap<UUID,T> res = new HashMap<>();
+    static <T> T read(Path path) throws IOException {
         try (
-//                FileInputStream fis = new FileInputStream(this.path.toFile());
                 BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(path));
                 ObjectInputStream ois = new ObjectInputStream(bis)
         ){
-            while(true){
-                T i = (T) ois.readObject();
-                res.put(i.getId(), i);
-            }
+            return (T) ois.readObject();
+        } catch(ClassNotFoundException e) { // 클래스 데이터 확인 불가
+            throw new IOException(e);
         }
-        catch (EOFException e){
-            // file read done.
-        }
-        catch (NoSuchFileException e){
-            System.out.println("No such file or directory");
-        }
-        catch (IOException | ClassNotFoundException e){
-            e.printStackTrace();
-        }
-
-        return res;
     }
 
-    static <T> void save(HashMap<UUID,T> ent, Path path){
-        checkDirectory(path);
+    static <T> void write(Path path,T entity) {
+        try {
+            check(path);
+        } catch(IOException e){
+            throw new RuntimeException(e);
+        }
 
         try (
-//                FileOutputStream fos = new FileOutputStream(this.path.toFile());
                 ObjectOutputStream oos = new ObjectOutputStream(
-//                        fos
-                new BufferedOutputStream(Files.newOutputStream(path))
+                        new BufferedOutputStream(Files.newOutputStream(path))
                 )
-        )
-        {
-            ArrayList<UUID> keys = new ArrayList<>(ent.keySet());
-            for (UUID key : keys) {
-                oos.writeObject(ent.get(key));
-            }
+        ){
+            oos.writeObject(entity);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        catch (Exception e)
-        {
-            e.printStackTrace();
+    }
+
+    static void delete(Path path){
+        try {
+            Files.delete(path);
+        } catch(IOException e){
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    // Todo - pre -> return 2중변환 로직 변경. 변환수 적게 만듦
+    static <T> List<T> rawFind(Predicate<T> fn, Path path) {
+        try {
+            if(!Files.exists(path)){
+                Files.createDirectories(path);
+            }
+            try (Stream<Path> paths = Files.list(path)) {
+                List<T> pre = paths.map(c -> {
+                            try {
+                                return (T) read(path.resolve(c));
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                return null;
+                            }
+                        })
+                        .filter(Objects::nonNull).toList();
+                if (pre.isEmpty()) {
+                    return pre;
+                } else{
+                    return pre.stream()
+                            .filter(fn)
+                            .toList();
+                }
+
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }

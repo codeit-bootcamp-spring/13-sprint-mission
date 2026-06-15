@@ -1,65 +1,48 @@
 package com.sprint.mission.discodeit.repository.file;
 
+import com.sprint.mission.discodeit.DiscodeitConfig;
 import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Repository;
 
-import java.nio.file.Path;
-import java.util.ArrayList;
-
-import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
+
+@Repository
+@ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
+@RequiredArgsConstructor
+@Slf4j
 public class FileChannelRepository extends FileBaseRepository implements ChannelRepository {
-    private final HashMap<UUID, Channel> data = new HashMap<>();
-    private final Path path;
+    private final DiscodeitConfig dic;
 
-    private FileChannelRepository(Path path) {
-        super();
-        this.path = path;
-        HashMap<UUID,Channel>  fData = load(path);
-        for (UUID k : fData.keySet()){
-            this.data.put(k, fData.get(k));
-        }
+    @Override
+    public void save(Channel cnl) throws RuntimeException {
+        write(dic.getFilePath().resolve("channel").resolve(cnl.getId()+ ".ser"), cnl);
     }
 
     @Override
-    public void create(String name, String description, ChannelType type) {
-        Channel channel = new Channel(name, description, type);
-        for (int i = 0; i < 3; i++){
-            if (data.containsKey(channel.getId()))
-                channel = new Channel(name, description, type);
-        }
-        data.put(channel.getId(),channel);
+    public List<Channel> find (Predicate<Channel> fn) {
+        return rawFind(fn,dic.getFilePath().resolve("channel"));
     }
 
     @Override
-    public ArrayList<Channel> select (Predicate<Channel> fn) {
-        return new ArrayList<>(data.values().stream()
-                .filter(fn)
-                .toList());
+    public List<Channel> findAll() {
+        return find(cnl -> true);
     }
 
     @Override
-    public void update(UUID pcnl, String name,String description,ChannelType type) {
-        Channel cnl = data.get(pcnl);
-        cnl.setName(name);
-        cnl.setDescription(description);
-        cnl.setType(type);
-        cnl.setUpdatedAt(System.currentTimeMillis());
+    public Channel findById(UUID id) {
+        List<Channel> res = find(cnl -> cnl.getId().equals(id));
+        return res.isEmpty() ? null : res.get(0);
     }
 
     @Override
     public void delete(UUID cnl) {
-        data.remove(cnl);
-    }
-
-    public static FileChannelRepository open(Path path) {
-        return new FileChannelRepository(path);
-    }
-
-    public void close(){
-        save(data,path);
+        delete(dic.getFilePath().resolve("channel").resolve(cnl.toString() + ".ser"));
     }
 }
