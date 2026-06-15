@@ -6,9 +6,10 @@ import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
 import lombok.*;
+import org.springframework.stereotype.*;
 
 import java.util.*;
-
+@Service
 @RequiredArgsConstructor
 public class BasicUserStatusService implements UserStatusService {
 
