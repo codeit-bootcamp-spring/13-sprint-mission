@@ -14,8 +14,9 @@ public class User implements Serializable {
     private UUID id;
     private Instant createdAt;
     private Instant updatedAt;
-
+    @Getter
     private String username;
+    @Getter
     private String email;
     private transient String password;  // 직렬화에서 제외
 
