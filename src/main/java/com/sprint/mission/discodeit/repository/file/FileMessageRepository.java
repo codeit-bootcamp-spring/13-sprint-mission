@@ -68,7 +68,7 @@ public class FileMessageRepository implements MessageRepository {
     }
 
     @Override
-    public List<Message> findAll() {
+    public List<Message> findAllByChannelId(UUID channelId) {
         if (!Files.exists(directory)) {
             return List.of();
         }
@@ -82,7 +82,10 @@ public class FileMessageRepository implements MessageRepository {
                 } catch (IOException | ClassNotFoundException e) {
                     throw new RuntimeException(e);
                 }
-            }).toList();
+
+            }).filter(message ->
+                            message.getChannelId().equals(channelId))
+                    .toList();
 
         } catch (IOException e) {
             throw new RuntimeException(e);

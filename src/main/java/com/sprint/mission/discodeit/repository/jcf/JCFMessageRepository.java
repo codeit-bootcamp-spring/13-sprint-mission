@@ -38,11 +38,11 @@ public class JCFMessageRepository implements MessageRepository {
     }
 
     @Override
-    public List<Message> findAll() {
-        if (!data.isEmpty()) {
-            return data;
-        }
-        return Collections.emptyList();
+    public List<Message> findAllByChannelId(UUID channelId) {
+        return data.stream()
+                .filter(message ->
+                        message.getChannelId().equals(channelId))
+                .toList();
     }
 
     @Override

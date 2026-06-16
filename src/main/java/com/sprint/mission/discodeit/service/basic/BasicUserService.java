@@ -32,7 +32,7 @@ public class BasicUserService implements UserService {
 //    }
 
     @Override
-    public User create(CreateUserRequest userRequest, Optional<CreateProfileImageRequest> profileImageRequest) {
+    public UserResponse create(CreateUserRequest userRequest, Optional<CreateProfileImageRequest> profileImageRequest) {
         // username 중복 검사
         boolean existsUsername = userRepository.findAll()
                 .stream()
@@ -65,14 +65,17 @@ public class BasicUserService implements UserService {
                             imageRequest.bytes()
             );
 
-//            binaryContentRepository.save(profileImage);
+            binaryContentRepository.save(profileImage);
         }
 
         // UserStatus 같이 생성
         UserStatus status = new UserStatus(UUID.randomUUID(), user.getId());
-//        userStatusRepository.save(status);
+        userStatusRepository.save(status);
 
-        return user;
+        return UserResponse.from(
+                user,
+                status
+        );
     }
 
     @Override
@@ -85,12 +88,22 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public List<User> findAll() {
-        return userRepository.findAll();
+    public List<UserResponse> findAll() {
+        return userRepository.findAll()
+                .stream()
+                .map(user -> {
+                    UserStatus status = userStatusRepository.findByUserId(user.getId());
+
+                    return UserResponse.from(
+                            user,
+                            status
+                    );
+                })
+                .toList();
     }
 
     @Override
-    public User update(UpdateUserRequest request,
+    public UserResponse update(UpdateUserRequest request,
                        Optional<CreateProfileImageRequest> profileImageRequest) {
         User user = userRepository.findById(request.id());
 
@@ -110,8 +123,12 @@ public class BasicUserService implements UserService {
             );
             binaryContentRepository.save(profileImage);
         }
+        UserStatus status = userStatusRepository.findByUserId(user.getId());
 
-        return user;
+        return UserResponse.from(
+                user,
+                status
+        );
     }
 
     @Override

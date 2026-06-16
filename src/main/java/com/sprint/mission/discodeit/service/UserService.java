@@ -12,13 +12,13 @@ import java.util.UUID;
 
 public interface UserService {
 
-    User create(CreateUserRequest userRequest, Optional<CreateProfileImageRequest> profileImageRequest);
+    UserResponse create(CreateUserRequest userRequest, Optional<CreateProfileImageRequest> profileImageRequest);
 
     UserResponse find(UUID id);
 
-    List<User> findAll();
+    List<UserResponse> findAll();
 
-    User update(UpdateUserRequest updateUserRequest, Optional<CreateProfileImageRequest> profileImageRequest);
+    UserResponse update(UpdateUserRequest updateUserRequest, Optional<CreateProfileImageRequest> profileImageRequest);
 
     void delete(UUID id);
 

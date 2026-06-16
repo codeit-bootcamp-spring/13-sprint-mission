@@ -36,18 +36,23 @@ public class BasicChannelService implements ChannelService {
 
 
     @Override
-    public Channel createPublicChannel(CreatePublicChannelRequest request) {
+    public ChannelResponse createPublicChannel(CreatePublicChannelRequest request) {
         Channel channel = new Channel(
                 request.name(),
                 PUBLIC,
                 request.description()
         );
+        channelRepository.save(channel);
 
-        return channelRepository.save(channel);
+        return ChannelResponse.from(
+                channel,
+                null,
+                List.of()
+        );
     }
 
     @Override
-    public Channel createPrivateChannel(CreatePrivateChannelRequest request) {
+    public ChannelResponse createPrivateChannel(CreatePrivateChannelRequest request) {
         Channel channel = new Channel(
                 null,
                 Channel.ChannelType.PRIVATE,
@@ -63,7 +68,11 @@ public class BasicChannelService implements ChannelService {
             readStatusRepository.save(readStatus);
         }
 
-        return channel;
+        return ChannelResponse.from(
+                channel,
+                null,
+                request.userIds()
+        );
     }
 
     @Override
@@ -71,9 +80,7 @@ public class BasicChannelService implements ChannelService {
         Channel channel = channelRepository.findById(id);
 
         Instant latestMessageAt = messageRepository.findAll()
-                .stream()
-                .filter(message ->
-                        message.getChannelId().equals(id))
+                .stream().filter(message -> message.getChannelId().equals(id))
                 .map(Message::getCreatedAt)
                 .max(Instant::compareTo)
                 .orElse(null);
@@ -81,7 +88,6 @@ public class BasicChannelService implements ChannelService {
         List<UUID> participantIds = List.of();
 
         if (channel.getType() == Channel.ChannelType.PRIVATE) {
-
             participantIds = readStatusRepository.findAll()
                     .stream()
                     .filter(status ->

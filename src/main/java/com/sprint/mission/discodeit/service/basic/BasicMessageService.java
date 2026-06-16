@@ -1,6 +1,13 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.request.CreateBinaryContentRequest;
+import com.sprint.mission.discodeit.dto.request.CreateMessageRequest;
+import com.sprint.mission.discodeit.dto.request.UpdateMessageRequest;
+import com.sprint.mission.discodeit.dto.response.BinaryContentResponse;
+import com.sprint.mission.discodeit.dto.response.MessageResponse;
+import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
@@ -14,39 +21,103 @@ import java.util.UUID;
 public class BasicMessageService implements MessageService {
 
     private final MessageRepository messageRepository;
+    private final BinaryContentRepository binaryContentRepository;
 
 //    public BasicMessageService(MessageRepository messageRepository) {
 //        this.messageRepository = messageRepository;
 //    }
 
     @Override
-    public Message create(String content, UUID channelId, UUID authorId) {
-        Message message = new Message(
-                content, channelId, authorId
+    public MessageResponse create(CreateMessageRequest request, List<CreateBinaryContentRequest> attachments) {
+        Message message = new Message(request.content(), request.channelId(), request.authorId());
+
+        message = messageRepository.save(message);
+
+        for (CreateBinaryContentRequest file : attachments) {
+            BinaryContent binaryContent = new BinaryContent(
+                            request.authorId(),
+                            message.getId(),
+                            file.filename(),
+                            file.contentType(),
+                            file.bytes()
+            );
+            binaryContentRepository.save(binaryContent);
+        }
+
+        List<BinaryContentResponse> attachmentResponses = binaryContentRepository
+                        .findAllByMessageId(message.getId())
+                        .stream()
+                        .map(BinaryContentResponse::from)
+                        .toList();
+
+        return MessageResponse.from(
+                message,
+                attachmentResponses
         );
-        return messageRepository.save(message);
     }
 
     @Override
-    public Message find(UUID id) {
-        return messageRepository.findById(id);
-    }
-
-    @Override
-    public List<Message> findAll() {
-        return  messageRepository.findAll();
-    }
-
-    @Override
-    public void update(UUID id, String content) {
+    public MessageResponse find(UUID id) {
         Message message = messageRepository.findById(id);
-        message.update(content);
+
+        List<BinaryContentResponse> attachments = binaryContentRepository.findAllByMessageId(message.getId())
+                        .stream()
+                        .map(BinaryContentResponse::from)
+                        .toList();
+
+        return MessageResponse.from(
+                message,
+                attachments
+        );
+    }
+
+    @Override
+    public List<MessageResponse> findAllByChannelId(UUID channelId) {
+        return messageRepository.findAllByChannelId(channelId)
+                .stream()
+                .map(message -> {
+                    List<BinaryContentResponse> attachments =
+                            binaryContentRepository
+                                    .findAllByMessageId(message.getId())
+                                    .stream()
+                                    .map(BinaryContentResponse::from)
+                                    .toList();
+
+                    return MessageResponse.from(
+                            message,
+                            attachments
+                    );
+                })
+                .toList();
+    }
+
+    @Override
+    public MessageResponse update(UpdateMessageRequest request) {
+        Message message = messageRepository.findById(request.id());
+        message.update(request.content());
 
         messageRepository.save(message);
+
+        List<BinaryContentResponse> attachments = binaryContentRepository
+                        .findAllByMessageId(message.getId())
+                        .stream()
+                        .map(BinaryContentResponse::from)
+                        .toList();
+
+        return MessageResponse.from(
+                message,
+                attachments
+        );
     }
 
     @Override
     public void delete(UUID id) {
+        List<BinaryContent> attachments = binaryContentRepository.findAllByMessageId(id);
+
+        for (BinaryContent attachment : attachments) {
+            binaryContentRepository.delete(attachment.getId());
+        }
+
         messageRepository.delete(id);
     }
 
