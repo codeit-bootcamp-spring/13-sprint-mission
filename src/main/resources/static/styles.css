@@ -1,0 +1,117 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f3f4f6;
+    min-height: 100vh;
+}
+
+/* 🎯 캡처본 상단의 브라우저 주소창 스타일의 검은색 바 구현 */
+body::before {
+    content: "ℹ  http://localhost:8080";
+    display: block;
+    background-color: #222222;
+    color: #ffffff;
+    font-family: monospace;
+    font-size: 13px;
+    padding: 12px 24px;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #111;
+}
+
+/* 전체 레이아웃 컨테이너 */
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* 메인 타이틀 */
+h1 {
+    text-align: center;
+    font-size: 36px;
+    font-weight: 800;
+    color: #2d3748;
+    margin-top: 10px;
+    margin-bottom: 45px;
+    letter-spacing: -0.5px;
+}
+
+/* 🎯 캡처본 특유의 부드럽고 넓은 그림자와 라운드 값 재현 */
+.user-list {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05),
+    0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    padding: 10px 0;
+    border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+/* 사용자 아이템 행 */
+.user-item {
+    display: flex;
+    align-items: center;
+    padding: 24px 32px;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background-color 0.2s ease;
+}
+
+.user-item:last-child {
+    border-bottom: none;
+}
+
+.user-item:hover {
+    background-color: #f8fafc;
+}
+
+/* 🎯 프로필 이미지 원형 및 아웃라인 */
+.user-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    margin-right: 24px;
+    object-fit: cover;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    border: 1px solid #e2e8f0;
+}
+
+/* 유저 정보 텍스트 영역 */
+.user-info {
+    flex-grow: 1;
+}
+
+.user-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.user-email {
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* 🎯 온라인/오프라인 배지 알약 스타일 디자인 고도화 */
+.status-badge {
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.online {
+    background-color: #5cb85c;
+    color: white;
+}
+
+.offline {
+    background-color: #94a3b8;
+    color: white;
+}
