@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Repository // File*Repository 구현체를 Repository 인터페이스의 Bean으로 등록
 public class FileUserRepository implements UserRepository {
@@ -68,8 +69,8 @@ public class FileUserRepository implements UserRepository {
 
     @Override
     public List<User> findAll() {
-        try {
-            return Files.list(DIRECTORY)
+        try (Stream<Path> paths=Files.list(DIRECTORY)){
+            return paths
                     .filter(path -> path.toString().endsWith(EXTENSION))
                     .map(path -> {
                         try (
