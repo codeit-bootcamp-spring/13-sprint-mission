@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -30,13 +31,12 @@ public class FileBinaryContentRepository extends FileBaseRepository implements B
 
     @Override
     public List<BinaryContent> find(Predicate<BinaryContent> fn){
-        return rawFind(fn,dic.getFilePath().resolve("binarycontent"));
+        return read(fn,dic.getFilePath().resolve("binarycontent"));
     }
 
     @Override
-    public BinaryContent findByID(UUID id) {
-        List<BinaryContent> res = find(bc -> bc.getId().equals(id));
-        return res.isEmpty() ? null : res.get(0);
+    public Optional<BinaryContent> findByID(UUID id) {
+        return find(bc -> bc.getId().equals(id)).stream().findFirst();
     }
 
     @Override

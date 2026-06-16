@@ -51,18 +51,11 @@ public class ExceptionController {
 
     @ExceptionHandler(value = DiscodeitException.class)
     public ProblemDetail handleDiscodeitException(DiscodeitUserException e, WebRequest request) {
-        HttpStatus code;
-        switch (e.getCode()) {
-            case 400:
-                code = HttpStatus.BAD_REQUEST;
-                break;
-            case 404:
-                code = HttpStatus.NOT_FOUND;
-                break;
-            default:
-                code = HttpStatus.INTERNAL_SERVER_ERROR;
-                break;
-        }
+        HttpStatus code = switch (e.getCode()) {
+            case 400 -> HttpStatus.BAD_REQUEST;
+            case 404 -> HttpStatus.NOT_FOUND;
+            default -> HttpStatus.INTERNAL_SERVER_ERROR;
+        };
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(code,e.getMessage());
         pd.setTitle(e.getType() + " Control error");
         pd.setProperty("timestamp", Instant.now());

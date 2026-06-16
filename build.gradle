@@ -30,3 +30,10 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+// for build .jar file to test
+bootJar {
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	destinationDirectory = file("/home/latte/test")
+	archiveFileName = "discodeit.jar"
+}

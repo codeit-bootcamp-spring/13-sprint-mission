@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -27,13 +28,12 @@ public class FileReadStatusRepository extends FileBaseRepository implements Read
 
     @Override
     public List<ReadStatus> find(Predicate<ReadStatus> fn) {
-        return rawFind(fn,dic.getFilePath().resolve("readstatus"));
+        return read(fn,dic.getFilePath().resolve("readstatus"));
     }
 
     @Override
-    public ReadStatus findByID(UUID id) {
-        List<ReadStatus> res = find(rs -> rs.getId().equals(id));
-        return res.isEmpty() ? null : res.get(0);
+    public Optional<ReadStatus> findByID(UUID id) {
+        return find(rs -> rs.getId().equals(id)).stream().findFirst();
     }
 
     @Override

@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -27,7 +28,7 @@ public class FileChannelRepository extends FileBaseRepository implements Channel
 
     @Override
     public List<Channel> find (Predicate<Channel> fn) {
-        return rawFind(fn,dic.getFilePath().resolve("channel"));
+        return read(fn,dic.getFilePath().resolve("channel"));
     }
 
     @Override
@@ -36,9 +37,8 @@ public class FileChannelRepository extends FileBaseRepository implements Channel
     }
 
     @Override
-    public Channel findById(UUID id) {
-        List<Channel> res = find(cnl -> cnl.getId().equals(id));
-        return res.isEmpty() ? null : res.get(0);
+    public Optional<Channel> findById(UUID id) {
+        return find(cnl -> cnl.getId().equals(id)).stream().findFirst();
     }
 
     @Override

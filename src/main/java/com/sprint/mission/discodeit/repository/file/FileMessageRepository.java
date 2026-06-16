@@ -28,7 +28,7 @@ public class FileMessageRepository extends FileBaseRepository implements Message
 
     @Override
     public List<Message> find(Predicate<Message> fn){
-        return rawFind(fn,dic.getFilePath().resolve("message"));
+        return read(fn,dic.getFilePath().resolve("message"));
     }
 
     @Override

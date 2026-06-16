@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -36,20 +37,18 @@ public class JCFUserRepository implements UserRepository {
     }
 
     @Override
-    public User findByID(UUID id){
-        return data.get(id);
+    public Optional<User> findByID(UUID id){
+        return Optional.ofNullable(data.get(id));
     }
 
     @Override
-    public User findByEmail(String email){
-        List<User> res = find(u -> u.getEmail().equals(email));
-        return !res.isEmpty() ?  res.get(0) : null;
+    public Optional<User> findByEmail(String email){
+        return find(u -> u.getEmail().equals(email)).stream().findFirst();
     }
 
     @Override
-    public User findByName(String name){
-        List<User> res = find(u -> u.getName().equals(name));
-        return !res.isEmpty() ?  res.get(0) : null;
+    public Optional<User> findByName(String name){
+        return find(u -> u.getName().equals(name)).stream().findFirst();
     }
 
     @Override

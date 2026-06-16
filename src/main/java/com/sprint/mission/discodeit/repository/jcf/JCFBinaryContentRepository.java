@@ -7,10 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Predicate;
 
 @Repository
@@ -32,9 +29,8 @@ public class JCFBinaryContentRepository implements BinaryContentRepository {
     }
 
     @Override
-    public BinaryContent findByID(UUID id){
-        List<BinaryContent> res = find(bc -> bc.getId().equals(id));
-        return res.isEmpty() ? null : res.get(0);
+    public Optional<BinaryContent> findByID(UUID id){
+        return find(bc -> bc.getId().equals(id)).stream().findFirst();
     }
 
     @Override
