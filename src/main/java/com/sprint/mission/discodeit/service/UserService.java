@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service;
 import com.sprint.mission.discodeit.dto.request.CreateProfileImageRequest;
 import com.sprint.mission.discodeit.dto.request.CreateUserRequest;
 import com.sprint.mission.discodeit.dto.request.UpdateUserRequest;
+import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.entity.User;
 
 import java.util.List;
@@ -13,7 +14,7 @@ public interface UserService {
 
     User create(CreateUserRequest userRequest, Optional<CreateProfileImageRequest> profileImageRequest);
 
-    User find(UUID id);
+    UserResponse find(UUID id);
 
     List<User> findAll();
 

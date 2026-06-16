@@ -6,13 +6,12 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.util.UUID;
 
+@Getter
 public class Message implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Getter
     private UUID id;
-    @Getter
     private Instant createdAt;
     private Instant updatedAt;
 

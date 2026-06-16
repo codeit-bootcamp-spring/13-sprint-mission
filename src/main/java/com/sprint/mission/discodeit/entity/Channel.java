@@ -6,11 +6,11 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.util.UUID;
 
+@Getter
 public class Channel implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Getter
     private UUID id;
     private Instant createdAt;
     private Instant updatedAt;

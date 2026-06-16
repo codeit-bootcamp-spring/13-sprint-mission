@@ -76,7 +76,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public User find(UUID id) {
+    public UserResponse find(UUID id) {
         User user = userRepository.findById(id);
 
         UserStatus status = userStatusRepository.findById(id);
