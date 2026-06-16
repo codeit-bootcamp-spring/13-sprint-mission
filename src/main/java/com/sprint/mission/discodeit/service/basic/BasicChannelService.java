@@ -40,8 +40,12 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public ChannelOutput findChannelInfoById(UUID id) {
-        Channel cnl =  cr.findById(id);
-        return toChannelOutput(cnl);
+        return toChannelOutput(
+                cr.findById(id)
+                        .orElseThrow(
+                                () -> new DiscodeitChannelException("channel with id " + id + " not found",400)
+                        )
+        );
     }
 
     @Override
@@ -61,9 +65,13 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public void updateChannelInfo(UpdateChannelInput uci) {
-        Channel cnl = cr.findById(uci.idToUUID());
+        Channel cnl = cr.findById(uci.idToUUID()).orElseThrow(
+                () -> new DiscodeitChannelException("channel with id " + uci.idToUUID() + "not found", 400)
+        );
 
-        if (cnl.getType().equals(ChannelType.PRIVATE)) throw new DiscodeitChannelException("Private channel",400);
+        if (cnl.getType().equals(ChannelType.PRIVATE)) {
+            throw new DiscodeitChannelException("channel with id " + uci.idToUUID() + " is Private channel",400);
+        }
 
         if (!uci.name().isEmpty()) cnl.setName(uci.name());
         if (!uci.description().isEmpty()) cnl.setDescription(uci.description());

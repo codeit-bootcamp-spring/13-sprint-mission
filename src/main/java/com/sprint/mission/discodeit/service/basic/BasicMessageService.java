@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.input.CreateMessageInput;
 import com.sprint.mission.discodeit.dto.input.UpdateMessageInput;
 import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
@@ -26,8 +27,12 @@ public class BasicMessageService implements MessageService {
     @Override
     public void createMessage(CreateMessageInput cmi){
 
-        if (ur.findByID(cmi.userID()) == null) throw new RuntimeException();
-        if (cr.findById(cmi.channelID()) == null) throw new RuntimeException();
+        ur.findByID(cmi.userID()).orElseThrow(
+                () -> new DiscodeitException("no user by id" + cmi.userID(),"Message",400)
+        );
+        cr.findById(cmi.channelID()).orElseThrow(
+                () -> new DiscodeitException("no channel by id" + cmi.channelID(),"Message",400)
+        );
 
         mr.save(new Message(cmi.userID(), cmi.channelID(), cmi.message(), cmi.dataIDs()));
     }
@@ -39,11 +44,19 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public void updateMessageData(UpdateMessageInput umi){
-        Message msg = mr.find(m -> m.getId().equals(umi.getMessageID())).get(0);
-        msg.setText(umi.getText());
-        msg.getAttrID().clear();
-        for (UUID dataID : umi.getDataIDs()) {
+        Message msg = mr.find(m -> m.getId().equals(umi.getMessageID()))
+                .stream()
+                .findFirst()
+                .orElseThrow(
+                        () -> new DiscodeitException("no message" + umi.getMessageID(),"Message",400)
+                );
+
+        if (umi.getText() != null) msg.setText(umi.getText());
+        if (!umi.getDataIDs().isEmpty()) {
+            msg.getAttrID().clear();
+            for (UUID dataID : umi.getDataIDs()) {
                 msg.getAttrID().add(dataID);
+            }
         }
         msg.setUpdatedAt();
         mr.save(msg);

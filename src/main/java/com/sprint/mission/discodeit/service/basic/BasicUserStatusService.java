@@ -1,8 +1,8 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.input.CreateUserStatusInput;
-import com.sprint.mission.discodeit.dto.input.UpdateUserStatusInput;
+import com.sprint.mission.discodeit.dto.input.IDRequest;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserStatusService;
@@ -20,23 +20,26 @@ public class BasicUserStatusService implements UserStatusService {
     private final UserRepository ur;
 
     @Override
-    public void create(CreateUserStatusInput cusi){
-        if (
-                ur.findByID(cusi.getUserID()) == null
-                || usr.findByUserID(cusi.getUserID()) != null
-        ) throw new RuntimeException("invalid create.");
-
+    public void create(IDRequest id){
+        ur.findByID(id.id()).orElseThrow(
+                () -> new DiscodeitException("no User by id" + id.id(),"UserStatus",400)
+        );
+        usr.findByUserID(id.id()).orElseThrow(
+                () -> new DiscodeitException("no UserStatus by User id" + id.id(),"UserStatus",400)
+        );
         usr.save(
                 UserStatus.builder()
-                        .userID(cusi.getUserID())
-                        .lastLogin(cusi.getLoginTime())
+                        .userID(id.id())
+                        .lastLogin(Instant.now())
                         .build()
         );
     }
 
     @Override
     public UserStatus find(UUID id){
-        return usr.findByUserID(id);
+        return usr.findByUserID(id).orElseThrow(
+                () -> new DiscodeitException("no UserStatus by User id" + id,"UserStatus",400)
+        );
     }
 
     @Override
@@ -45,14 +48,18 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public void update(UpdateUserStatusInput uusi){
-        UserStatus ust = usr.findByID(uusi.getID());
-        ust.setLastLogin(uusi.getLastLoginTime());
+    public void update(IDRequest uusi){
+        UserStatus ust = usr.findByID(uusi.id()).orElseThrow(
+                () -> new DiscodeitException("no UserStatus by User id" + uusi.id(),"UserStatus",400)
+        );
+        ust.setLastLogin(Instant.now());
     }
 
     @Override
     public void updateByUserID(UUID userID){
-        UserStatus ust = usr.findByUserID(userID);
+        UserStatus ust = usr.findByUserID(userID).orElseThrow(
+                () -> new DiscodeitException("no UserStatus by User id" + userID,"UserStatus",400)
+        );
         ust.setLastLogin(Instant.now());
     }
 

@@ -4,6 +4,8 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.input.CreateReadyStatusInput;
 import com.sprint.mission.discodeit.dto.input.UpdateReadStatusInput;
 import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.exception.DiscodeitChannelException;
+import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -26,17 +28,17 @@ public class BasicReadStatusService implements ReadStatusService {
         if (
                 ch.find(c -> c.getId().equals(crsi.channelID())).isEmpty()
                 || ur.find(c -> c.getId().equals(crsi.userID())).isEmpty()
-        ) throw new RuntimeException("invalid create readstatus");
+        ) throw new DiscodeitException("invalid create readstatus","ReadStatus",400);
         if (
                 ! rsr.find(rs -> rs.getUserID().equals(crsi.userID())).isEmpty()
                 && ! rsr.find(rs -> rs.getChannelID().equals(crsi.channelID())).isEmpty()
-        ) throw new RuntimeException("object already created");
+        ) throw new DiscodeitException("object already created","ReadStatus",400);
         rsr.save(new ReadStatus(crsi.userID(), crsi.channelID()));
     }
 
     @Override
     public ReadStatus find(UUID id){
-        return rsr.find(rs -> rs.getId().equals(id)).get(0);
+        return rsr.findByID(id).orElseThrow(() -> new DiscodeitException("no status by id" + id ,"ReadStatus",400));
     }
 
     @Override
@@ -47,7 +49,9 @@ public class BasicReadStatusService implements ReadStatusService {
     // wich field will change?
     @Override
     public void update(UpdateReadStatusInput ursi){
-        ReadStatus rs = rsr.find(r -> r.getId().equals(ursi.getReadStatusID())).get(0);
+        ReadStatus rs = rsr.findByID(ursi.getReadStatusID()).orElseThrow(
+                () -> new DiscodeitException("no status by id" + ursi.getReadStatusID(),"ReadStatus",400)
+        );
         rs.setUpdatedAt();
         rsr.save(rs);
     }

@@ -34,8 +34,8 @@ public class BasicUserService implements UserService {
     @Override
     public void createUser(CreateUserInput cui){
 
-        if (fur.findByEmail(cui.getEmail()) != null) throw new DiscodeitUserException("Email already exists",400);
-        if (fur.findByName(cui.getName()) != null) throw new DiscodeitUserException("Name already exists",400);
+        fur.findByEmail(cui.getEmail()).orElseThrow(() -> new DiscodeitUserException("Email already exists",400));
+        fur.findByName(cui.getName()).orElseThrow(() -> new DiscodeitUserException("Name already exists",400));
 
         User user = User.builder()
                 .email(cui.getEmail())
@@ -67,44 +67,45 @@ public class BasicUserService implements UserService {
 
     @Override
     public UserOutput getUserById(UUID id){
-        try {
-            User user = fur.findByID(id);
-            UserStatus ust = usr.findByUserID(user.getId());
+        User user = fur.findByID(id).orElseThrow(() -> new DiscodeitUserException("User by id " + id  + " not found",400));
+        UserStatus ust = usr.findByUserID(id).orElseThrow(
+                () -> new DiscodeitUserException("UserStatus by id " + id + " not found",400)
+        );
 
-            return UserOutput.builder()
-                    .name(user.getName())
-                    .email(user.getEmail())
-                    .online(ust.online())
-                    .build();
+        return UserOutput.builder()
+                .name(user.getName())
+                .email(user.getEmail())
+                .online(ust.online())
+                .build();
 
-        } catch (IndexOutOfBoundsException e) {
-            log.warn(e.getMessage());
-            return null;
-        }
     }
 
     @Override
     public List<UserDto> getUserList(){
         return fur.findAll()
                 .stream()
-                .map(u -> UserDto.builder()
-                        .id(u.getId())
-                        .createdAt(u.getCreatedAt())
-                        .updatedAt(u.getUpdatedAt())
-                        .username(u.getName())
-                        .email(u.getEmail())
-                        .online(usr.findByUserID(u.getId()).online())
-                        .profileId(
-                                u.getProfileID()
-                                )
-                        .build())
+                .map(u -> {
+                    UserStatus us =  usr.findByUserID(u.getId()).orElse(null);
+                    return UserDto.builder()
+                            .id(u.getId())
+                            .createdAt(u.getCreatedAt())
+                            .updatedAt(u.getUpdatedAt())
+                            .username(u.getName())
+                            .email(u.getEmail())
+                            .online(us != null && us.online())
+                            .profileId(
+                                    u.getProfileID()
+                            )
+                            .build();
+                })
                 .toList();
     }
 
     @Override
     public BinaryObjectOutput getUserThumbnail(UUID id){
-        BinaryContent bct = bcr.findByID(id);
-        if (bct == null) throw new DiscodeitUserException("Thumbnail not found",400);
+        BinaryContent bct = bcr.findByID(id).orElseThrow(
+                () -> new DiscodeitUserException("Thumbnail not found",400)
+        );
         return BinaryObjectOutput.builder()
                 .contentID(bct.getContentID())
                 .build();
@@ -114,7 +115,7 @@ public class BasicUserService implements UserService {
     @Override
     public void update(UpdateUserInput uui){
         // name duplicate check.
-        if (fur.findByName(uui.name()) != null) {
+        if (fur.findByName(uui.name()).isPresent()) {
             throw new DiscodeitUserException("Not exist User on Request",400);
         }
 
@@ -124,15 +125,16 @@ public class BasicUserService implements UserService {
     }
 
     private User updateUserProfile(UUID id, String name, String password){
-        User user = fur.findByID(id);
-        if (user == null) throw new DiscodeitUserException("user not Exist", 400);
+        User user = fur.findByID(id).orElseThrow(
+                () -> new DiscodeitUserException("User not found",400)
+        );
         if (name != null) user.setName(name);
         if (password != null) user.setPassword(password);
         return user;
     }
 
     private void updateThumbnail(UUID authorID, UUID thumbID){
-        if (bcr.findByID(authorID) == null) throw new DiscodeitUserException("Thumbnail not existed",400);
+        if (bcr.findByID(authorID).isEmpty()) throw new DiscodeitUserException("Thumbnail not existed",400);
         bcr.delete(authorID);
         bcr.save(
                 BinaryContent.builder()
@@ -144,10 +146,17 @@ public class BasicUserService implements UserService {
 
     @Override
     public void delete(UUID id){
+        User user = fur.findByID(id).orElseThrow(
+                () -> new DiscodeitUserException("User not found",400)
+        );
+        UserStatus us = usr.findByUserID(id).orElseThrow(
+                () -> new DiscodeitUserException("UserStatus not found",400)
+        );
+
         fur.delete(id);
-        usr.delete(usr.findByUserID(id).getId());
-        if (!bcr.findByAuthorID(id).isEmpty()) {
-            bcr.delete(bcr.findByAuthorID(id).get(0).getId());
+        usr.delete(us.getId());
+        if (user.getProfileID() != null) {
+            bcr.delete(user.getProfileID());
         }
     }
 }
