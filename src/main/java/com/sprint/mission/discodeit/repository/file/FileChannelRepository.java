@@ -2,91 +2,81 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class FileChannelRepository implements ChannelRepository {
 
-    private List<Channel> storage;
+    private Map<UUID, Channel> database;
     private final Path filePath;
 
-    public FileChannelRepository() {
-        this.filePath = Path.of("data/channels.ser");
+    public FileChannelRepository(String fileDirectory) {
+        this.filePath = Path.of(fileDirectory, "channel.ser");
 
         try {
             Files.createDirectories(filePath.getParent());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("데이터 디렉토리 생성 실패", e);
         }
-        storage = load();
-    }
 
+        this.database = load();
+    }
 
     @Override
     public Channel save(Channel channel) {
-
-        for (int i = 0; i < storage.size(); i++) {
-            if (storage.get(i).getId().equals(channel.getId())) {
-                storage.remove(i);
-                break;
-            }
-        }
-        storage.add(channel);
+        database.put(channel.getId(), channel);
         saveToFile();
         return channel;
     }
 
     @Override
-    public Channel findById(UUID id) {
-        for (Channel channel : storage) {
-            if (channel.getId().equals(id)) {
-                return channel;
-            }
-        }
-        return null;
+    public Optional<Channel> findById(UUID id) {
+        return Optional.ofNullable(database.get(id));
     }
 
     @Override
     public List<Channel> findAll() {
-        return new ArrayList<>(storage);
+        return new ArrayList<>(database.values());
     }
 
     @Override
     public void delete(UUID id) {
-        for (int i = 0; i < storage.size(); i++) {
-            if (storage.get(i).getId().equals(id)) {
-                storage.remove(i);
-                break;
-            }
-        }
+        database.remove(id);
         saveToFile();
-
     }
 
     private void saveToFile() {
-        try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(filePath))) {
-            oos.writeObject(storage);
+        try (ObjectOutputStream oos =
+                     new ObjectOutputStream(Files.newOutputStream(filePath))) {
+
+            oos.writeObject(database);
+
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("파일 저장 실패", e);
         }
     }
 
-    private List<Channel> load() {
+
+    @SuppressWarnings("unchecked")
+    private Map<UUID, Channel> load() {
+
         if (!Files.exists(filePath)) {
-            return new ArrayList<>();
+            return new HashMap<>();
         }
 
-        try (ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(filePath))) {
-            return (List<Channel>) ois.readObject();
+        try (ObjectInputStream ois =
+                     new ObjectInputStream(Files.newInputStream(filePath))) {
+
+            return (Map<UUID, Channel>) ois.readObject();
+
         } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("파일 로드 실패", e);
         }
     }
 }

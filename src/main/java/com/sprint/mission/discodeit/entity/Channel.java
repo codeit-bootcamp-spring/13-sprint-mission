@@ -1,62 +1,55 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
+import lombok.ToString;
+
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.UUID;
 
+@Getter
 public class Channel implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     private UUID id;
-    private Long createdAt;
-    private Long updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
     private String name;
     private String description; // 채널 설명
-    private ChannelType type;
+    private String type;
 
     public enum ChannelType {
         PUBLIC, PRIVATE
     }
 
-    public Channel(String name, String description, ChannelType type) {
+    public Channel(String name, String description, String type) {
         this.id = UUID.randomUUID();
-        this.createdAt = System.currentTimeMillis();
-        this.updatedAt = System.currentTimeMillis();
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
         this.name = name;
         this.description = description;
         this.type = type;
     }
 
-    public UUID getId() {
-        return id;
+    public void update(String name, String description) {
+        if (name != null) this.name = name;
+        if (description != null) this.description = description;
+        this.updatedAt = Instant.now();
     }
-    public Long getCreatedAt() {
-        return createdAt;
-    }
-    public Long getUpdatedAt() {
-        return updatedAt;
-    }
-    public String getName() {
-        return name;
-    }
-    public String getDescription() {
-        return description;
-    }
-    public ChannelType getType() {
-        return type;
-    }
+
 
     public void updateName(String name) {
         this.name = name;
-        this.updatedAt = System.currentTimeMillis();
+        this.updatedAt = Instant.now();
     }
     public void updateDescription(String description) {
         this.description = description;
-        this.updatedAt = System.currentTimeMillis();
+        this.updatedAt = Instant.now();
     }
-    public void updateType(ChannelType type) {
+    public void updateType(String type) {
         this.type = type;
-        this.updatedAt = System.currentTimeMillis();
+        this.updatedAt = Instant.now();
     }
 
     @Override

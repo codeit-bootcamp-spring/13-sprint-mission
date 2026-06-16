@@ -7,29 +7,29 @@ import java.util.*;
 
 public class JCFChannelRepository implements ChannelRepository {
 
-    private final Map<UUID, Channel> data = new HashMap<>();
+    private final Map<UUID, Channel> database = new HashMap<>();
 
     @Override
     public Channel save(Channel channel) {
 
-        data.put(channel.getId(), channel);
+        database.put(channel.getId(), channel);
 
         return channel;
     }
 
     @Override
-    public Channel findById(UUID id) {
-        return data.get(id);
+    public Optional<Channel> findById(UUID id) {
+        return Optional.ofNullable(database.get(id));
     }
 
     @Override
     public List<Channel> findAll() {
-        return new ArrayList<>(data.values());
+        return new ArrayList<>(database.values());
     }
 
     @Override
     public void delete(UUID id) {
-        data.remove(id);
+        database.remove(id);
 
     }
 }

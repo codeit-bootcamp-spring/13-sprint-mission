@@ -1,14 +1,18 @@
 package com.sprint.mission.discodeit.service.file;
 
 
+import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.MessageResponse;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
-public class FileMessageService implements MessageService {
+class FileMessageService implements MessageService {
 
     private final MessageRepository repository;
 
@@ -17,35 +21,68 @@ public class FileMessageService implements MessageService {
     }
 
     @Override
-    public Message create(UUID authorId, UUID channelId, String content) {
-        return repository.save(new Message(authorId, channelId, content));
-    }
+    public MessageResponse create(MessageCreateRequest request) {
 
-    @Override
-    public Message findById(UUID id) {
-        return repository.findById(id);
-    }
+        Message message = new Message(
+                request.userId(),
+                request.channelId(),
+                request.content()
+        );
 
-    @Override
-    public List<Message> findAll() {
-        return repository.findAll();
-    }
-
-    @Override
-    public void update(UUID id, String content) {
-        Message message = repository.findById(id);
-
-        if (message == null) {
-            throw new IllegalArgumentException("Message not found");
-        }
-        message.updateContent(content);
         repository.save(message);
 
+        return new MessageResponse(
+                message.getId(),
+                message.getCreatedAt(),
+                message.getUpdatedAt(),
+                message.getAuthorId(),
+                message.getChannelId(),
+                message.getContent(),
+                List.of()
+        );
+    }
+
+    @Override
+    public List<MessageResponse> findAllByChannelId(UUID channelId) {
+
+        return repository.findAll().stream()
+                .filter(message -> message.getChannelId().equals(channelId))
+                .map(message -> new MessageResponse(
+                        message.getId(),
+                        message.getCreatedAt(),
+                        message.getUpdatedAt(),
+                        message.getAuthorId(),
+                        message.getChannelId(),
+                        message.getContent(),
+                        List.of()
+                ))
+                .toList();
+    }
+
+    @Override
+    public MessageResponse update(MessageUpdateRequest request) {
+
+        Message message = repository.findById(request.id())
+                .orElseThrow(() ->
+                        new NoSuchElementException("Message not found"));
+
+        message.updateContent(request.content());
+
+        repository.save(message);
+
+        return new MessageResponse(
+                message.getId(),
+                message.getCreatedAt(),
+                message.getUpdatedAt(),
+                message.getAuthorId(),
+                message.getChannelId(),
+                message.getContent(),
+                List.of()
+        );
     }
 
     @Override
     public void delete(UUID id) {
         repository.delete(id);
-
     }
 }
