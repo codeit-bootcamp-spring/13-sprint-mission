@@ -1,0 +1,59 @@
+package com.sprint.mission.discodeit.service;
+
+import com.sprint.mission.discodeit.dto.request.CreateReadStatusRequest;
+import com.sprint.mission.discodeit.dto.request.UpdateReadStatusRequest;
+import com.sprint.mission.discodeit.dto.response.ReadStatusResponse;
+import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.repository.ReadStatusRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class ReadStatusService {
+
+    private final ReadStatusRepository readStatusRepository;
+
+    public ReadStatusResponse create(CreateReadStatusRequest request) {
+        if (readStatusRepository.findByUserIdAndChannelId(request.userId(), request.channelId()) != null) {
+            throw new IllegalArgumentException("이미 존재합니다.");
+        }
+
+        ReadStatus readStatus = new ReadStatus(
+                        UUID.randomUUID(),
+                        request.userId(),
+                        request.channelId()
+        );
+        readStatusRepository.save(readStatus);
+
+        return ReadStatusResponse.from(readStatus);
+    }
+
+    public ReadStatusResponse find(UUID id) {
+        ReadStatus status = readStatusRepository.findById(id);
+
+        return ReadStatusResponse.from(status);
+    }
+
+    public List<ReadStatusResponse> findAllByUserId(UUID userId) {
+        return readStatusRepository.findAllByUserId(userId)
+                .stream()
+                .map(ReadStatusResponse::from)
+                .toList();
+    }
+
+    public ReadStatusResponse update(UpdateReadStatusRequest request) {
+        ReadStatus status = readStatusRepository.findById(request.id());
+        status.updateLastSeen(); readStatusRepository.save(status);
+
+        return ReadStatusResponse.from(status);
+    }
+
+    public void delete(UUID id) {
+        readStatusRepository.delete(id);
+    }
+
+}

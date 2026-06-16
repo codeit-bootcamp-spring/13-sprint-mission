@@ -7,12 +7,11 @@ import org.springframework.stereotype.Repository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-@Repository
-public class JCFReadStatusRepository
-        implements ReadStatusRepository {
 
-    private final List<ReadStatus> data =
-            new ArrayList<>();
+@Repository
+public class JCFReadStatusRepository implements ReadStatusRepository {
+
+    private final List<ReadStatus> data = new ArrayList<>();
 
     @Override
     public ReadStatus save(ReadStatus readStatus) {
@@ -39,8 +38,7 @@ public class JCFReadStatusRepository
 
     @Override
     public void delete(UUID id) {
-        data.removeIf(status ->
-                status.getId().equals(id));
+        data.removeIf(status -> status.getId().equals(id));
     }
 
     @Override
@@ -53,19 +51,15 @@ public class JCFReadStatusRepository
     @Override
     public List<ReadStatus> findAllByUserId(UUID userId) {
         return data.stream()
-                .filter(status ->
-                        status.getUserId()
-                                .equals(userId))
+                .filter(status -> status.getUserId().equals(userId))
                 .toList();
     }
 
     @Override
     public ReadStatus findByUserIdAndChannelId(UUID userId, UUID channelId) {
         return data.stream()
-                .filter(status ->
-                        status.getUserId().equals(userId)
-                                &&
-                                status.getChannelId().equals(channelId))
+                .filter(status -> status.getUserId().equals(userId)
+                        && status.getChannelId().equals(channelId))
                 .findFirst()
                 .orElse(null);
     }

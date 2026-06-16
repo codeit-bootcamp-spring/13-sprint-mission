@@ -63,7 +63,7 @@ public class BasicChannelService implements ChannelService {
         for (UUID userId : request.userIds()) {
             ReadStatus readStatus = new ReadStatus(
                             UUID.randomUUID(),
-                            userId, channel.getId(), null
+                            userId, channel.getId()
             );
             readStatusRepository.save(readStatus);
         }
@@ -79,7 +79,7 @@ public class BasicChannelService implements ChannelService {
     public ChannelResponse find(UUID id) {
         Channel channel = channelRepository.findById(id);
 
-        Instant latestMessageAt = messageRepository.findAll()
+        Instant latestMessageAt = messageRepository.findAllByChannelId(channel.getId())
                 .stream().filter(message -> message.getChannelId().equals(id))
                 .map(Message::getCreatedAt)
                 .max(Instant::compareTo)
@@ -118,7 +118,7 @@ public class BasicChannelService implements ChannelService {
                         channel.getType() == PUBLIC || joinedChannelIds.contains(channel.getId()))
                 .map(channel -> {
 
-                    Instant latestMessageAt = messageRepository.findAll()
+                    Instant latestMessageAt = messageRepository.findAllByChannelId(channel.getId())
                             .stream()
                             .filter(message ->
                                     message.getChannelId().equals(channel.getId()))
@@ -161,18 +161,12 @@ public class BasicChannelService implements ChannelService {
     @Override
     public void delete(UUID id) {
         // 해당 채널의 메시지 삭제
-        messageRepository.findAll()
-                .stream()
-                .filter(message ->
-                        message.getChannelId().equals(id))
-                .forEach(message ->
-                        messageRepository.delete(message.getId()));
+        messageRepository.findAllByChannelId(id)
+                .forEach(message -> messageRepository.delete(message.getId()));
 
-        // 해당 채널의 ReadStatus 삭제
-        readStatusRepository.findAll()
-                .stream().filter(status -> status.getChannelId().equals(id))
-                .forEach(status ->
-                        readStatusRepository.delete(status.getId()));
+        // ReadStatus 삭제
+        readStatusRepository.findAllByChannelId(id)
+                .forEach(status -> readStatusRepository.delete(status.getId()));
 
         // 채널 삭제
         channelRepository.delete(id);
