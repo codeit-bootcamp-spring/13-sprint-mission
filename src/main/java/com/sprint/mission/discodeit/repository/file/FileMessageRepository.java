@@ -1,26 +1,27 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
-import com.sprint.mission.discodeit.service.ChannelService;
-import com.sprint.mission.discodeit.service.UserService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Repository;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
+@Repository
+@ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
 public class FileMessageRepository implements MessageRepository {
 
     private final Path filePath;
 
-    public FileMessageRepository(Path filePath) {
-        this.filePath = filePath;
+    public FileMessageRepository(
+            @Value("${discodeit.repository.file-directory:.discodeit}") String fileDirectory
+    ) {
+        this.filePath = Path.of(fileDirectory).resolve("message.ser");
         if (!Files.exists(filePath.getParent())) {
             try {
                 Files.createDirectories(filePath.getParent());
@@ -54,14 +55,14 @@ public class FileMessageRepository implements MessageRepository {
     @Override
     public void save(Message message) {
         Map<UUID, Message> data = loadFromFile();
-        data.put(message.getId(), message);
+        data.put(message.getMessageId(), message);
         saveToFile(data);
     }
 
     @Override
-    public Message findById(UUID messageId) {
+    public Optional<Message> findById(UUID messageId) {
         Map<UUID, Message> data = loadFromFile();
-        return data.get(messageId);
+        return Optional.ofNullable(data.get(messageId));
     }
 
     @Override
@@ -69,14 +70,6 @@ public class FileMessageRepository implements MessageRepository {
         Map<UUID, Message> data = loadFromFile();
         return data.values().stream()
                 .filter(message -> message.getChannelId().equals(channelId))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<Message> findAllByUserId(UUID userId) {
-        Map<UUID, Message> data = loadFromFile();
-        return data.values().stream()
-                .filter(message -> message.getAuthorId().equals(userId))
                 .collect(Collectors.toList());
     }
 

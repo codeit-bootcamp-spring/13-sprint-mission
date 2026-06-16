@@ -1,101 +1,162 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.channel.ChannelResponse;
+import com.sprint.mission.discodeit.dto.channel.ChannelUpdateRequest;
+import com.sprint.mission.discodeit.dto.channel.PrivateChannelRequest;
+import com.sprint.mission.discodeit.dto.channel.PublicChannelRequest;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
+import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.UUID;
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Collectors;
 
+@Service
+@RequiredArgsConstructor
+@Slf4j
 public class BasicChannelService implements ChannelService {
 
-    private ChannelRepository channelRepository;
-    public BasicChannelService(ChannelRepository channelRepository) {
-        this.channelRepository = channelRepository;
-    }
+    private final ChannelRepository channelRepository;
+    private final ReadStatusRepository readStatusRepository;
+    private final MessageRepository messageRepository;
 
+    //PUBLIC 채널 생성
     @Override
-    public Channel createChannel(String name, String description) {
+    public ChannelResponse createPublicChannel(PublicChannelRequest request) {
         boolean duplicateCheck = channelRepository.findAll().stream()
-                .anyMatch(channel -> channel.getName().equals(name));
-        if (name == null || name.isBlank()){
-            throw new IllegalArgumentException("채널명을 입력해주세요.");
-        }
-        if (description == null || description.isBlank()){
-            throw new IllegalArgumentException("채널설명을 입력해주세요.");
-        }
+                .anyMatch(channel -> request.name().equals(channel.getName()));
         if (duplicateCheck) {
             throw new IllegalArgumentException("이미 동일한 채널명이 존재합니다.");
         }
-        Channel channel = new Channel(name, description);
+        Channel channel = new Channel(request.name(), request.description());
         channelRepository.save(channel);
-        return channel;
+        log.info("PUBLIC 채널 생성 - 채널명: {}, 채널설명: {}", channel.getName(), channel.getDescription());
+        return new ChannelResponse(
+                channel.getChannelId(),
+                channel.getChannelType(),
+                channel.getName(),
+                channel.getDescription(),
+                null,
+                null
+        );
     }
-
+    //PRIVATE 채널 생성
     @Override
-    public Channel createChannel(String name, String description, ChannelType channelType) {
-        boolean duplicateCheck = channelRepository.findAll().stream()
-                .anyMatch(channel -> channel.getName().equals(name));
-        if (duplicateCheck) {
-            throw new IllegalArgumentException("이미 동일한 채널명이 존재합니다.");
-        }
-
-        if (name == null || name.isBlank()){
-            throw new IllegalArgumentException("채널명을 입력해주세요.");
-        }
-        if (description == null || description.isBlank()){
-            throw new IllegalArgumentException("채널설명을 입력해주세요.");
-        }
-        Channel channel = new Channel(name, description, channelType);
+    public ChannelResponse createPrivateChannel(PrivateChannelRequest request) {
+        Channel channel = new Channel(ChannelType.PRIVATE);
         channelRepository.save(channel);
-        return channel;
+
+        request.participantIds().forEach(userId -> {
+            ReadStatus readStatus = new ReadStatus(userId, channel.getChannelId());
+            readStatusRepository.save(readStatus);
+        });
+        log.info("PRIVATE 채널 생성 - 채널 참여자: {}", request.participantIds());
+        return  new ChannelResponse(
+                channel.getChannelId(),
+                channel.getChannelType(),
+                null,
+                null,
+                request.participantIds(),
+                null
+        );
     }
 
     @Override
-    public Channel findByChannel(UUID ChannelId) {
-        Channel channel = channelRepository.findById(ChannelId);
-        if (channel == null) {
-            throw new NoSuchElementException("존재하지 않는 채널입니다.");
+    public ChannelResponse findByChannelId(UUID channelId) {
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널입니다."));
+        List<UUID> participantIds = null;
+        if (channel.getChannelType().equals(ChannelType.PRIVATE)) {
+            participantIds = readStatusRepository.findAllByChannelId(channelId)
+                    .stream()
+                    .map(ReadStatus::getUserId)
+                    .collect(Collectors.toList());
         }
-        return channel;
+
+        Instant lastMessageAt = messageRepository.findAllByChannelId(channelId)
+                .stream()
+                .map(Message::getCreatedAt)
+                .max(Comparator.naturalOrder())
+                .orElse(null);
+
+        log.info("채널 조회 - 채널명: {}",channel.getName());
+
+        return new ChannelResponse(
+                channel.getChannelId(),
+                channel.getChannelType(),
+                channel.getName(),
+                channel.getDescription(),
+                participantIds,
+                lastMessageAt
+        );
     }
 
     @Override
-    public List<Channel> findAllChannel() {
-        List<Channel> channels = channelRepository.findAll();
-        if (channels.isEmpty()) {
-            throw new NoSuchElementException("채널이 존재하지 않습니다.");
-        }
-        return channels;
+    public List<ChannelResponse> findAllByUserId(UUID userId) {
+        List<Channel> publicChannels = channelRepository.findAll()
+                .stream()
+                .filter(channel -> channel.getChannelType().equals(ChannelType.PUBLIC))
+                .collect(Collectors.toList());
+
+        List<Channel> privateChannels = readStatusRepository.findAllByUserId(userId)
+                .stream()
+                .map(readStatus -> channelRepository.findById(readStatus.getChannelId())
+                        .orElseThrow())
+                .collect(Collectors.toList());
+
+        List<Channel> allChannels = new ArrayList<>();
+        allChannels.addAll(publicChannels);
+        allChannels.addAll(privateChannels);
+
+        log.info("전체 채널 조회 완료: {}", allChannels.size());
+
+        return allChannels.stream()
+                .map(channel -> findByChannelId(channel.getChannelId()))
+                .collect(Collectors.toList());
+
     }
 
     @Override
-    public Channel updateChannel(UUID ChannelId, String name, String description, ChannelType channelType) {
-        Channel channel = channelRepository.findById(ChannelId);
-        if (channel == null) {
-            throw new NoSuchElementException("존재 하지 않는 채널입니다.");
+    public ChannelResponse updateChannel(UUID ChannelId, ChannelUpdateRequest request) {
+        Channel channel = channelRepository.findById(ChannelId)
+                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널 입니다."));
+        if (channel.getChannelType().equals(ChannelType.PRIVATE)) {
+            throw new IllegalArgumentException("비공개 채널은 수정할 수 없습니다.");
         }
-        if (name != null && !name.isBlank()){
-            channel.updateChannel(name);
-        }
-        if (description != null && !description.isBlank()){
-            channel.updateChannelDescription(description);
-        }
-        if (channelType != null) {
-            channel.updateIsChannelType(channelType);
-        }
+        if (request.name() != null && !request.name().isBlank()) channel.updateChannel(request.name());
+        if (request.description() != null && !request.description().isBlank()) channel.updateChannelDescription(request.description());
+
+        log.info("채널 수정 완료- 채널id: {}, 채널명: {} ,채널설명: {}", channel.getChannelId(), channel.getName(), channel.getDescription());
+
         channelRepository.save(channel);
-        return channel;
+        return new ChannelResponse(
+                channel.getChannelId(),
+                channel.getChannelType(),
+                channel.getName(),
+                channel.getDescription(),
+                null,
+                null
+        );
     }
 
     @Override
-    public void deleteChannel(UUID id) {
-        Channel channel = channelRepository.findById(id);
-        if (channel == null) {
-            throw new NoSuchElementException("존재 하지 않는 채널 입니다.");
-        }
-        channelRepository.deleteById(id);
+    public void deleteChannel(UUID ChannelId) {
+        Channel channel = channelRepository.findById(ChannelId)
+                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널입니다."));
+
+        messageRepository.findAllByChannelId(channel.getChannelId())
+                        .forEach(message -> messageRepository.deleteById(message.getMessageId()));
+        readStatusRepository.deleteByChannelId(channel.getChannelId());
+        channelRepository.deleteById(channel.getChannelId());
+        log.info("채널 삭제 완료 - 채널id: {}, 채널명: {}", channel.getChannelId(), channel.getName());
     }
 }

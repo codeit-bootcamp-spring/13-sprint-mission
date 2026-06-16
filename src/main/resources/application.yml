@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: discodeit
+
+#파일 저장 방식 변경 설정
+discodeit:
+  repository:
+    type: jcf #file
+    file-directory: data

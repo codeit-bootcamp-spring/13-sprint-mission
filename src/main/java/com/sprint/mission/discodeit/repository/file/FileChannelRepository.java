@@ -2,18 +2,25 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Repository;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+@Repository
+@ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
 public class FileChannelRepository implements ChannelRepository {
 
     private final Path filePath;
 
-    public FileChannelRepository(Path filePath){
-        this.filePath = filePath;
+    public FileChannelRepository(
+            @Value("${discodeit.repository.file-directory:.discodeit}") String fileDirectory
+    ){
+        this.filePath =  Path.of(fileDirectory).resolve("channel.ser");
         if (!Files.exists(filePath.getParent())){
             try {
                 Files.createDirectories(filePath.getParent());
@@ -48,14 +55,14 @@ public class FileChannelRepository implements ChannelRepository {
     @Override
     public void save(Channel channel) {
         Map<UUID, Channel> data = loadFromFile();
-        data.put(channel.getId(), channel);
+        data.put(channel.getChannelId(), channel);
         saveToFile(data);
     }
 
     @Override
-    public Channel findById(UUID channelId) {
+    public Optional<Channel> findById(UUID channelId) {
         Map<UUID, Channel> data = loadFromFile();
-        return data.get(channelId);
+        return Optional.ofNullable(data.get(channelId));
     }
 
     @Override
