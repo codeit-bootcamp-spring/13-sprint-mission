@@ -78,8 +78,8 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    public ReadStatusResponse update(ReadStatusUpdateRequest request) {
-        ReadStatus readStatus = readStatusRepository.findById(request.id())
+    public ReadStatusResponse update(UUID id, ReadStatusUpdateRequest request) {
+        ReadStatus readStatus = readStatusRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 읽음 상태 정보입니다."));
 
         readStatus.update(request.readAt());

@@ -99,18 +99,16 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ChannelResponse update(ChannelUpdateRequest request) {
-        Optional<Channel> channel = channelRepository.findById(request.id());
-        if (channel.isEmpty()) {
-            throw new IllegalArgumentException("존재하지 않는 채널입니다.");
-        }
-        if ("PRIVATE".equals(channel.get().getType())) {
+    public ChannelResponse update(UUID id, ChannelUpdateRequest request) {
+        Channel channel = channelRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널입니다."));
+
+        if ("PRIVATE".equals(channel.getType())) {
             throw new IllegalArgumentException("PRIVATE 채널은 수정할 수 없습니다.");
         }
-        channel.get().update(request.name(), request.description());
-        channelRepository.save(channel.orElse(null));
+        channel.update(request.name(), request.description());
 
-        return convertToResponse(channel.orElse(null));
+        return convertToResponse(channel);
     }
 
     @Override

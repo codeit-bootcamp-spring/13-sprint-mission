@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.exception.BinaryContentNotFoundException;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import org.springframework.context.annotation.Primary;
@@ -43,13 +44,13 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     public BinaryContentResponse find(UUID id) {
         BinaryContent binaryContent = binaryContentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 파일 콘텐츠입니다."));
+                .orElseThrow(() -> new BinaryContentNotFoundException(id));
 
         return convertToResponse(binaryContent);
     }
 
     @Override
-    public List<BinaryContentResponse> findByUserIdIn(List<UUID> ids) {
+    public List<BinaryContentResponse> findByIdIn(List<UUID> ids) {
         return binaryContentRepository.findAll().stream()
                 .filter(b -> ids.contains(b.getId()))
                 .map(this::convertToResponse)
@@ -63,6 +64,12 @@ public class BasicBinaryContentService implements BinaryContentService {
 
         binaryContentRepository.delete(id);
 
+    }
+
+    @Override
+    public BinaryContent findEntityById(UUID id) {
+        return binaryContentRepository.findById(id)
+                .orElseThrow(() -> new BinaryContentNotFoundException(id));
     }
 
     private BinaryContentResponse convertToResponse(BinaryContent binaryContent) {

@@ -82,7 +82,7 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public UserStatusResponse updateByUserId(UUID userId, String statusName) {
+    public UserStatusResponse updateByUserId(UUID userId) {
         UserStatus userStatus = userStatusRepository.findAll().stream()
                 .filter(us -> us.isUser(userId))
                 .findFirst()
