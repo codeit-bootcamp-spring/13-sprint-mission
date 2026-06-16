@@ -7,29 +7,34 @@ import java.util.*;
 
 public class JCFUserRepository implements UserRepository {
 
-    private final Map<UUID, User> data=new HashMap<>();
+    private final Map<UUID, User> data;
+    public JCFUserRepository(){
+        this.data=new HashMap<>();
+    }
 
     @Override
-    public User saveUser(User user) {
+    public User save(User user) {
         data.put(user.getId(), user);
         return user;
     }
 
     @Override
-    public Optional<User> findUser(UUID id) {
+    public Optional<User> findById(UUID id) {
         return Optional.ofNullable(data.get(id)); // null 반환 또한 저장소의 특성이니 추가해야 함
     }
 
     @Override
-    public List<User> findUsers() {
-        return new ArrayList<>(data.values());
+    public List<User> findAll() {
+        return data.values().stream().toList();
     }
 
-
     @Override
-    public void deleteUser(UUID id) {
+    public void deleteById(UUID id) {
         data.remove(id);
     }
 
-
+    @Override
+    public boolean existById(UUID id) {
+        return data.containsKey(id);
+    }
 }

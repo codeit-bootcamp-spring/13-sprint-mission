@@ -8,26 +8,35 @@ import java.util.*;
 
 public class JCFChannelRepository implements ChannelRepository {
 
-    private final Map<UUID, Channel> data=new HashMap<>();
+    private final Map<UUID, Channel> data;
+    public JCFChannelRepository(){
+        this.data=new HashMap<>();
+    }
 
     @Override
-    public Channel saveChannel(Channel channel) {
+    public Channel save(Channel channel) {
         data.put(channel.getId(), channel);
         return channel;
     }
 
     @Override
-    public Optional<Channel> fineChannel(UUID id) {
+    public Optional<Channel> findById(UUID id) {
         return Optional.ofNullable(data.get(id));
     }
 
     @Override
-    public List<Channel> findChannels() {
-        return new ArrayList<>(data.values());
+    public List<Channel> findAll() {
+        return data.values().stream().toList();
     }
 
     @Override
-    public void deleteChannel(UUID id) {
+    public void deleteById(UUID id) {
         data.remove(id);
     }
+
+    @Override
+    public boolean existById(UUID id) {
+        return data.containsKey(id);
+    }
+
 }
