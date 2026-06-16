@@ -2,46 +2,99 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
+import org.springframework.stereotype.Repository;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
+@Repository
 public class FileMessageRepository implements MessageRepository {
 
-    private final MessageRepository messageRepository;
+    private final Path filePath = Paths.get(System.getProperty("user.dir"), "messages.ser");
 
-    public FileMessageRepository() {
-        this.messageRepository = new FileMessageRepository();
+    @SuppressWarnings("unchecked")
+    private List<Message> readFile() {
+        if(!Files.exists(filePath)) {
+            return new ArrayList<>();
+        }
+        try (FileInputStream fis = new FileInputStream(filePath.toFile());
+            ObjectInputStream ois = new ObjectInputStream(fis)) {
+                return (List<Message>) ois.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+            return new  ArrayList<>();
+        }
+    }
+
+    private void saveFile(List<Message> messages) {
+        try (FileOutputStream fos = new FileOutputStream(filePath.toFile());
+        ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(messages);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Message create(Message message) {
-        return messageRepository.create(message);
+        List<Message> messages = readFile();
+        messages.add(message);
+        saveFile(messages);
+        return message;
+    }
+
+    @Override
+    public Optional<Message> findById(UUID id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return readFile().stream()
+                .filter(m -> id.equals(m.getId()))
+                .findFirst();
     }
 
     @Override
     public Message findByContent(String content) {
-        return messageRepository.findByContent(content);
+        return readFile().stream()
+                .filter(m -> m.getContent().equals(content))
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
     public List<Message> findAll() {
-        return messageRepository.findAll();
+        return readFile();
     }
 
     @Override
     public void update(Message requestMessage) {
-        messageRepository.update(requestMessage);
+        List<Message> messages = readFile();
+        messages.replaceAll(m -> m.getContent()
+                .equals(requestMessage.getContent())
+                ? requestMessage : m);
+        saveFile(messages);
     }
 
     @Override
-    public void delete(String content) {
-        messageRepository.delete(content);
+    public void delete(UUID id) {
+        List<Message> messages = readFile();
+        messages.removeIf(m -> m.getId().equals(id));
+        saveFile(messages);
+    }
+
+    @Override
+    public void deleteByChannelId(UUID channelId) {
+        if (channelId == null) {
+            return;
+        }
+        List<Message> messages = readFile();
+        messages.removeIf(m -> m.getChannelId() != null && m.getChannelId().equals(channelId));
+        saveFile(messages);
     }
 
 }
-/*
-레포지토리 설계 및 구현
-[ ] 다음의 조건을 만족하는 레포지토리 인터페이스의 구현체를 작성하세요.
-[ ] 기존에 구현한 File*Service 구현체의 "저장 로직"과 관련된 코드를 참고하여 구현하세요.
- */

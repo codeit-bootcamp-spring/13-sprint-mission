@@ -1,22 +1,19 @@
 package com.sprint.mission.discodeit;
 
-import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.dto.request.ChannelPublicRequest;
+import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.request.UserRequest;
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.file.FileChannelService;
 import com.sprint.mission.discodeit.service.file.FileMessageService;
 import com.sprint.mission.discodeit.service.file.FileUserService;
-import com.sprint.mission.discodeit.service.jcf.JCFChannelService;
-import com.sprint.mission.discodeit.service.jcf.JCFMessageService;
-import com.sprint.mission.discodeit.service.jcf.JCFUserService;
 
+import java.util.Collections;
 import java.util.Scanner;
 import java.util.UUID;
-
-import static com.sprint.mission.discodeit.SampleData.names;
 
 public class JavaApplication {
 
@@ -33,15 +30,33 @@ public class JavaApplication {
         SampleData.loadChannelTitles(); // 기존 데이터 먼저 준비
         SampleData.loadMessages();
 
-        for (String name : SampleData.names) { // 기존 데이터 먼저 등록
-            userService.create(new User(name));
+        for (String name : SampleData.names) {
+            UserRequest sampleRequest = new UserRequest(
+                    name,
+                    name + "@codeit.com",
+                    "password123!",
+                    null
+            );
+            userService.create(sampleRequest);
         }
         // <기존 채널 등록>
         for (String title : SampleData.titles) { // 기존 데이터 먼저 등록
-            channelService.create(new Channel(title));
+            ChannelPublicRequest sampleChannel = new ChannelPublicRequest(title, "샘플 채널 설명");
+//            channelService.createPrivateChannel(new Channel(title));
+            channelService.createPublicChannel(sampleChannel);
         }
         for (String message : SampleData.messages) {
-            messageService.create(new Message(message));
+            UUID tempChannelId = UUID.randomUUID();
+            UUID tempSenderId = UUID.randomUUID();
+
+            MessageCreateRequest sampleMessageRequest = new MessageCreateRequest(
+                    tempChannelId,
+                    tempSenderId,
+                    message,
+                    Collections.emptyList()
+            );
+
+            messageService.create(sampleMessageRequest);
         }
 
         boolean running = true;

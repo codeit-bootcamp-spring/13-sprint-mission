@@ -2,46 +2,80 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import org.springframework.stereotype.Repository;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Repository
 public class FileChannelRepository implements ChannelRepository {
 
-    private ChannelRepository channelRepository;
+    private final Path filePath = Paths.get(System.getProperty("user.dir"), "channels.ser");
 
-    public FileChannelRepository() {
-        this.channelRepository = new FileChannelRepository();
+    @SuppressWarnings("unchecked")
+    private List<Channel> readFile() {
+        if(!Files.exists(filePath)) {
+            return new ArrayList<>();
+        }
+        try (FileInputStream fis = new FileInputStream(filePath.toFile());
+        ObjectInputStream ois = new ObjectInputStream(fis)) {
+            return (List<Channel>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            return new ArrayList<>();
+        }
     }
+
+    private void saveFile(List<Channel> channels) {
+        try (FileOutputStream fos = new FileOutputStream(filePath.toFile());
+        ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(channels);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+
 
     @Override
     public Channel create(Channel channel) {
-        return channelRepository.create(channel);
+        List<Channel> channels = readFile();
+        channels.add(channel);
+        saveFile(channels);
+        return channel;
     }
 
     @Override
     public Channel findById(UUID id) {
-        return channelRepository.findById(id);
+        return readFile().stream()
+                .filter(c -> c.getId().equals(id))
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
     public List<Channel> findAll() {
-        return channelRepository.findAll();
+        return readFile();
     }
 
     @Override
-    public void update(Channel channel) {
-        channelRepository.update(channel);
+    public void update(Channel requestChannel) {
+        List<Channel> channels = readFile();
+        channels.replaceAll(c -> c.getId()
+                .equals(requestChannel.getId())
+                ? requestChannel : c);
+        saveFile(channels);
     }
 
     @Override
     public void delete(UUID id) {
-        channelRepository.delete(id);
+        List<Channel> channels = readFile();
+        channels.removeIf(c -> c.getId().equals(id));
+        saveFile(channels);
     }
 }
-/*
-레포지토리 설계 및 구현
-[ ] 다음의 조건을 만족하는 레포지토리 인터페이스의 구현체를 작성하세요.
-[ ] 기존에 구현한 File*Service 구현체의 "저장 로직"과 관련된 코드를 참고하여 구현하세요.
- */
