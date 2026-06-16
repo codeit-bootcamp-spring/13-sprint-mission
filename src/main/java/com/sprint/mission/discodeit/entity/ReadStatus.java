@@ -29,7 +29,7 @@ public class ReadStatus implements Serializable {
         this.createdAt = Instant.now();
     }
 
-    public void setUpdatedAt(Instant newLastReadAt) {
+    public void update(Instant newLastReadAt) {
         boolean anyValueUpdated = false;
         if (newLastReadAt != null && !newLastReadAt.equals(lastReadAt)) {
             this.lastReadAt = newLastReadAt;
