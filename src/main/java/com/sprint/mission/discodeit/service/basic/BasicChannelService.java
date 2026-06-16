@@ -170,4 +170,30 @@ public class BasicChannelService implements ChannelService {
 
         repository.delete(id);
     }
+
+    @Override
+    public List<ChannelResponse> findAllByUserId(UUID userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("사용자 아이디는 필수입니다.");
+        }
+
+        List<ReadStatus> readStatuses = readStatusRepository.findAllByUserId(userId);
+
+        List<UUID> privateChannelIds = readStatuses.stream()
+                .map(ReadStatus::getChannelId)
+                .toList();
+
+        return repository.findAll()
+                .stream()
+                .filter(channel ->
+                        channel.getType() == ChannelType.PUBLIC
+                                || privateChannelIds.contains(channel.getId())
+                )
+                .map(channel -> ChannelResponse.from(
+                        channel,
+                        null,
+                        List.of(userId)
+                ))
+                .toList();
+    }
 }
