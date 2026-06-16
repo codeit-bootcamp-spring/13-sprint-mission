@@ -20,7 +20,7 @@ public class BinaryFileController {
 //            @RequestBody QueryBinaryInput qbi
             @RequestParam(value = "binaryContentId") UUID id
             ){
-        return bbcs.find(id);
+        return bbcs.findByID(id);
     }
 
 }

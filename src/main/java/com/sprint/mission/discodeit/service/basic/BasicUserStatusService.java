@@ -9,14 +9,15 @@ import com.sprint.mission.discodeit.service.UserStatusService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class BasicUserStatusService implements UserStatusService {
-    UserStatusRepository usr;
-    UserRepository ur;
+    private final UserStatusRepository usr;
+    private final UserRepository ur;
 
     @Override
     public void create(CreateUserStatusInput cusi){
@@ -33,7 +34,6 @@ public class BasicUserStatusService implements UserStatusService {
         );
     }
 
-    // Todo - return DTO OBJ
     @Override
     public UserStatus find(UUID id){
         return usr.findByUserID(id);
@@ -51,9 +51,9 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public void updateByUserID(UpdateUserStatusInput uusi){
-        UserStatus ust = usr.findByUserID(uusi.getID());
-        ust.setLastLogin(uusi.getLastLoginTime());
+    public void updateByUserID(UUID userID){
+        UserStatus ust = usr.findByUserID(userID);
+        ust.setLastLogin(Instant.now());
     }
 
     @Override

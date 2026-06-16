@@ -21,7 +21,10 @@ public class UserStatus extends BaseEntity {
     private Instant lastLogin;
 
     public boolean online(){
-        return 5 > Duration.between(lastLogin, Instant.now()).abs().toMillis();
+        System.out.println(lastLogin);
+        System.out.println(Instant.now());
+        System.out.println(Duration.between(lastLogin, Instant.now()).abs().toMillis());
+        return (5 * 60 * 1000) > Duration.between(lastLogin, Instant.now()).abs().toMillis();
     }
 
 }

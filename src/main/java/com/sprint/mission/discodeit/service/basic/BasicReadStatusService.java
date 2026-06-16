@@ -24,14 +24,14 @@ public class BasicReadStatusService implements ReadStatusService {
     @Override
     public void create(CreateReadyStatusInput crsi){
         if (
-                ch.find(c -> c.getId().equals(crsi.getChannelID())).isEmpty()
-                || ur.find(c -> c.getId().equals(crsi.getUserID())).isEmpty()
+                ch.find(c -> c.getId().equals(crsi.channelID())).isEmpty()
+                || ur.find(c -> c.getId().equals(crsi.userID())).isEmpty()
         ) throw new RuntimeException("invalid create readstatus");
         if (
-                ! rsr.find(rs -> rs.getUserID().equals(crsi.getUserID())).isEmpty()
-                && ! rsr.find(rs -> rs.getChannelID().equals(crsi.getChannelID())).isEmpty()
+                ! rsr.find(rs -> rs.getUserID().equals(crsi.userID())).isEmpty()
+                && ! rsr.find(rs -> rs.getChannelID().equals(crsi.channelID())).isEmpty()
         ) throw new RuntimeException("object already created");
-        rsr.save(new ReadStatus(crsi.getUserID(), crsi.getChannelID()));
+        rsr.save(new ReadStatus(crsi.userID(), crsi.channelID()));
     }
 
     @Override

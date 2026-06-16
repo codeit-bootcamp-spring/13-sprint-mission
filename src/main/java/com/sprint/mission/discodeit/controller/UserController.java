@@ -1,10 +1,7 @@
 package com.sprint.mission.discodeit.controller;
 
 
-import com.sprint.mission.discodeit.dto.input.CreateUserInput;
-import com.sprint.mission.discodeit.dto.input.IDRequestInput;
-import com.sprint.mission.discodeit.dto.input.UpdateUserInput;
-import com.sprint.mission.discodeit.dto.input.UpdateUserStatusInput;
+import com.sprint.mission.discodeit.dto.input.*;
 import com.sprint.mission.discodeit.dto.output.UserDto;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.service.basic.BasicReadStatusService;
@@ -16,8 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -30,14 +25,14 @@ public class UserController {
     private final BasicUserStatusService buss;
     private final BasicReadStatusService brss;
 
-    @RequestMapping(value = "/regist", method = RequestMethod.POST)
+    @RequestMapping(value = "/", method = RequestMethod.POST)
     public void regist(
             @RequestBody CreateUserInput cui
     ) {
         this.bus.createUser(cui);
     }
 
-    @RequestMapping(value = "/update", method = RequestMethod.POST)
+    @RequestMapping(value = "/", method = RequestMethod.PATCH)
     public void update(
             @RequestBody UpdateUserInput uui
     ){
@@ -58,11 +53,11 @@ public class UserController {
     }
 
 
-    @RequestMapping(value = "/state", method = RequestMethod.GET)
-    public void userState(){
-            buss.updateByUserID(UpdateUserStatusInput.builder()
-                            .lastLoginTime(Instant.now())
-                            .build());
+    @RequestMapping(value = "/state", method = RequestMethod.POST)
+    public void userState(
+            @RequestBody IDRequestInput id
+    ){
+            buss.updateByUserID(id.getID());
     }
 
     @RequestMapping(value = "/msgStatus", method = RequestMethod.POST)

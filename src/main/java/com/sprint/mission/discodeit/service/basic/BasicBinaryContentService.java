@@ -20,15 +20,15 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     public BinaryContent create(BinaryContentInput bci){
         BinaryContent bc = BinaryContent.builder()
-                .contentID(bci.getContentID())
-                .authorID(bci.getAuthorID())
+                .contentID(bci.content())
+                .authorID(bci.auth())
                 .build();
         bcr.save(bc);
         return bc;
     }
 
     @Override
-    public BinaryContent find(UUID id){
+    public BinaryContent findByID(UUID id){
         return bcr.findByID(id);
     }
 

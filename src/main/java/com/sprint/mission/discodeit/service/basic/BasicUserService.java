@@ -8,7 +8,7 @@ import com.sprint.mission.discodeit.dto.output.UserOutput;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
-import com.sprint.mission.discodeit.exception.ServiceLayerException;
+import com.sprint.mission.discodeit.exception.DiscodeitUserException;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
@@ -34,40 +34,35 @@ public class BasicUserService implements UserService {
     @Override
     public void createUser(CreateUserInput cui){
 
-        if (fur.findByEmail(cui.getEmail()) != null) throw new ServiceLayerException("Email already exists","UserService");
-        if (fur.findByName(cui.getName()) != null) throw new ServiceLayerException("Name already exists","UserService");
+        if (fur.findByEmail(cui.getEmail()) != null) throw new DiscodeitUserException("Email already exists",400);
+        if (fur.findByName(cui.getName()) != null) throw new DiscodeitUserException("Name already exists",400);
 
-        try {
-            User user = User.builder()
-                    .email(cui.getEmail())
-                    .password(cui.getPassword())
-                    .name(cui.getName())
-                    .profileID(cui.getThumbnail())
+        User user = User.builder()
+                .email(cui.getEmail())
+                .password(cui.getPassword())
+                .name(cui.getName())
+                .profileID(cui.getThumbnail())
+                .build();
+
+        if (cui.getThumbnail() != null){
+            BinaryContent bc = BinaryContent.builder()
+                    .authorID(user.getId())
+                    .contentID(cui.getThumbnail())
                     .build();
-
-
-            if (cui.getThumbnail() != null){
-                BinaryContent bc = BinaryContent.builder()
-                        .authorID(user.getId())
-                        .contentID(cui.getThumbnail())
-                        .build();
-                bcr.save(bc);
-                log.debug("\n" + cui.getThumbnail().toString() + " Thumbnail created");
-                user.setProfileID(bc.getId());
-            }
-            fur.save(user);
-            log.debug("\n" + user.getId().toString() + " User created");
-
-            UserStatus ust = UserStatus.builder()
-                    .userID(user.getId())
-                    .lastLogin(Instant.now())
-                    .build();
-            usr.save(ust);
-            log.debug("\n" + ust.getId().toString() + " UserStatus created");
-
-        } catch (RuntimeException e) {
-            throw new ServiceLayerException(e.getMessage(), "UserService");
+            bcr.save(bc);
+            user.setProfileID(bc.getId());
+            log.debug("\n >> " + cui.getThumbnail().toString() + " Thumbnail created");
         }
+
+        fur.save(user);
+        log.debug("\n >> " + user.getId().toString() + " User created");
+
+        UserStatus ust = UserStatus.builder()
+                .userID(user.getId())
+                .lastLogin(Instant.now())
+                .build();
+        usr.save(ust);
+        log.debug("\n >> " + ust.getId().toString() + " UserStatus created");
     }
 
     @Override
@@ -96,7 +91,7 @@ public class BasicUserService implements UserService {
                         .id(u.getId())
                         .createdAt(u.getCreatedAt())
                         .updatedAt(u.getUpdatedAt())
-                        .userName(u.getName())
+                        .username(u.getName())
                         .email(u.getEmail())
                         .online(usr.findByUserID(u.getId()).online())
                         .profileId(
@@ -109,37 +104,35 @@ public class BasicUserService implements UserService {
     @Override
     public BinaryObjectOutput getUserThumbnail(UUID id){
         BinaryContent bct = bcr.findByID(id);
+        if (bct == null) throw new DiscodeitUserException("Thumbnail not found",400);
         return BinaryObjectOutput.builder()
                 .contentID(bct.getContentID())
                 .build();
     }
 
 
-    /**
-     * update functions
-     *
-     */
-
     @Override
     public void update(UpdateUserInput uui){
         // name duplicate check.
-        if (fur.findByName(uui.getName()) != null) return;
+        if (fur.findByName(uui.name()) != null) {
+            throw new DiscodeitUserException("Not exist User on Request",400);
+        }
 
-        updateUserProfile(uui.getId(), uui.getName(), uui.getPw());
-        if (uui.getThumbnail() != null) updateThumbnail(uui.getId(),uui.getThumbnail());
-    }
-
-    private void updateUserProfile(UUID id, String name, String password){
-        if (fur.findByName(name) != null) throw new IllegalArgumentException(name + " is existed.");
-
-        User user = fur.findByID(id);
-        if (name != null) user.setName(name);
-        if (password != null) user.setPassword(password);
+        User user = updateUserProfile(uui.id(), uui.name(), uui.pw());
+        if (uui.thumbnail() != null) updateThumbnail(uui.id(),uui.thumbnail());
         fur.save(user);
     }
 
+    private User updateUserProfile(UUID id, String name, String password){
+        User user = fur.findByID(id);
+        if (user == null) throw new DiscodeitUserException("user not Exist", 400);
+        if (name != null) user.setName(name);
+        if (password != null) user.setPassword(password);
+        return user;
+    }
+
     private void updateThumbnail(UUID authorID, UUID thumbID){
-        if (fur.findByID(authorID) != null) return;
+        if (bcr.findByID(authorID) == null) throw new DiscodeitUserException("Thumbnail not existed",400);
         bcr.delete(authorID);
         bcr.save(
                 BinaryContent.builder()

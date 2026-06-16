@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.input.CreatePublicChannelInput;
 import com.sprint.mission.discodeit.dto.input.UpdateChannelInput;
 import com.sprint.mission.discodeit.dto.output.ChannelOutput;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.exception.DiscodeitChannelException;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -26,15 +27,15 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public void createPublicChannel(CreatePublicChannelInput cpb){
-        cr.save(new Channel(cpb.getName(), cpb.getDescription(), ChannelType.PUBLIC));
-        // read status service 추가해야 함.
+        if (cpb.name().isEmpty()) throw new DiscodeitChannelException("channel name is required!",400);
+        cr.save(new Channel(cpb.name(), cpb.description(), ChannelType.PUBLIC));
     }
 
     @Override
     public void createPrivateChannel(CreatePrivateChannelInput cpv){
         Channel cnl = new Channel("", "", ChannelType.PRIVATE);
         cr.save(cnl);
-        rsr.save(new ReadStatus(UUID.fromString(cpv.getId()),cnl.getId()));
+        rsr.save(new ReadStatus(UUID.fromString(cpv.id()),cnl.getId()));
     }
 
     @Override
@@ -59,10 +60,10 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public void updateChannelInfo(UpdateChannelInput uci) throws RuntimeException {
+    public void updateChannelInfo(UpdateChannelInput uci) {
         Channel cnl = cr.findById(uci.idToUUID());
 
-        if (cnl.getType().equals(ChannelType.PRIVATE)) throw new RuntimeException("Private channel");
+        if (cnl.getType().equals(ChannelType.PRIVATE)) throw new DiscodeitChannelException("Private channel",400);
 
         if (!uci.name().isEmpty()) cnl.setName(uci.name());
         if (!uci.description().isEmpty()) cnl.setDescription(uci.description());

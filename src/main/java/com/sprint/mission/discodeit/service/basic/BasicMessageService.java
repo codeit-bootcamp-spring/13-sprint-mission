@@ -26,10 +26,10 @@ public class BasicMessageService implements MessageService {
     @Override
     public void createMessage(CreateMessageInput cmi){
 
-        if (ur.findByID(cmi.getUserID()) == null) throw new RuntimeException();
-        if (cr.findById(cmi.getChannelID()) == null) throw new RuntimeException();
+        if (ur.findByID(cmi.userID()) == null) throw new RuntimeException();
+        if (cr.findById(cmi.channelID()) == null) throw new RuntimeException();
 
-        mr.save(new Message(cmi.getUserID(), cmi.getChannelID(), cmi.getMessage(), cmi.getDataIDs()));
+        mr.save(new Message(cmi.userID(), cmi.channelID(), cmi.message(), cmi.dataIDs()));
     }
 
     @Override
