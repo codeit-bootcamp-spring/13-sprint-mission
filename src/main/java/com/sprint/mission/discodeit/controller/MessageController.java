@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.controller;
 
 
 import com.sprint.mission.discodeit.dto.input.CreateMessageInput;
+import com.sprint.mission.discodeit.dto.input.IDRequestInput;
 import com.sprint.mission.discodeit.dto.input.UpdateMessageInput;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.service.MessageService;
@@ -24,32 +25,33 @@ public class MessageController {
     public final MessageService mss;
 
 
-    @RequestMapping(value = "", method = RequestMethod.POST)
-    public void createMessage(
+    // msg id 를 반납하도록 해야하나?
+    @RequestMapping(value = "/", method = RequestMethod.POST)
+    public void sandMessage(
             @RequestBody CreateMessageInput msi
     ) {
         mss.createMessage(msi);
     }
 
-    @RequestMapping(value = "", method = RequestMethod.POST)
-    public void updateMessage(
+    @RequestMapping(value = "/", method = RequestMethod.PATCH)
+    public void modifyMessage(
             @RequestBody UpdateMessageInput msi
     ) {
         mss.updateMessageData(msi);
     }
 
-    @RequestMapping(value = "", method = RequestMethod.POST)
+    @RequestMapping(value = "/", method = RequestMethod.DELETE)
     public void deleteMessage(
-            @RequestBody String id
+            @RequestBody IDRequestInput id
     ){
-        mss.deleteMessage(UUID.fromString(id));
+        mss.deleteMessage(id.getID());
     }
 
-    @RequestMapping(value = "", method = RequestMethod.POST)
-    public List<Message> findMessageByUer(
-            @RequestBody String userID
+    @RequestMapping(value = "/byChannel", method = RequestMethod.POST)
+    public List<Message> findMessageByUser(
+            @RequestBody IDRequestInput id
     ){
-        return mss.findallByChannelId(UUID.fromString(userID));
+        return mss.findallByChannelId(id.getID());
     }
 
 }
