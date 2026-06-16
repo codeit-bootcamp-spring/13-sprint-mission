@@ -44,11 +44,11 @@ public class UserController {
             value = "/{userId}/status",
             method = RequestMethod.PATCH
     )
-    public void updateStatus(
+    public UserStatusResponse updateStatus(
             @PathVariable UUID userId,
             @RequestBody UpdateUserStatusRequest request
     ) {
-        userStatusService.updateByUserId(userId, request);
+       return userStatusService.updateByUserId(userId, request);
     }
 }
 

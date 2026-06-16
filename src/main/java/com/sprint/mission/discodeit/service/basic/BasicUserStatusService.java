@@ -104,7 +104,7 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public void updateByUserId(UUID userId, UpdateUserStatusRequest request) {
+    public UserStatusResponse updateByUserId(UUID userId, UpdateUserStatusRequest request) {
         if (userId == null) {
             throw new IllegalArgumentException("유저 아이디는 필수입니다.");
         }
@@ -122,5 +122,7 @@ public class BasicUserStatusService implements UserStatusService {
         userStatus.updateLastOnlineAt(request.lastOnlineTime());
 
         userStatusRepository.update(userStatus);
+
+        return UserStatusResponse.from(userStatus);
     }
 }
