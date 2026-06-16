@@ -32,7 +32,6 @@ public class ExceptionController {
 //        e.getBindingResult().getFieldErrors().forEach((error) -> {
 //            errors.put(error.getField(), error.getDefaultMessage());
 //        });
-        System.out.println(e);
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,e.getMessage());
         pd.setTitle("입력 검증 실패");
         pd.setProperty("timestamp", Instant.now());

@@ -6,7 +6,6 @@ import com.sprint.mission.discodeit.dto.input.IDRequestInput;
 import com.sprint.mission.discodeit.dto.input.UpdateUserInput;
 import com.sprint.mission.discodeit.dto.input.UpdateUserStatusInput;
 import com.sprint.mission.discodeit.dto.output.UserDto;
-import com.sprint.mission.discodeit.dto.output.UserOutput;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.service.basic.BasicReadStatusService;
 import com.sprint.mission.discodeit.service.basic.BasicUserService;
@@ -20,7 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor

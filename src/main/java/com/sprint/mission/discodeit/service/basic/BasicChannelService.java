@@ -79,13 +79,11 @@ public class BasicChannelService implements ChannelService {
     }
 
     private ChannelOutput toChannelOutput(Channel chn){
-        List<UUID> userIDs = null;
+        List<UUID> userIDs;
 
         List<Message> msg = mr.findByChannelID(chn.getId())
                 .stream()
-                .sorted(Comparator.comparing(
-                        (m1) -> m1.getCreatedAt()
-                ))
+                .sorted(Comparator.comparing(BaseEntity::getCreatedAt))
                 .toList();
 
         if (chn.getType().equals(ChannelType.PRIVATE)) {
