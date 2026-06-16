@@ -10,7 +10,8 @@ import java.util.List;
 public interface MessageRepository {
     Message save(Message message); //메시지 저장
     Optional<Message> findById(UUID id); //Id로 메시지 조회
-    List<Message> findAll(); //전체 메시지 조회
+    List<Message> findAllByChannelId(UUID channelId); //전체 메시지 조회
     boolean existsById(UUID id); //메시지 존재 여부 확인
     void deleteById(UUID id); //메시지 삭제
+    void deleteAllByChannelId(UUID channelId);
 }

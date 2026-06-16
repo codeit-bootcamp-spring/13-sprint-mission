@@ -46,10 +46,5 @@ public class Message implements Serializable {
             // this.updatedAt = Instant.now().getEpochSecond(); // 객체를 초(Second) 단위로 변환 (예 1970-01-01 00:00:00 UTC 의미함 (1749636000))
         }
     }
-
-    public void addAttachment(UUID attachmentId) {
-        attachmentIds.add(attachmentId);
-        this.updatedAt = Instant.now();
-    }
 }
 
