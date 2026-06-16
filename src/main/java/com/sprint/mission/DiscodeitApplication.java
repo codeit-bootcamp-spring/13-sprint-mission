@@ -1,5 +1,6 @@
 package com.sprint.mission;
 
+import com.sprint.mission.discodeit.dto.request.PublicChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
@@ -43,7 +44,9 @@ public class DiscodeitApplication {
 
         System.out.print("채널 설명 입력(예시: 공지채널입니다.): ");
         String description = scanner.nextLine();
-        Channel channel = channelService.create(type, name, description); //채널 생성
+
+        PublicChannelUpdateRequest request = new PublicChannelUpdateRequest(name, description);
+        Channel channel = channelService.create(request); //채널 생성
         return channel;
     }
 

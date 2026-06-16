@@ -10,7 +10,7 @@ import java.util.UUID;
 // ##채팅방(채널) 정보를 담는 클래스
 public class Channel implements Serializable {
     private static final long serialVersionUID = 1L;
-    private final UUID id; //고유번호
+    private UUID id; //고유번호
     private Instant createdAt; //만든시각
     private Instant updatedAt;  //바뀐시각
     private String name; //채널이름
