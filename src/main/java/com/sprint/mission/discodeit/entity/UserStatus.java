@@ -17,7 +17,7 @@ public class UserStatus implements Serializable {
     private Instant updatedAt;
     private Instant createdAt;
 
-    public UserStatus(UUID userId) {
+    public UserStatus(UUID userId, Instant lastConnectedAt) {
         this.id = UUID.randomUUID();
         this.userId = userId;
         this.lastConnectedAt = Instant.now();
@@ -25,13 +25,21 @@ public class UserStatus implements Serializable {
         this.createdAt = Instant.now();
     }
 
-    //현재 온라인 여부 확인. 마지막 접속 시간이 5분 이내면 true
-    public boolean isOnline() {
-        return Duration.between(lastConnectedAt, Instant.now()).toMinutes() >= 5;
+    public void update(Instant lastActiveAt) {
+        boolean anyValueUpdated = false;
+        if (lastActiveAt != null && !lastActiveAt.equals(this.lastConnectedAt)) {
+            this.lastConnectedAt = lastActiveAt;
+            anyValueUpdated = true;
+        }
+        if (anyValueUpdated) {
+            this.updatedAt = Instant.now();
+        }
     }
 
-    public void updateLastConnectedAt() {
-        this.lastConnectedAt = Instant.now();
-        this.updatedAt = Instant.now();
+    //현재 온라인 여부 확인. 마지막 접속 시간이 5분 이내면 true
+    public boolean isOnline() {
+        Instant instantFiveMinutesAgo = Instant.now().minus(Duration.ofMinutes(5));
+        return lastConnectedAt.isAfter(instantFiveMinutesAgo);
     }
+
 }
