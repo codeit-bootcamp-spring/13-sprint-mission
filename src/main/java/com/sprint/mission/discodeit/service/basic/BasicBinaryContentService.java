@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -35,6 +36,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     public List<BinaryContent> findAllByIdIn(List<UUID> ids){
         return ids.stream()
                 .map(bcr::findByID)
+                .filter(Objects::nonNull)
                 .toList();
     }
 

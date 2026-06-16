@@ -2,9 +2,13 @@ package com.sprint.mission.discodeit.controller;
 
 
 import com.sprint.mission.discodeit.dto.input.CreateUserInput;
+import com.sprint.mission.discodeit.dto.input.IDRequestInput;
 import com.sprint.mission.discodeit.dto.input.UpdateUserInput;
 import com.sprint.mission.discodeit.dto.input.UpdateUserStatusInput;
+import com.sprint.mission.discodeit.dto.output.UserDto;
 import com.sprint.mission.discodeit.dto.output.UserOutput;
+import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.service.basic.BasicReadStatusService;
 import com.sprint.mission.discodeit.service.basic.BasicUserService;
 import com.sprint.mission.discodeit.service.basic.BasicUserStatusService;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +30,7 @@ public class UserController {
 
     private final BasicUserService bus;
     private final BasicUserStatusService buss;
+    private final BasicReadStatusService brss;
 
     @RequestMapping(value = "/regist", method = RequestMethod.POST)
     public void regist(
@@ -43,14 +48,14 @@ public class UserController {
 
     @RequestMapping(value = "/delete",method = RequestMethod.DELETE)
     public void delete(
-            @RequestBody String id
+            @RequestBody IDRequestInput id
     ){
-        this.bus.delete(UUID.fromString(id));
+        this.bus.delete(id.getID());
     }
 
 
-    @RequestMapping(value = "findAll",method = RequestMethod.GET)
-    public List<UserOutput> allUsers(){
+    @RequestMapping(value = "/findAll",method = RequestMethod.GET)
+    public List<UserDto> allUsers(){
         return this.bus.getUserList();
     }
 
@@ -62,5 +67,11 @@ public class UserController {
                             .build());
     }
 
+    @RequestMapping(value = "/msgStatus", method = RequestMethod.POST)
+    public List<ReadStatus> queryByUser(
+            @RequestBody IDRequestInput userID
+    ){
+        return brss.findAllByUserID(userID.getID());
+    }
 
 }

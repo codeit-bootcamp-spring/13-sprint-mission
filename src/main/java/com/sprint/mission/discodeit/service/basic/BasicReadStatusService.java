@@ -49,6 +49,7 @@ public class BasicReadStatusService implements ReadStatusService {
     public void update(UpdateReadStatusInput ursi){
         ReadStatus rs = rsr.find(r -> r.getId().equals(ursi.getReadStatusID())).get(0);
         rs.setUpdatedAt();
+        rsr.save(rs);
     }
     @Override
     public void delete(UUID id){

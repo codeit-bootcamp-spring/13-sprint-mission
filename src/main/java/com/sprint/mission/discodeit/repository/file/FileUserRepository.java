@@ -34,6 +34,11 @@ public class FileUserRepository extends FileBaseRepository implements UserReposi
     }
 
     @Override
+    public List<User> findAll(){
+        return this.find(c -> true);
+    }
+
+    @Override
     public User findByID(UUID id){
         List<User> res =  find(u -> u.getId().equals(id));
         return res.isEmpty() ? null : res.get(0);

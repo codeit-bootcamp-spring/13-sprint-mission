@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.service;
 
 import com.sprint.mission.discodeit.dto.input.CreatePrivateChannelInput;
 import com.sprint.mission.discodeit.dto.input.CreatePublicChannelInput;
+import com.sprint.mission.discodeit.dto.input.UpdateChannelInput;
 import com.sprint.mission.discodeit.dto.output.ChannelOutput;
 
 
@@ -13,6 +14,6 @@ public interface ChannelService {
     void createPrivateChannel(CreatePrivateChannelInput cnp);
     ChannelOutput findChannelInfoById(UUID Channelid);
     List<ChannelOutput> findAllByUserID(UUID userID);
-    void updateChannelInfo(UUID id, CreatePublicChannelInput cnp);
+    void updateChannelInfo(UpdateChannelInput uci);
     void deleteChannel(UUID id);
 }

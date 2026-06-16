@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.input.CreateMessageInput;
+import com.sprint.mission.discodeit.dto.input.QueryMessageInput;
 import com.sprint.mission.discodeit.dto.input.UpdateMessageInput;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -45,6 +46,7 @@ public class BasicMessageService implements MessageService {
         for (UUID dataID : umi.getDataIDs()) {
                 msg.getAttrID().add(dataID);
         }
+        msg.setUpdatedAt();
         mr.save(msg);
     }
 
@@ -54,5 +56,4 @@ public class BasicMessageService implements MessageService {
         bcr.findByAuthorID(id)
                 .forEach(b -> bcr.delete(b.getId()));
     }
-
 }

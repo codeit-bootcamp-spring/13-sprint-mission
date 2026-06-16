@@ -3,10 +3,12 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.input.CreateUserInput;
 import com.sprint.mission.discodeit.dto.input.UpdateUserInput;
 import com.sprint.mission.discodeit.dto.output.BinaryObjectOutput;
+import com.sprint.mission.discodeit.dto.output.UserDto;
 import com.sprint.mission.discodeit.dto.output.UserOutput;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.ServiceLayerException;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
@@ -31,36 +33,40 @@ public class BasicUserService implements UserService {
 
     @Override
     public void createUser(CreateUserInput cui){
-        boolean check =  fur.findByEmail(cui.getEmail()) != null
-                || fur.find(u -> u.getName().equals(cui.getName())) != null;
 
-        if (!check){
-            log.debug("User create cancel - same name or email detached.");
-            return;
-        }
+        if (fur.findByEmail(cui.getEmail()) != null) throw new ServiceLayerException("Email already exists","UserService");
+        if (fur.findByName(cui.getName()) != null) throw new ServiceLayerException("Name already exists","UserService");
 
-        User user = User.builder()
-                .email(cui.getEmail())
-                .password(cui.getPassword())
-                .name(cui.getName())
-                .build();
-        fur.save(user);
+        try {
+            User user = User.builder()
+                    .email(cui.getEmail())
+                    .password(cui.getPassword())
+                    .name(cui.getName())
+                    .profileID(cui.getThumbnail())
+                    .build();
 
 
-        UserStatus ust = UserStatus.builder()
-                .userID(user.getId())
-                .lastLogin(Instant.now())
-                .build();
-        usr.save(ust);
+            if (cui.getThumbnail() != null){
+                BinaryContent bc = BinaryContent.builder()
+                        .authorID(user.getId())
+                        .contentID(cui.getThumbnail())
+                        .build();
+                bcr.save(bc);
+                log.debug("\n" + cui.getThumbnail().toString() + " Thumbnail created");
+                user.setProfileID(bc.getId());
+            }
+            fur.save(user);
+            log.debug("\n" + user.getId().toString() + " User created");
 
+            UserStatus ust = UserStatus.builder()
+                    .userID(user.getId())
+                    .lastLogin(Instant.now())
+                    .build();
+            usr.save(ust);
+            log.debug("\n" + ust.getId().toString() + " UserStatus created");
 
-        if (cui.getThumbnail() != null){
-            bcr.save(
-                    BinaryContent.builder()
-                            .authorID(user.getId())
-                            .contentID(cui.getThumbnail())
-                            .build()
-            );
+        } catch (RuntimeException e) {
+            throw new ServiceLayerException(e.getMessage(), "UserService");
         }
     }
 
@@ -83,13 +89,19 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public List<UserOutput> getUserList(){
-        return fur.find(((c) -> true))
+    public List<UserDto> getUserList(){
+        return fur.findAll()
                 .stream()
-                .map(u -> UserOutput.builder()
-                        .name(u.getName())
+                .map(u -> UserDto.builder()
+                        .id(u.getId())
+                        .createdAt(u.getCreatedAt())
+                        .updatedAt(u.getUpdatedAt())
+                        .userName(u.getName())
                         .email(u.getEmail())
                         .online(usr.findByUserID(u.getId()).online())
+                        .profileId(
+                                u.getProfileID()
+                                )
                         .build())
                 .toList();
     }
@@ -117,20 +129,22 @@ public class BasicUserService implements UserService {
         if (uui.getThumbnail() != null) updateThumbnail(uui.getId(),uui.getThumbnail());
     }
 
-    private void updateUserProfile(String id, String name, String password){
-        User user = fur.findByID(UUID.fromString(id));
-        user.setName(name);
-        user.setPassword(password);
+    private void updateUserProfile(UUID id, String name, String password){
+        if (fur.findByName(name) != null) throw new IllegalArgumentException(name + " is existed.");
+
+        User user = fur.findByID(id);
+        if (name != null) user.setName(name);
+        if (password != null) user.setPassword(password);
         fur.save(user);
     }
 
-    private void updateThumbnail(String authorID, String thumbID){
-        if (fur.findByID(UUID.fromString(authorID)) != null) return;
-        bcr.delete(UUID.fromString(authorID));
+    private void updateThumbnail(UUID authorID, UUID thumbID){
+        if (fur.findByID(authorID) != null) return;
+        bcr.delete(authorID);
         bcr.save(
                 BinaryContent.builder()
-                        .authorID(UUID.fromString(authorID))
-                        .contentID(UUID.fromString(thumbID))
+                        .authorID(authorID)
+                        .contentID(thumbID)
                         .build()
         );
     }

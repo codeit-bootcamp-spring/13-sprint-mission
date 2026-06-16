@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service;
 
 import com.sprint.mission.discodeit.dto.input.CreateMessageInput;
+import com.sprint.mission.discodeit.dto.input.QueryMessageInput;
 import com.sprint.mission.discodeit.dto.input.UpdateMessageInput;
 import com.sprint.mission.discodeit.entity.Message;
 

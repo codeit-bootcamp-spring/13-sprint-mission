@@ -31,6 +31,11 @@ public class JCFUserRepository implements UserRepository {
     }
 
     @Override
+    public List<User> findAll(){
+        return this.find(c -> true);
+    }
+
+    @Override
     public User findByID(UUID id){
         return data.get(id);
     }

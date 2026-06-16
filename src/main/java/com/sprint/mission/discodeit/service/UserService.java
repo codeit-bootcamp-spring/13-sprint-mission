@@ -4,6 +4,7 @@ package com.sprint.mission.discodeit.service;
 import com.sprint.mission.discodeit.dto.input.CreateUserInput;
 import com.sprint.mission.discodeit.dto.input.UpdateUserInput;
 import com.sprint.mission.discodeit.dto.output.BinaryObjectOutput;
+import com.sprint.mission.discodeit.dto.output.UserDto;
 import com.sprint.mission.discodeit.dto.output.UserOutput;
 
 
@@ -14,7 +15,7 @@ public interface UserService {
     void createUser(CreateUserInput upf);
     UserOutput getUserById(UUID id);
     BinaryObjectOutput getUserThumbnail(UUID id);
-    List<UserOutput> getUserList();
+    List<UserDto> getUserList();
     void update(UpdateUserInput uui);
     void delete(UUID id);
 }

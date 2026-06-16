@@ -10,5 +10,4 @@ import lombok.Setter;
 public class CreatePublicChannelInput {
     String name;
     String description;
-    String type;
 }

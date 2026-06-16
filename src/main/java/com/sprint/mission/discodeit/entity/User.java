@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @Builder
@@ -13,6 +15,7 @@ public class User extends BaseEntity {
     private final String email;
     private String password;
     private String name;
+    private UUID profileID;
 
     // temp ToString
     @Override

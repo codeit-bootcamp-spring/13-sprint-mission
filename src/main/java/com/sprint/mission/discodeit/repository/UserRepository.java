@@ -10,6 +10,7 @@ public interface UserRepository {
 
     void save(User user);
     List<User> find(Predicate<User> fn);
+    List<User> findAll();
     User findByID(UUID id);
     User findByEmail(String email);
     User findByName(String name);
