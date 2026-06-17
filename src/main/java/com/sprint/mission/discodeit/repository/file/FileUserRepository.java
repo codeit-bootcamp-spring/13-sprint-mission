@@ -2,56 +2,115 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import org.springframework.stereotype.Repository;
 
 import java.io.*;
-import java.util.ArrayList;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
-public abstract class FileUserRepository implements UserRepository {
-    private final String filePath = "users.dat";
-    private List<User> users = new ArrayList<>();
+@Repository
+//파일(Users.dat)에 사용자 데이터를 저장하는 파일 저장방식 구현체 (프로그램이 종료되어도 데이터가 유지됨)
+public class FileUserRepository implements UserRepository {
+    private final Path DIRECTORY;
+    private final String EXTENSION = ".ser";
 
     public FileUserRepository() {
-        load();
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", User.class.getSimpleName());
+        if (Files.notExists(DIRECTORY)) {
+            try {
+                Files.createDirectories(DIRECTORY);
+            }catch (IOException e){
+                throw new RuntimeException(e);
+            }
+        }
     }
 
-    //@Override
+    private Path resolvePath(UUID id){ return DIRECTORY.resolve(id + EXTENSION); }
+
+    @Override //사용자 생성
     public User save(User user) {
-        users.add(user);
-        saveToFile();
+        Path path = resolvePath(user.getId());
+       try(
+               FileOutputStream fos = new FileOutputStream(path.toFile()); //파일 출력 스트림
+               ObjectOutputStream oos = new ObjectOutputStream(fos) //객체 직렬화 출력 스트림
+               ) {
+           oos.writeObject(user); //User 객체를 파일로 저장
+       }catch (IOException e) {throw new RuntimeException(e);}
         return user;
     }
 
-    //@Override
-    public User findByld(UUID id){
-        for (User user : users) {
-            if (user.getId().equals(id))
-                return user;
+    @Override //id로 사용자 조회
+    public Optional<User> findById(UUID id) {
+        User userNullable = null;
+        Path path = resolvePath(id);
+        if (Files.exists(path)) {
+            try (
+                    FileInputStream fis = new FileInputStream(path.toFile()); //파일 읽기 스트림
+                    ObjectInputStream ois = new ObjectInputStream(fis) //객체 역질렬화 스트림
+                    ) {
+                userNullable = (User) ois.readObject();
+            } catch (IOException | ClassNotFoundException e) {throw new RuntimeException(e);}
         }
-        return null;
+        return Optional.ofNullable(userNullable);
     }
 
-    private void saveToFile() {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
-            oos.writeObject(users);
+    @Override
+    public Optional<User> findByUsername(String username) {
+        return this.findAll().stream()
+                .filter(user -> user.getUsername().equals(username))
+                .findFirst();
+    }
+
+    @Override //전체 사용자 조회
+    public List<User> findAll(){
+        try {
+            return Files.list(DIRECTORY)
+                    .filter(path -> path.toString().endsWith(EXTENSION))
+                    .map(path -> {
+                        try (
+                                FileInputStream fis = new FileInputStream(path.toFile());
+                                ObjectInputStream ois = new ObjectInputStream(fis)
+                        ){
+                            return (User) ois.readObject();
+                        }catch (IOException | ClassNotFoundException e) {
+                                    throw new RuntimeException(e);
+                        }
+                    })
+                    .toList();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
-    @SuppressWarnings("uncheked")
-    private void load() {
-        File file = new File(filePath);
-        if (!file.exists()) {
-            users = new ArrayList<>();
-            return;
-        }
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
-            users = (List<User>) ois.readObject();
-        } catch (Exception e) {
-            users = new ArrayList<>();
+    @Override //사용자 존재 여부 확인
+    public boolean existsById(UUID id) {
+        Path path = resolvePath(id);
+        return Files.exists(path);
+    }
+
+    @Override //사용자 삭제
+    public void deleteById(UUID id) {
+        Path path = resolvePath(id);
+        try {
+            Files.delete(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
+    @Override
+    public boolean existsByUsername(String username) {
+        return this.findAll().stream()
+                .anyMatch(user -> user.getUsername().equals(username));
+    }
+
+    @Override
+    public boolean existsByEmail(String email) {
+        return this.findAll().stream()
+                .anyMatch(user -> user.getEmail().equals(email));
+    }
 }
