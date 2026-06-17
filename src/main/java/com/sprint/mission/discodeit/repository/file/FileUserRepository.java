@@ -1,116 +1,106 @@
 package com.sprint.mission.discodeit.repository.file;
 
+
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import org.springframework.stereotype.Repository;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-
-
+@Repository // File*Repository 구현체를 Repository 인터페이스의 Bean으로 등록
 public class FileUserRepository implements UserRepository {
 
-    private final Path userPath =Path.of("data/users.csv");
+    private final Path DIRECTORY;
+    private final String EXTENSION = ".ser";
+
+    public FileUserRepository(){
+        this.DIRECTORY= Paths.get(System.getProperty("user.dir"),
+                "file-data-map", User.class.getSimpleName());
+        if (Files.notExists(DIRECTORY)){ // Repository 생성 시점에서 폴더 존재 여부 한 번만 검사
+            try {
+                Files.createDirectories(DIRECTORY);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private Path resolvePath(UUID id) {
+        return DIRECTORY.resolve(id+EXTENSION);
+    }
 
     @Override
-    public User createOne(User user) throws IOException {
-
-        Path parent=userPath.getParent(); // 경로 실제로 존재하는지 확인하기 위해 부모 경로 확인
-
-        if(parent!=null){ // null 체크 먼저 진행하자
-            Files.createDirectories(parent);
-        }
-
-        try(BufferedWriter writer=Files.newBufferedWriter(userPath, StandardCharsets.UTF_8, StandardOpenOption.APPEND, StandardOpenOption.CREATE)){
-            writer.write(user.getId()+","+user.getUsername()+","+user.getEmail()+","+user.getCreatedAt()+","+user.getUpdatedAt()); // 공백 조심
-            writer.newLine();
+    public User save(User user) {
+        Path path=resolvePath(user.getId());
+        try(
+                FileOutputStream fileOutputStream = new FileOutputStream(path.toFile());
+                ObjectOutputStream objectOutputStream =new ObjectOutputStream(fileOutputStream)
+        ) {
+            objectOutputStream.writeObject(user); // 직렬화로 저장
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         return user;
     }
 
     @Override
-    public Optional<User> readOne(UUID id) throws IOException {
-        try (BufferedReader reader = Files.newBufferedReader(userPath, StandardCharsets.UTF_8)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.isBlank()) continue;
-                User user = parseCsvRow(line);
-                if (user.getId().equals(id)) {
-                    return Optional.of(user);
-                }
-
+    public Optional<User> findById(UUID id) {
+        User userNullable=null;
+        Path path=resolvePath(id); // id가 파일 경로 직접 순회
+        if (Files.exists(path)){
+            try (
+                    FileInputStream fileInputStream=new FileInputStream(path.toFile());
+                    ObjectInputStream objectInputStream=new ObjectInputStream(fileInputStream)
+            ) {
+                userNullable=(User) objectInputStream.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
             }
         }
-        return Optional.empty();
+        return Optional.ofNullable(userNullable);
     }
 
-    public User parseCsvRow(String line) throws IOException{
-        String[] cols=line.split(",", -1);
-        if (cols.length<4){
-            throw new IOException("CSV 칼럼 수가 부족합니다! (4개 필요, 실제 "+cols.length+"개)");
+    @Override
+    public List<User> findAll() {
+        try {
+            return Files.list(DIRECTORY)
+                    .filter(path -> path.toString().endsWith(EXTENSION))
+                    .map(path -> {
+                        try (
+                                FileInputStream fileInputStream = new FileInputStream(path.toFile());
+                                ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)
+                        ) {
+                            return (User) objectInputStream.readObject();
+
+                        } catch (IOException | ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }).toList();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        UUID id=UUID.fromString(cols[0]);
-        String username=cols[1];
-        String email=cols[2];
-        Long createdAt=Long.parseLong(cols[3]);
-
-        return new User(id, username, email, createdAt);
-
 
     }
 
     @Override
-    public List<User> readAll() throws IOException {
-        List<User> allResult=new ArrayList<>();
-        try (BufferedReader reader=Files.newBufferedReader(userPath, StandardCharsets.UTF_8)) {
-
-
-            String line;
-            while ((line=reader.readLine())!=null){
-                if (line.isBlank()) continue;
-                allResult.add(parseCsvRow(line));
-            }
+    public void deleteById(UUID id) {
+        Path path=resolvePath(id);
+        try {
+            Files.delete(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        return allResult;
     }
-
 
     @Override
-    public void deleteOne(UUID id) throws IOException {
-        List<User> erase=new ArrayList<>();
-        try (BufferedReader reader=Files.newBufferedReader(userPath, StandardCharsets.UTF_8)) {
-
-
-            String line;
-            while ((line=reader.readLine())!=null){
-                if (line.isBlank()) continue;
-                User user = parseCsvRow(line);
-                if (!user.getId().equals(id)) {
-                    erase.add(user); // 아이디가 일치하는 것은 빼고 일치하지 않는 것만 추가하자
-                }
-
-            }
-        }
-
-        try(BufferedWriter writer=Files.newBufferedWriter(userPath, StandardCharsets.UTF_8)){
-            for (User user : erase) {
-
-                writer.write(user.getId()+","+user.getUsername()+","+user.getEmail()+","+user.getUpdatedAt());
-                writer.newLine();
-            }
-
-        }
-
+    public boolean existById(UUID id) {
+        Path path=resolvePath(id);
+        return Files.exists(path);
     }
-
-
 }

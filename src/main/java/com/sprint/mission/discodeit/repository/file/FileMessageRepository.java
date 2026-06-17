@@ -2,103 +2,125 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
+import org.springframework.stereotype.Repository;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Repository // File*Repository 구현체를 Repository 인터페이스의 Bean으로 등록
 public class FileMessageRepository implements MessageRepository {
 
-    private final Path messagePath =Path.of("data/messages.csv");
+    private final Path DIRECTORY;
+    private final String EXTENSION=".ser";
 
+    public FileMessageRepository(){
+        this.DIRECTORY= Paths.get(System.getProperty("user.dir"),
+                "file-data-map", Message.class.getSimpleName());
+        if (Files.notExists(DIRECTORY)){
+            try {
+                Files.createDirectories(DIRECTORY);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private Path resolvePath(UUID id){
+        return DIRECTORY.resolve(id+EXTENSION);
+    }
 
     @Override
-    public Message createOne(Message message) throws IOException {
-        Path parent=messagePath.getParent(); // 경로 실제로 존재하는지 확인하기 위해 부모 경로 확인
-
-        if(parent!=null){ // null 체크 먼저 진행하자
-            Files.createDirectories(parent);
-        }
-
-        try (BufferedWriter writer= Files.newBufferedWriter(messagePath, StandardCharsets.UTF_8, StandardOpenOption.APPEND, StandardOpenOption.CREATE)){
-            writer.write(message.getId()+","+message.getChannelId()+","+message.getContent()+","+message.getCreatedAt()+","+message.getUpdatedAt());
-            writer.newLine();
+    public Message save(Message message) {
+        Path path=resolvePath(message.getId());
+        try(
+                FileOutputStream fileOutputStream=new FileOutputStream(path.toFile());
+                ObjectOutputStream objectOutputStream=new ObjectOutputStream(fileOutputStream)
+        ) {
+            objectOutputStream.writeObject(message);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         return message;
     }
 
     @Override
-    public Optional<Message> readOne(UUID id) throws IOException {
-        try (BufferedReader reader=Files.newBufferedReader(messagePath, StandardCharsets.UTF_8)){
-
-            String line;
-            while ((line=reader.readLine())!=null){
-                if (line.isBlank()) continue;
-                Message message=parseCsvRow(line);
-                if (message.getId().equals(id)){
-                    return Optional.of(message);
-                }
+    public Optional<Message> findById(UUID id) {
+        Message messageNullable=null;
+        Path path=resolvePath(id);
+        if (Files.exists(path)){
+            try (
+                    FileInputStream fileInputStream=new FileInputStream(path.toFile());
+                    ObjectInputStream objectInputStream=new ObjectInputStream(fileInputStream)
+            ){
+                messageNullable=(Message) objectInputStream.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
             }
         }
-        return Optional.empty();
-    }
-
-    private Message parseCsvRow(String line) throws IOException{
-
-        String[] cols=line.split(",", -1);
-        if (cols.length<4) {
-            throw new IOException("CSV 칼럼 수가 부족합니다! (4개 필요, 실제 "+cols.length+"개)");
-        }
-        UUID id=UUID.fromString(cols[0]);
-        UUID channelId=UUID.fromString(cols[1]);
-        String content=cols[2];
-        Long createdAt=Long.parseLong(cols[3]);
-        return new Message(id, channelId, content, createdAt);
+        return Optional.ofNullable(messageNullable);
     }
 
     @Override
-    public List<Message> readAll() throws IOException {
-        List<Message> allResult=new ArrayList<>();
-        try (BufferedReader reader=Files.newBufferedReader(messagePath, StandardCharsets.UTF_8)){
+    public List<Message> findAll() {
+        try {
+            return Files.list(DIRECTORY)
+                    .filter(path -> path.toString().endsWith(EXTENSION))
+                    .map(path -> {
+                        try (
+                                FileInputStream fileInputStream=new FileInputStream(path.toFile());
+                                ObjectInputStream objectInputStream=new ObjectInputStream(fileInputStream)
+                        ){
+                            return (Message)objectInputStream.readObject();
 
-
-            String line;
-            while ((line=reader.readLine())!=null){
-                if (line.isBlank()) continue;
-                allResult.add(parseCsvRow(line));
-            }
+                        } catch (IOException | ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }).toList();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        return allResult;
     }
 
     @Override
-    public void deleteOne(UUID id) throws IOException {
-        List<Message> erase=new ArrayList<>();
-        try (BufferedReader reader=Files.newBufferedReader(messagePath, StandardCharsets.UTF_8)){
+    public List<Message> findAllByChannelId(UUID channelId) {
+        try {
+            return Files.list(DIRECTORY)
+                    .filter(path -> path.toString().endsWith(EXTENSION))
+                    .map(path -> {
+                        try (
+                                FileInputStream fileInputStream=new FileInputStream(path.toFile());
+                                ObjectInputStream objectInputStream=new ObjectInputStream(fileInputStream)
+                        ){
+                            return (Message)objectInputStream.readObject();
 
-            String line;
-            while ((line=reader.readLine())!=null) {
-                if (line.isBlank()) continue;
-                Message message=parseCsvRow(line);
-                if (!message.getId().equals(id)){
-                    erase.add(message);
-                }
-            }
+                        } catch (IOException | ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }).filter(message -> message.getChannelId().equals(channelId))
+                    .toList();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+    }
 
-        try (BufferedWriter writer=Files.newBufferedWriter(messagePath, StandardCharsets.UTF_8)){
-            for (Message message : erase) {
-                writer.write(message.getId()+","+message.getChannelId()+","+message.getContent()+","+message.getUpdatedAt());
-                writer.newLine();
-            }
+    @Override
+    public void deleteById(UUID id) {
+        Path path=resolvePath(id);
+        try {
+            Files.delete(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public boolean existById(UUID id) {
+        Path path=resolvePath(id);
+        return Files.exists(path);
     }
 }

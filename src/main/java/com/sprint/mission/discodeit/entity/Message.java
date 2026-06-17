@@ -1,99 +1,45 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
 
+import java.io.Serial;
 import java.io.Serializable;
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
-
 import static java.util.UUID.randomUUID;
 
+@Getter
 public class Message implements Serializable {
-
+    @Serial
     private static final long serialVersionUID=1L;
-    // 직렬화 및 역직렬화를 수행할 때 이 클래스의 버전을 의미
-
-    private final UUID id; // 객체 식별
-    // UUID 범용 고유 식별자, 중복 되지 않는 유일한 값
-    private final Long createdAt;
-    private Long updatedAt; // 각각 객체의 생성, 수정 시간을 유닉스 타임스탬프로 나타냄
-
-
+    private final UUID id, channelId, authorId; // User 도메인 모델의 id와 연결하기 위해 authorId 추가
+    private final Instant createdAt;
+    private Instant updatedAt;
     private String content;
-    private UUID channelId;
+    private List<UUID> attachmentIds;
 
-
-
-    // 생성자 호출
-    public Message(UUID channelId, String content, Long createdAt) {
-
-        this(randomUUID(), channelId, content, System.currentTimeMillis());
-
-
+    public Message(String content, UUID channelId, UUID authorId, List<UUID> attachmentIds) {
+        this.id=randomUUID();
+        this.createdAt= Instant.now();
+        this.updatedAt= Instant.now();
+        this.content=content;
+        this.channelId=channelId; // 채널 ID는 수정할 수 없는 값
+        this.authorId=authorId;
+        this.attachmentIds = attachmentIds;
     }
-
-    public Message(UUID id, UUID channelId, String content, Long createdAt) {
-        this.id=id; // id 초기화
-        this.channelId=normalizeChannelId(channelId);
-        this.content=normalizeContent(content);
-        this.createdAt= createdAt; // 유낙스 타임스탬프 얻기
-        this.updatedAt=createdAt; // 우선 생성시점과 동일하게 초기화
-    }
-
-
-
 
     // 필드 수정하는 update 함수 정의
-    public void updateMessage(UUID newChannelId, String newContent, Long updatedAt) {
-
-
-        this.channelId=normalizeChannelId(newChannelId);
-        this.content=normalizeContent(newContent);
-        this.updatedAt=System.currentTimeMillis();
-        System.out.println("최초생성: "+createdAt+"\n채널: "+newChannelId+"\n메시지내용: "+newContent+"\n수정: "+updatedAt);
-
-        System.out.println();
-
-
-    }
-
-
-
-
-    private String normalizeContent(String newContent){
-        if(newContent.isBlank()){
-            return "조심하세요! 공백은 불가능합니다...";
+    public void update(String newContent) {
+        boolean anyValueUpdated=false; // 수정시간은 실제 변경이 있을 때만 갱신되도록 구성
+        if(newContent != null && !newContent.equals(this.content)){
+            this.content=newContent;
+            anyValueUpdated=true;
         }
-        return newContent;
-    }
-
-    private UUID normalizeChannelId(UUID newChannelId){
-        if(newChannelId==null) {
-            System.out.println("조심하세요! 공백은 불가능합니다....");
-            return channelId;
+        if (!anyValueUpdated) {
+            throw new IllegalArgumentException("변경사항이 없습니다!");
         }
-        return newChannelId;
-
+        this.updatedAt=Instant.now();
     }
 
-
-
-
-    public UUID getId() {
-        return id;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public UUID getChannelId() {
-        return channelId;
-    }
-
-    public Long getCreatedAt() {
-        return createdAt;
-    }
-
-    public Long getUpdatedAt() {
-        return updatedAt;
-    }
 }
