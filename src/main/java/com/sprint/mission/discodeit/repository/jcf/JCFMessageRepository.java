@@ -1,23 +1,22 @@
 package com.sprint.mission.discodeit.repository.jcf;
 
+import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
+import org.springframework.boot.autoconfigure.condition.*;
+import org.springframework.stereotype.*;
 
 import java.util.*;
 
+@Repository
+@ConditionalOnProperty(name = "discodeit.repository.type", matchIfMissing = true, havingValue = "jcf")
 public class JCFMessageRepository implements MessageRepository {
 
     private final Map<UUID, Message> data;
-    private final ChannelService channelService;
-    private final UserService userService;
 
-    public JCFMessageRepository(UserService userService,
-                             ChannelService channelService) {
-
+    public JCFMessageRepository() {
         this.data = new HashMap<>();
-        this.userService = userService;
-        this.channelService = channelService;
     }
 
     @Override
@@ -31,13 +30,15 @@ public class JCFMessageRepository implements MessageRepository {
     }
 
     @Override
-    public Message read(UUID id) {
+    public Message find(UUID id) {
         return data.get(id);
     }
 
     @Override
-    public List<Message> readAll() {
-        return new ArrayList<>(data.values());
+    public List<Message> findAllByChannelId(UUID channelId) {
+        return data.values().stream()
+                .filter(message -> message.getChannelId().equals(channelId))
+                .toList();
     }
 
     @Override

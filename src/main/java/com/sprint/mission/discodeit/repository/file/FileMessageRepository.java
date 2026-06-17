@@ -1,19 +1,28 @@
 package com.sprint.mission.discodeit.repository.file;
 
+import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
+import org.springframework.boot.autoconfigure.condition.*;
+import org.springframework.stereotype.*;
 
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
+@Repository
+@ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
 public class FileMessageRepository implements MessageRepository {
 
     private final List<Message> messages = new ArrayList<>();
     private final Path messagePath;
 
-    public FileMessageRepository(Path messagePath) {
-        this.messagePath = messagePath;
+    public FileMessageRepository() {
+        this(Paths.get("data/messages.ser"));
+    }
+
+    public FileMessageRepository(Path messagesPath) {
+        this.messagePath = messagesPath;
         loadFromFile();
     }
 
@@ -28,7 +37,7 @@ public class FileMessageRepository implements MessageRepository {
     }
 
     @Override
-    public Message read(UUID id) {
+    public Message find(UUID id) {
         for (Message message : messages) {
             if (message.getId().equals(id)) {
                 return message;
@@ -39,8 +48,10 @@ public class FileMessageRepository implements MessageRepository {
     }
 
     @Override
-    public List<Message> readAll() {
-        return new ArrayList<>(messages);
+    public List<Message> findAllByChannelId(UUID channelId) {
+        return messages.stream()
+                .filter(message -> Objects.equals(message.getChannelId(), channelId))
+                .toList();
     }
 
     @Override

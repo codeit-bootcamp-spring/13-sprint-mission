@@ -1,7 +1,10 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.*;
+
 import java.io.*;
 
+@Getter
 public class User extends BaseEntity implements Serializable {
 
     private String userName;
@@ -30,14 +33,6 @@ public class User extends BaseEntity implements Serializable {
         setUpdatedAt();
     }
 
-    public String getUserName() {
-        return userName;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
     private void validateEmail(String email) {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("이메일 입력은 필수입니다.");
@@ -50,10 +45,6 @@ public class User extends BaseEntity implements Serializable {
 
         this.email = email;
         setUpdatedAt();
-    }
-
-    public String getPassWord() {
-        return passWord;
     }
 
     private void validatePassWord(String passWord) {

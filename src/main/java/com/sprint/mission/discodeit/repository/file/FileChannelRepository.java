@@ -2,15 +2,23 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
+import org.springframework.boot.autoconfigure.condition.*;
+import org.springframework.stereotype.*;
 
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
+@Repository
+@ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
 public class FileChannelRepository implements ChannelRepository {
 
     private final List<Channel> channels = new ArrayList<>();
     private final Path channelPath;
+
+    public FileChannelRepository() {
+        this(Paths.get("data/channels.ser"));
+    }
 
     public FileChannelRepository(Path channelPath) {
         this.channelPath = channelPath;
@@ -24,7 +32,7 @@ public class FileChannelRepository implements ChannelRepository {
     }
 
     @Override
-    public Channel read(UUID id) {
+    public Channel find(UUID id) {
         for (Channel channel : channels) {
             if (channel.getId().equals(id)) {
                 return channel;
@@ -35,7 +43,7 @@ public class FileChannelRepository implements ChannelRepository {
     }
 
     @Override
-    public List<Channel> readAll() {
+    public List<Channel> findAll() {
         return new ArrayList<>(channels);
     }
 

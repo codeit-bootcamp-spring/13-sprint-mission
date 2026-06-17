@@ -8,15 +8,14 @@ public interface MessageRepository {
 
     void create(Message message);
 
-    Message read(UUID id);
+    Message find(UUID id);
 
-    List<Message> readAll();
+    List<Message> findAllByChannelId(UUID channelId);
 
     void update(UUID id, Message message);
 
     void delete(UUID id);
 
     boolean exists(UUID id);
-
 
 }

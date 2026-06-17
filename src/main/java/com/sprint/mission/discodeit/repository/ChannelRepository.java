@@ -8,9 +8,9 @@ public interface ChannelRepository {
 
     void create(Channel channel);
 
-    Channel read(UUID id);
+    Channel find(UUID id);
 
-    List<Channel> readAll();
+    List<Channel> findAll();
 
     void update(UUID id, Channel channel);
 
