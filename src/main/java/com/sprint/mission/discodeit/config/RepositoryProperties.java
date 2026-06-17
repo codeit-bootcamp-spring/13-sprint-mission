@@ -9,8 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "discodeit.repository")
 public class RepositoryProperties {
 
-    private String type = "jcf";
-
-    private String fileDirectory = ".discodeit";
+    private RepositoryType type = RepositoryType.JCF;
+    private String FILE_DIRECTORY = ".discodeit";
 
 }

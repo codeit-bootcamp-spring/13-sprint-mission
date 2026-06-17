@@ -10,8 +10,9 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -73,14 +74,17 @@ public class BasicBinaryContentService implements BinaryContentService {
     }
 
     private BinaryContentResponse convertToResponse(BinaryContent binaryContent) {
+        LocalDateTime localDateTimeCreatedAt = binaryContent.getCreatedAt()
+                .atZone(ZoneId.of("Asia/Seoul"))
+                .toLocalDateTime();
+
         return new BinaryContentResponse(
                 binaryContent.getId(),
-                binaryContent.getCreatedAt(),
+                localDateTimeCreatedAt,
                 binaryContent.getFileName(),
                 binaryContent.getFileUrl(),
                 binaryContent.getFileSize(),
                 binaryContent.getMessageId()
         );
     }
-
 }

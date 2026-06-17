@@ -3,18 +3,22 @@ package com.sprint.mission.discodeit.repository.file;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
 public class FileBinaryContentRepository implements BinaryContentRepository {
 
+    private static final String FILE_NAME = "binary.ser";
+
     private final Map<UUID, BinaryContent> database;
     private final Path filePath;
 
     public FileBinaryContentRepository(String fileDirectory) {
-        this.filePath = Path.of(fileDirectory, "binary.ser");
+        this.filePath = Path.of(fileDirectory, FILE_NAME);
 
         try {
             Files.createDirectories(filePath.getParent());

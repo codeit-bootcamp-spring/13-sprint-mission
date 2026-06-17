@@ -5,7 +5,6 @@ import com.sprint.mission.discodeit.dto.response.BinaryContentResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface BinaryContentService {

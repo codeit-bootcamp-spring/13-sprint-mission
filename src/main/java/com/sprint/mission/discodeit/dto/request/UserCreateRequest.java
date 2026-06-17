@@ -8,9 +8,4 @@ public record UserCreateRequest (
     String password,
     UUID profileId
 ){
-    public static UserCreateRequest from(
-            String username, String email, String password, UUID profileId) {
-        return new UserCreateRequest(username, email, password, profileId);
-    }
-
 }

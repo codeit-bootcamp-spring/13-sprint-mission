@@ -18,48 +18,48 @@ public class RepositoryConfig {
 
     @Bean
     public UserRepository userRepository() {
-        if ("file".equalsIgnoreCase(properties.getType())) {
-            return new FileUserRepository(properties.getFileDirectory());
+        if (RepositoryType.FILE == (properties.getType())) {
+            return new FileUserRepository(properties.getFILE_DIRECTORY());
         }
         return new JCFUserRepository();
     }
 
     @Bean
     public UserStatusRepository userStatusRepository() {
-        if ("file".equalsIgnoreCase(properties.getType())) {
-            return new FileUserStatusRepository(properties.getFileDirectory());
+        if (RepositoryType.FILE == (properties.getType())) {
+            return new FileUserStatusRepository(properties.getFILE_DIRECTORY());
         }
         return new JCFUserStatusRepository();
     }
 
     @Bean
     public ReadStatusRepository readStatusRepository() {
-        if ("file".equalsIgnoreCase(properties.getType())) {
-            return new FileReadStatusRepository(properties.getFileDirectory());
+        if (RepositoryType.FILE == (properties.getType())) {
+            return new FileReadStatusRepository(properties.getFILE_DIRECTORY());
         }
         return new JCFReadStatusRepository();
     }
 
     @Bean
     public MessageRepository messageRepository() {
-        if ("file".equalsIgnoreCase(properties.getType())) {
-            return new FileMessageRepository(properties.getFileDirectory());
+        if (RepositoryType.FILE == (properties.getType())) {
+            return new FileMessageRepository(properties.getFILE_DIRECTORY());
         }
         return new JCFMessageRepository();
     }
 
     @Bean
     public ChannelRepository channelRepository() {
-        if ("file".equalsIgnoreCase(properties.getType())) {
-            return new FileChannelRepository(properties.getFileDirectory());
+        if (RepositoryType.FILE == (properties.getType())) {
+            return new FileChannelRepository(properties.getFILE_DIRECTORY());
         }
         return new JCFChannelRepository();
     }
 
     @Bean
     public BinaryContentRepository binaryContentRepository() {
-        if ("file".equalsIgnoreCase(properties.getType())) {
-            return new FileBinaryContentRepository(properties.getFileDirectory());
+        if (RepositoryType.FILE == (properties.getType())) {
+            return new FileBinaryContentRepository(properties.getFILE_DIRECTORY());
         }
         return new JCFBinaryContentRepository();
     }

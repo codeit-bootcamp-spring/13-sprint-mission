@@ -9,11 +9,4 @@ public record UserUpdateRequest (
     String password,
     UUID profileId
 ){
-    public static UserUpdateRequest from(
-            UUID id,
-            String username,
-            String email, String password, UUID profileId) {
-        return new UserUpdateRequest(id, username, email, password, profileId);
-    }
-
 }
