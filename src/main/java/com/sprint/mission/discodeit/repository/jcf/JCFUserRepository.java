@@ -2,40 +2,42 @@ package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
+@Repository
+@ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "jcf", matchIfMissing = true)
 public class JCFUserRepository implements UserRepository {
-    private final List<User> data = new ArrayList<>();
+    private final HashMap<UUID, User> data = new HashMap<>();
 
 
     @Override
-    public void save(User user) {
-        data.add(user);
+    public User save(User user) {
+        data.put(user.getId(), user);
+        return user;
     }
 
     @Override
-    public User findById(UUID id) {
-        for(User user : data) {
-        if(user.getId().equals(id)){
-            return user;
-        }
-        } return null;
+    public Optional<User> findById(UUID id) {
+        return Optional.ofNullable(data.get(id));
+    }
+
+    @Override
+    public boolean existsById(UUID id) {
+       return data.containsKey(id);
     }
 
     @Override
     public List<User> findAll() {
-        return data;
+        return data.values().stream().toList();
     }
 
     @Override
-    public void delete(UUID id) {
-        User foundUser = findById(id);
-        if(foundUser != null){
-            data.remove(foundUser);
-        }
-
+    public void deleteById(UUID id) {
+        data.remove(id);
     }
+
 }
+

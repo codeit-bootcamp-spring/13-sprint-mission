@@ -2,36 +2,49 @@ package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+@Repository
+@ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "jcf", matchIfMissing = true)
 public class JCFMessageRepository implements MessageRepository {
-    private final List<Message> data = new ArrayList<>();
+    private final HashMap<UUID, Message> data = new HashMap<>();
+
+
     @Override
-    public void save(Message message) {
-        data.add(message);
+    public Message save(Message message) {
+
+        data.put(message.getId(), message);
+        return message;
     }
 
     @Override
-    public Message findById(UUID id) {
-        for(Message message : data){
-            if(message.getId().equals(id)){
-                return message;
-            }
-        }
-        return null;
+    public Optional<Message> findById(UUID id) {
+        return Optional.ofNullable(data.get(id));
+    }
+
+    @Override
+    public boolean  existsById(UUID id) {
+        return data.containsKey(id);
     }
 
     @Override
     public List<Message> findAll() {
-        return data;
+        return data.values().stream().toList();
     }
 
     @Override
-    public void delete(UUID id) {
-        data.remove(findById(id));
+    public void deleteById(UUID id) {
+        data.remove(id);
 
     }
 }
+
+
+
+
