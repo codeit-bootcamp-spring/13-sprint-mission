@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import org.springframework.stereotype.Repository;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -10,6 +11,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 
+@Repository
 public class FileChannelRepository implements ChannelRepository {
 
     // channels 디렉토리 경로
@@ -36,7 +38,7 @@ public class FileChannelRepository implements ChannelRepository {
     }
 
     @Override
-    public void save(Channel channel) {
+    public Channel save(Channel channel) {
         Path filePath = directory.resolve(channel.getId() + ".ser");
 
         try (FileOutputStream fos = new FileOutputStream(filePath.toFile());
@@ -45,6 +47,7 @@ public class FileChannelRepository implements ChannelRepository {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return channel;
     }
 
     @Override

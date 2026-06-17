@@ -18,15 +18,21 @@ public class JCFMessageService implements MessageService {
         this.data = new ArrayList<>();
     }
 
-    // 생성
+    // 매개변수 변경으로 인한 오류로 빈 메서드 생성
     @Override
-    public void createMessage(Message message) {
-        data.add(message);
+    public Message create(String content, UUID channelId, UUID userId) {
+        return new Message(content, channelId, userId);
     }
+
+    // 생성
+//    @Override
+//    public void create(Message message) {
+//        data.add(message);
+//    }
 
     // 조회
     @Override
-    public Message findMessage(UUID id) {
+    public Message find(UUID id) {
         for (Message m : data) {
             if (m.getId().equals(id)) {
                 return m;
@@ -37,7 +43,7 @@ public class JCFMessageService implements MessageService {
 
     // 모두 조회
     @Override
-    public List<Message> findAllMessages() {
+    public List<Message> findAll() {
         if (!data.isEmpty()) {
             return data;
         }
@@ -46,7 +52,7 @@ public class JCFMessageService implements MessageService {
 
     // 수정
     @Override
-    public void updateMessage(UUID id, String content) {
+    public void update(UUID id, String content) {
         for (Message m : data) {
             if (m.getId().equals(id)) {
                 m.update(content);
@@ -58,7 +64,7 @@ public class JCFMessageService implements MessageService {
 
     // 삭제
     @Override
-    public void deleteMessage(UUID id) {
+    public void delete(UUID id) {
         for (Message message : data) {
             if (message.getId().equals(id)) {
                 data.remove(message);

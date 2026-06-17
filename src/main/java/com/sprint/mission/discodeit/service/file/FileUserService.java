@@ -36,17 +36,23 @@ public class FileUserService implements UserService {
         }
     }
 
+    // 매개변수 변경으로 인한 오류로 빈 메서드 생성
     @Override
-    public void createUser(User user) {
-        Path filePath =
-                directory.resolve(user.getId() + ".ser");
-
-        save(filePath, user);
+    public User create(String name, String email, String password) {
+        return null;
     }
+
+    //    @Override
+//    public void createUser(User user) {
+//        Path filePath =
+//                directory.resolve(user.getId() + ".ser");
+//
+//        save(filePath, user);
+//    }
 
     // 단일 조회
     @Override
-    public User findUser(UUID id) {
+    public User find(UUID id) {
         // 저장 로직
         Path filePath = directory.resolve(id + ".ser");
 
@@ -65,7 +71,7 @@ public class FileUserService implements UserService {
 
     // 유저 전체 조회
     @Override
-    public List<User> findAllUsers() {
+    public List<User> findAll() {
         if (Files.exists(directory)) {
             try {
                 // 저장 로직
@@ -92,8 +98,8 @@ public class FileUserService implements UserService {
 
     // 수정 후 조회
     @Override
-    public void updateUser(UUID id, String name, String email, String password) {
-        User user = findUser(id);
+    public void update(UUID id, String name, String email, String password) {
+        User user = find(id);
         // 비즈니스 로직
         if (user == null) {
             return;
@@ -109,7 +115,7 @@ public class FileUserService implements UserService {
 
 
     @Override
-    public void deleteUser(UUID id) {
+    public void delete(UUID id) {
         Path filePath = directory.resolve(id + ".ser");
 
         try {
