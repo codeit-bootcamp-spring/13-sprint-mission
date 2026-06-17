@@ -25,8 +25,8 @@ public class UserController {
     }
 
     @RequestMapping(value = "/{userId}", method = RequestMethod.PUT)
-    public UserResponse update( @PathVariable UUID userId,
-            @RequestBody UserRequest.UpdateUserRequest request) {
+    public UserResponse update(@PathVariable UUID userId,
+                               @RequestBody UserRequest.UpdateUserRequest request) {
         return userService.update(userId, request);
     }
 
@@ -48,7 +48,7 @@ public class UserController {
             @PathVariable UUID userId,
             @RequestBody UpdateUserStatusRequest request
     ) {
-       return userStatusService.updateByUserId(userId, request);
+        return userStatusService.updateByUserId(userId, request);
     }
 }
 
