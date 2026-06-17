@@ -9,7 +9,7 @@ import com.sprint.mission.discodeit.service.MessageService;
 
 import java.util.ArrayList;
 import java.util.List;
-
+/*
 public class JCFMessageService implements MessageService {
 
     //필드
@@ -124,3 +124,6 @@ public class JCFMessageService implements MessageService {
         return channel.getUsers().stream().anyMatch(userTemp -> userTemp.getId().equals(user.getId()));
     }
 }
+
+
+ */

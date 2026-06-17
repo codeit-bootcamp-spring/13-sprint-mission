@@ -13,7 +13,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
+/*
 public class FileUserService implements UserService {
 
     //필드
@@ -180,3 +180,5 @@ public class FileUserService implements UserService {
         return channel.getUsers().stream().anyMatch(userTemp -> userTemp.getId().equals(user.getId()));
     }
 }
+
+ */

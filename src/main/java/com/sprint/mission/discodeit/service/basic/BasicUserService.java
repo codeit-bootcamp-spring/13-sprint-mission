@@ -1,176 +1,219 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.UserFindResponse;
+import com.sprint.mission.discodeit.dto.response.UserUpdateResponse;
+import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.UserService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
+@Service
+@RequiredArgsConstructor
+@Slf4j
 public class BasicUserService implements UserService {
 
     //필드
     private final UserRepository userRepository;
-
-    //ctor
-    public BasicUserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    private final BinaryContentRepository binaryContentRepository;
+    private final UserStatusRepository userStatusRepository;
+    private final ReadStatusRepository readStatusRepository;
+    private final MessageRepository messageRepository;
 
     //interface
     @Override
-    public User createUser(String name, String email) {
-        if (name == null || name.isBlank()) throw new RuntimeException("에러: 이름은 공백일 수 없습니다.");
-        if (email == null || email.isBlank()) throw new RuntimeException("에러: 이메일은 공백일 수 없습니다.");
+    public User createUser(UserCreateRequest request) {
+        //입력값 검증 처리하겠습니다
+        validateString(request.name());
+        validateString(request.email());
+        validateString(request.password());
 
-        if (userRepository.existsUserByEmail(email)){
-            System.out.println("이메일: " + email + "은 이미 사용중인 이메일입니다. 대신 해당 이메일을 사용하는 유저 객체 반환하겠습니다.\n" );
-            return userRepository.findUserByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+        //중복된 이름, 이메일로 생성 요청을 한 경우 검증
+        validateNameExists(request.name());
+        validateEmailExists(request.email());
+
+        //프로필 사진 경로 존재 시
+        UUID binaryContentId = null;
+        if (request.profileImagePath() != null && !request.profileImagePath().isBlank()) {
+            //binaryContent 생성
+            BinaryContent binaryContent = new BinaryContent(request.profileImagePath());
+            binaryContentRepository.createBinaryContent(binaryContent);
+            binaryContentId = binaryContent.getId();
         }
 
-        User user = new User(name, email);
+        //유저 생성
+        User user = new User(request.name(), request.email(), request.password(), binaryContentId);
         userRepository.createUser(user);
-        System.out.println("유저: " + name + "가 생성됨.\n" );
+        log.info("유저: {}가 생성됨.", user.getName());
+
+        //UserStatus 생성
+        UserStatus userStatus = new UserStatus(user.getId());
+        userStatusRepository.createUserStatus(userStatus);
 
         return user;
     }
 
     @Override
-    public void printUserInfo(User user) {
-        if (user == null) throw new RuntimeException("에러: 출력하려는 유저는 null이면 안됩니다.");
+    public UserFindResponse findUser(UUID userId) {
+        //입력값 검증 처리하겠습니다
+        validateUUID(userId);
 
-        User userTemp = userRepository.findUserByEmail(user.getEmail())
+        //유저 검색
+        User userTemp = userRepository.findUserById(userId)
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
-        System.out.println(userTemp + "\n");
+        //유저 상태 검색
+        UserStatus userStatus = userStatusRepository.findUserStatusByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
+
+        return UserFindResponse.from(userTemp, userStatus.isUserOnline());
     }
 
     @Override
-    public void printAllUsersInfo() {
+    public List<UserFindResponse> findAllUsers() {
+        //유저들 검색
         List<User> users = userRepository.findAll();
-        for (User user : users) {
-            System.out.println(user + "\n");
-        }
+
+        return users.stream()
+                .map(user ->
+                        UserFindResponse.from(
+                                user, userStatusRepository.findUserStatusByUserId(user.getId()).get().isUserOnline()
+                        ))
+                .toList();
     }
 
     @Override
-    public void changeName(User user, String newName) {
-        if (user == null) throw new RuntimeException("에러: 유저는 null이면 안됩니다.");
-        if (newName == null || newName.isBlank()) throw new RuntimeException("에러: 새 이름은 공백일 수 없습니다.\n");
+    public UserUpdateResponse updateUser(UserUpdateRequest request) {
+        //입력값 검증 처리하겠습니다
+        validateUUID(request.userId());
+        validateString(request.newName());
+        validateString(request.newEmail());
+        validateString(request.newPassword());
 
-        User userTemp = userRepository.findUserByEmail(user.getEmail())
+        //유저 검색
+        User userTemp = userRepository.findUserById(request.userId())
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
-        System.out.println("유저명: " + userTemp.getName() + "가 수정됨.\n -> " + newName + "\n");
-        userTemp.changeName(newName);
+        //중복된 이름, 이메일로 수정 요청을 한 경우 검증
+        if (!userTemp.getName().equals(request.newName())) {
+            validateNameExists(request.newName());
+        }
+        if (!userTemp.getEmail().equals(request.newEmail())) {
+            validateEmailExists(request.newEmail());
+        }
 
+        //프로필 사진 경로 존재 시
+        UUID binaryContentId = null;
+        if (request.profileImagePath() != null && !request.profileImagePath().isBlank()) {
+            //기존 BinaryContent 검색
+            BinaryContent binaryContent = binaryContentRepository.findBinaryContentByContentPath(request.profileImagePath())
+                    .orElse(null);
+
+            //기존 BinaryContent 없으면
+            if (binaryContent == null) {
+                //binaryContent 생성
+                binaryContent = new BinaryContent(request.profileImagePath());
+                binaryContentRepository.createBinaryContent(binaryContent);
+                //기존 유저 프로필 이미지 삭제
+                deleteProfileImage(userTemp);
+            }
+
+            //기존 BinaryContent id 반환
+            binaryContentId = binaryContent.getId();
+        } else {  //업데이트 프로필 사진이 없으면 기존 프로필 사진 삭제
+            //기존 유저 프로필 이미지 삭제
+            deleteProfileImage(userTemp);
+        }
+
+        log.info("유저: {}가 수정됨.", userTemp.getName());
+        log.info("name: {}, email: {}, password: {}\n-> name: {}, email: {}, password: {}", userTemp.getName(), userTemp.getEmail(), userTemp.getPassword(), request.newName(), request.newEmail(), request.newPassword());
+
+        //유저 업데이트
+        userTemp.updateUser(request.newName(), request.newEmail(), request.newPassword(), binaryContentId);
         userRepository.save();
+
+        return UserUpdateResponse.from(userTemp);
     }
 
     @Override
-    public void changeEmail(User user, String newEmail) {
-        if (user == null) throw new RuntimeException("에러: 유저는 null이면 안됩니다.");
-        if (newEmail == null || newEmail.isBlank()) throw new RuntimeException("에러: 새 이메일은 공백일 수 없습니다.\n");
+    public void deleteUser(UUID userId) {
+        //입력값 검증 처리하겠습니다
+        validateUUID(userId);
 
-        if (userRepository.existsUserByEmail(newEmail)){
-            System.out.println("에러: 이메일: " + newEmail + "은 이미 사용중인 이메일입니다. 이메일 업데이트 거부.\n" );
-            return;
-        }
-
-        User userTemp = userRepository.findUserByEmail(user.getEmail())
+        //유저 검색
+        User userTemp = userRepository.findUserById(userId)
                 .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
-        System.out.println("유저 이메일: " + userTemp.getEmail() + "가 수정됨.\n -> " + newEmail + "\n");
-        userTemp.changeEmail(newEmail);
+        //유저 상태 검색 및 삭제
+        UserStatus userStatus = userStatusRepository.findUserStatusByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
+        userStatusRepository.deleteUserStatus(userStatus.getId());
 
-        userRepository.save();
-    }
-
-    @Override
-    public User deleteUser(User user) {
-        if (user == null) throw new RuntimeException("에러: 유저는 null이면 안됩니다.");
-
-        User userTemp = userRepository.findUserByEmail(user.getEmail())
-                .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
-
-        for (Channel channel : userTemp.getChannels()) {
-            channel.removeUser(userTemp);
+        //유저가 가입한 채널에 대한 ReadStatus 검색 및 삭제
+        List<ReadStatus> readStatusList = readStatusRepository.findAllReadStatusByUserId(userId);
+        for (ReadStatus readStatus : readStatusList) {
+            readStatusRepository.deleteReadStatusById(readStatus.getId());
         }
 
-        System.out.println("유저: " + userTemp.getName() + "가 삭제됨.\n" );
-        userRepository.deleteUser(userTemp);
-
-        return null;
-    }
-
-    @Override
-    public void joinChannel(User user, Channel channel) {
-        if (channel == null || user == null) throw new RuntimeException("에러: 채널, 유저는 null이면 안됩니다.");
-        if (validateUserExistsChannel(channel, user)) {
-            System.out.println("에러: 이 채널에는 이미 해당 유저가 존재합니다.");
-            return;
+        //유저가 작성한 메세지 검색 및 삭제
+        List<Message> messageList = messageRepository.findAllMessagesByUserId(userId);
+        for (Message message : messageList) {
+            for (UUID attachmentId : message.getAttachmentIds()) {
+                binaryContentRepository.deleteBinaryContent(attachmentId);
+            }
+            messageRepository.deleteMessageById(message.getId());
         }
 
-        User userTemp = userRepository.findUserByEmail(user.getEmail())
-                .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+        //기존 유저 프로필 이미지 삭제
+        deleteProfileImage(userTemp);
 
-        channel.addUser(userTemp);
-        userTemp.addChannel(channel);
-        System.out.println("채널: " + channel.getName() + "에 " + userTemp.getName() + "가 추가됨.\n" );
+        //유저 삭제
+        userRepository.deleteUser(userId);
 
-        userRepository.save();
+        log.info("유저: {}가 삭제됨.", userTemp.getName());
     }
 
-    @Override
-    public void printMyChannelsInfo(User user) {
-        if (user == null) throw new RuntimeException("에러: 유저는 null이면 안됩니다.");
 
-        User userTemp = userRepository.findUserByEmail(user.getEmail())
-                .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+    //유저의 현재 프로필 이미지가 존재한다면 삭제하기
+    private void deleteProfileImage(User user) {
+        UUID binaryContentId = user.getProfileId();
 
-        System.out.println(user.getName() + "가 가입한 채널: ");
-        for (Channel channel : userTemp.getChannels()) {
-            System.out.println(channel.getName());
+        if (binaryContentId != null) {
+            binaryContentRepository.deleteBinaryContent(binaryContentId);
         }
-        System.out.println();
     }
 
-    @Override
-    public void leaveChannel(User user, Channel channel) {
-        if (channel == null || user == null) throw new RuntimeException("에러: 채널, 탈퇴하려는 유저는 null이면 안됩니다.");
-        if (!validateUserExistsChannel(channel, user)) {
-            System.out.println("에러: 이 유저는 애초에 이 채널에 없습니다.");
-            return;
+    // 들어온 String 필드가 null 혹은 공백인지 검증하는 메서드
+    private void validateString(String str) {
+        if (str == null || str.isBlank()) {
+            throw new IllegalArgumentException("에러: 입력값이 Null 또는 공백입니다.");
         }
-
-        User userTemp = userRepository.findUserByEmail(user.getEmail())
-                .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
-
-        channel.removeUser(userTemp);
-        userTemp.removeChannel(channel);
-        System.out.println(channel.getName() + "채널에서 " + userTemp.getName() + "가 퇴장했습니다.\n");
-
-        userRepository.save();
     }
 
-    @Override
-    public void printMessages(User user) {
-        if (user == null) throw new RuntimeException("에러: 유저는 null이면 안됩니다.");
-
-        User userTemp = userRepository.findUserByEmail(user.getEmail())
-                .orElseThrow(() -> new RuntimeException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
-
-        System.out.println(userTemp.getName() + "가 작성한 메세지들: ");
-        for (Message message : userTemp.getMessages()) {
-            System.out.println(message.getMessage());
+    // 들어온 UUID 필드가 null인지 검증하는 메서드
+    private void validateUUID(UUID id) {
+        if (id == null) {
+            throw new IllegalArgumentException("에러: 입력값이 Null입니다.");
         }
-        System.out.println();
     }
 
-    //들어온 user가 해당 channel에 존재하면 true반환, 아니면 false 반환
-    private boolean validateUserExistsChannel(Channel channel, User user) {
-        return channel.getUsers().stream().anyMatch(userTemp -> userTemp.getId().equals(user.getId()));
+    // 들어온 이름 필드가 레포지터리에 존재하는지 검증하는 메서드
+    private void validateNameExists(String name) {
+        if (userRepository.existsUserByName(name)) {
+            throw new RuntimeException("이름: " + name + "은 이미 사용중입니다.");
+        }
+    }
+
+    // 들어온 이메일 필드가 레포지터리에 존재하는지 검증하는 메서드
+    private void validateEmailExists(String email) {
+        if (userRepository.existsUserByEmail(email)) {
+            throw new RuntimeException("이메일: " + email + "은 이미 사용중입니다.");
+        }
     }
 }

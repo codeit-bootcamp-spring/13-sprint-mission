@@ -1,49 +1,41 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
+@Getter
 public class Message extends EntityRoot implements Serializable {
 
     //필드
-    private String message;
-    private User user;
-    private Channel channel;
+    private String content;
+    private final UUID channelId;
+    private final UUID authorId;
+    private List<UUID> attachmentIds;
 
     //ctor
-    public Message(String message, User user, Channel channel) {
+    public Message(String content, UUID channelId, UUID authorId, List<UUID> attachmentIds) {
         super();
 
-        this.message = message;
-        this.user = user;
-        this.channel = channel;
-    }
-
-    //getter
-    public String getMessage() {
-        return message;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public Channel getChannel() {
-        return channel;
+        this.content = content;
+        this.channelId = channelId;
+        this.authorId = authorId;
+        this.attachmentIds = attachmentIds;
     }
 
     //update Method
-    public void updateMessage(String newMessage) {
-        if (newMessage == null || newMessage.isBlank())
-            return;
-        this.message = newMessage;
+    public void updateMessage(String content, List<UUID> attachmentIds) {
+        this.content = content;
+        this.attachmentIds = attachmentIds;
+
         updateUpdatedAt();
     }
 
     //method override
     @Override
     public String toString() {
-        return "User: " + user.getName() + ", Channel: " + channel.getName() + "\n[Message: " + message + "]";
+        return "User: " + authorId + ", Channel: " + channelId + "\n[Message: " + content + "]";
     }
 }

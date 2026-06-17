@@ -9,7 +9,7 @@ import com.sprint.mission.discodeit.service.ChannelService;
 
 import java.util.ArrayList;
 import java.util.List;
-
+/*
 public class JCFChannelService implements ChannelService {
 
     //필드
@@ -204,3 +204,6 @@ public class JCFChannelService implements ChannelService {
         return channel.getUsers().stream().anyMatch(userTemp -> userTemp.getId().equals(user.getId()));
     }
 }
+
+
+ */

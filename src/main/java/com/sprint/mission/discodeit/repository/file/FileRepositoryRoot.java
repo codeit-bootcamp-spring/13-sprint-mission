@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class FileRepositoryRoot<T extends EntityRoot>{
+public abstract class FileRepositoryRoot<T>{
 
     //entity 저장 객체 및 저장 경로
     protected final List<T> storage = new ArrayList<>();
@@ -54,7 +54,7 @@ public abstract class FileRepositoryRoot<T extends EntityRoot>{
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("역직렬화에 실패했습니다.");
         } catch (IOException e) {
-            throw new RuntimeException("역직렬화에 실패했습니다22.");
+            throw new RuntimeException("역직렬화에 실패했습니다.");
         }
     }
 }

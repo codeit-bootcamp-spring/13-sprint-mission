@@ -8,7 +8,7 @@ import com.sprint.mission.discodeit.repository.file.FileMessageRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 
 import java.util.List;
-
+/*
 public class FileMessageService implements MessageService {
 
     //필드
@@ -127,3 +127,5 @@ public class FileMessageService implements MessageService {
     }
 
 }
+
+ */
