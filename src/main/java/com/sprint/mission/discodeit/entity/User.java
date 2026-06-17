@@ -1,18 +1,23 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.UUID;
 
+@Getter
 public class User implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
-    private UUID id;
+    private final UUID id;
 
-    private Long createdAt;
+    private final Instant createdAt;
 
-    private Long updatedAt;
+    private Instant updatedAt;
 
     private String username;
 
@@ -20,36 +25,14 @@ public class User implements Serializable {
 
     private String password;
 
+    private UUID profileId;
+
     public User(String username, String email, String password) {
         this.id = UUID.randomUUID();
-        this.createdAt = Instant.now().getEpochSecond();
+        this.createdAt = Instant.now();
         this.username = username;
         this.email = email;
         this.password = password;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public Long getCreatedAt() {
-        return createdAt;
-    }
-
-    public Long getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getPassword() {
-        return password;
     }
 
     public void update(String newUsername, String newEmail, String newPassword) {
@@ -69,7 +52,14 @@ public class User implements Serializable {
         }
 
         if (flag) {
-            this.updatedAt = Instant.now().getEpochSecond();
+            this.updatedAt = Instant.now();
+        }
+    }
+
+    public void updateProfileId(UUID newProfileId) {
+        if (newProfileId != null && !newProfileId.equals(this.profileId)) {
+            this.profileId = newProfileId;
+            this.updatedAt = Instant.now();
         }
     }
 }
