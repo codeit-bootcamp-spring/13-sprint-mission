@@ -7,7 +7,7 @@ import java.util.*;
 
 //java collection Framework(ArrayList)를 이용한 User 저장소 구현체
 public class JCFUserRepository implements UserRepository {
-    private Map<UUID, User> data; //실제 user 객체가 저장되는 메모리 저장소
+    private final Map<UUID, User> data; //실제 user 객체가 저장되는 메모리 저장소
     public JCFUserRepository() {this.data = new HashMap<>();} //Repository 생성 시 HashMap 저장소를 초기화함.
 
     @Override //사용자 저장. 신규 생성 또는 수정 저장 모두 처리
@@ -19,6 +19,12 @@ public class JCFUserRepository implements UserRepository {
     @Override //사용자 단건 조회. ID로 User 조회
     public Optional<User> findById(UUID id){return Optional.ofNullable(this.data.get(id));}
 
+    @Override
+    public Optional<User> findByUsername(String username) {
+        return this.findAll().stream()
+                .filter(user->user.getUsername().equals(username)).findFirst();
+    }
+
     @Override //전체 사용자 조회. HashMap 내부 모든 User 반환
     public List<User> findAll() {
         return this.data.values().stream().toList();
@@ -29,4 +35,10 @@ public class JCFUserRepository implements UserRepository {
 
     @Override //사용자 삭제. 지정된 ID의 User 제거
     public void deleteById(UUID id) {this.data.remove(id);}
+
+    @Override
+    public boolean existsByUsername(String username) {return this.findAll().stream().anyMatch(user->user.getUsername().equals(username));}
+
+    @Override
+    public boolean existsByEmail(String email) {return this.data.containsKey(email);}
 }

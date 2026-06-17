@@ -22,11 +22,19 @@ public class JCFMessageRepository implements MessageRepository {
     public Optional<Message> findById(UUID id) {return Optional.ofNullable(this.data.get(id));}
 
     @Override //전체 메시지 조회
-    public List<Message> findAll() {return this.data.values().stream().toList();}
+    public List<Message> findAllByChannelId(UUID channelId) {
+        return this.data.values().stream().filter(message->message.getChannelId().equals(channelId)).toList();
+    }
 
     @Override //메시지 존재 여부 확인
     public boolean existsById(UUID id) {return this.data.containsKey(id);}
 
     @Override //메시지 삭제
     public void deleteById(UUID id) {this.data.remove(id);}
+
+    @Override
+    public void deleteAllByChannelId(UUID channelId) {
+        this.findAllByChannelId(channelId)
+                .forEach(message -> this.deleteById(message.getId()));
+    }
 }
