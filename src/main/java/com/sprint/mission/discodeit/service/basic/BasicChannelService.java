@@ -10,7 +10,7 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
-import com.sprint.mission.discodeit.repository.ReadStatusRepesitory;
+import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,9 +23,8 @@ import java.util.*;
 //채널 관련 비즈니스 로직을 담당하는 Service 계층
 public class BasicChannelService implements ChannelService {
     private final ChannelRepository channelRepository; //채널 저장소 객체
-    private final ReadStatusRepesitory readStatusRepesitory;
+    private final ReadStatusRepository readStatusRepository;
     private final MessageRepository messageRepository;
-    private final ChannelService channelService;
 
     @Override //채널 생성
     public Channel create(PublicChannelCreateRequest request) {
@@ -41,7 +40,7 @@ public class BasicChannelService implements ChannelService {
 
         request.participantIds().stream()
                 .map(userId -> new ReadStatus(userId, createChannel.getId(), Instant.MIN))
-                .forEach(readStatusRepesitory::save);
+                .forEach(readStatusRepository::save);
         return createChannel;
     }
 
@@ -53,7 +52,7 @@ public class BasicChannelService implements ChannelService {
 
     @Override //전체 채널 조회
     public List<ChannelDto> findAllByUserId(UUID userId) {
-        List<UUID> mySubscribedChannelIds = readStatusRepesitory.findAllByUserId(userId).stream()
+        List<UUID> mySubscribedChannelIds = readStatusRepository.findAllByUserId(userId).stream()
                 .map(ReadStatus::getChannelId).toList();
         return channelRepository.findAll().stream()
                 .filter(channel -> channel.getType().equals(ChannelType.PUBLIC) || mySubscribedChannelIds.contains(channel.getId()))
@@ -77,21 +76,21 @@ public class BasicChannelService implements ChannelService {
     public void delete(UUID channelId) {
         Channel channel = channelRepository.findById(channelId).orElseThrow(() -> new NoSuchElementException("Channel with id " + channelId + " not found"));
         messageRepository.deleteAllByChannelId(channel.getId());
-        readStatusRepesitory.deleteAllByChannelId(channel.getId());
+        readStatusRepository.deleteAllByChannelId(channel.getId());
         channelRepository.deleteById(channelId);
     }
 
     private ChannelDto toDto(Channel channel) {
         Instant lastMessageAt = messageRepository.findAllByChannelId(channel.getId())
                 .stream().sorted(Comparator.comparing(Message::getCreatedAt).reversed())
-                .map(Message::getChannelId)
+                .map(Message::getCreatedAt)
                 .limit(1)
                 .findFirst()
                 .orElse(Instant.MIN);
 
         List<UUID> participantIds = new ArrayList<>();
         if (channel.getType().equals(ChannelType.PRIVATE)) {
-            readStatusRepesitory.findAllByChannelId(channel.getId())
+                readStatusRepository.findAllByChannelId(channel.getId())
                     .stream().map(ReadStatus::getUserId)
                     .forEach(participantIds::add);
         }
