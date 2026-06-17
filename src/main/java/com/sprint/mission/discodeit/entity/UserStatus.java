@@ -37,7 +37,7 @@ public class UserStatus implements Serializable {
     }
 
     //현재 온라인 여부 확인. 마지막 접속 시간이 5분 이내면 true
-    public boolean isOnline() {
+    public Boolean isOnline() {
         Instant instantFiveMinutesAgo = Instant.now().minus(Duration.ofMinutes(5));
         return lastConnectedAt.isAfter(instantFiveMinutesAgo);
     }
