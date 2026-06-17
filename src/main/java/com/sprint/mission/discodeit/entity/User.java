@@ -1,28 +1,43 @@
 package com.sprint.mission.discodeit.entity;
 
 
-public class User extends AllApply {
+import lombok.Getter;
+
+import java.util.UUID;
+
+@Getter
+public class User extends MutableEntity {
+
+	private UUID profileId;
 	
 	String name;
 	String email;
+	String password;
 	
-	public User(String name, String email) {
+	public User(String name, String email, String password, UUID profileId) {
 		super();
 		this.name = name;
 		this.email = email;
+		this.password = password;
+		this.profileId = profileId;
 	}
-	
-	public String getName() {
-		return this.name;
-	}
-	
-	public String getEmail() {
-		return this.email;
-	}
-	
-	public void renew(String name, String email) {
+
+	public void renew(String name, String email, String password, UUID profileId) {
 		this.name = name;
 		this.email = email;
+		this.password = password;
+		this.profileId = profileId;
 		updateTime();
+	}
+
+	@Override
+	public String toString() {
+		return "User[" +
+				"id= " + getId() + "\n" +
+				"Name=" + getName() + "\n" +
+				"Email=" + getEmail() + "\n" +
+				"CreateAt=" + getCreateAt() + "\n" +
+				"UpdateAt=" + getUpdateAt() + "\n" +
+				"]";
 	}
 }

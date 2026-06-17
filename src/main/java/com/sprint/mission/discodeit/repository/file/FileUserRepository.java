@@ -2,10 +2,13 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Repository;
 
 import java.io.*;
 import java.util.*;
 
+@Repository
 public class FileUserRepository implements UserRepository {
     private final File file;
     private final Map<UUID, User> users;
@@ -33,8 +36,10 @@ public class FileUserRepository implements UserRepository {
         }
     }
 
-    public FileUserRepository() {
-        this.file = new File("data/repository-user.ser");
+    public FileUserRepository(
+            @Value("${discodeit.repository.file-directory}") String fileDirectory
+    ) {
+        this.file = new File(fileDirectory, "repository-user.json");
         this.users = loadUserRepo();
     }
 
@@ -52,12 +57,30 @@ public class FileUserRepository implements UserRepository {
 
     @Override
     public Collection<User> findAll() {
-        return users.values();
+        return new ArrayList<>(users.values());
     }
 
     @Override
     public void delete(UUID id) {
         users.remove(id);
         saveUserRepo();
+    }
+
+    @Override
+    public User findByName(String name) {
+        for (User user : users.values()) {
+            if (user.getName().equals(name)) {
+                return user;
+            }
+        } return null;
+    }
+
+    @Override
+    public User findByEmail(String email) {
+        for (User user : users.values()) {
+            if (user.getEmail().equals(email)) {
+                return user;
+            }
+        }return null;
     }
 }
