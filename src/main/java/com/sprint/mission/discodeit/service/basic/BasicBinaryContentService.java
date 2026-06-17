@@ -24,20 +24,24 @@ public class BasicBinaryContentService implements BinaryContentService {
         BinaryContent binaryContent = new BinaryContent(fileName, contentType, bytes);
         return binaryContentRepository.save(binaryContent);
     }
+
     @Override
     public BinaryContent find(UUID binaryContentId) {
         return binaryContentRepository.findById(binaryContentId)
-                .orElseThrow(()->new NoSuchElementException("BinaryContent with id " +binaryContentId +" not found"));
+                .orElseThrow(() -> new NoSuchElementException("BinaryContent with id " + binaryContentId + " not found"));
     }
+
     @Override
-    public List<BinaryContent> findAllByIdIn(List<UUID> binaryContentIds){
-        return binaryContentRepository.findAllByIdIn(binaryContentIds).stream().toList();
-     }
-     @Override
+    public List<BinaryContent> findAllByIdIn(List<UUID> binaryContentIds) {
+        return binaryContentRepository.findAllByIdIn(binaryContentIds).stream()
+                .toList();
+    }
+
+    @Override
     public void delete(UUID binaryContentId) {
         if (!binaryContentRepository.existsById(binaryContentId)) {
             throw new NoSuchElementException("BinaryContent with id " + binaryContentId + " not found");
         }
         binaryContentRepository.deleteById(binaryContentId);
-     }
+    }
 }
