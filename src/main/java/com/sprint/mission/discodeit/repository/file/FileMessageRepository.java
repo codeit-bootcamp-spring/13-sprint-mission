@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
 @Repository
@@ -62,8 +63,8 @@ public class FileMessageRepository implements MessageRepository {
 
     @Override //전체 메시지 조회
     public List<Message> findAllByChannelId(UUID channelId){
-        try {
-            return Files.list(DIRECTORY)
+        try (Stream<Path> paths = Files.list(DIRECTORY)) {
+            return paths
                     .filter(path -> path.toString().endsWith(EXTENSION))
                     .map(path -> {
                         try (
