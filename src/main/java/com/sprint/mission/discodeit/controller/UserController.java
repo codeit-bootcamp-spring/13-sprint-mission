@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -37,8 +37,8 @@ public class UserController {
     }
 
     @RequestMapping(value = "/findAll", method = RequestMethod.GET)
-    public ResponseEntity<Collection<UserDto>> findAll() {
-        return ResponseEntity.ok(userService.findAllDto());
+    public ResponseEntity<List<UserDto>> findAll() {
+        return ResponseEntity.ok(userService.findAllDto().stream().toList());
     }
 
     @RequestMapping (method = RequestMethod.PUT)
