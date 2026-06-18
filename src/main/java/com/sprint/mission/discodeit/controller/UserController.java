@@ -56,4 +56,11 @@ public class UserController {
     public ResponseEntity<UserStatusResponse> updateStatus(@RequestBody UserStatusUpdateRequest request) {
         return ResponseEntity.ok(userStatusService.update(request));
     }
+
+    @RequestMapping(value = "/status", method = RequestMethod.GET)
+    public ResponseEntity<UserStatusResponse> findStatusByUserId(
+            @RequestParam UUID userId
+    ) {
+        return ResponseEntity.ok(userStatusService.findByUserId(userId));
+    }
 }
