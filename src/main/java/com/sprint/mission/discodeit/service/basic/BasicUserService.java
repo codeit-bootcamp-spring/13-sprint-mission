@@ -90,7 +90,8 @@ public class BasicUserService implements UserService {
         return users.stream()
                 .map(user ->
                         UserFindResponse.from(
-                                user, userStatusRepository.findUserStatusByUserId(user.getId()).get().isUserOnline()
+                                user, userStatusRepository.findUserStatusByUserId(user.getId())
+                                        .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다.")).isUserOnline()
                         ))
                 .toList();
     }
@@ -150,24 +151,13 @@ public class BasicUserService implements UserService {
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         //유저 상태 검색 및 삭제
-        UserStatus userStatus = userStatusRepository.findUserStatusByUserId(userId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
-        userStatusRepository.deleteUserStatus(userStatus.getId());
+        deleteUserStatus(userId);
 
         //유저가 가입한 채널에 대한 ReadStatus 검색 및 삭제
-        List<ReadStatus> readStatusList = readStatusRepository.findAllReadStatusByUserId(userId);
-        for (ReadStatus readStatus : readStatusList) {
-            readStatusRepository.deleteReadStatusById(readStatus.getId());
-        }
+        deleteReadStatus(userId);
 
         //유저가 작성한 메세지 검색 및 삭제
-        List<Message> messageList = messageRepository.findAllMessagesByUserId(userId);
-        for (Message message : messageList) {
-            for (UUID attachmentId : message.getAttachmentIds()) {
-                binaryContentRepository.deleteBinaryContent(attachmentId);
-            }
-            messageRepository.deleteMessageById(message.getId());
-        }
+        deleteUserMessages(userId);
 
         //기존 유저 프로필 이미지 삭제
         deleteProfileImage(userTemp);
@@ -178,6 +168,31 @@ public class BasicUserService implements UserService {
         log.info("유저: {}가 삭제됨.", userTemp.getName());
     }
 
+    //유저 상태 검색 및 삭제
+    private void deleteUserStatus(UUID userId) {
+        UserStatus userStatus = userStatusRepository.findUserStatusByUserId(userId)
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
+        userStatusRepository.deleteUserStatus(userStatus.getId());
+    }
+
+    //유저가 가입한 채널에 대한 ReadStatus 검색 및 삭제
+    private void deleteReadStatus(UUID userId) {
+        List<ReadStatus> readStatusList = readStatusRepository.findAllReadStatusByUserId(userId);
+        for (ReadStatus readStatus : readStatusList) {
+            readStatusRepository.deleteReadStatusById(readStatus.getId());
+        }
+    }
+
+    //유저가 작성한 메세지 검색 및 삭제
+    private void deleteUserMessages(UUID userId) {
+        List<Message> messageList = messageRepository.findAllMessagesByUserId(userId);
+        for (Message message : messageList) {
+            for (UUID attachmentId : message.getAttachmentIds()) {
+                binaryContentRepository.deleteBinaryContent(attachmentId);
+            }
+            messageRepository.deleteMessageById(message.getId());
+        }
+    }
 
     //유저의 현재 프로필 이미지가 존재한다면 삭제하기
     private void deleteProfileImage(User user) {
