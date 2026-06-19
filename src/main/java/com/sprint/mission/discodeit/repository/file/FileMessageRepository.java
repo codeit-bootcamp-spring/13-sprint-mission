@@ -12,7 +12,7 @@ import java.util.*;
 @Repository
 public class FileMessageRepository implements MessageRepository {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final String FilePath = "messages.json";
+    private final String filePath = "messages.json";
 
     @Override
     public void save(Message message) {
@@ -23,7 +23,7 @@ public class FileMessageRepository implements MessageRepository {
 
     @Override
     public List<Message> findAll() {
-        File file = new File(FilePath);
+        File file = new File(filePath);
         if (!file.exists()) return new ArrayList<>();
         try {
             return objectMapper.readValue(file,
@@ -35,7 +35,7 @@ public class FileMessageRepository implements MessageRepository {
 
     private void saveAll(List<Message> messages) {
         try {
-            objectMapper.writeValue(new File(FilePath), messages);
+            objectMapper.writeValue(new File(filePath), messages);
         } catch (IOException e) {
             e.printStackTrace();
         }

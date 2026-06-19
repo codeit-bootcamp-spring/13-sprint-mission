@@ -12,7 +12,7 @@ import java.util.*;
 @Repository
 public class FileChannelRepository implements ChannelRepository {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final String FilePath = "channels.json";
+    private final String filePath = "channels.json";
 
     @Override
     public void save(Channel channel) {
@@ -23,7 +23,7 @@ public class FileChannelRepository implements ChannelRepository {
 
     @Override
     public List<Channel> findAll() {
-        File file = new File(FilePath);
+        File file = new File(filePath);
         if (!file.exists()) return new ArrayList<>();
         try {
             return objectMapper.readValue(file,
@@ -35,7 +35,7 @@ public class FileChannelRepository implements ChannelRepository {
 
     private void saveAll(List<Channel> channels) {
         try {
-            objectMapper.writeValue(new File(FilePath), channels);
+            objectMapper.writeValue(new File(filePath), channels);
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -12,7 +12,7 @@ import java.util.*;
 @Repository
 public class FileUserRepository implements UserRepository {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final String FilePath = "users.json";
+    private final String filePath = "users.json";
 
     @Override
     public void save(User user) {
@@ -24,7 +24,7 @@ public class FileUserRepository implements UserRepository {
     // 파일 전체 확인
     @Override
     public List<User> findAll() {
-        File file = new File(FilePath);
+        File file = new File(filePath);
         if (!file.exists()) return new ArrayList<>();
         try {
             // 파일을 User 리스트 객체로 변환
@@ -38,7 +38,7 @@ public class FileUserRepository implements UserRepository {
     // 파일로 저장
     private void saveAll(List<User> users) {
         try {
-            objectMapper.writeValue(new File(FilePath), users);
+            objectMapper.writeValue(new File(filePath), users);
         } catch (IOException e) {
             e.printStackTrace();
         }
