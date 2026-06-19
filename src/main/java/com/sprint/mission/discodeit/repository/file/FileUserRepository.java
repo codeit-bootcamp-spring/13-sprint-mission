@@ -120,4 +120,19 @@ public class FileUserRepository implements UserRepository {
 
         return null;
     }
+
+    @Override
+    public User findByUserName(String userName) {
+        if(userName == null || userName.isBlank()) {
+            return null;
+        }
+
+        for (User user : users) {
+            if (user.getUserName().equals(userName)) {
+                return user;
+            }
+        }
+
+        return null;
+    }
 }

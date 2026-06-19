@@ -55,4 +55,12 @@ public class JCFUserRepository implements UserRepository {
                 .findFirst()
                 .orElse(null);
     }
+
+    @Override
+    public User findByUserName(String userName) {
+        return data.values().stream()
+                .filter(user -> user.getUserName().equals(userName))
+                .findFirst()
+                .orElse(null);
+    }
 }
