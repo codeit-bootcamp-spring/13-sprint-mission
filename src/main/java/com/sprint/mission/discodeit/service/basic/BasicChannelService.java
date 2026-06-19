@@ -16,6 +16,7 @@ public class BasicChannelService implements ChannelService {
 
     private final ChannelRepository repository;
     private final ReadStatusRepository readStatusRepository;
+    private final UserRepository userRepository;
 
 
     @Override
@@ -23,6 +24,11 @@ public class BasicChannelService implements ChannelService {
         if (publicChannel == null) {
             throw new IllegalArgumentException("공개 채널 생성 요청은 필수입니다.");
         }
+
+        if (publicChannel.name() == null || publicChannel.name().isBlank()) {
+            throw new IllegalArgumentException("채널이름이 공백일 수는 없습니다.");
+        }
+
         Channel channel = new Channel(
                 publicChannel.name(),
                 publicChannel.description(),
@@ -42,6 +48,25 @@ public class BasicChannelService implements ChannelService {
     public ChannelResponse createPrivateChannel(ChannelRequest.CreatePrivateChannel privateChannel) {
         if (privateChannel == null) {
             throw new IllegalArgumentException("비공개 채널 생성 요청은 필수입니다.");
+        }
+
+        if (privateChannel.participantIds() == null || privateChannel.participantIds().isEmpty()) {
+            throw new IllegalArgumentException("비공개 채널 참여자는 필수입니다.");
+        }
+
+        Set<UUID> participantIds = new HashSet<>();
+        for (UUID participantId : privateChannel.participantIds()) {
+            if (participantId == null) {
+                throw new IllegalArgumentException("참여자 ID는 필수입니다.");
+            }
+
+            if(!userRepository.exists(participantId)) {
+                throw new IllegalArgumentException("존재하지 않는 참여자 ID입니다.");
+            }
+
+            if (!participantIds.add(participantId)) {
+                throw new IllegalArgumentException("중복된 참여자 ID가 있습니다.");
+            }
         }
 
         Channel channel = new Channel(

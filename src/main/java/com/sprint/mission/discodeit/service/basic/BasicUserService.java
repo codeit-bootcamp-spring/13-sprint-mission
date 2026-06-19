@@ -135,6 +135,16 @@ public class BasicUserService implements UserService {
             throw new IllegalArgumentException("존재하지 않는 유저 ID입니다.");
         }
 
+        UserStatus userStatus = userStatusRepository.findByUserId(id);
+        BinaryContent profile = binaryContentRepository.findByUserId(id);
+
+       if (profile != null) {
+           binaryContentRepository.delete(profile.getId());
+       }
+       if (userStatus != null) {
+           userStatusRepository.delete(userStatus.getId());
+       }
+
         repository.delete(id);
     }
 }
