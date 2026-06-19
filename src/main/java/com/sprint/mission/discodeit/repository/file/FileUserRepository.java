@@ -45,28 +45,30 @@ public class FileUserRepository implements UserRepository {
     }
 
     // 나머지 findById, update, delete는 findAll() 후 처리
+    // findById 수정(멘토님 코드리뷰)
     @Override
     public Optional<User> findById(String id) {
         return findAll().stream()
-                .filter(u -> id.equals(u.getId()))
+                .filter(u -> id.equals(u.getId())) // c.getId().equals(id) 에서 변경
                 .findFirst();
     }
 
-
+    // stream.map.filter로 표현(멘토님 코드리뷰)
     @Override
     public void update(User user) {
         List<User> users = findAll();
+        // 스트림을 사용해 조건에 맞는 데이터만 변경 후 다시 리스트로 수집
         List<User> updatedUsers = users.stream()
                 .map(u -> user.getId().equals(u.getId()) ? user : u)
                 .toList();
         saveAll(updatedUsers);
     }
 
-
-
+    // delete 수정(멘토님 코드리뷰)
     @Override
     public void delete(String id) {
         List<User> users = findAll();
+        // channel.getId().equals(id) 에서 변경
         boolean removed = users.removeIf(user -> id.equals(user.getId()));
 
         if (removed) {

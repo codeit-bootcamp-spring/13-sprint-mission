@@ -42,20 +42,17 @@ public class FileChannelRepository implements ChannelRepository {
     }
 
 
-    // findById 수정(멘토님 코드리뷰)
     @Override
     public Optional<Channel> findById(String id) {
         return findAll().stream()
-                .filter(c -> id.equals(c.getId())) // c.getId().equals(id) 에서 변경
+                .filter(c -> id.equals(c.getId()))
                 .findFirst();
     }
 
 
-    // stream.map.filter로 표현(멘토님 코드리뷰)
     @Override
     public void update(Channel channel) {
         List<Channel> channels = findAll();
-        // 스트림을 사용해 조건에 맞는 데이터만 변경 후 다시 리스트로 수집
         List<Channel> updatedChannels = channels.stream()
                 .map(c -> channel.getId().equals(c.getId()) ? channel : c)
                 .toList();
@@ -64,11 +61,9 @@ public class FileChannelRepository implements ChannelRepository {
 
 
 
-    // delete 수정(멘토님 코드리뷰)
     @Override
     public void delete(String id) {
         List<Channel> channels = findAll();
-        // channel.getId().equals(id) 에서 변경
         boolean removed = channels.removeIf(channel -> id.equals(channel.getId()));
 
         if (removed) {
