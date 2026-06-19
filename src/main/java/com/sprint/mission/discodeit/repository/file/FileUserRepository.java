@@ -12,6 +12,7 @@ import java.util.*;
 @Repository
 public class FileUserRepository implements UserRepository {
     private final ObjectMapper objectMapper = new ObjectMapper();
+    // static에서 private로 변경(멘토님 코드리뷰)
     private final String filePath = "users.json";
 
     @Override
