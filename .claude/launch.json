@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Spring Boot (discodeit)",
+      "runtimeExecutable": "java",
+      "runtimeArgs": ["-jar", "/Users/jangjunseo/Desktop/codei_13th_develop/13-sprint-mission/build/libs/discodeit-0.0.1-SNAPSHOT.jar"],
+      "port": 8080
+    }
+  ]
+}
