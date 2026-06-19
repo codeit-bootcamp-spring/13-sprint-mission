@@ -12,7 +12,7 @@ import java.util.*;
 @Repository
 public class FileUserRepository implements UserRepository {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    static final String FilePath = "users.json";
+    private final String FilePath = "users.json";
 
     @Override
     public void save(User user) {
@@ -47,29 +47,30 @@ public class FileUserRepository implements UserRepository {
     // 나머지 findById, update, delete는 findAll() 후 처리
     @Override
     public Optional<User> findById(String id) {
-        return findAll().stream().filter(u -> u.getId().equals(id)).findFirst(); }
+        return findAll().stream()
+                .filter(u -> id.equals(u.getId()))
+                .findFirst();
+    }
 
 
     @Override
     public void update(User user) {
-        List<User> users = findAll(); // 전체 목록 호출
-        for (int i = 0; i < users.size(); i++) {
-            // 같은 id를 가진 대상 확인
-            if (users.get(i).getId().equals(user.getId())) {
-                users.set(i, user); // 해당 위치의 데이터를 새 정보로 교체
-                break;
-            }
-        }
-        saveAll(users); // 수정된 리스트 저장
+        List<User> users = findAll();
+        List<User> updatedUsers = users.stream()
+                .map(u -> user.getId().equals(u.getId()) ? user : u)
+                .toList();
+        saveAll(updatedUsers);
     }
+
+
+
     @Override
     public void delete(String id) {
-        List<User> users = findAll(); // 전체 목록 호출
-        // 입력받은 id와 일치하지 않는 사용자만 남기기 (해당 id는 삭제)
-        boolean removed = users.removeIf(user -> user.getId().equals(id));
+        List<User> users = findAll();
+        boolean removed = users.removeIf(user -> id.equals(user.getId()));
 
         if (removed) {
-            saveAll(users); // 수정된 리스트 저장
+            saveAll(users);
         }
     }
 }

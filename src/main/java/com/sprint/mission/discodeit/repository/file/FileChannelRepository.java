@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,7 +12,7 @@ import java.util.*;
 @Repository
 public class FileChannelRepository implements ChannelRepository {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    static final String FilePath = "channels.json";
+    private final String FilePath = "channels.json";
 
     @Override
     public void save(Channel channel) {
@@ -42,25 +41,35 @@ public class FileChannelRepository implements ChannelRepository {
         }
     }
 
+
+    // findById 수정(멘토님 코드리뷰)
     @Override
     public Optional<Channel> findById(String id) {
-        return findAll().stream().filter(c -> c.getId().equals(id)).findFirst(); }
+        return findAll().stream()
+                .filter(c -> id.equals(c.getId())) // c.getId().equals(id) 에서 변경
+                .findFirst();
+    }
 
+
+    // stream.map.filter로 표현(멘토님 코드리뷰)
     @Override
     public void update(Channel channel) {
         List<Channel> channels = findAll();
-        for (int i = 0; i < channels.size(); i++) {
-            if (channels.get(i).getId().equals(channel.getId())) {
-                channels.set(i, channel);
-                break;
-            }
-        }
-        saveAll(channels);
+        // 스트림을 사용해 조건에 맞는 데이터만 변경 후 다시 리스트로 수집
+        List<Channel> updatedChannels = channels.stream()
+                .map(c -> channel.getId().equals(c.getId()) ? channel : c)
+                .toList();
+        saveAll(updatedChannels);
     }
+
+
+
+    // delete 수정(멘토님 코드리뷰)
     @Override
     public void delete(String id) {
         List<Channel> channels = findAll();
-        boolean removed = channels.removeIf(channel -> channel.getId().equals(id));
+        // channel.getId().equals(id) 에서 변경
+        boolean removed = channels.removeIf(channel -> id.equals(channel.getId()));
 
         if (removed) {
             saveAll(channels);

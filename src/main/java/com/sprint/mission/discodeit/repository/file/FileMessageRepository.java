@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,7 +12,7 @@ import java.util.*;
 @Repository
 public class FileMessageRepository implements MessageRepository {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    static final String FilePath = "messages.json";
+    private final String FilePath = "messages.json";
 
     @Override
     public void save(Message message) {
@@ -44,23 +43,26 @@ public class FileMessageRepository implements MessageRepository {
 
     @Override
     public Optional<Message> findById(String id) {
-        return findAll().stream().filter(m -> m.getId().equals(id)).findFirst(); }
+        return findAll().stream()
+                .filter(m -> id.equals(m.getId()))
+                .findFirst();
+    }
 
     @Override
     public void update(Message message) {
         List<Message> messages = findAll();
-        for (int i = 0; i < messages.size(); i++) {
-            if (messages.get(i).getId().equals(message.getId())) {
-                messages.set(i, message);
-                break;
-            }
-        }
-        saveAll(messages);
+        List<Message> updatedMessages = messages.stream()
+                .map(m -> message.getId().equals(m.getId()) ? message : m)
+                .toList();
+        saveAll(updatedMessages);
     }
+
+
+
     @Override
     public void delete(String id) {
         List<Message> messages = findAll();
-        boolean removed = messages.removeIf(message -> message.getId().equals(id));
+        boolean removed = messages.removeIf(message -> id.equals(message.getId()));
 
         if (removed) {
             saveAll(messages);
