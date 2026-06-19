@@ -45,7 +45,7 @@ public class FileUserRepository implements UserRepository {
     }
 
     // 나머지 findById, update, delete는 findAll() 후 처리
-    // findById 수정(멘토님 코드리뷰)
+    // findById 수정완료(멘토님 코드리뷰)
     @Override
     public Optional<User> findById(String id) {
         return findAll().stream()
