@@ -31,6 +31,7 @@ public class BasicAuthService implements AuthService {
                 .map(s -> s.getLastActiveAt().isAfter(Instant.now().minusSeconds(300)))
                 .orElse(false);
 
-        return new UserDto(user.getId(), user.getUserName(), user.getEmail(), user.getProfileId(), online);
+        return new UserDto(user.getId(), user.getCreatedAt(), user.getUpdatedAt(), user.getUserName(), user.getEmail(),
+                user.getProfileId(), online);
     }
 }
