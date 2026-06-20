@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-// 깃 충돌 해결을 위해 force로 머지(멘토님 코드리뷰)
 @Repository
 public class FileUserRepository implements UserRepository {
     private final ObjectMapper objectMapper = new ObjectMapper();
