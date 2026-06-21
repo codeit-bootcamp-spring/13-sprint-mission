@@ -19,10 +19,10 @@ import java.util.stream.Stream;
 //MessageRepository 인터페이스의 파일 기반(File I/O) 구현체
 public class FileMessageRepository implements MessageRepository {
     private final Path DIRECTORY;
-    private final String EXTENSION = ".ser";
+    private static final String EXTENSION = ".ser";
 
     public FileMessageRepository() {
-        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", Message.class.getSimpleName());
+        this.DIRECTORY = Paths.get(System.getProperty("message.dir"), "file-data-map", Message.class.getSimpleName());
         if (Files.notExists(DIRECTORY)) {
             try {
                 Files.createDirectories(DIRECTORY);

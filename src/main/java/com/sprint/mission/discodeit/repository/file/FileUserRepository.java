@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 //파일(Users.dat)에 사용자 데이터를 저장하는 파일 저장방식 구현체 (프로그램이 종료되어도 데이터가 유지됨)
 public class FileUserRepository implements UserRepository {
     private final Path DIRECTORY;
-    private final String EXTENSION = ".ser";
+    private static final String EXTENSION = ".ser";
 
     public FileUserRepository() {
         this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", User.class.getSimpleName());

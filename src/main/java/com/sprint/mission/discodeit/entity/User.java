@@ -9,10 +9,10 @@ import java.util.UUID;
 @Getter
 // ##사용자 정보를 담는 클래스
 public class User implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long SERIAL_VERSION_UID = 1L;
     //도메인 모델 정의 (6~
     //객체 타입선언
-    private UUID id; //고유번호
+    private final UUID id; //고유번호
     private Instant createdAt; //만든시각
     private Instant updatedAt;  //바뀐시각
     private String username; //사용자이름

@@ -10,7 +10,7 @@ import java.util.UUID;
 @Getter
 // ##메시지 정보를 담는 클래스
 public class Message implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long SERIAL_VERSION_UID = 1L;
     private final UUID id; //고유번호
     private Instant createdAt; //만든시각
     private Instant updatedAt;  //바뀐시각

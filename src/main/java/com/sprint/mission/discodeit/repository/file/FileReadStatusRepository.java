@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 @Repository
 public class FileReadStatusRepository implements ReadStatusRepository {
     private final Path DIRECTORY;
-    private final String EXTENSION = ".ser";
+    private static final String EXTENSION = ".ser";
 
     public FileReadStatusRepository() {
         this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", ReadStatus.class.getSimpleName());
