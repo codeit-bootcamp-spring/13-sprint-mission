@@ -24,7 +24,7 @@ public class FileMessageService implements MessageService {
     public Message find(UUID id) {
         return messageRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("메시지를 찾을 수 없습니다."));
+                        new IllegalArgumentException("메시지를 찾을 수 없습니다."));
     }
 
     @Override
