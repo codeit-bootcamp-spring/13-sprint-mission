@@ -1,79 +1,131 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Stream;
 
+@ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
 @Repository
 public class FileUserRepository implements UserRepository {
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    // static에서 private로 변경(멘토님 코드리뷰)
-    private final String filePath = "users.json";
+    private final Path DIRECTORY;
+    private final String EXTENSION = ".ser";
 
-    @Override
-    public void save(User user) {
-        List<User> users = findAll(); // 기존 파일 불러오기
-        users.add(user);
-        saveAll(users); // 다시 저장
-    }
-
-    // 파일 전체 확인
-    @Override
-    public List<User> findAll() {
-        File file = new File(filePath);
-        if (!file.exists()) return new ArrayList<>();
-        try {
-            // 파일을 User 리스트 객체로 변환
-            return objectMapper.readValue(file,
-                    objectMapper.getTypeFactory().constructCollectionType(List.class, User.class));
-        } catch (IOException e) {
-            return new ArrayList<>();
+    public FileUserRepository(
+            @Value("${discodeit.repository.file-directory:data}") String fileDirectory
+    ) {
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), fileDirectory, User.class.getSimpleName());
+        if (Files.notExists(DIRECTORY)) {
+            try {
+                Files.createDirectories(DIRECTORY);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
-    // 파일로 저장
-    private void saveAll(List<User> users) {
-        try {
-            objectMapper.writeValue(new File(filePath), users);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private Path resolvePath(UUID id) {
+        return DIRECTORY.resolve(id + EXTENSION);
     }
 
-    // 나머지 findById, update, delete는 findAll() 후 처리
-    // findById 수정완료(멘토님 코드리뷰)
     @Override
-    public Optional<User> findById(String id) {
-        return findAll().stream()
-                .filter(u -> id.equals(u.getId())) // c.getId().equals(id) 에서 변경
+    public User save(User user) {
+        Path path = resolvePath(user.getId());
+        try (
+                FileOutputStream fos = new FileOutputStream(path.toFile());
+                ObjectOutputStream oos = new ObjectOutputStream(fos)
+        ) {
+            oos.writeObject(user);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return user;
+    }
+
+    @Override
+    public Optional<User> findById(UUID id) {
+        User userNullable = null;
+        Path path = resolvePath(id);
+        if (Files.exists(path)) {
+            try (
+                    FileInputStream fis = new FileInputStream(path.toFile());
+                    ObjectInputStream ois = new ObjectInputStream(fis)
+            ) {
+                userNullable = (User) ois.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return Optional.ofNullable(userNullable);
+    }
+
+    @Override
+    public Optional<User> findByUsername(String username) {
+        return this.findAll().stream()
+                .filter(user -> user.getUsername().equals(username))
                 .findFirst();
     }
 
-    // stream.map.filter로 표현(멘토님 코드리뷰)
     @Override
-    public void update(User user) {
-        List<User> users = findAll();
-        // 스트림을 사용해 조건에 맞는 데이터만 변경 후 다시 리스트로 수집
-        List<User> updatedUsers = users.stream()
-                .map(u -> user.getId().equals(u.getId()) ? user : u)
-                .toList();
-        saveAll(updatedUsers);
+    public List<User> findAll() {
+        try (Stream<Path> paths = Files.list(DIRECTORY)) {
+            return paths
+                    .filter(path -> path.toString().endsWith(EXTENSION))
+                    .map(path -> {
+                        try (
+                                FileInputStream fis = new FileInputStream(path.toFile());
+                                ObjectInputStream ois = new ObjectInputStream(fis)
+                        ) {
+                            return (User) ois.readObject();
+                        } catch (IOException | ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .toList();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    // delete 수정(멘토님 코드리뷰)
     @Override
-    public void delete(String id) {
-        List<User> users = findAll();
-        // channel.getId().equals(id) 에서 변경
-        boolean removed = users.removeIf(user -> id.equals(user.getId()));
+    public boolean existsById(UUID id) {
+        Path path = resolvePath(id);
+        return Files.exists(path);
+    }
 
-        if (removed) {
-            saveAll(users);
+    @Override
+    public void deleteById(UUID id) {
+        Path path = resolvePath(id);
+        try {
+            Files.delete(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public boolean existsByEmail(String email) {
+        return this.findAll().stream()
+                // null인 데이터는 건너뛰도록 방어 로직 추가
+                .filter(user -> user.getEmail() != null)
+                .anyMatch(user -> user.getEmail().equals(email));
+    }
+
+    @Override
+    public boolean existsByUsername(String username) {
+        return this.findAll().stream()
+                // null인 데이터는 건너뛰도록 방어 로직 추가
+                .filter(user -> user.getUsername() != null)
+                .anyMatch(user -> user.getUsername().equals(username));
     }
 }
