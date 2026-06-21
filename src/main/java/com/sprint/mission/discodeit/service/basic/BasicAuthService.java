@@ -24,8 +24,8 @@ public class BasicAuthService implements AuthService {
         // username, password 일치하는 유저 -> 유저 정보 반환
         // 유저 정보 얻기 위해 filter
         User user=userRepository.findAll().stream()
-                .filter(u -> u.getUsername().equals(request.username())
-                && u.getPassword().equals(request.password()))
+                .filter(u -> u.getUsername().equals(request.getUsername())
+                && u.getPassword().equals(request.getPassword()))
                         .findFirst()
                                 .orElseThrow(()->new NoSuchElementException("존재하지 않는 아이디, 비밀번호입니다.")); // 일치하는 유저 없는 경우 -> 예외 발생
         UserStatus userStatus = statusRepository.findByUserId(user.getId())

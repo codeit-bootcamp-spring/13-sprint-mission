@@ -30,24 +30,25 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public MessageResponse create(MessageCreateRequest request) {
-        channelRepository.findById(request.channelId())
-                .orElseThrow(()->new NoSuchElementException(request.channelId()+" 를 찾지 못했습니다."));
-        userRepository.findById(request.authorId())
-                .orElseThrow(()->new NoSuchElementException(request.authorId()+" 를 찾지 못했습니다."));
+        channelRepository.findById(request.getChannelId())
+                .orElseThrow(()->new NoSuchElementException(request.getChannelId()+" 를 찾지 못했습니다."));
+        userRepository.findById(request.getAuthorId())
+                .orElseThrow(()->new NoSuchElementException(request.getAuthorId()+" 를 찾지 못했습니다."));
         // 선택적으로 여러 개의 첨부파일 같이 등록 가능
         List<UUID> attachmentIds=new ArrayList<>();
-        if (request.attachments() != null){
-            for (BinaryContentCreateRequest file : request.attachments()) {
+        if (request.getAttachmentIds() != null){
+            for (BinaryContentCreateRequest file : request.getAttachmentIds()) {
                 BinaryContent binaryContent=new BinaryContent(
-                        file.fileName(),
-                        file.contentType(),
-                        file.fileSize()
+                        file.getFileName(),
+                        file.getContentType(),
+                        file.getFileSize(),
+                        file.getBytes()
                 );
                 contentRepository.save(binaryContent);
                 attachmentIds.add(binaryContent.getId());
             }
         }
-        Message message=new Message(request.content(), request.channelId(), request.authorId(), attachmentIds);
+        Message message=new Message(request.getContent(), request.getChannelId(), request.getAuthorId(), attachmentIds);
         messageRepository.save(message);
         return MessageResponse.from(message);
     }
@@ -68,10 +69,10 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public MessageResponse update(MessageUpdateRequest request) {
-        Message message=messageRepository.findById(request.messageId())
-                .orElseThrow(()->new NoSuchElementException(request.messageId()+" 를 찾을 수 없습니다."));
-        message.update(request.newContent());
+    public MessageResponse update(MessageUpdateRequest request, UUID messageId) {
+        Message message=messageRepository.findById(messageId)
+                .orElseThrow(()->new NoSuchElementException(messageId+" 를 찾을 수 없습니다."));
+        message.update(request.getNewContent());
         messageRepository.save(message);
         return MessageResponse.from(message);
     }

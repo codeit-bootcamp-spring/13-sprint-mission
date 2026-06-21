@@ -7,14 +7,16 @@ import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserStatusService;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
+@Service
 public class BasicUserStatusService implements UserStatusService {
     private final UserStatusRepository userStatusRepository;
     private final UserRepository userRepository;
@@ -23,12 +25,12 @@ public class BasicUserStatusService implements UserStatusService {
     @Override
     public UserStatusResponse create(UserStatusCreateRequest request) {
         // 관련된 User가 존재하지 않으면 예외 발생
-        userRepository.findById(request.userId())
+        userRepository.findById(request.getUserId())
                 .orElseThrow(()->new NoSuchElementException("존재하지 않는 사용자입니다."));
         // 같은 User와 관련된 객체가 이미 존재하면 예외 발생
-        userStatusRepository.findById(request.userId())
+        userStatusRepository.findById(request.getUserId())
                 .ifPresent(userStatus->{throw new IllegalArgumentException("이미 존재하는 사용자입니다.");});
-        UserStatus userStatus = new UserStatus(request.userId());
+        UserStatus userStatus = new UserStatus(request.getUserId(), request.getLastActiveAt());
         userStatusRepository.save(userStatus);
         return UserStatusResponse.from(userStatus);
     }
@@ -48,10 +50,10 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public UserStatusResponse update(UserStatusUpdateRequest request) {
-        UserStatus userStatus = userStatusRepository.findById(request.userId())
+    public UserStatusResponse update(UserStatusUpdateRequest request, UUID userId) {
+        UserStatus userStatus = userStatusRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 아이디입니다."));
-        userStatus.update(request.NewLastOnlineAt());
+        userStatus.update(request.getNewLastActiveAt());
         userStatusRepository.save(userStatus);
         return UserStatusResponse.from(userStatus);
     }

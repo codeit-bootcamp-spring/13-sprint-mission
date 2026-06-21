@@ -1,9 +1,14 @@
 package com.sprint.mission.discodeit.dto.readstatus;
 
-import java.time.Instant;
-import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-public record ReadStatusUpdateRequest(
-        UUID readStatusId,
-        Instant NewReadAt
-) { }
+import java.time.Instant;
+
+@Setter
+@Getter
+@ToString
+public class ReadStatusUpdateRequest {
+    private Instant newLastReadAt;
+}

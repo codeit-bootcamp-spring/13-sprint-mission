@@ -24,8 +24,8 @@ public class DiscodeitApplication {
         return channelService.createPublicChannel(new PublicChannelCreateRequest("학습", "학습 관련 공지입니다."));
 	}
 	static void messageCreateTest(MessageService messageService, ChannelResponse channel, UserResponse user) {
-		MessageResponse message=messageService.create(new MessageCreateRequest("클래스 매니저님과 나눈 다이렉트 메시지의 첫 부분이에요.", channel.id(), user.id(), null));
-		System.out.println("=== 메시지 생성: "+message.id());
+		MessageResponse message=messageService.create(new MessageCreateRequest("클래스 매니저님과 나눈 다이렉트 메시지의 첫 부분이에요.", channel.getId(), user.getId(), null));
+		System.out.println("=== 메시지 생성: "+message.getId());
 	}
 	public static void main(String[] args) {
 		ConfigurableApplicationContext context=SpringApplication.run(DiscodeitApplication.class, args);

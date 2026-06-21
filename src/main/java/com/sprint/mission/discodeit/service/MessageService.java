@@ -12,6 +12,6 @@ public interface MessageService {
     MessageResponse create(MessageCreateRequest request);
     MessageResponse find(UUID messageId); // 연관 도메인 별 아이디 구분 messageId, userId, channelId
     List<MessageResponse> findallByChannelId(UUID channelId);
-    MessageResponse update(MessageUpdateRequest request);
+    MessageResponse update(MessageUpdateRequest request, UUID messageId);
     void delete(UUID messageId);
 }

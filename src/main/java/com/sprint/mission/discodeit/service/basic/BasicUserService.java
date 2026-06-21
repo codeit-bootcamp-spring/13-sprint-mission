@@ -13,6 +13,7 @@ import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -29,32 +30,33 @@ public class BasicUserService implements UserService {
     public UserResponse create(UserCreateRequest request) {
         // username과 email 다른 유저와 다른지 중복 검사
         boolean flag1 = userRepository.findAll().stream()
-                .anyMatch(user -> user.getUsername().equals(request.username()));
+                .anyMatch(user -> user.getUsername().equals(request.getUsername()));
         if (flag1){
-            throw new IllegalArgumentException(request.username()+" 은(는) 중복된 이름입니다.");
+            throw new IllegalArgumentException(request.getUsername()+" 은(는) 중복된 이름입니다.");
         }
         boolean flag2 = userRepository.findAll().stream()
-                .anyMatch(user -> user.getEmail().equals(request.email()));
+                .anyMatch(user -> user.getEmail().equals(request.getEmail()));
         if (flag2){
-            throw new IllegalArgumentException(request.email()+" 은(는) 중복된 이메일입니다.");
+            throw new IllegalArgumentException(request.getEmail()+" 은(는) 중복된 이메일입니다.");
         }
         // 프로필 이미지 있으면 등록
         UUID profileId = null;
-        if (request.profileImage() != null){
+        if (request.getProfileImage() != null){
             BinaryContent profileImage=new BinaryContent(
-                    request.profileImage().fileName(),
-                    request.profileImage().contentType(),
-                    request.profileImage().fileSize()
+                    request.getProfileImage().getFileName(),
+                    request.getProfileImage().getContentType(),
+                    request.getProfileImage().getFileSize(),
+                    request.getProfileImage().getBytes()
             );
             contentRepository.save(profileImage);
             profileId=profileImage.getId();
         }
         // 프로필 이미지 없으면 이는 비워두고 등록
-        User user=new User(request.username(), request.email(),
-                request.password(), request.profileImage() == null ? null : profileId);
+        User user=new User(request.getUsername(), request.getEmail(),
+                request.getPassword(), request.getProfileImage() == null ? null : profileId);
         userRepository.save(user);
         // UserStatus를 같이 생성
-        UserStatus userStatus=new UserStatus(user.getId());
+        UserStatus userStatus=new UserStatus(user.getId(), Instant.now());
         statusRepository.save(userStatus);
         return UserResponse.from(user, userStatus);
     }
@@ -79,17 +81,18 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public UserResponse update(UserUpdateRequest request) {
-        User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new NoSuchElementException(request.userId() + " (을)를 찾을 수 없습니다."));
+    public UserResponse update(UserUpdateRequest request, UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException(userId + " (을)를 찾을 수 없습니다."));
         UUID oldProfileId = user.getProfileId();
         UUID newProfileId = oldProfileId;
         // 프로필 이미지 선택적으로 대체
-        if (request.newProfileImage() != null){
+        if (request.getNewProfileImage() != null){
             BinaryContent newProfileImage =new BinaryContent(
-                    request.newProfileImage().fileName(),
-                    request.newProfileImage().contentType(),
-                    request.newProfileImage().fileSize()
+                    request.getNewProfileImage().getFileName(),
+                    request.getNewProfileImage().getContentType(),
+                    request.getNewProfileImage().getFileSize(),
+                    request.getNewProfileImage().getBytes()
             );
             contentRepository.save(newProfileImage);
             newProfileId = newProfileImage.getId();
@@ -98,7 +101,7 @@ public class BasicUserService implements UserService {
         if (oldProfileId != null && !oldProfileId.equals(newProfileId)){
             contentRepository.deleteById(oldProfileId);
         }
-        user.update(request.newUsername(), request.newEmail(), request.newPassword(), newProfileId); // profileId 추가
+        user.update(request.getNewUsername(), request.getNewEmail(), request.getNewPassword(), newProfileId); // profileId 추가
         userRepository.save(user);
         UserStatus userStatus = statusRepository.findByUserId(user.getId())
                 .orElseThrow(()-> new NoSuchElementException(user.getId()+" (을)를 찾을 수 없습니다."));

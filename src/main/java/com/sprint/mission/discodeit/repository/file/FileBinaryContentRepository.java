@@ -17,11 +17,12 @@ import java.util.UUID;
 public class FileBinaryContentRepository implements BinaryContentRepository {
 
     private final Path DIRECTORY;
-    private final String EXTENSION = ".ser";
+    private static final String EXTENSION = ".ser"; // 상수 변수로 선언
+    private static final String USER_DIRECTORY = System.getProperty("user.dir"); // user.dir 또한 상수로 표현
+    private static final String FILE_STORAGE_DIR = "file-data-map"; // file-data-map 또한 처음 보는 사람도 알아볼 수 있도록 역할과 의미를 분명히 해야 한다
 
     public FileBinaryContentRepository(){
-        this.DIRECTORY= Paths.get(System.getProperty("user.dir"),
-                "file-data-map", UserStatus.class.getSimpleName());
+        this.DIRECTORY= Paths.get(USER_DIRECTORY, FILE_STORAGE_DIR, UserStatus.class.getSimpleName());
         if (Files.notExists(DIRECTORY)){ // Repository 생성 시점에서 폴더 존재 여부 한 번만 검사
             try {
                 Files.createDirectories(DIRECTORY);
@@ -72,7 +73,10 @@ public class FileBinaryContentRepository implements BinaryContentRepository {
                 .map(this::resolvePath)
                 .filter(Files::exists)
                 .map(path -> {
-                    try (
+                    try ( // OS를 통해 읽고, OS를 통해 리소스를 사용하는데 반납을 하지 않으면 리소스가 고갈되고 문제가 발생한다
+                          // 따라서 clear, close 반환이 필요하다
+                          // InputStream을 open하면 CRUD 관련해 리소스를 반환해줘야 한다
+                          // try() 문법을 사용해 파일 I/O를 마치면 JVM이 자동으로 close()를 호출하여 clear() 메서드를 호출하지 않아도 된다
                             FileInputStream fileInputStream = new FileInputStream(path.toFile());
                             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)
                     ) {

@@ -3,15 +3,14 @@ package com.sprint.mission.discodeit.repository.jcf;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
+import lombok.NoArgsConstructor;
 
 import java.util.*;
 
+@NoArgsConstructor
 public class JCFBinaryContentRepository implements BinaryContentRepository {
 
-    private final Map<UUID, BinaryContent> data;
-    public JCFBinaryContentRepository(){
-        this.data=new HashMap<>();
-    }
+    private static final Map<UUID, BinaryContent> data=new HashMap<>(); // 인스턴스를 생성할 때 마다 새로운 Map을 만들지 않도록 한다
 
     @Override
     public BinaryContent save(BinaryContent content) {

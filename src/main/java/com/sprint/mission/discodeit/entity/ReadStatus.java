@@ -14,25 +14,26 @@ public class ReadStatus implements Serializable {
     private final UUID id;
     private final Instant createdAt;
     private Instant updatedAt; // 공통 필드
-    private UUID userId, channelId;
-    private Instant ReadAt;
+    private UUID userId;
+    private UUID channelId;
+    private Instant lastReadAt; // ReadAt -> lastReadAt으로 변경하여 마지막으로 읽은 시간임을 알려준다
 
     // 채널 별 마지막으로 메시지 읽은 시간 표현
     // 사용자별 각 채널에 읽지 않은 메시지 확인하기 위해 활용
 
-    public ReadStatus(UUID userId, UUID channelId) {
+    public ReadStatus(UUID userId, UUID channelId, Instant lastReadAt) {
         this.id = UUID.randomUUID();
         this.userId = userId;
         this.channelId = channelId;
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
-        this.ReadAt = Instant.now();
+        this.lastReadAt = lastReadAt;
     }
 
-    public void update(Instant newReadAt) {
+    public void update(Instant newLastReadAt) {
         boolean anyValueUpdated = false;
-        if (newReadAt != null && !newReadAt.equals(this.ReadAt)){
-            this.ReadAt=newReadAt;
+        if (newLastReadAt != null && !newLastReadAt.equals(this.lastReadAt)){
+            this.lastReadAt = newLastReadAt;
             anyValueUpdated=true;
         }
         if (!anyValueUpdated){

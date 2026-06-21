@@ -16,7 +16,9 @@ public class User implements Serializable {
     private UUID profileId;
     private final Instant createdAt;
     private Instant updatedAt;
-    private String username, email, password; // 비밀번호 추가
+    private String username;
+    private String email;
+    private String password; // 비밀번호 추가
 
     public User(String username, String email, String password, UUID profileId) {
         this.id= randomUUID();
