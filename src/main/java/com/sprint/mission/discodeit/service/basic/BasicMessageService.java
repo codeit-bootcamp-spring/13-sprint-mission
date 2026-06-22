@@ -61,7 +61,7 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public List<MessageResponse> findallByChannelId(UUID channelId) {
+    public List<MessageResponse> findAllByChannelId(UUID channelId) {
         // 특정 Channel의 Message 목록 조회 조건 추가
         return messageRepository.findAllByChannelId(channelId).stream()
                 .map(MessageResponse::from)

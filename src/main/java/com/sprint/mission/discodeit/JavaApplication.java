@@ -92,7 +92,7 @@ public class JavaApplication {
         MessageResponse foundMessage =messageService.find(message.getId());
         System.out.println("메시지 조회--단건: "+String.join("/",foundMessage.getId().toString(),
                 foundMessage.getContent(), foundMessage.getChannelId().toString(), foundMessage.getAuthorId().toString(), foundMessage.getAttachmentIds().toString()));
-        List<MessageResponse> readMessages=messageService.findallByChannelId(channel.getId());
+        List<MessageResponse> readMessages=messageService.findAllByChannelId(channel.getId());
         System.out.println("메시지 조회--다건 (메시지 수: "+readMessages.size()+")");
         readMessages.forEach(messageResponse -> System.out.println(String.join("/", messageResponse.getId().toString(),
                 messageResponse.getContent(), messageResponse.getChannelId().toString(), messageResponse.getAuthorId().toString(), messageResponse.getAttachmentIds().toString())));
@@ -101,7 +101,7 @@ public class JavaApplication {
         System.out.println("=== 수정된 메시지: "+updateMessage.getContent());
         System.out.println("=== 메시지 삭제 ====");
         messageService.delete(message.getId());
-        List<MessageResponse> foundDeletedMessage=messageService.findallByChannelId(channel.getId());
+        List<MessageResponse> foundDeletedMessage=messageService.findAllByChannelId(channel.getId());
         System.out.println("메시지 삭제! 현재 메시지 수: "+foundDeletedMessage.size());
     }
 
