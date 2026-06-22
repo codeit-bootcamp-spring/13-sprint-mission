@@ -4,6 +4,10 @@ import com.sprint.mission.discodeit.dto.request.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ReadStatusResponse;
 import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.exception.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.ReadStatusAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.ReadStatusNotFoundException;
+import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -20,91 +24,75 @@ import java.util.stream.Collectors;
 @Primary
 public class BasicReadStatusService implements ReadStatusService {
 
-    private final ReadStatusRepository readStatusRepository;
-    private final UserRepository userRepository;
-    private final ChannelRepository channelRepository;
+  private final ReadStatusRepository readStatusRepository;
+  private final UserRepository userRepository;
+  private final ChannelRepository channelRepository;
 
-    public BasicReadStatusService(ReadStatusRepository readStatusRepository, UserRepository userRepository, ChannelRepository channelRepository) {
-        this.readStatusRepository = readStatusRepository;
-        this.userRepository = userRepository;
-        this.channelRepository = channelRepository;
+  public BasicReadStatusService(ReadStatusRepository readStatusRepository,
+      UserRepository userRepository, ChannelRepository channelRepository) {
+    this.readStatusRepository = readStatusRepository;
+    this.userRepository = userRepository;
+    this.channelRepository = channelRepository;
+  }
+
+  @Override
+  public ReadStatusResponse create(ReadStatusCreateRequest request) {
+    userRepository.findById(request.userId())
+        .orElseThrow(() -> new UserNotFoundException(request.userId()));
+    channelRepository.findById(request.channelId())
+        .orElseThrow(() -> new ChannelNotFoundException(request.channelId()));
+
+    boolean isAlreadyExist = readStatusRepository.findAll().stream()
+        .anyMatch(rs -> rs.getUserId().equals(request.userId())
+            && rs.getChannelId().equals(request.channelId()));
+
+    if (isAlreadyExist) {
+      throw new ReadStatusAlreadyExistsException(request.userId(), request.channelId());
     }
 
-    @Override
-    public ReadStatusResponse create(ReadStatusCreateRequest request) {
-        if (userRepository.findById(request.userId()) == null) {
-            throw new IllegalArgumentException("존재하지 않는 유저입니다.");
-        }
-        if (channelRepository.findById(request.channelId()) == null) {
-            throw new IllegalArgumentException("존재하지 않는 채널입니다.");
-        }
+    ReadStatus readStatus = ReadStatus.builder()
+        .id(UUID.randomUUID())
+        .createdAt(Instant.now())
+        .updatedAt(Instant.now())
+        .userId(request.userId())
+        .channelId(request.channelId())
+        .readAt(Instant.now())
+        .build();
 
-        boolean isAlreadyExist = readStatusRepository.findAll().stream()
-                .anyMatch(rs -> rs.getUserId().equals(request.userId())
-                        && rs.getChannelId().equals(request.channelId()));
+    readStatusRepository.save(readStatus);
 
-        if (isAlreadyExist) {
-            throw new IllegalArgumentException("이미 해당 채널에 참여 중인 유저입니다.");
-        }
+    return convertToResponse(readStatus);
+  }
 
-        ReadStatus readStatus = ReadStatus.builder()
-                .id(UUID.randomUUID())
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
-                .userId(request.userId())
-                .channelId(request.channelId())
-                .readAt(Instant.now())
-                .build();
 
-        readStatusRepository.save(readStatus);
+  @Override
+  public List<ReadStatusResponse> findAllByUserId(UUID userId) {
+    return readStatusRepository.findAll().stream()
+        .filter(rs -> rs.getUserId().equals(userId))
+        .map(this::convertToResponse)
+        .collect(Collectors.toList());
+  }
 
-        return convertToResponse(readStatus);
-    }
+  @Override
+  public ReadStatusResponse update(UUID id, ReadStatusUpdateRequest request) {
+    ReadStatus readStatus = readStatusRepository.findById(id)
+        .orElseThrow(() -> new ReadStatusNotFoundException(id));
 
-    @Override
-    public ReadStatusResponse find(UUID id) {
-        ReadStatus readStatus = readStatusRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 읽음 상태 정보입니다."));
+    readStatus.update(request.newLastReadAt());
+    readStatusRepository.save(readStatus);
 
-        return convertToResponse(readStatus);
-    }
+    return convertToResponse(readStatus);
+  }
 
-    @Override
-    public List<ReadStatusResponse> findAllByUserId(UUID userId) {
-        return readStatusRepository.findAll().stream()
-                .filter(rs -> rs.getUserId().equals(userId))
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
 
-    @Override
-    public ReadStatusResponse update(UUID id, ReadStatusUpdateRequest request) {
-        ReadStatus readStatus = readStatusRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 읽음 상태 정보입니다."));
-
-        readStatus.update(request.readAt());
-        readStatusRepository.save(readStatus);
-
-        return convertToResponse(readStatus);
-    }
-
-    @Override
-    public void delete(UUID id) {
-        ReadStatus readStatus = readStatusRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 읽음 상태 정보입니다."));
-
-        readStatusRepository.delete(id);
-
-    }
-
-    private ReadStatusResponse convertToResponse(ReadStatus readStatus) {
-        return new ReadStatusResponse(
-                readStatus.getId(),
-                readStatus.getCreatedAt(),
-                readStatus.getUpdatedAt(),
-                readStatus.getUserId(),
-                readStatus.getChannelId(),
-                readStatus.getReadAt()
-        );
-    }
+  private ReadStatusResponse convertToResponse(ReadStatus readStatus) {
+    return new ReadStatusResponse(
+        readStatus.getId(),
+        readStatus.getCreatedAt(),
+        readStatus.getUpdatedAt(),
+        readStatus.getUserId(),
+        readStatus.getChannelId(),
+        readStatus.getReadAt()
+    );
+  }
 }
