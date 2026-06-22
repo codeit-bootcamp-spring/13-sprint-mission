@@ -18,11 +18,11 @@ public class BinaryContentService {
 
     public BinaryContentResponse create(CreateBinaryContentRequest request) {
         BinaryContent content = new BinaryContent(
-                request.userId(),
-                request.messageId(),
-                request.filename(),
-                request.contentType(),
-                request.bytes());
+                request.getUserId(),
+                request.getMessageId(),
+                request.getFilename(),
+                request.getContentType(),
+                request.getBytes());
         binaryContentRepository.save(content);
 
         return BinaryContentResponse.from(content);

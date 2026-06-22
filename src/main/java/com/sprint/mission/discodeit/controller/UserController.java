@@ -5,7 +5,6 @@ import com.sprint.mission.discodeit.dto.request.UpdateUserRequest;
 import com.sprint.mission.discodeit.dto.request.UpdateUserStatusRequest;
 import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.dto.response.UserStatusResponse;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import lombok.RequiredArgsConstructor;

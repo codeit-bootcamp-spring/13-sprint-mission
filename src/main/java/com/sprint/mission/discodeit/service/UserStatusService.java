@@ -21,16 +21,15 @@ public class UserStatusService {
     private final UserRepository userRepository;
 
     public UserStatusResponse create(CreateUserStatusRequest request) {
-        User user = userRepository.findById(request.userId())
+        User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
 
-        boolean exists = userStatusRepository.findById(request.userId()).isPresent();
+        userStatusRepository.findByUserId(request.getUserId())
+                .ifPresent(status -> {
+                    throw new IllegalArgumentException("이미 UserStatus가 존재합니다.");
+                });
 
-        if (exists) {
-            throw new IllegalArgumentException("이미 UserStatus가 존재합니다.");
-        }
-
-        UserStatus status = new UserStatus( UUID.randomUUID(), request.userId() );
+        UserStatus status = new UserStatus( UUID.randomUUID(), request.getUserId() );
         userStatusRepository.save(status);
 
         return UserStatusResponse.from(status);
@@ -51,7 +50,7 @@ public class UserStatusService {
     }
 
     public UserStatusResponse updateByUserId(UpdateUserStatusRequest request) {
-        UserStatus status = userStatusRepository.findByUserId(request.userId())
+        UserStatus status = userStatusRepository.findByUserId(request.getUserId())
                         .orElseThrow(() ->
                                 new IllegalArgumentException("유저 상태를 찾을 수 없습니다."));
 

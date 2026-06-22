@@ -1,12 +1,17 @@
 package com.sprint.mission.discodeit.dto.request;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.util.UUID;
 
-public record CreateBinaryContentRequest(
-        UUID userId,
-        UUID messageId,
-        String filename,
-        String contentType,
-        byte[] bytes
-) {
+@Getter
+@NoArgsConstructor
+public class CreateBinaryContentRequest {
+    private UUID userId;
+    private UUID messageId;
+    private String filename;
+    private String contentType;
+    private byte[] bytes;
 }
+

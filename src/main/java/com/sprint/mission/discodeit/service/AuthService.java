@@ -20,7 +20,7 @@ public class AuthService {
         User user = userRepository.findAll()
                 .stream()
                 .filter(u ->
-                        u.getUsername().equals(request.username()) && u.getPassword().equals(request.password()))
+                        u.getUsername().equals(request.getUsername()) && u.getPassword().equals(request.getPassword()))
                 .findFirst()
                 .orElseThrow(() ->
                         new IllegalArgumentException("아이디 또는 비밀번호가 일치하지 않습니다."));

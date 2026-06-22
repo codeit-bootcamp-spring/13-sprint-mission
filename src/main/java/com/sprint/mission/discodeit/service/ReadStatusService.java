@@ -18,14 +18,14 @@ public class ReadStatusService {
     private final ReadStatusRepository readStatusRepository;
 
     public ReadStatusResponse create(CreateReadStatusRequest request) {
-        if (readStatusRepository.findByUserIdAndChannelId(request.userId(), request.channelId()) != null) {
+        if (readStatusRepository.findByUserIdAndChannelId(request.getUserId(), request.getChannelId()) != null) {
             throw new IllegalArgumentException("이미 존재합니다.");
         }
 
         ReadStatus readStatus = new ReadStatus(
                         UUID.randomUUID(),
-                        request.userId(),
-                        request.channelId()
+                        request.getUserId(),
+                        request.getChannelId()
         );
         readStatusRepository.save(readStatus);
 
@@ -47,7 +47,7 @@ public class ReadStatusService {
     }
 
     public ReadStatusResponse update(UpdateReadStatusRequest request) {
-        ReadStatus status = readStatusRepository.findById(request.id())
+        ReadStatus status = readStatusRepository.findById(request.getId())
                 .orElseThrow(() -> new IllegalArgumentException("읽음 상태를 찾을 수 없습니다."));
 
         status.updateLastSeen(); readStatusRepository.save(status);

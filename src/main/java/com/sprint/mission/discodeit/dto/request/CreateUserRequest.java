@@ -1,12 +1,17 @@
 package com.sprint.mission.discodeit.dto.request;
 
 import com.sprint.mission.discodeit.entity.User;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-public record CreateUserRequest (
-        String username,
-        String email,
-        String password
-) {
+@Getter
+@NoArgsConstructor
+public class CreateUserRequest  {
+
+    private String username;
+    private String email;
+    private String password;
+
     public User toEntity() {
         return new User(
                 username,

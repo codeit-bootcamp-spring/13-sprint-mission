@@ -1,8 +1,14 @@
 package com.sprint.mission.discodeit.dto.request;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.util.UUID;
 
-public record UpdateUserStatusRequest(
-        UUID userId
-) {
+@Getter
+@NoArgsConstructor
+public class UpdateUserStatusRequest {
+
+    private UUID userId;
+
 }

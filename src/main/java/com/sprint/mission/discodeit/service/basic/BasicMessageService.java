@@ -25,17 +25,17 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public MessageResponse create(CreateMessageRequest request, List<CreateBinaryContentRequest> attachments) {
-        Message message = new Message(request.content(), request.channelId(), request.authorId());
+        Message message = new Message(request.getContent(), request.getChannelId(), request.getAuthorId());
 
         messageRepository.save(message);
 
         for (CreateBinaryContentRequest file : attachments) {
             BinaryContent binaryContent = new BinaryContent(
-                            request.authorId(),
+                            request.getAuthorId(),
                             message.getId(),
-                            file.filename(),
-                            file.contentType(),
-                            file.bytes()
+                            file.getFilename(),
+                            file.getContentType(),
+                            file.getBytes()
             );
             binaryContentRepository.save(binaryContent);
         }
@@ -91,10 +91,10 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public MessageResponse update(UpdateMessageRequest request) {
-        Message message = messageRepository.findById(request.id())
+        Message message = messageRepository.findById(request.getId())
                 .orElseThrow(() ->
                     new IllegalArgumentException("메시지를 찾을 수 없습니다."));
-        message.update(request.content());
+        message.update(request.getContent());
 
         messageRepository.save(message);
 
