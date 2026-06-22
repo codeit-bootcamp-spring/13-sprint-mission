@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserResponse;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusResponse;
+import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import jakarta.validation.Valid;
@@ -61,8 +62,9 @@ public class UserController {
 
     // 사용자의 온라인 상태 업데이트
     @RequestMapping(value = "/{userId}/online-status", method = RequestMethod.PATCH)
-    public ResponseEntity<UserStatusResponse> updateOnlineStatus(@PathVariable UUID userId){
-        UserStatusResponse updatedStatus = userStatusService.updateByUserId(userId);
+    public ResponseEntity<UserStatusResponse> updateOnlineStatus(@PathVariable UUID userId,
+                                                                 @Valid @RequestBody UserStatusUpdateRequest request){
+        UserStatusResponse updatedStatus = userStatusService.updateByUserId(userId, request);
         return ResponseEntity.ok().body(updatedStatus);
     }
 }

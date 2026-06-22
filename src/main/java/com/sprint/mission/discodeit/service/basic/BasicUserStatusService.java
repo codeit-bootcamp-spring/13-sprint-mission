@@ -59,10 +59,11 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public UserStatusResponse updateByUserId(UUID userId) { // userId로 특정 User의 객체를 업데이트
-        UserStatus userStatus = userStatusRepository.findById(userId)
+    public UserStatusResponse updateByUserId(UUID userId, UserStatusUpdateRequest request) { // userId로 특정 User의 객체를 업데이트
+        Instant newLastActiveAt = request.getNewLastActiveAt();
+        UserStatus userStatus = userStatusRepository.findByUserId(userId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 아이디입니다."));
-        userStatus.update(Instant.now());
+        userStatus.update(newLastActiveAt);
         userStatusRepository.save(userStatus);
         return UserStatusResponse.from(userStatus);
     }

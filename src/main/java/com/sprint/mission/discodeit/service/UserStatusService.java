@@ -12,7 +12,7 @@ public interface UserStatusService {
     UserStatusResponse find(UUID userStatusId);
     List<UserStatusResponse> findAll();
     UserStatusResponse update(UUID userStatusId, UserStatusUpdateRequest request); // 식별자인 id가 먼저 오는 것이 흐름상 자연스럽다
-    UserStatusResponse updateByUserId(UUID userId);
+    UserStatusResponse updateByUserId(UUID userId, UserStatusUpdateRequest request);
     void delete(UUID userStatusId);
 
 }

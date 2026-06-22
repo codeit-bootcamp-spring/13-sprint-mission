@@ -22,7 +22,7 @@ public class FileBinaryContentRepository implements BinaryContentRepository {
     private static final String FILE_STORAGE_DIR = "file-data-map"; // file-data-map 또한 처음 보는 사람도 알아볼 수 있도록 역할과 의미를 분명히 해야 한다
 
     public FileBinaryContentRepository(){
-        this.DIRECTORY= Paths.get(USER_DIRECTORY, FILE_STORAGE_DIR, UserStatus.class.getSimpleName());
+        this.DIRECTORY= Paths.get(USER_DIRECTORY, FILE_STORAGE_DIR, BinaryContent.class.getSimpleName());
         if (Files.notExists(DIRECTORY)){ // Repository 생성 시점에서 폴더 존재 여부 한 번만 검사
             try {
                 Files.createDirectories(DIRECTORY);
