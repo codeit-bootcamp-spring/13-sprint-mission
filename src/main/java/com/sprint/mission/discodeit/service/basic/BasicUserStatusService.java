@@ -21,7 +21,7 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     public UserStatus create(UserStatusCreateRequest request){
-        UUID userId = request.userId();
+        UUID userId = request.getUserId();
 
         if (!userStatusRepository.existsById(userId)) {
             throw new NoSuchElementException("User with id " + userId + " does not exist");
@@ -29,7 +29,7 @@ public class BasicUserStatusService implements UserStatusService {
         if (userStatusRepository.findByUserId(userId).isPresent()) {
             throw new NoSuchElementException("UserStatus with id " + userId + " already exists");
         }
-        Instant lastActiveAt = request.lastActiveAt();
+        Instant lastActiveAt = request.getLastActiveAt();
         UserStatus userStatus = new UserStatus(userId, lastActiveAt);
         return userStatusRepository.save(userStatus);
     }
@@ -44,7 +44,7 @@ public class BasicUserStatusService implements UserStatusService {
     }
     @Override
     public UserStatus update(UUID userStatusId, UserStatusUpdateRequest request){
-        Instant newLastActiveAt = request.newLastActiveAt();
+        Instant newLastActiveAt = request.getNewLastActiveAt();
 
         UserStatus userStatus = userStatusRepository.findById(userStatusId)
                 .orElseThrow(() -> new NoSuchElementException("UserStatus with id " + userStatusId + " does not exist"));
@@ -53,7 +53,7 @@ public class BasicUserStatusService implements UserStatusService {
     }
     @Override
     public UserStatus updateByUserId(UUID userId, UserStatusUpdateRequest request){
-        Instant newLastActiveAt = request.newLastActiveAt();
+        Instant newLastActiveAt = request.getNewLastActiveAt();
 
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
                 .orElseThrow(() -> new NoSuchElementException("UserStatus with userId " + userId + " not found"));

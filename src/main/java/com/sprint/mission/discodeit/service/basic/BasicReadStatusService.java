@@ -18,14 +18,14 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class BasicReadStatusService implements ReadStatusService {
-    private ReadStatusRepository readStatusRepesitory;
+    private ReadStatusRepository readStatusRepository;
     private UserRepository userRepository;
     private ChannelRepository channelRepository;
 
     @Override
     public ReadStatus create(ReadStatusCreateRequest request) {
-        UUID userId = request.userId();
-        UUID channelId = request.channelId();
+        UUID userId = request.getUserId();
+        UUID channelId = request.getChannelId();
 
         if (!userRepository.existsById(userId)) {
             throw new NoSuchElementException("user with id " + userId + " does not exist");
@@ -33,23 +33,23 @@ public class BasicReadStatusService implements ReadStatusService {
         if (!channelRepository.existsById(channelId)) {
             throw new NoSuchElementException("channel with id " + channelId + " does not exist");
         }
-        if (readStatusRepesitory.findAllByUserId(userId).stream()
+        if (readStatusRepository.findAllByUserId(userId).stream()
                 .anyMatch(readStatus -> readStatus.getChannelId().equals(channelId))) {
             throw new NoSuchElementException("channel with userId " + userId + " and channelId " + channelId+ " already exists");
         }
-        Instant lastReadAt = request.lastReadAt();
+        Instant lastReadAt = request.getLastReadAt();
         ReadStatus readStatus = new ReadStatus(userId, channelId, lastReadAt);
-        return  readStatusRepesitory.save(readStatus);
+        return  readStatusRepository.save(readStatus);
     }
 
     @Override
     public ReadStatus find(UUID readStatusId) {
-        return readStatusRepesitory.findById(readStatusId)
+        return readStatusRepository.findById(readStatusId)
                 .orElseThrow(() -> new NoSuchElementException("readStatus with id " + readStatusId + " does not exist"));
     }
      @Override
     public List<ReadStatus> findAllByUserId(UUID userId) {
-        return readStatusRepesitory.findAllByUserId(userId).stream().toList();
+        return readStatusRepository.findAllByUserId(userId).stream().toList();
      }
 
     @Override
@@ -59,10 +59,10 @@ public class BasicReadStatusService implements ReadStatusService {
 
     @Override
     public void delete(UUID readStatusId) {
-        if (!readStatusRepesitory.existsById(readStatusId)) {
+        if (!readStatusRepository.existsById(readStatusId)) {
             throw new NoSuchElementException("readStatus with id " + readStatusId + " does not exist");
         }
-        readStatusRepesitory.deleteById(readStatusId);
+        readStatusRepository.deleteById(readStatusId);
     }
 
 }

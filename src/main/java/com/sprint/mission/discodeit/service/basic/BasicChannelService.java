@@ -28,8 +28,8 @@ public class BasicChannelService implements ChannelService {
 
     @Override //채널 생성
     public Channel create(PublicChannelCreateRequest request) {
-        String name = request.name();
-        String description = request.description();
+        String name = request.getName();
+        String description = request.getDescription();
         Channel channel = new Channel(ChannelType.PUBLIC, name, description);
         return channelRepository.save(channel);
     }
@@ -38,7 +38,7 @@ public class BasicChannelService implements ChannelService {
         Channel channel = new Channel(ChannelType.PRIVATE, null, null);
         Channel createChannel = channelRepository.save(channel);
 
-        request.participantIds().stream()
+        request.getParticipantIds().stream()
                 .map(userId -> new ReadStatus(userId, createChannel.getId(), Instant.MIN))
                 .forEach(readStatusRepository::save);
         return createChannel;
@@ -61,8 +61,8 @@ public class BasicChannelService implements ChannelService {
 
     @Override //채널 수정
     public Channel update(UUID channelId, PublicChannelUpdateRequest request) {
-        String newName = request.newName();
-        String newDecription = request.newDescription();
+        String newName = request.getNewName();
+        String newDecription = request.getNewDescription();
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new NoSuchElementException("Channel with id " + channelId + " not found"));
         if (channel.getType().equals(ChannelType.PRIVATE)) {

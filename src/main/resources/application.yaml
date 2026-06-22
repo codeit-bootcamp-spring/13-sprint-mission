@@ -8,7 +8,7 @@ server:
 # application.yaml
 discodeit:
   repository:
-    type: jcf   # jcf | file
+    type: file   # jcf(메모리에 저장) | file(파일에 저장)
   storage:
     root-path: file-data-map
     extension: .ser

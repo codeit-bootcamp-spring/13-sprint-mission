@@ -24,7 +24,7 @@ public class FileChannelRepository implements ChannelRepository {
 
     public FileChannelRepository(StorageProperties properties) { //Repository 생성 시 저장 폴더가 존재하지 않으면 자동 생성
         this.EXTENSION = properties.getExtension();
-        this.DIRECTORY = Paths.get(System.getProperty("channel.dir"), properties.getRootPath(), Channel.class.getSimpleName());
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), properties.getRootPath(), Channel.class.getSimpleName());
         if (Files.notExists(DIRECTORY)) { //디렉토리가 존재하지 않으면 생성
             try {
                 Files.createDirectories(DIRECTORY);

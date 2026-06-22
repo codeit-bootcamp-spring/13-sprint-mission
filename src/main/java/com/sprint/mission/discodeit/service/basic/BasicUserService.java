@@ -30,8 +30,8 @@ public class BasicUserService implements UserService {
 
     @Override //사용자 생성
     public User create(UserCreateRequest userCreateRequest, Optional<BinaryContentCreateRequest> optionalProfileCreateRequest) {
-        String username = userCreateRequest.username();
-        String email = userCreateRequest.email();
+        String username = userCreateRequest.getUsername();
+        String email = userCreateRequest.getEmail();
 
         if(userRepository.existsByUsername(username)){
             throw new IllegalStateException("User with username " + username + " already exists");
@@ -42,15 +42,14 @@ public class BasicUserService implements UserService {
 
         UUID nullableProfileId = optionalProfileCreateRequest
                 .map(profileRequest -> {
-                    ;
-                    String fileName = profileRequest.fileName();
-                    String contentType = profileRequest.contentType();
-                    byte[] bytes = profileRequest.bytes();
+                    String fileName = profileRequest.getFileName();
+                    String contentType = profileRequest.getContentType();
+                    byte[] bytes = profileRequest.getBytes();
                     BinaryContent binaryContent = new BinaryContent(fileName, contentType, bytes);
                     return binaryContentRepository.save(binaryContent).getId();
                 })
                 .orElse(null);
-        String password = userCreateRequest.password();
+        String password = userCreateRequest.getPassword();
 
         User user = new User(username,email,password,nullableProfileId);
         User createdUser = userRepository.save(user);
@@ -79,8 +78,8 @@ public class BasicUserService implements UserService {
         User user = userRepository.findById(userId) //기존 사용자 조회
                 .orElseThrow(()-> new NoSuchElementException("User with id " + userId + " not found"));
 
-        String newUsername = userUpdateRequest.newUsername();
-        String newEmail = userUpdateRequest.newEmail();
+        String newUsername = userUpdateRequest.getNewUsername();
+        String newEmail = userUpdateRequest.getNewEmail();
         if (userRepository.existsByUsername(newUsername)){
             throw new IllegalStateException("User with username " + newUsername + " already exists");
         }
@@ -92,15 +91,15 @@ public class BasicUserService implements UserService {
                 .map(profileRequest -> {
                     Optional.ofNullable(user.getProfileId())
                             .ifPresent(binaryContentRepository::deleteById);
-                    String fileName = profileRequest.fileName();
-                    String contentType = profileRequest.contentType();
-                    byte[] bytes = profileRequest.bytes();
+                    String fileName = profileRequest.getFileName();
+                    String contentType = profileRequest.getContentType();
+                    byte[] bytes = profileRequest.getBytes();
                     BinaryContent binaryContent = new BinaryContent(fileName, contentType, bytes);
                     return binaryContentRepository.save(binaryContent).getId();
                 })
                 .orElse(null);
 
-        String newPassword = userUpdateRequest.newPassword();
+        String newPassword = userUpdateRequest.getNewPassword();
         user.update(newUsername, newEmail, newPassword, nullableProfileId); //User 엔티티 내부 update 메서드 실행
         return userRepository.save(user); //변경된 객체 재저장
     }

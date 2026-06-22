@@ -24,7 +24,7 @@ public class FileMessageRepository implements MessageRepository {
 
     public FileMessageRepository(StorageProperties properties) {
         this.EXTENSION = properties.getExtension();
-        this.DIRECTORY = Paths.get(System.getProperty("message.dir"), properties.getRootPath(), Message.class.getSimpleName());
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), properties.getRootPath(), Message.class.getSimpleName());
         if (Files.notExists(DIRECTORY)) {
             try {
                 Files.createDirectories(DIRECTORY);
