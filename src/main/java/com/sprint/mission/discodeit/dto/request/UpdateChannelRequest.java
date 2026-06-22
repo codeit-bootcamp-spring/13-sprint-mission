@@ -10,9 +10,9 @@ import java.util.UUID;
 @NoArgsConstructor
 public class UpdateChannelRequest {
 
-    private UUID channelId;
     private String name;
-    private Channel.ChannelType type;
     private String description;
+
+    // 타입은 항상 PUBLIC 으로 유지되므로 dto에선 제거
 
 }

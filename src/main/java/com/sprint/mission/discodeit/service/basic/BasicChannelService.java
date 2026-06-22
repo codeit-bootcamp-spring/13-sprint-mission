@@ -144,8 +144,8 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public void update(UpdateChannelRequest request) {
-        Channel channel = channelRepository.findById(request.getChannelId())
+    public ChannelResponse update(UUID id, UpdateChannelRequest request) {
+        Channel channel = channelRepository.findById(id)
                 .orElseThrow(() ->
                         new IllegalArgumentException("채널을 찾을 수 없습니다."));;
 
@@ -153,9 +153,11 @@ public class BasicChannelService implements ChannelService {
             throw new IllegalArgumentException("PRIVATE 채널은 수정할 수 없습니다.");
         }
 
-        channel.update(request.getName(), PUBLIC, request.getDescription());
+        channel.update(request.getName(), channel.getType(), request.getDescription());
 
         channelRepository.save(channel);
+
+        return ChannelResponse.from(channel);
     }
 
     @Override

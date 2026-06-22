@@ -9,7 +9,6 @@ import java.util.UUID;
 @NoArgsConstructor
 public class UpdateMessageRequest {
 
-    private UUID id;
     private String content;
 
 }

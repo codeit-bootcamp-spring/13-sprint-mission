@@ -19,6 +19,17 @@ public class ChannelResponse {
     private Instant latestMessageAt;
     private List<UUID> participantIds;
 
+    public static ChannelResponse from(Channel channel) {
+        return new ChannelResponse(
+                channel.getId(),
+                channel.getName(),
+                channel.getType(),
+                channel.getDescription(),
+                null,
+                List.of()
+        );
+    }
+
     public static ChannelResponse from(
             Channel channel,
             Instant latestMessageAt,
@@ -32,4 +43,5 @@ public class ChannelResponse {
                 participantIds
         );
     }
+
 }
