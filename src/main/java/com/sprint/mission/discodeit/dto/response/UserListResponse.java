@@ -1,27 +1,29 @@
 package com.sprint.mission.discodeit.dto.response;
 
 import com.sprint.mission.discodeit.entity.User;
-
 import java.time.Instant;
 import java.util.UUID;
 
-public record UserResponse(
+public record UserListResponse(
     UUID id,
     Instant createdAt,
     Instant updatedAt,
     String username,
     String email,
-    String password,
-    UUID profileId
+    UUID profileId,
+    boolean online
 ) {
 
-
-  public static UserResponse from(User user) {
-    return new UserResponse(
+  public static UserListResponse from(User user, boolean online) {
+    return new UserListResponse(
         user.getId(),
         user.getCreatedAt(),
         user.getUpdatedAt(),
         user.getUsername(),
-        user.getEmail(), user.getPassword(), user.getProfileId());
+        user.getEmail(),
+        user.getProfileId(),
+        online
+    );
   }
+
 }

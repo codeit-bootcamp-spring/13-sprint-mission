@@ -9,11 +9,10 @@ import java.util.UUID;
 
 public interface UserStatusRepository {
 
-    User save(UserStatus userStatus);
-    Optional<UserStatus> findById(UUID id);
-    Optional<UserStatus> findByUserId(UUID userId);
-    List<UserStatus> findAll();
-    User delete(UUID Id);
+  UserStatus save(UserStatus userStatus);
 
+  Optional<UserStatus> findByUserId(UUID userId);
+
+  List<UserStatus> findAll();
 
 }
