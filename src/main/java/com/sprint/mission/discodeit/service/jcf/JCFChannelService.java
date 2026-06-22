@@ -33,7 +33,7 @@ public class JCFChannelService implements ChannelService {
     @Override
     public Channel find(UUID id) {
         for (Channel ch : data) {
-            if (ch.getId().equals(id)) {
+            if (id.equals(ch.getId())) {
                 return ch;
             }
         }
@@ -53,7 +53,7 @@ public class JCFChannelService implements ChannelService {
     @Override
     public void update(UUID id, String name, Channel.ChannelType type, String description) {
         for (Channel ch : data) {
-            if (ch.getId().equals(id)) {
+            if (id.equals(ch.getId())) {
                 ch.update(name, type, description);
                 return;
             }

@@ -10,7 +10,7 @@ public class User implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private UUID id;
+    private final UUID id;
     private Instant createdAt;
     private Instant updatedAt;
     private String username;
@@ -26,7 +26,7 @@ public class User implements Serializable {
     }
 
     public void update(String username, String email, String password) {
-        if (username != null) {
+        if (username != null || !username.isBlank()) {
             this.username = username;
         }
         if (email != null) {

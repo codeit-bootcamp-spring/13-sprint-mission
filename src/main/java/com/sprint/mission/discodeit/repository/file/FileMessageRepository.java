@@ -9,19 +9,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public class FileMessageRepository implements MessageRepository {
 
     // messages 디렉토리 경로
+    private static final String DATA_DIRECTORY = "data";
+    private static final String MESSAGE_DIRECTORY = "messages";
+
     private final Path directory;
 
     public FileMessageRepository() {
         this.directory = Paths.get(
                 System.getProperty("user.dir"),
-                "data",
-                "messages"
+                DATA_DIRECTORY,
+                MESSAGE_DIRECTORY
         );
         init(directory);
     }
@@ -38,7 +42,7 @@ public class FileMessageRepository implements MessageRepository {
     }
 
     @Override
-    public Message save(Message message) {
+    public void save(Message message) {
         Path filePath = directory.resolve(message.getId() + ".ser");
 
         try (FileOutputStream fos = new FileOutputStream(filePath.toFile());
@@ -47,21 +51,20 @@ public class FileMessageRepository implements MessageRepository {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return message;
     }
 
     @Override
-    public Message findById(UUID id) {
+    public Optional<Message> findById(UUID id) {
         Path filePath = directory.resolve(id + ".ser");
 
         if (!Files.exists(filePath)) {
-            return null;
+            return Optional.empty();
         }
 
         try (FileInputStream fis = new FileInputStream(filePath.toFile());
              ObjectInputStream ois = new ObjectInputStream(fis))
         {
-            return (Message) ois.readObject();
+            return Optional.of((Message) ois.readObject());
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

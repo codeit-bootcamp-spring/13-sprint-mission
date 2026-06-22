@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -14,21 +15,18 @@ public class JCFReadStatusRepository implements ReadStatusRepository {
     private final List<ReadStatus> data = new ArrayList<>();
 
     @Override
-    public ReadStatus save(ReadStatus readStatus) {
+    public void save(ReadStatus readStatus) {
         data.removeIf(
                 status -> status.getId().equals(readStatus.getId())
         );
         data.add(readStatus);
-
-        return readStatus;
     }
 
     @Override
-    public ReadStatus findById(UUID id) {
+    public Optional<ReadStatus> findById(UUID id) {
         return data.stream()
                 .filter(status -> status.getId().equals(id))
-                .findFirst()
-                .orElse(null);
+                .findFirst();
     }
 
     @Override

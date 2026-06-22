@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -14,22 +15,23 @@ public class JCFBinaryContentRepository implements BinaryContentRepository {
     private final List<BinaryContent> data = new ArrayList<>();
 
     @Override
-    public BinaryContent save(BinaryContent content) {
-
+    public void save(BinaryContent content) {
         data.removeIf(c -> c.getId().equals(content.getId()));
         data.add(content);
-
-        return content;
     }
 
     @Override
-    public BinaryContent findById(UUID id) {
-
+    public Optional<BinaryContent> findById(UUID id) {
         return data.stream()
                 .filter(c -> c.getId().equals(id))
-                .findFirst()
-                .orElse(null);
+                .findFirst();
+    }
 
+    @Override
+    public List<BinaryContent> findByUserId(UUID userId) {
+        return data.stream()
+                .filter(c -> c.getUserId().equals(userId))
+                .toList();
     }
 
     @Override
@@ -46,7 +48,6 @@ public class JCFBinaryContentRepository implements BinaryContentRepository {
 
     @Override
     public List<BinaryContent> findAllByMessageId(UUID messageId) {
-
         return data.stream()
                 .filter(c -> c.getMessageId().equals(messageId))
                 .toList();
@@ -54,8 +55,6 @@ public class JCFBinaryContentRepository implements BinaryContentRepository {
 
     @Override
     public void delete(UUID id) {
-
         data.removeIf(c -> c.getId().equals(id));
     }
-
 }

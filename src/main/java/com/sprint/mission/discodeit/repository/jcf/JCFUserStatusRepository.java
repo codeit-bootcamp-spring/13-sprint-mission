@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.repository.UserStatusRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class JCFUserStatusRepository implements UserStatusRepository {
@@ -12,18 +13,16 @@ public class JCFUserStatusRepository implements UserStatusRepository {
     private final List<UserStatus> data = new ArrayList<>();
 
     @Override
-    public UserStatus save(UserStatus userStatus) {
+    public void save(UserStatus userStatus) {
         data.removeIf(s -> s.getId().equals(userStatus.getId()));
         data.add(userStatus);
-        return userStatus;
     }
 
     @Override
-    public UserStatus findById(UUID id) {
+    public Optional<UserStatus> findById(UUID id) {
         return data.stream()
                 .filter(s -> s.getId().equals(id))
-                .findFirst()
-                .orElse(null);
+                .findFirst();
     }
 
     @Override
@@ -37,11 +36,10 @@ public class JCFUserStatusRepository implements UserStatusRepository {
     }
 
     @Override
-    public UserStatus findByUserId(UUID userId) {
+    public Optional<UserStatus> findByUserId(UUID userId) {
         return data.stream()
                 .filter(s -> s.getUserId().equals(userId))
-                .findFirst()
-                .orElse(null);
+                .findFirst();
     }
 
 }

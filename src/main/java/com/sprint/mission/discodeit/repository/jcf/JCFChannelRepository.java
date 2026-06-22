@@ -3,10 +3,7 @@ package com.sprint.mission.discodeit.repository.jcf;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class JCFChannelRepository implements ChannelRepository {
 
@@ -17,26 +14,23 @@ public class JCFChannelRepository implements ChannelRepository {
         this.data = new ArrayList<>();
     }
 
-    // 리턴값 변경으로 인한 메소드 생성
     @Override
-    public Channel save(Channel channel) {
-        return null;
+    public void save(Channel channel) {
+        data.add(channel);
     }
 
-    //    @Override
-//    public void save(Channel channel) {
-//        data.add(channel);
-//    }
-
     @Override
-    public Channel findById(UUID id) {
+    public Optional<Channel> findById(UUID id) {
         for (Channel ch : data) {
             if (ch.getId().equals(id)) {
-                return ch;
+                return Optional.of(ch);
             }
         }
-        throw new IllegalArgumentException("채널을 찾을 수 없습니다.");
+
+        return Optional.empty();
     }
+
+
 
     @Override
     public List<Channel> findAll() {

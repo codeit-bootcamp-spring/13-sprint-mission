@@ -13,42 +13,11 @@ import java.util.UUID;
 
 public class FileUserService implements UserService {
 
-    // users 디렉토리 경로
-    private final Path directory;
-
-    public FileUserService() {
-        this.directory = Paths.get(
-                System.getProperty("user.dir"),
-                "data",
-                "users"
-        );
-        init(directory);
-    }
-
-    public static void init(Path directory) {
-        // 저장할 경로의 파일 초기화
-        if (!Files.exists(directory)) {
-            try {
-                Files.createDirectories(directory);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
     // 매개변수 변경으로 인한 오류로 빈 메서드 생성
     @Override
     public User create(String name, String email, String password) {
         return null;
     }
-
-    //    @Override
-//    public void createUser(User user) {
-//        Path filePath =
-//                directory.resolve(user.getId() + ".ser");
-//
-//        save(filePath, user);
-//    }
 
     // 단일 조회
     @Override

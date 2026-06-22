@@ -30,7 +30,7 @@ public class JCFUserService implements UserService {
     @Override
     public User find(UUID id) {
         for (User user : data) {
-            if (user.getId().equals(id)) {
+            if (id.equals(user.getId())) {
                 // 저장 로직
                 return user;
             }
@@ -54,7 +54,7 @@ public class JCFUserService implements UserService {
     public void update(UUID id, String username, String email, String password) {
         for (User user : data) {
             // 비즈니스 로직
-            if (user.getId().equals(id)) {
+            if (id.equals(user.getId())) {
                 // 비즈니스 로직
                 user.update(username, email, password);
                 return;

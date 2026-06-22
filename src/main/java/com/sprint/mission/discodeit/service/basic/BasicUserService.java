@@ -27,10 +27,6 @@ public class BasicUserService implements UserService {
     private final UserStatusRepository userStatusRepository;
     private final BinaryContentRepository binaryContentRepository;
 
-//    public BasicUserService(UserRepository userRepository) {
-//        this.userRepository = userRepository;
-//    }
-
     @Override
     public UserResponse create(CreateUserRequest userRequest, Optional<CreateProfileImageRequest> profileImageRequest) {
         // username 중복 검사
@@ -80,9 +76,11 @@ public class BasicUserService implements UserService {
 
     @Override
     public UserResponse find(UUID id) {
-        User user = userRepository.findById(id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        UserStatus status = userStatusRepository.findById(id);
+        UserStatus status = userStatusRepository.findByUserId(id)
+                .orElseThrow(() -> new IllegalArgumentException("상태 정보를 찾을 수 없습니다."));
 
         return UserResponse.from(user, status);
     }
@@ -92,7 +90,8 @@ public class BasicUserService implements UserService {
         return userRepository.findAll()
                 .stream()
                 .map(user -> {
-                    UserStatus status = userStatusRepository.findByUserId(user.getId());
+                    UserStatus status = userStatusRepository.findByUserId(user.getId())
+                            .orElseThrow(() -> new IllegalArgumentException("상태 정보를 찾을 수 없습니다."));
 
                     return UserResponse.from(
                             user,
@@ -105,7 +104,8 @@ public class BasicUserService implements UserService {
     @Override
     public UserResponse update(UpdateUserRequest request,
                        Optional<CreateProfileImageRequest> profileImageRequest) {
-        User user = userRepository.findById(request.id());
+        User user = userRepository.findById(request.id())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
         user.update(request.username(), request.email(), request.password());
         userRepository.save(user);
@@ -123,7 +123,9 @@ public class BasicUserService implements UserService {
             );
             binaryContentRepository.save(profileImage);
         }
-        UserStatus status = userStatusRepository.findByUserId(user.getId());
+
+        UserStatus status = userStatusRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("상태 정보를 찾을 수 없습니다."));
 
         return UserResponse.from(
                 user,
@@ -133,21 +135,14 @@ public class BasicUserService implements UserService {
 
     @Override
     public void delete(UUID id) {
-        // 프로필 이미지 삭제
-        BinaryContent profile = binaryContentRepository.findByUserId(id);
+        binaryContentRepository.findByUserId(id)
+                .forEach(profile ->
+                        binaryContentRepository.delete(profile.getId()));
 
-        if (profile != null) {
-            binaryContentRepository.delete(profile.getId());
-        }
+        userStatusRepository.findByUserId(id)
+                .ifPresent(status ->
+                        userStatusRepository.delete(status.getId()));
 
-        // 상태 정보 삭제
-        UserStatus status = userStatusRepository.findByUserId(id);
-
-        if (status != null) {
-            userStatusRepository.delete(status.getId());
-        }
-
-        // 사용자 삭제
         userRepository.delete(id);
     }
 

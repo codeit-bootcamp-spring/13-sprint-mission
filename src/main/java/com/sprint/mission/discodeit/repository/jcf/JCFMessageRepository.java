@@ -3,10 +3,7 @@ package com.sprint.mission.discodeit.repository.jcf;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class JCFMessageRepository implements MessageRepository {
 
@@ -16,25 +13,20 @@ public class JCFMessageRepository implements MessageRepository {
         this.data = new ArrayList<>();
     }
 
-    // 리턴값 변경으로 인한 메서드 생성
     @Override
-    public Message save(Message message) {
-        return null;
+    public void save(Message message) {
+        data.add(message);
     }
 
-    //    @Override
-//    public void save(Message message) {
-//        data.add(message);
-//    }
-
     @Override
-    public Message findById(UUID id) {
+    public Optional<Message> findById(UUID id) {
         for (Message m : data) {
             if (m.getId().equals(id)) {
-                return m;
+                return Optional.of(m);
             }
         }
-        throw new IllegalArgumentException("메시지를 찾을 수 없습니다.");
+
+        return Optional.empty();
     }
 
     @Override

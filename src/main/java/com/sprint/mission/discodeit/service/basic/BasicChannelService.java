@@ -30,10 +30,6 @@ public class BasicChannelService implements ChannelService {
     private final ReadStatusRepository readStatusRepository;
     private final MessageRepository messageRepository;
 
-//    public BasicChannelService(ChannelRepository channelRepository) {
-//        this.channelRepository = channelRepository;
-//    }
-
 
     @Override
     public ChannelResponse createPublicChannel(CreatePublicChannelRequest request) {
@@ -77,7 +73,9 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public ChannelResponse find(UUID id) {
-        Channel channel = channelRepository.findById(id);
+        Channel channel = channelRepository.findById(id)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("채널을 찾을 수 없습니다."));;
 
         Instant latestMessageAt = messageRepository.findAllByChannelId(channel.getId())
                 .stream().filter(message -> message.getChannelId().equals(id))
@@ -147,7 +145,9 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public void update(UpdateChannelRequest request) {
-        Channel channel = channelRepository.findById(request.channelId());
+        Channel channel = channelRepository.findById(request.channelId())
+                .orElseThrow(() ->
+                        new IllegalArgumentException("채널을 찾을 수 없습니다."));;
 
         if (channel.getType() == Channel.ChannelType.PRIVATE) {
             throw new IllegalArgumentException("PRIVATE 채널은 수정할 수 없습니다.");

@@ -34,7 +34,7 @@ public class JCFMessageService implements MessageService {
     @Override
     public Message find(UUID id) {
         for (Message m : data) {
-            if (m.getId().equals(id)) {
+            if (id.equals(m.getId())) {
                 return m;
             }
         }
@@ -54,7 +54,7 @@ public class JCFMessageService implements MessageService {
     @Override
     public void update(UUID id, String content) {
         for (Message m : data) {
-            if (m.getId().equals(id)) {
+            if (id.equals(m.getId())) {
                 m.update(content);
                 return;
             }
