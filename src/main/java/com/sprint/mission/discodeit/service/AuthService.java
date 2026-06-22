@@ -25,7 +25,8 @@ public class AuthService {
                 .orElseThrow(() ->
                         new IllegalArgumentException("아이디 또는 비밀번호가 일치하지 않습니다."));
 
-        UserStatus status = userStatusRepository.findByUserId(user.getId());
+        UserStatus status = userStatusRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("유저 상태를 찾을 수 없습니다."));
 
         return UserResponse.from(user, status);
     }

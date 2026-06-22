@@ -29,7 +29,8 @@ public class BinaryContentService {
     }
 
     public BinaryContentResponse find(UUID id) {
-        BinaryContent content = binaryContentRepository.findById(id);
+        BinaryContent content = binaryContentRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("바이너리 컨텐츠가 없습니다."));
 
         return BinaryContentResponse.from(content);
     }

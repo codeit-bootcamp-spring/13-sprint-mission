@@ -42,7 +42,7 @@ public class JCFUserService implements UserService {
     @Override
     public List<User> findAll() {
         if (!data.isEmpty()) {
-            // 저장 롲직
+            // 저장 로직
             return data;
         }
         return Collections.emptyList();

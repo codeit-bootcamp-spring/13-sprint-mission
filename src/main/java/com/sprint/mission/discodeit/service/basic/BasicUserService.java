@@ -102,9 +102,9 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public UserResponse update(UpdateUserRequest request,
+    public UserResponse update(UUID id, UpdateUserRequest request,
                        Optional<CreateProfileImageRequest> profileImageRequest) {
-        User user = userRepository.findById(request.id())
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
         user.update(request.username(), request.email(), request.password());

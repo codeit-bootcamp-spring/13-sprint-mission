@@ -33,7 +33,8 @@ public class ReadStatusService {
     }
 
     public ReadStatusResponse find(UUID id) {
-        ReadStatus status = readStatusRepository.findById(id);
+        ReadStatus status = readStatusRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("읽음 상태를 찾을 수 없습니다."));
 
         return ReadStatusResponse.from(status);
     }
@@ -46,7 +47,9 @@ public class ReadStatusService {
     }
 
     public ReadStatusResponse update(UpdateReadStatusRequest request) {
-        ReadStatus status = readStatusRepository.findById(request.id());
+        ReadStatus status = readStatusRepository.findById(request.id())
+                .orElseThrow(() -> new IllegalArgumentException("읽음 상태를 찾을 수 없습니다."));
+
         status.updateLastSeen(); readStatusRepository.save(status);
 
         return ReadStatusResponse.from(status);

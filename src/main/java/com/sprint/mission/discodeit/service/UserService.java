@@ -18,7 +18,7 @@ public interface UserService {
 
     List<UserResponse> findAll();
 
-    UserResponse update(UpdateUserRequest updateUserRequest, Optional<CreateProfileImageRequest> profileImageRequest);
+    UserResponse update(UUID id, UpdateUserRequest updateUserRequest, Optional<CreateProfileImageRequest> profileImageRequest);
 
     void delete(UUID id);
 
