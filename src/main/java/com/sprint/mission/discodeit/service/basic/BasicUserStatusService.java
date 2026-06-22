@@ -50,7 +50,7 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public UserStatusResponse update(UserStatusUpdateRequest request, UUID userId) {
+    public UserStatusResponse update(UUID userId, UserStatusUpdateRequest request) {
         UserStatus userStatus = userStatusRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 아이디입니다."));
         userStatus.update(request.getNewLastActiveAt());

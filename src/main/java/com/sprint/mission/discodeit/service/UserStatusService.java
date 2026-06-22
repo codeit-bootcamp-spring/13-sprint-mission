@@ -11,7 +11,7 @@ public interface UserStatusService {
     UserStatusResponse create(UserStatusCreateRequest request);
     UserStatusResponse find(UUID userStatusId);
     List<UserStatusResponse> findAll();
-    UserStatusResponse update(UserStatusUpdateRequest request, UUID userStatusId);
+    UserStatusResponse update(UUID userStatusId, UserStatusUpdateRequest request); // 식별자인 id가 먼저 오는 것이 흐름상 자연스럽다
     UserStatusResponse updateByUserId(UUID userId);
     void delete(UUID userStatusId);
 

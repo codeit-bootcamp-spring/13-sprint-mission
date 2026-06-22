@@ -52,7 +52,7 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    public ReadStatusResponse update(ReadStatusUpdateRequest request, UUID readStatusId) {
+    public ReadStatusResponse update(UUID readStatusId, ReadStatusUpdateRequest request) {
         ReadStatus readStatus=readStatusRepository.findById(readStatusId)
                 .orElseThrow(()->new NoSuchElementException(readStatusId+" 를 찾을 수 없습니다."));
         readStatus.update(request.getNewLastReadAt());

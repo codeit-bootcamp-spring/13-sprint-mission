@@ -33,7 +33,7 @@ public class UserController {
     @RequestMapping(method = RequestMethod.POST)
     public ResponseEntity<UserResponse> create(@Valid @RequestBody UserCreateRequest request){
         UserResponse user=userService.create(request);
-        URI location=URI.create("/api/users"+user.getId());
+        URI location=URI.create("/api/users/"+user.getId());
         return ResponseEntity.created(location).body(user);
     }
 
@@ -41,9 +41,8 @@ public class UserController {
     @RequestMapping(value = "/{userId}", method = RequestMethod.PATCH)
     public ResponseEntity<UserResponse> update(@PathVariable UUID userId,
                                                @Valid @RequestBody UserUpdateRequest request){
-        UserResponse user = userService.update(request, userId);
-        return ResponseEntity.ok().body(user);
-
+        UserResponse updatedUser = userService.update(userId, request);
+        return ResponseEntity.ok().body(updatedUser);
     }
 
     // 사용자 삭제
@@ -56,8 +55,8 @@ public class UserController {
     // 모든 사용자 조회
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<List<UserResponse>> findAll(){
-        List<UserResponse> users = userService.findAll();
-        return ResponseEntity.ok().body(users);
+        List<UserResponse> foundUsers = userService.findAll();
+        return ResponseEntity.ok().body(foundUsers);
     }
 
     // 사용자의 온라인 상태 업데이트

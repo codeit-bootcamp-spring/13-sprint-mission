@@ -3,7 +3,6 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import java.io.*;
@@ -24,8 +23,7 @@ public class FileChannelRepository implements ChannelRepository {
     private static final String FILE_STORAGE_DIR = "file-data-map"; // file-data-map 또한 처음 보는 사람도 알아볼 수 있도록 역할과 의미를 분명히 해야 한다
 
     public FileChannelRepository(){
-        this.DIRECTORY= Paths.get(USER_DIRECTORY,
-                FILE_STORAGE_DIR, Channel.class.getSimpleName());
+        this.DIRECTORY= Paths.get(USER_DIRECTORY, FILE_STORAGE_DIR, Channel.class.getSimpleName());
         if (Files.notExists(DIRECTORY)){
             try {
                 Files.createDirectories(DIRECTORY);

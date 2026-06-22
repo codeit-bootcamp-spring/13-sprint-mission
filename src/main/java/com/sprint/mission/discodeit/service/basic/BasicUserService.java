@@ -81,7 +81,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public UserResponse update(UserUpdateRequest request, UUID userId) {
+    public UserResponse update(UUID userId, UserUpdateRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException(userId + " (을)를 찾을 수 없습니다."));
         UUID oldProfileId = user.getProfileId();

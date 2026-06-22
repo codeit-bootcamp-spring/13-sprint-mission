@@ -53,7 +53,7 @@ public class JavaApplication {
         // 수정 edit
         // 수정된 데이터 조회
         System.out.println("=== 프로필 수정 ====");
-        UserResponse updatedUser = userService.update(new UserUpdateRequest("구정모", "jungmo0205@discodeit.com", "DscdJungmo234!!", null), user.getId());
+        UserResponse updatedUser = userService.update(user.getId(), new UserUpdateRequest("구정모", "jungmo0205@discodeit.com", "DscdJungmo234!!", null));
         System.out.println("수정된 사용자: "+String.join("/", updatedUser.getUsername(), updatedUser.getEmail()));
         // 삭제 delete
         // 조회 통해 삭제되었는지 확인
@@ -75,7 +75,7 @@ public class JavaApplication {
         foundChannels.forEach(channelResponse -> System.out.println(String.join("/", channelResponse.getType().toString(),
                 channelResponse.getName(), channelResponse.getDescription())));
         System.out.println("=== 채널 수정 ====");
-        ChannelResponse updatedChannel = channelService.update(new ChannelUpdateRequest(ChannelType.PRIVATE, "학습-문의", "학습 질의응답을 위한 채널이에요."), channel.getId());
+        ChannelResponse updatedChannel = channelService.update(channel.getId(), new ChannelUpdateRequest(ChannelType.PRIVATE, "학습-문의", "학습 질의응답을 위한 채널이에요."));
         System.out.println("수정된 채널: "+String.join("/", updatedChannel.getType().toString(),
                 updatedChannel.getName(), updatedChannel.getDescription()));
         System.out.println("=== 채널 삭제 ====");
@@ -97,7 +97,7 @@ public class JavaApplication {
         readMessages.forEach(messageResponse -> System.out.println(String.join("/", messageResponse.getId().toString(),
                 messageResponse.getContent(), messageResponse.getChannelId().toString(), messageResponse.getAuthorId().toString(), messageResponse.getAttachmentIds().toString())));
         System.out.println("=== 메시지 수정 ====");
-        MessageResponse updateMessage=messageService.update(new MessageUpdateRequest("회원님의 활동을 응원합니다."), message.getId());
+        MessageResponse updateMessage=messageService.update(message.getId(), new MessageUpdateRequest("회원님의 활동을 응원합니다."));
         System.out.println("=== 수정된 메시지: "+updateMessage.getContent());
         System.out.println("=== 메시지 삭제 ====");
         messageService.delete(message.getId());

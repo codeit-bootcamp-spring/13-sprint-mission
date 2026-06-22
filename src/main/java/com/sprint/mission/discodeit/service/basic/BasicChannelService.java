@@ -95,7 +95,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ChannelResponse update(ChannelUpdateRequest request, UUID channelId) {
+    public ChannelResponse update(UUID channelId, ChannelUpdateRequest request) {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new NoSuchElementException(channelId + " 를 찾을 수 없습니다."));
         // PRIVATE 채널은 수정 불가능

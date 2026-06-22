@@ -11,6 +11,6 @@ public interface ReadStatusService {
     ReadStatusResponse create(ReadStatusCreateRequest request);
     ReadStatusResponse find(UUID readStatusId);
     List<ReadStatusResponse> findAllByUserId(UUID userId);
-    ReadStatusResponse update(ReadStatusUpdateRequest request, UUID readStatusId);
+    ReadStatusResponse update(UUID readStatusId, ReadStatusUpdateRequest request); // 식별자인 id가 먼저 오는 것이 흐름상 자연스럽다
     void delete(UUID readStatusId);
 }

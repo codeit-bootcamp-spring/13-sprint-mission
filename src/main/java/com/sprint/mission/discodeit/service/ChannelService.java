@@ -13,6 +13,6 @@ public interface ChannelService {
     ChannelResponse createPrivateChannel(PrivateChannelCreateRequest request);
     ChannelResponse find(UUID channelId);
     List<ChannelResponse> findAllByUserId(UUID userId);
-    ChannelResponse update(ChannelUpdateRequest request, UUID channelId);
+    ChannelResponse update(UUID channelId, ChannelUpdateRequest request); // 식별자인 id가 먼저 오는 것이 흐름상 자연스럽다
     void delete(UUID channelId);
 }
