@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.repository.file;
 
+import com.sprint.mission.discodeit.config.StorageProperties;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -18,10 +19,11 @@ import java.util.stream.Stream;
 @Repository
 public class FileReadStatusRepository implements ReadStatusRepository {
     private final Path DIRECTORY;
-    private static final String EXTENSION = ".ser";
+    private final String EXTENSION;
 
-    public FileReadStatusRepository() {
-        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", ReadStatus.class.getSimpleName());
+    public FileReadStatusRepository(StorageProperties properties) {
+        this.EXTENSION = properties.getExtension();
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), properties.getRootPath(), ReadStatus.class.getSimpleName());
         if (Files.notExists(DIRECTORY)) {
             try {
                 Files.createDirectories(DIRECTORY);

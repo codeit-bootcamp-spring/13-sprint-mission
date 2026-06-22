@@ -22,7 +22,7 @@ public class Channel implements Serializable {
     public Channel(ChannelType type, String name, String description) {
         this.id = UUID.randomUUID(); //고유 아이디 자동 생성
         //this.createdAt = System.currentTimeMillis(); //생성시점 자동 기록
-        this.createdAt = Instant.ofEpochSecond(Instant.now().toEpochMilli());
+        this.createdAt = Instant.now();
         this.type = type; //채널 타입저장
         this.name = name; //채널 이름 저장
         this.description = description; //채널 설명저장
@@ -31,7 +31,7 @@ public class Channel implements Serializable {
     //이름을 수정하는 update 함수 (수정 시 update도 갱신)
     public void update(String newName, String newDescription) {
         boolean anyValueUpdated = false;
-        this.updatedAt = Instant.ofEpochSecond(Instant.now().toEpochMilli());
+        this.updatedAt = Instant.now();
         if (newName != null && !newName.equals(this.name)) {
             this.name = newName;
             anyValueUpdated = true;

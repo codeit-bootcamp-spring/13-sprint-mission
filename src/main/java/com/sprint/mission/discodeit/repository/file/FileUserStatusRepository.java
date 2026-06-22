@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.repository.file;
 
+import com.sprint.mission.discodeit.config.StorageProperties;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -18,10 +19,11 @@ import java.util.stream.Stream;
 @Repository
 public class FileUserStatusRepository implements UserStatusRepository {
     private final Path DIRECTORY;
-    private static final String EXTENSION = ".ser";
+    private final String EXTENSION;
 
-    public FileUserStatusRepository() {
-        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", UserStatus.class.getSimpleName());
+    public FileUserStatusRepository(StorageProperties properties) {
+        this.EXTENSION = properties.getExtension();
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), properties.getRootPath(), UserStatus.class.getSimpleName());
         if (Files.notExists(DIRECTORY)) {
             try {
                 Files.createDirectories(DIRECTORY);

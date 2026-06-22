@@ -1,10 +1,15 @@
 package com.sprint.mission.discodeit.dto.request;
 
 import com.sprint.mission.discodeit.entity.ChannelType;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-public record PublicChannelCreateRequest(
-        ChannelType type,
-        String name,
-        String description
-) {
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+public class PublicChannelCreateRequest{
+        private ChannelType type;
+        private String name;
+        private String description;
 }

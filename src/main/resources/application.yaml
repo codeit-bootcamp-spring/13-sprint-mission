@@ -9,3 +9,6 @@ server:
 discodeit:
   repository:
     type: jcf   # jcf | file
+  storage:
+    root-path: file-data-map
+    extension: .ser

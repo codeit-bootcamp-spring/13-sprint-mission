@@ -1,9 +1,14 @@
 package com.sprint.mission.discodeit.dto.request;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 import java.util.UUID;
-
-public record PrivateChannelCreateRequest(
-        List<UUID> participantIds
-) {
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+public class PrivateChannelCreateRequest{
+        private List<UUID> participantIds;
 }

@@ -1,7 +1,13 @@
 package com.sprint.mission.discodeit.dto.request;
 
-public record LoginRequest(
-        String username,
-        String password
-) {
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+public class LoginRequest{
+        private String username;
+        private String password;
 }

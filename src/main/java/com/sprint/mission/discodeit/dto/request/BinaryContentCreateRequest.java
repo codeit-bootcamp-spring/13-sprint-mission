@@ -1,8 +1,14 @@
 package com.sprint.mission.discodeit.dto.request;
 
-public record BinaryContentCreateRequest(
-        String fileName,
-        String contentType,
-        byte[] bytes
-) {
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+public class BinaryContentCreateRequest {
+    private String fileName;
+    private String contentType;
+    private byte[] bytes;
 }

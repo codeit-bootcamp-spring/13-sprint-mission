@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.repository.file;
 
+import com.sprint.mission.discodeit.config.StorageProperties;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -19,10 +20,12 @@ import java.util.stream.Stream;
 //파일(Users.dat)에 사용자 데이터를 저장하는 파일 저장방식 구현체 (프로그램이 종료되어도 데이터가 유지됨)
 public class FileUserRepository implements UserRepository {
     private final Path DIRECTORY;
-    private static final String EXTENSION = ".ser";
+    private final String EXTENSION;
 
-    public FileUserRepository() {
-        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", User.class.getSimpleName());
+    public FileUserRepository(StorageProperties properties) {
+        this.EXTENSION = properties.getExtension();
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), properties.getRootPath(), User.class.getSimpleName());
+
         if (Files.notExists(DIRECTORY)) {
             try {
                 Files.createDirectories(DIRECTORY);

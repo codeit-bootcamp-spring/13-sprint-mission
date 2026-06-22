@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.repository.file;
 
+import com.sprint.mission.discodeit.config.StorageProperties;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -19,10 +20,11 @@ import java.util.stream.Stream;
 //MessageRepository 인터페이스의 파일 기반(File I/O) 구현체
 public class FileMessageRepository implements MessageRepository {
     private final Path DIRECTORY;
-    private static final String EXTENSION = ".ser";
+    private final String EXTENSION;
 
-    public FileMessageRepository() {
-        this.DIRECTORY = Paths.get(System.getProperty("message.dir"), "file-data-map", Message.class.getSimpleName());
+    public FileMessageRepository(StorageProperties properties) {
+        this.EXTENSION = properties.getExtension();
+        this.DIRECTORY = Paths.get(System.getProperty("message.dir"), properties.getRootPath(), Message.class.getSimpleName());
         if (Files.notExists(DIRECTORY)) {
             try {
                 Files.createDirectories(DIRECTORY);

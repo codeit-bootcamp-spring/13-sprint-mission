@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.repository.file;
 
+import com.sprint.mission.discodeit.config.StorageProperties;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -19,10 +20,11 @@ import java.util.stream.Stream;
 //ChannelRepository 인터페이스의 파일 기반(File I/o) 구현체
 public class FileChannelRepository implements ChannelRepository {
     private final Path DIRECTORY; //Channel 파일들이 저장될 디렉토리 경로
-    private static final String EXTENSION = ".ser"; //직렬화 파일 확장자
+    private final String EXTENSION; //직렬화 파일 확장자
 
-    public FileChannelRepository() { //Repository 생성 시 저장 폴더가 존재하지 않으면 자동 생성
-        this.DIRECTORY = Paths.get(System.getProperty("channel.dir"), "file-data-map", Channel.class.getSimpleName());
+    public FileChannelRepository(StorageProperties properties) { //Repository 생성 시 저장 폴더가 존재하지 않으면 자동 생성
+        this.EXTENSION = properties.getExtension();
+        this.DIRECTORY = Paths.get(System.getProperty("channel.dir"), properties.getRootPath(), Channel.class.getSimpleName());
         if (Files.notExists(DIRECTORY)) { //디렉토리가 존재하지 않으면 생성
             try {
                 Files.createDirectories(DIRECTORY);
