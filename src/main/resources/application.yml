@@ -1,4 +1,23 @@
+spring:
+  application:
+    name: discodeit
+
+
 discodeit:
   repository:
     type: file
     file-directory: .discodeit
+
+server:
+  port: 8080
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+    display-request-duration: true
+    doc-expansion: none
+
+  api-docs:
+    path: /my-api

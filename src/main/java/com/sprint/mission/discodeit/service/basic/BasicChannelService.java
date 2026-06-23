@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelListResponse;
 import com.sprint.mission.discodeit.dto.response.ChannelResponse;
 import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.entity.Channel.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.exception.ChannelNotFoundException;
@@ -75,16 +76,13 @@ public class BasicChannelService implements ChannelService {
   @Override
   public List<ChannelListResponse> findAllByUserId(UUID userId) {
     List<UUID> joinedChannelIds = readStatusRepository.findAll().stream()
-        .filter(rs -> rs.getUserId() != null && rs.getUserId().equals(userId))
+        .filter(rs -> rs.getUserId().equals(userId))
         .map(ReadStatus::getChannelId)
         .toList();
 
-    if (joinedChannelIds.isEmpty()) {
-      return Collections.emptyList();
-    }
-
     return channelRepository.findAll().stream()
-        .filter(channel -> joinedChannelIds.contains(channel.getId()))
+        .filter(channel -> channel.getType() == ChannelType.PUBLIC || joinedChannelIds.contains(
+            channel.getId()))
         .map(channel -> {
 
           Instant lastMessageAt = messageRepository.findAll().stream()

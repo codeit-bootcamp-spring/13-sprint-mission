@@ -36,12 +36,12 @@ public class BasicMessageService implements MessageService {
 
   @Override
   public MessageResponse create(MessageCreateRequest request, List<MultipartFile> attachments) {
-    userRepository.findById(request.userId())
-        .orElseThrow(() -> new UserNotFoundException(request.userId()));
+    userRepository.findById(request.authorId())
+        .orElseThrow(() -> new UserNotFoundException(request.authorId()));
     channelRepository.findById(request.channelId())
         .orElseThrow(() -> new ChannelNotFoundException(request.channelId()));
 
-    Message message = new Message(request.userId(), request.channelId(), request.content());
+    Message message = new Message(request.authorId(), request.channelId(), request.content());
     messageRepository.save(message);
 
     if (attachments != null && !attachments.isEmpty()) {

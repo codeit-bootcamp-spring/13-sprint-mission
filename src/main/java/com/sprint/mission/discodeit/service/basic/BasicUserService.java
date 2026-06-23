@@ -48,6 +48,10 @@ public class BasicUserService implements UserService {
       BinaryContent binaryContent = BinaryContent.builder()
           .id(UUID.randomUUID())
           .createdAt(Instant.now())
+          .fileName(profile.getOriginalFilename())
+          .contentType(profile.getContentType())
+          .size(profile.getSize())
+          .bytes(profile.getBytes())
           .build();
       binaryContentRepository.save(binaryContent);
       profileId = binaryContent.getId();
@@ -102,15 +106,15 @@ public class BasicUserService implements UserService {
     User user = userRepository.findById(id)
         .orElseThrow(() -> new UserNotFoundException(id));
 
-    if (request.username() != null
-        && !request.username().equals(user.getUsername())
-        && userRepository.findByUsername(request.username()).isPresent()) {
+    if (request.newUsername() != null
+        && !request.newUsername().equals(user.getUsername())
+        && userRepository.findByUsername(request.newUsername()).isPresent()) {
       throw new DuplicateUserException("이미 존재하는 유저 이름입니다.");
     }
 
-    if (request.email() != null
-        && !request.email().equals(user.getEmail())
-        && userRepository.findByEmail(request.email()).isPresent()) {
+    if (request.newEmail() != null
+        && !request.newEmail().equals(user.getEmail())
+        && userRepository.findByEmail(request.newEmail()).isPresent()) {
       throw new DuplicateUserException("이미 존재하는 이메일입니다.");
     }
 
@@ -128,7 +132,7 @@ public class BasicUserService implements UserService {
       currentProfileId = newBinaryContent.getId();
     }
 
-    user.update(request.username(), request.email(), request.password(), currentProfileId);
+    user.update(request.newUsername(), request.newEmail(), request.newPassword(), currentProfileId);
 
     userRepository.save(user);
 
