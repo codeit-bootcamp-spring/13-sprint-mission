@@ -3,68 +3,107 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.input.*;
 import com.sprint.mission.discodeit.dto.output.UserDto;
-import com.sprint.mission.discodeit.entity.ReadStatus;
-import com.sprint.mission.discodeit.service.basic.BasicReadStatusService;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.service.basic.BasicUserService;
 import com.sprint.mission.discodeit.service.basic.BasicUserStatusService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping({"/api/user","/api/v1/user"})
+@RequestMapping({"/api/users"})
 public class UserController {
 
     private final BasicUserService bus;
     private final BasicUserStatusService buss;
-    private final BasicReadStatusService brss;
 
-    @RequestMapping(value = "/", method = RequestMethod.POST)
-    public void regist(
-            @RequestBody CreateUserInput cui
+    @RequestMapping(value = "",method = RequestMethod.GET)
+    public ResponseEntity<List<UserDto>> findAll(){
+        return ResponseEntity.ok(this.bus.getUserList());
+    }
+
+    @RequestMapping(
+            value = "",
+            method = RequestMethod.POST,
+            consumes = { MediaType.MULTIPART_FORM_DATA_VALUE }
+    )
+    public ResponseEntity<User> create(
+            @RequestPart("userCreateRequest") UserCreateRequest uci,
+            @RequestPart(value = "thumbnail", required = false) MultipartFile tmb
     ) {
-        this.bus.createUser(cui);
+        Optional<BinaryContentCreate> bcc = Optional.ofNullable(tmb).flatMap(this::thumbnailResolver);
+        User res = this.bus.create(uci, bcc);
+        return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.PATCH)
-    public void update(
-            @RequestBody UpdateUserInput uui
+    @RequestMapping(value = "/{userId}",method = RequestMethod.DELETE)
+    public ResponseEntity.BodyBuilder delete(
+            @PathVariable UUID userId
     ){
-        this.bus.update(uui);
+        this.bus.delete(userId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT);
     }
 
-    @RequestMapping(value = "/delete",method = RequestMethod.DELETE)
-    public void delete(
-            @RequestBody IDRequestInput id
+
+    @RequestMapping(
+            value = "/{userId}",
+            method = RequestMethod.PATCH,
+            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}
+    )
+    public ResponseEntity<User> update(
+            @PathVariable UUID userId,
+            @RequestPart UserUpdateRequest uui,
+            @RequestPart (value = "thumbnail", required = false) MultipartFile tmb
     ){
-        this.bus.delete(id.getID());
+        Optional<BinaryContentCreate> bcc = Optional.ofNullable(tmb).flatMap(this::thumbnailResolver);
+        User res = this.bus.update(userId, uui, bcc);
+        return ResponseEntity.ok(res);
     }
 
 
-    @RequestMapping(value = "/findAll",method = RequestMethod.GET)
-    public List<UserDto> allUsers(){
-        return this.bus.getUserList();
-    }
-
-
-    @RequestMapping(value = "/state", method = RequestMethod.POST)
-    public void userState(
-            @RequestBody IDRequestInput id
+    @RequestMapping(value = "/{userId}/userStatus", method = RequestMethod.PATCH)
+    public ResponseEntity<UserStatus> updateUserStatusByUserId(
+            @PathVariable UUID userId,
+            @RequestBody UserStatusUpdateRequest usur
     ){
-            buss.updateByUserID(id.getID());
+        UserStatus res = buss.updateByUserId(userId, usur);
+        return ResponseEntity.ok(res);
     }
 
-    @RequestMapping(value = "/msgStatus", method = RequestMethod.POST)
-    public List<ReadStatus> queryByUser(
-            @RequestBody IDRequestInput userID
-    ){
-        return brss.findAllByUserID(userID.getID());
+
+
+    private Optional<BinaryContentCreate> thumbnailResolver(MultipartFile tmb) {
+        if (tmb.isEmpty()) return Optional.empty();
+        try{
+            String filename = tmb.getOriginalFilename();
+            String contentType = tmb.getContentType();
+            Long fileSize = tmb.getSize();
+            byte[] content = tmb.getBytes();
+
+            BinaryContentCreate bc = new BinaryContentCreate(
+                    filename,
+                    contentType,
+                    fileSize,
+                    content
+            );
+
+            return Optional.of(bc);
+        } catch (IOException e){
+            throw new RuntimeException(e);
+        }
     }
+
 
 }

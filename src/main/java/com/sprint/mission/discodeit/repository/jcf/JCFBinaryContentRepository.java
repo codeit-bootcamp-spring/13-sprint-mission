@@ -14,16 +14,16 @@ import java.util.function.Predicate;
 @RequiredArgsConstructor
 @ConditionalOnProperty(name="discodeit.repository.type",havingValue = "jcf", matchIfMissing = true)
 public class JCFBinaryContentRepository implements BinaryContentRepository {
-    private final Set<BinaryContent> data = new HashSet<>();
+    private final HashMap<UUID, BinaryContent> data = new HashMap<>();
 
     @Override
     public void save(BinaryContent bc){
-        data.add(bc);
+        data.put(bc.getId(),bc);
     }
 
     @Override
     public List<BinaryContent> find(Predicate<BinaryContent> fn){
-        return data.stream()
+        return data.values().stream()
                 .filter(fn)
                 .toList();
     }
@@ -34,13 +34,8 @@ public class JCFBinaryContentRepository implements BinaryContentRepository {
     }
 
     @Override
-    public List<BinaryContent> findByAuthorID(UUID userID){
-        return find(bc -> bc.getAuthorID().equals(userID));
-    }
-
-    @Override
     public void delete(UUID id){
-        data.remove(findByID(id));
+        data.remove(id);
     }
 
 }

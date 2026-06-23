@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.dto.input;
 
 
-public record CreatePublicChannelInput (
+public record PublicChannelCreateRequest(
         String name,
         String description
 ){}

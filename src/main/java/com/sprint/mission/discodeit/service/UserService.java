@@ -1,21 +1,20 @@
 package com.sprint.mission.discodeit.service;
 
 
-import com.sprint.mission.discodeit.dto.input.CreateUserInput;
-import com.sprint.mission.discodeit.dto.input.UpdateUserInput;
-import com.sprint.mission.discodeit.dto.output.BinaryObjectOutput;
+import com.sprint.mission.discodeit.dto.input.BinaryContentCreate;
+import com.sprint.mission.discodeit.dto.input.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.input.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.output.UserDto;
-import com.sprint.mission.discodeit.dto.output.UserOutput;
+import com.sprint.mission.discodeit.entity.User;
 
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface UserService {
-    void createUser(CreateUserInput upf);
-    UserOutput getUserById(UUID id);
-    BinaryObjectOutput getUserThumbnail(UUID id);
+    User create(UserCreateRequest upf, Optional<BinaryContentCreate> bcc);
     List<UserDto> getUserList();
-    void update(UpdateUserInput uui);
+    User update(UUID id, UserUpdateRequest uui, Optional<BinaryContentCreate> bcc);
     void delete(UUID id);
 }
