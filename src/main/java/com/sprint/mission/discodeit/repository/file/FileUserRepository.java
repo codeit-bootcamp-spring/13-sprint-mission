@@ -1,54 +1,131 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Repository;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Stream;
 
+@ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
+@Repository
 public class FileUserRepository implements UserRepository {
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    private final String filePath = "users.json";
+    private final Path DIRECTORY;
+    private final String EXTENSION = ".ser";
 
-    @Override
-    public void save(User user) {
-        List<User> users = findAll(); // 기존 파일 불러오기
-        users.add(user);
-        saveAll(users); // 다시 저장
+    public FileUserRepository(
+            @Value("${discodeit.repository.file-directory:data}") String fileDirectory
+    ) {
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), fileDirectory, User.class.getSimpleName());
+        if (Files.notExists(DIRECTORY)) {
+            try {
+                Files.createDirectories(DIRECTORY);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
-    // 파일 전체 확인
+    private Path resolvePath(UUID id) {
+        return DIRECTORY.resolve(id + EXTENSION);
+    }
+
+    @Override
+    public User save(User user) {
+        Path path = resolvePath(user.getId());
+        try (
+                FileOutputStream fos = new FileOutputStream(path.toFile());
+                ObjectOutputStream oos = new ObjectOutputStream(fos)
+        ) {
+            oos.writeObject(user);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return user;
+    }
+
+    @Override
+    public Optional<User> findById(UUID id) {
+        User userNullable = null;
+        Path path = resolvePath(id);
+        if (Files.exists(path)) {
+            try (
+                    FileInputStream fis = new FileInputStream(path.toFile());
+                    ObjectInputStream ois = new ObjectInputStream(fis)
+            ) {
+                userNullable = (User) ois.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return Optional.ofNullable(userNullable);
+    }
+
+    @Override
+    public Optional<User> findByUsername(String username) {
+        return this.findAll().stream()
+                .filter(user -> user.getUsername().equals(username))
+                .findFirst();
+    }
+
     @Override
     public List<User> findAll() {
-        File file = new File(filePath);
-        if (!file.exists()) return new ArrayList<>();
-        try {
-            // 파일을 User 리스트 객체로 변환
-            return objectMapper.readValue(file,
-                    objectMapper.getTypeFactory().constructCollectionType(List.class, User.class));
+        try (Stream<Path> paths = Files.list(DIRECTORY)) {
+            return paths
+                    .filter(path -> path.toString().endsWith(EXTENSION))
+                    .map(path -> {
+                        try (
+                                FileInputStream fis = new FileInputStream(path.toFile());
+                                ObjectInputStream ois = new ObjectInputStream(fis)
+                        ) {
+                            return (User) ois.readObject();
+                        } catch (IOException | ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .toList();
         } catch (IOException e) {
-            return new ArrayList<>();
+            throw new RuntimeException(e);
         }
     }
 
-    // 파일로 저장
-    private void saveAll(List<User> users) {
+    @Override
+    public boolean existsById(UUID id) {
+        Path path = resolvePath(id);
+        return Files.exists(path);
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        Path path = resolvePath(id);
         try {
-            objectMapper.writeValue(new File(filePath), users);
+            Files.delete(path);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
-    // 나머지 findById, update, delete는 findAll() 후 처리
-    @Override public Optional<User> findById(String id) {
-        return findAll().stream().filter(u -> u.getId().equals(id)).findFirst(); }
-    @Override public void update(User user) {
-
+    @Override
+    public boolean existsByEmail(String email) {
+        return this.findAll().stream()
+                // null인 데이터는 건너뛰도록 방어 로직 추가
+                .filter(user -> user.getEmail() != null)
+                .anyMatch(user -> user.getEmail().equals(email));
     }
-    @Override public void delete(String id) {
 
+    @Override
+    public boolean existsByUsername(String username) {
+        return this.findAll().stream()
+                // null인 데이터는 건너뛰도록 방어 로직 추가
+                .filter(user -> user.getUsername() != null)
+                .anyMatch(user -> user.getUsername().equals(username));
     }
 }
