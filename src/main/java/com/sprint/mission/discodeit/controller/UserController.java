@@ -9,14 +9,16 @@ import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
-@RestController
+@Controller
 @RequiredArgsConstructor
 @RequestMapping("/api/users") // 컨트롤러에 공통 url 매핑, 기본 시작을 지정
 public class UserController {
@@ -35,36 +37,36 @@ public class UserController {
     public ResponseEntity<UserResponse> create(@Valid @RequestBody UserCreateRequest request){
         UserResponse user=userService.create(request);
         URI location=URI.create("/api/users/"+user.getId());
-        return ResponseEntity.created(location).body(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
 
     // 사용자 정보 수정
-    @RequestMapping(value = "/{userId}", method = RequestMethod.PATCH)
+    @RequestMapping(path = "/{userId}", method = RequestMethod.PATCH)
     public ResponseEntity<UserResponse> update(@PathVariable UUID userId,
                                                @Valid @RequestBody UserUpdateRequest request){
         UserResponse updatedUser = userService.update(userId, request);
-        return ResponseEntity.ok().body(updatedUser);
+        return ResponseEntity.status(HttpStatus.OK).body(updatedUser);
     }
 
     // 사용자 삭제
-    @RequestMapping(value = "/{userId}", method = RequestMethod.DELETE)
+    @RequestMapping(path = "/{userId}", method = RequestMethod.DELETE)
     public ResponseEntity<Void> delete(@PathVariable UUID userId){
         userService.delete(userId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     // 모든 사용자 조회
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<List<UserResponse>> findAll(){
         List<UserResponse> foundUsers = userService.findAll();
-        return ResponseEntity.ok().body(foundUsers);
+        return ResponseEntity.status(HttpStatus.OK).body(foundUsers);
     }
 
     // 사용자의 온라인 상태 업데이트
-    @RequestMapping(value = "/{userId}/online-status", method = RequestMethod.PATCH)
+    @RequestMapping(path = "/{userId}/online-status", method = RequestMethod.PATCH)
     public ResponseEntity<UserStatusResponse> updateOnlineStatus(@PathVariable UUID userId,
                                                                  @Valid @RequestBody UserStatusUpdateRequest request){
         UserStatusResponse updatedStatus = userStatusService.updateByUserId(userId, request);
-        return ResponseEntity.ok().body(updatedStatus);
+        return ResponseEntity.status(HttpStatus.OK).body(updatedStatus);
     }
 }

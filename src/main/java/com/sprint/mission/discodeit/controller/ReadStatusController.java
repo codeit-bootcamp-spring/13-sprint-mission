@@ -6,16 +6,19 @@ import com.sprint.mission.discodeit.dto.readstatus.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.service.ReadStatusService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
-@RestController
+@Controller
 @RequestMapping("/api/read-statuses")
 @RequiredArgsConstructor
+@ResponseBody
 public class ReadStatusController {
 
     private final ReadStatusService readStatusService;
@@ -27,21 +30,21 @@ public class ReadStatusController {
     public ResponseEntity<ReadStatusResponse> create(@Valid @RequestBody ReadStatusCreateRequest request){
         ReadStatusResponse readStatus = readStatusService.create(request);
         URI location = URI.create("/api/read-statuses/" + readStatus.getId());
-        return ResponseEntity.created(location).body(readStatus);
+        return ResponseEntity.status(HttpStatus.CREATED).body(readStatus);
     }
 
     // 특정 채널의 메시지 수신 정보 수정
-    @RequestMapping(value = "/{readStatusId}", method = RequestMethod.PATCH)
+    @RequestMapping(path = "/{readStatusId}", method = RequestMethod.PATCH)
     public ResponseEntity<ReadStatusResponse> update(@PathVariable UUID readStatusId,
                                                      @Valid @RequestBody ReadStatusUpdateRequest request){
         ReadStatusResponse updatedReadStatus = readStatusService.update(readStatusId, request);
-        return ResponseEntity.ok().body(updatedReadStatus);
+        return ResponseEntity.status(HttpStatus.OK).body(updatedReadStatus);
     }
 
     // 특정 사용자의 메시지 수신 정보 조회
-    @RequestMapping(value = "/users/{userId}", method = RequestMethod.GET)
+    @RequestMapping(path = "/users/{userId}", method = RequestMethod.GET)
     public ResponseEntity<List<ReadStatusResponse>> findAllByUserId(@PathVariable UUID userId){
         List<ReadStatusResponse> foundAllByUserId = readStatusService.findAllByUserId(userId);
-        return ResponseEntity.ok().body(foundAllByUserId);
+        return ResponseEntity.status(HttpStatus.OK).body(foundAllByUserId);
     }
 }

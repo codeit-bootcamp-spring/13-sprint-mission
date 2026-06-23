@@ -41,7 +41,7 @@ public class BasicChannelService implements ChannelService {
     // PRIVATE 채널 생성할 때 채널에 참여하는 User 정보 받아 User 별 ReadStatus 정보 생성 (name, description 속성 생략)
     @Override
     public ChannelResponse createPrivateChannel(PrivateChannelCreateRequest request) {
-        Channel channel=new Channel(ChannelType.PRIVATE, request.getName(), request.getDescription());
+        Channel channel=new Channel(ChannelType.PRIVATE, null, null);
         channelRepository.save(channel);
         // 채널 생성
         for (UUID userId : request.getParticipantsIds()) {
