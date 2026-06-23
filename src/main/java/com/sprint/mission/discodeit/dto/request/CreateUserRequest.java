@@ -12,11 +12,11 @@ public class CreateUserRequest  {
     private String email;
     private String password;
 
-    public User toEntity() {
+    public User toEntity(String encodedPassword) {
         return new User(
                 username,
                 email,
-                password
+                encodedPassword
         );
     }
 }

@@ -11,6 +11,7 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.util.PasswordUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,7 +48,10 @@ public class BasicUserService implements UserService {
             throw new IllegalArgumentException("이미 존재하는 email입니다.");
         }
 
-        User user = userRequest.toEntity();
+        // password 암호화
+        String encodedPassword = PasswordUtil.encode(userRequest.getPassword());
+
+        User user = userRequest.toEntity(encodedPassword);
         userRepository.save(user);
 
         if (profileImageRequest.isPresent()) {
@@ -107,7 +111,10 @@ public class BasicUserService implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        user.update(request.getUsername(), request.getEmail(), request.getPassword());
+        // 비밀번호 암호화
+        String encodedPassword = PasswordUtil.encode(request.getPassword());
+
+        user.update(request.getUsername(), request.getEmail(), encodedPassword);
         userRepository.save(user);
 
         if (profileImageRequest.isPresent()) {

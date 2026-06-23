@@ -17,7 +17,7 @@ public class AuthController {
     private final AuthService authService;
 
     // 사용자 로그인
-    @RequestMapping(value = "/login", method = RequestMethod.POST)
+    @RequestMapping(method = RequestMethod.POST)
     public UserResponse login(@RequestBody LoginRequest request) {
         return authService.login(request);
     }

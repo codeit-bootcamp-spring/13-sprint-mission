@@ -31,7 +31,7 @@ public class ChannelController {
     }
 
     // 공개 채널 정보 수정
-    @RequestMapping(value = "/{channelId}", method = RequestMethod.PUT)
+    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
     public ChannelResponse update(@PathVariable UUID id,
                                   @RequestBody UpdateChannelRequest request) {
         return channelService.update(id, request);

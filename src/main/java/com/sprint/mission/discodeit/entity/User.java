@@ -15,7 +15,7 @@ public class User implements Serializable {
     private Instant updatedAt;
     private String username;
     private String email;
-    private transient String password;  // 직렬화에서 제외
+    private String password;  // 직렬화에서 제외(transient) 저장 안되어 로그인 불가로 제거
 
     public User(String username, String email, String password) {
         this.id = UUID.randomUUID();
@@ -25,15 +25,19 @@ public class User implements Serializable {
         this.password = password;
     }
 
-    public void update(String username, String email, String password) {
-        if (username != null || !username.isBlank()) {
+    public boolean checkPassword(String rawPassword) {
+        return this.password.equals(rawPassword);
+    }
+
+    public void update(String username, String email, String encodedPassword) {
+        if (username != null && !username.isBlank()) {
             this.username = username;
         }
         if (email != null) {
             this.email = email;
         }
-        if (password != null) {
-            this.password = password;
+        if (encodedPassword != null) {
+            this.password = encodedPassword;
         }
 
         this.updatedAt = Instant.now();
