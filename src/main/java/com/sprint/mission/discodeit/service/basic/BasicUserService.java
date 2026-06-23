@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -35,6 +36,8 @@ public class BasicUserService implements UserService {
     private UserResponse toResponse(User user, UserStatus userStatus) {
         return new UserResponse(
                 user.getUserId(),
+                user.getCreatedAt(),
+                user.getUpdatedAt(),
                 user.getName(),
                 user.getEmail(),
                 user.getProfileId(),
@@ -96,7 +99,7 @@ public class BasicUserService implements UserService {
     public List<UserResponse> findAllUser() {
         List<User> users = userRepository.findAll();
         if (users.isEmpty()) {
-            throw new NoSuchElementException("사용자가 존재하지 않습니다.");
+            return  new ArrayList<>();
         }
         log.info("전체 유저 조회 완료 - 총 {}명", users.size());
         return  users.stream()

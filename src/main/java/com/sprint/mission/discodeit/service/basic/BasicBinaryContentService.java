@@ -64,5 +64,10 @@ public class BasicBinaryContentService implements BinaryContentService {
         binaryContentRepository.find(id).orElseThrow(() -> new NoSuchElementException("존재하지 않는 content 입니다."));
         binaryContentRepository.delete(id);
     }
+
+    @Override
+    public BinaryContent findEntity(UUID id) {
+        return binaryContentRepository.find(id).orElseThrow(()-> new NoSuchElementException("존재하지 않는 content 입니다."));
+    }
 }
 
