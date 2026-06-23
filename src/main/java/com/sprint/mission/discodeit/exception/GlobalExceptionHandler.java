@@ -50,6 +50,14 @@ public class GlobalExceptionHandler {
     return pd;
   }
 
+  @ExceptionHandler(WrongPasswordException.class)
+  public ProblemDetail handleWrongPasswordException(WrongPasswordException e) {
+    ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    pd.setTitle("Invalid Request");
+    pd.setProperty("timestamp", Instant.now());
+    return pd;
+  }
+
   @ExceptionHandler(ReadStatusAlreadyExistsException.class)
   public ProblemDetail handleReadStatusAlreadyExistsException(ReadStatusAlreadyExistsException e) {
     ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());

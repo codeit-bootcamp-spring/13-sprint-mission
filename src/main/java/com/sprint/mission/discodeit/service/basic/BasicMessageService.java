@@ -12,6 +12,7 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
@@ -45,11 +46,24 @@ public class BasicMessageService implements MessageService {
 
     if (attachments != null && !attachments.isEmpty()) {
       for (MultipartFile file : attachments) {
-        BinaryContent binaryContent = BinaryContent.builder()
-            .id(UUID.randomUUID())
-            .messageId(message.getId())
-            .build();
-        binaryContentRepository.save(binaryContent);
+        if (file.isEmpty()) {
+          continue;
+        }
+
+        try {
+          BinaryContent binaryContent = BinaryContent.builder()
+              .id(UUID.randomUUID())
+              .messageId(message.getId())
+              .createdAt(java.time.Instant.now())
+              .fileName(file.getOriginalFilename())
+              .size(file.getSize())
+              .contentType(file.getContentType())
+              .bytes(file.getBytes())
+              .build();
+          binaryContentRepository.save(binaryContent);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
       }
     }
     return convertToResponse(message);
@@ -67,7 +81,7 @@ public class BasicMessageService implements MessageService {
   @Override
   public MessageResponse update(UUID id, MessageUpdateRequest request) {
 
-    Message message = messageRepository.findById(request.id())
+    Message message = messageRepository.findById(id)
         .orElseThrow(() -> new NoSuchElementException("메세지를 찾을 수 없습니다."));
 
     message.updateContent(request.newContent());

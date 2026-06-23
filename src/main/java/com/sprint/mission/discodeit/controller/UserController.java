@@ -38,7 +38,7 @@ public class UserController {
   @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<UserResponse> update(
       @PathVariable("userId") UUID id,
-      @RequestPart UserUpdateRequest request,
+      @RequestPart(value = "userUpdateRequest") UserUpdateRequest request,
       @RequestPart(value = "profile", required = false) MultipartFile profile
   ) {
     UserResponse response = userService.update(id, request, profile);

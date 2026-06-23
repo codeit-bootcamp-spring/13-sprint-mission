@@ -48,7 +48,6 @@ public class BasicUserService implements UserService {
       BinaryContent binaryContent = BinaryContent.builder()
           .id(UUID.randomUUID())
           .createdAt(Instant.now())
-          .updatedAt(Instant.now())
           .build();
       binaryContentRepository.save(binaryContent);
       profileId = binaryContent.getId();
@@ -124,7 +123,6 @@ public class BasicUserService implements UserService {
       BinaryContent newBinaryContent = BinaryContent.builder()
           .id(UUID.randomUUID())
           .createdAt(Instant.now())
-          .updatedAt(Instant.now())
           .build();
       binaryContentRepository.save(newBinaryContent);
       currentProfileId = newBinaryContent.getId();

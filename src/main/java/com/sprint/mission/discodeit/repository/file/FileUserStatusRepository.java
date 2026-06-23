@@ -61,6 +61,12 @@ public class FileUserStatusRepository implements UserStatusRepository {
     }
   }
 
+  @Override
+  public void delete(UUID id) {
+    database.remove(id);
+    saveToFile();
+  }
+
   @SuppressWarnings("unchecked")
   private Map<UUID, UserStatus> load() {
 
