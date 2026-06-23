@@ -12,18 +12,18 @@ import java.util.UUID;
 @RestController
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("/binary-content")
+@RequestMapping("/api/binaryContents")
 public class BinaryContentController {
 
-    private final BinaryContentService binaryContentService;
+  private final BinaryContentService binaryContentService;
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public BinaryContentResponse find(@PathVariable UUID id) {
-        return binaryContentService.find(id);
-    }
+  @GetMapping("/{binaryContentId}")
+  public BinaryContentResponse find(@PathVariable("binaryContentId") UUID id) {
+    return binaryContentService.find(id);
+  }
 
-    @RequestMapping(method = RequestMethod.GET)
-    public List<BinaryContentResponse> findByIdIn(@RequestParam List<UUID> ids) {
-        return binaryContentService.findByIdIn(ids);
-    }
+  @GetMapping
+  public List<BinaryContentResponse> findByIdIn(@RequestParam("binaryContentIds") List<UUID> ids) {
+    return binaryContentService.findByIdIn(ids);
+  }
 }

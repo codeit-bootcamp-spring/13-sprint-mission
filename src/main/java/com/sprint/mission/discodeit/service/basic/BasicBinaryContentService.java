@@ -20,71 +20,38 @@ import java.util.stream.Collectors;
 @Primary
 public class BasicBinaryContentService implements BinaryContentService {
 
-    BinaryContentRepository binaryContentRepository;
+  BinaryContentRepository binaryContentRepository;
 
-    public BasicBinaryContentService(BinaryContentRepository binaryContentRepository) {
-        this.binaryContentRepository = binaryContentRepository;
-    }
+  public BasicBinaryContentService(BinaryContentRepository binaryContentRepository) {
+    this.binaryContentRepository = binaryContentRepository;
+  }
+
+  @Override
+  public BinaryContentResponse find(UUID id) {
+    BinaryContent binaryContent = binaryContentRepository.findById(id)
+        .orElseThrow(() -> new BinaryContentNotFoundException(id));
+
+    return convertToResponse(binaryContent);
+  }
+
+  @Override
+  public List<BinaryContentResponse> findByIdIn(List<UUID> ids) {
+    return binaryContentRepository.findAll().stream()
+        .filter(b -> ids.contains(b.getId()))
+        .map(this::convertToResponse)
+        .collect(Collectors.toList());
+  }
 
 
-    @Override
-    public BinaryContentResponse create(BinaryContentCreateRequest request) {
-        BinaryContent binaryContent = BinaryContent.builder()
-                .id(UUID.randomUUID())
-                .createdAt(Instant.now())
-                .fileName(request.fileName())
-                .fileUrl(request.fileUrl())
-                .fileSize(request.fileSize())
-                .build();
+  private BinaryContentResponse convertToResponse(BinaryContent binaryContent) {
 
-        binaryContentRepository.save(binaryContent);
-
-        return convertToResponse(binaryContent);
-    }
-
-    @Override
-    public BinaryContentResponse find(UUID id) {
-        BinaryContent binaryContent = binaryContentRepository.findById(id)
-                .orElseThrow(() -> new BinaryContentNotFoundException(id));
-
-        return convertToResponse(binaryContent);
-    }
-
-    @Override
-    public List<BinaryContentResponse> findByIdIn(List<UUID> ids) {
-        return binaryContentRepository.findAll().stream()
-                .filter(b -> ids.contains(b.getId()))
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public void delete(UUID id) {
-        BinaryContent binaryContent =binaryContentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 파일 콘텐츠입니다."));
-
-        binaryContentRepository.delete(id);
-
-    }
-
-    @Override
-    public BinaryContent findEntityById(UUID id) {
-        return binaryContentRepository.findById(id)
-                .orElseThrow(() -> new BinaryContentNotFoundException(id));
-    }
-
-    private BinaryContentResponse convertToResponse(BinaryContent binaryContent) {
-        LocalDateTime localDateTimeCreatedAt = binaryContent.getCreatedAt()
-                .atZone(ZoneId.of("Asia/Seoul"))
-                .toLocalDateTime();
-
-        return new BinaryContentResponse(
-                binaryContent.getId(),
-                localDateTimeCreatedAt,
-                binaryContent.getFileName(),
-                binaryContent.getFileUrl(),
-                binaryContent.getFileSize(),
-                binaryContent.getMessageId()
-        );
-    }
+    return new BinaryContentResponse(
+        binaryContent.getId(),
+        binaryContent.getCreatedAt(),
+        binaryContent.getFileName(),
+        binaryContent.getSize(),
+        binaryContent.getContentType(),
+        binaryContent.getBytes()
+    );
+  }
 }
