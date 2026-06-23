@@ -19,7 +19,10 @@ public class ReadStatusService {
     private final ReadStatusRepository readStatusRepository;
 
     public ReadStatusResponse create(CreateReadStatusRequest request) {
-        if (readStatusRepository.findByUserIdAndChannelId(request.getUserId(), request.getChannelId()) != null) {
+        if (readStatusRepository.findByUserIdAndChannelId(
+                request.getUserId(),
+                request.getChannelId()).isPresent()) {
+
             throw new IllegalArgumentException("이미 존재합니다.");
         }
 
@@ -28,6 +31,7 @@ public class ReadStatusService {
                         request.getChannelId(),
                         Instant.now()
         );
+
         readStatusRepository.save(readStatus);
 
         return ReadStatusResponse.from(readStatus);

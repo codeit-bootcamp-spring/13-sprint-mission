@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping
+@RequestMapping("/api/readStatus")
 @RequiredArgsConstructor
 public class ReadStatusController {
 
@@ -25,7 +25,7 @@ public class ReadStatusController {
 
     // 메시지 수신 정보 수정
     @RequestMapping(value = "/{channelId}", method = RequestMethod.PUT)
-    public ReadStatusResponse update(@PathVariable UUID userId, @PathVariable UUID channelId, @RequestBody UpdateReadStatusRequest request) {
+    public ReadStatusResponse update(@RequestParam UUID userId, @PathVariable UUID channelId, @RequestBody UpdateReadStatusRequest request) {
         return readStatusService.updateLastReadAt(userId, channelId);
     }
 

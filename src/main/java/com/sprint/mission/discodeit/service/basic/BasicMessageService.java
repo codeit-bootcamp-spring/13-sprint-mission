@@ -29,15 +29,18 @@ public class BasicMessageService implements MessageService {
 
         messageRepository.save(message);
 
-        for (CreateBinaryContentRequest file : request.getAttachments()) {
-            BinaryContent binaryContent = new BinaryContent(
-                            request.getAuthorId(),
-                            message.getId(),
-                            file.getFilename(),
-                            file.getContentType(),
-                            file.getBytes()
-            );
-            binaryContentRepository.save(binaryContent);
+        // 첨부파일 null 대비
+        if (request.getAttachments() != null) {
+            for (CreateBinaryContentRequest file : request.getAttachments()) {
+                BinaryContent binaryContent = new BinaryContent(
+                        request.getAuthorId(),
+                        message.getId(),
+                        file.getFilename(),
+                        file.getContentType(),
+                        file.getBytes()
+                );
+                binaryContentRepository.save(binaryContent);
+            }
         }
 
         List<BinaryContentResponse> attachmentResponses = binaryContentRepository

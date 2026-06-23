@@ -50,5 +50,4 @@ public class MessageController {
         return messageService.findAllByChannelId(channelId);
     }
 
-
 }
