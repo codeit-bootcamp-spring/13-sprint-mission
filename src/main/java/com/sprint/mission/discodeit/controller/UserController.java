@@ -1,11 +1,13 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.dto.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
 import lombok.*;
 import lombok.extern.slf4j.*;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -13,7 +15,7 @@ import java.util.*;
 @RestController
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/users")
+@RequestMapping("/api/user")
 public class UserController {
 
     private final UserService userService;
@@ -35,9 +37,9 @@ public class UserController {
         userService.delete(userId);
     }
 
-    @RequestMapping(method = RequestMethod.GET)
-    public List<UserResponse> findAll() {
-        return userService.findAll();
+    @RequestMapping(value = "/findAll", method = RequestMethod.GET)
+    public ResponseEntity<List<UserDto>> findAll() {
+        return ResponseEntity.ok(userService.findAll());
     }
 
     @RequestMapping(

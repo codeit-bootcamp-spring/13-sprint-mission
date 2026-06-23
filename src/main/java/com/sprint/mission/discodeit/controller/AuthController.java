@@ -6,7 +6,7 @@ import com.sprint.mission.discodeit.service.*;
 import lombok.*;
 import org.springframework.web.bind.annotation.*;
 
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/auth")
 @RestController
 @RequiredArgsConstructor
 public class AuthController {

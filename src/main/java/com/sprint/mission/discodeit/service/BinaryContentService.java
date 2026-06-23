@@ -16,4 +16,5 @@ public interface BinaryContentService {
 
     void delete(UUID id);
 
+    BinaryContent findEntity(UUID binaryContentId);
 }

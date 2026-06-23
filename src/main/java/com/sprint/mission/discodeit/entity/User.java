@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.entity;
 import lombok.*;
 
 import java.io.*;
+import java.util.*;
 
 @Getter
 public class User extends BaseEntity implements Serializable {
@@ -68,6 +69,7 @@ public class User extends BaseEntity implements Serializable {
                 ", email = '" + email + '\'' +
                 ", passWord = '" + passWord + '\'';
     }
+
 }
 
 

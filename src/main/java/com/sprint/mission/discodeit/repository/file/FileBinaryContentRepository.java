@@ -69,6 +69,14 @@ public class FileBinaryContentRepository implements BinaryContentRepository {
         saveToFile();
     }
 
+    @Override
+    public boolean exists(UUID binaryContentId) {
+        return binaryContents.stream()
+                .anyMatch(binaryContent ->
+                        Objects.equals(binaryContent.getId(), binaryContentId)
+                );
+    }
+
     private void saveToFile() {
         try {
             Path parent = binaryContentPath.getParent();
