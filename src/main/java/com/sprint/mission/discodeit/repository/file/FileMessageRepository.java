@@ -17,15 +17,16 @@ import java.util.stream.Stream;
 
 @ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
 @Repository
-//MessageRepository 인터페이스의 파일 기반(File I/O) 구현체
+//MessageRepository의 File 기반 구현체
 public class FileMessageRepository implements MessageRepository {
-    private final Path DIRECTORY;
-    private final String EXTENSION;
+    private final Path DIRECTORY; //메시지 파일 저장 디렉토리
+    private final String EXTENSION; //파일 확장자
 
-    public FileMessageRepository(StorageProperties properties) {
+    public FileMessageRepository(StorageProperties properties) { //생성자. storageProperties를 통해 외부 설정값 주입
         this.EXTENSION = properties.getExtension();
+        // 저장 경로
         this.DIRECTORY = Paths.get(System.getProperty("user.dir"), properties.getRootPath(), Message.class.getSimpleName());
-        if (Files.notExists(DIRECTORY)) {
+        if (Files.notExists(DIRECTORY)) { //디렉토리가 없으면 생성
             try {
                 Files.createDirectories(DIRECTORY);
             }catch (IOException e){
@@ -34,6 +35,7 @@ public class FileMessageRepository implements MessageRepository {
         }
     }
 
+    // UUID->파일 경로 변환
     private Path resolvePath(UUID id){ return DIRECTORY.resolve(id + EXTENSION); }
 
     @Override //메시지 저장
@@ -101,9 +103,9 @@ public class FileMessageRepository implements MessageRepository {
         }
     }
 
-    @Override
+    @Override //채널 기준 메시지 전체 삭제
     public void deleteAllByChannelId(UUID channelId) {
         this.findAllByChannelId(channelId)
-                .forEach(message ->this.deleteAllByChannelId(message.getId()));
+                .forEach(message ->this.deleteById(message.getId()));
     }
 }

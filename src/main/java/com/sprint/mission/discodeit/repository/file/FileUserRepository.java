@@ -17,16 +17,17 @@ import java.util.stream.Stream;
 
 @ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
 @Repository
-//파일(Users.dat)에 사용자 데이터를 저장하는 파일 저장방식 구현체 (프로그램이 종료되어도 데이터가 유지됨)
+//파일(users.dat)에 사용자 데이터를 저장하는 파일 저장방식 구현체 (프로그램이 종료되어도 데이터가 유지됨)
 public class FileUserRepository implements UserRepository {
-    private final Path DIRECTORY;
-    private final String EXTENSION;
+    private final Path DIRECTORY; //User 데이터 저장 디렉토리
+    private final String EXTENSION; //파일 확장자
 
-    public FileUserRepository(StorageProperties properties) {
+    public FileUserRepository(StorageProperties properties) { //생성자. storageProperties에서 roorPath,extension 설정 주입
         this.EXTENSION = properties.getExtension();
+        //저장 경로
         this.DIRECTORY = Paths.get(System.getProperty("user.dir"), properties.getRootPath(), User.class.getSimpleName());
 
-        if (Files.notExists(DIRECTORY)) {
+        if (Files.notExists(DIRECTORY)) { //디렉토리가 없으면 생성
             try {
                 Files.createDirectories(DIRECTORY);
             }catch (IOException e){
@@ -35,9 +36,10 @@ public class FileUserRepository implements UserRepository {
         }
     }
 
+    //UUID->파일 경로 변환
     private Path resolvePath(UUID id){ return DIRECTORY.resolve(id + EXTENSION); }
 
-    @Override //사용자 생성
+    @Override //사용자 저장
     public User save(User user) {
         Path path = resolvePath(user.getId());
        try(
@@ -64,10 +66,17 @@ public class FileUserRepository implements UserRepository {
         return Optional.ofNullable(userNullable);
     }
 
-    @Override
+    @Override //username 으로 조회
     public Optional<User> findByUsername(String username) {
         return this.findAll().stream()
                 .filter(user -> user.getUsername().equals(username))
+                .findFirst();
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return this.findAll().stream()
+                .filter(user -> user.getEmail().equals(email))
                 .findFirst();
     }
 
@@ -108,13 +117,13 @@ public class FileUserRepository implements UserRepository {
         }
     }
 
-    @Override
+    @Override //username 존재 여부 확인. 전체 탐색 O(n)
     public boolean existsByUsername(String username) {
         return this.findAll().stream()
                 .anyMatch(user -> user.getUsername().equals(username));
     }
 
-    @Override
+    @Override //email 존재 여부 확인. 여기 로직은 정상(UserRepository 인터페이스 기준)
     public boolean existsByEmail(String email) {
         return this.findAll().stream()
                 .anyMatch(user -> user.getEmail().equals(email));

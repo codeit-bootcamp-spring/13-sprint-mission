@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 
 @ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
 @Repository
-//ChannelRepository 인터페이스의 파일 기반(File I/o) 구현체
+//ChannelRepository 의 File 기반 구현체
 public class FileChannelRepository implements ChannelRepository {
     private final Path DIRECTORY; //Channel 파일들이 저장될 디렉토리 경로
     private final String EXTENSION; //직렬화 파일 확장자

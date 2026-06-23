@@ -15,16 +15,18 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+//ReadStatus File 기반 Repository 구현체
 @ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
 @Repository
 public class FileReadStatusRepository implements ReadStatusRepository {
-    private final Path DIRECTORY;
-    private final String EXTENSION;
+    private final Path DIRECTORY; //ReadStatus 파일 저장 디렉토리
+    private final String EXTENSION; //파일 확장자
 
-    public FileReadStatusRepository(StorageProperties properties) {
+    public FileReadStatusRepository(StorageProperties properties) { //생성자. storageProperties 기반 설정값 주입
         this.EXTENSION = properties.getExtension();
+        //저장경로
         this.DIRECTORY = Paths.get(System.getProperty("user.dir"), properties.getRootPath(), ReadStatus.class.getSimpleName());
-        if (Files.notExists(DIRECTORY)) {
+        if (Files.notExists(DIRECTORY)) { //디렉토리 없으면 생성
             try {
                 Files.createDirectories(DIRECTORY);
             } catch (IOException e) {
@@ -33,11 +35,12 @@ public class FileReadStatusRepository implements ReadStatusRepository {
         }
     }
 
+    //UUID->파일 경로 변환
     private Path resolvePath(UUID id) {
         return DIRECTORY.resolve(id + EXTENSION);
     }
 
-    @Override
+    @Override //ReadStatus 저장
     public ReadStatus save(ReadStatus readStatus) {
         Path path = resolvePath(readStatus.getId());
         try (
@@ -51,7 +54,7 @@ public class FileReadStatusRepository implements ReadStatusRepository {
         return readStatus;
     }
 
-    @Override
+    @Override //ID로 ReadStatus 조회(역질렬화)
     public Optional<ReadStatus> findById(UUID id) {
         ReadStatus readStatusNullable = null;
         Path path = resolvePath(id);
@@ -68,7 +71,7 @@ public class FileReadStatusRepository implements ReadStatusRepository {
         return Optional.ofNullable(readStatusNullable);
     }
 
-    @Override
+    @Override //특정 사용자 기준 ReadStatus 전체 조회
     public List<ReadStatus> findAllByUserId(UUID userId) {
         try (Stream<Path> paths = Files.list(DIRECTORY)) {
             return paths
@@ -90,7 +93,7 @@ public class FileReadStatusRepository implements ReadStatusRepository {
         }
     }
 
-    @Override
+    @Override //특정 채널 기준 ReadStatus 조회
     public List<ReadStatus> findAllByChannelId(UUID channelId) {
         try {
             return Files.list(DIRECTORY)
@@ -112,13 +115,13 @@ public class FileReadStatusRepository implements ReadStatusRepository {
         }
     }
 
-    @Override
+    @Override //ReadStatus 존재 여부 확인
     public boolean existsById(UUID id) {
         Path path = resolvePath(id);
         return Files.exists(path);
     }
 
-    @Override
+    @Override //ReadStatus 삭제
     public void deleteById(UUID id) {
         Path path = resolvePath(id);
         try {
@@ -128,7 +131,7 @@ public class FileReadStatusRepository implements ReadStatusRepository {
         }
     }
 
-    @Override
+    @Override //특정 채넝의 ReadStatus 전체 삭제
     public void deleteAllByChannelId(UUID channelId) {
         this.findAllByChannelId(channelId)
                 .forEach(readStatus -> this.deleteById(readStatus.getId()));

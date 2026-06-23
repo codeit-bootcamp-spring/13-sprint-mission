@@ -18,17 +18,17 @@ public class User implements Serializable {
     private String username; //사용자이름
     private String email; //사용자 이메일
     private String password; //사용자 비밀번호
-    private UUID profileId;
+    private UUID profileId; //프로필 이미지 ID
 
     public User(String username, String email, String password,UUID profileId) { //만들 때 이름만 받음
         this.id = UUID.randomUUID(); //고유 번호 자동 생성
-        this.createdAt = Instant.now();
+        this.createdAt = Instant.now(); //생성 시각 기록
         //this.createdAt = System.currentTimeMillis(); //지금 시각 (생성 시각 자동기록)
         this.username = username; //사용자 이름 저장
         this.email = email; //사용자 이메일 저장
         this.password = password; //사용자 비밀번호 저장
-        this.profileId = profileId;
-        this.updatedAt = Instant.now();
+        this.profileId = profileId; //프로필 이미지 ID 저장
+        this.updatedAt = Instant.now(); //최초 생성 시 수정 시각도 현재 시각으로 설정
     }
 
     public void update(String newUsername, String newEmail, String newPassword, UUID newProfileId) {

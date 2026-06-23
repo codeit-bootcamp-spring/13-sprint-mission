@@ -15,49 +15,51 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
+//ReadStatusService 구현체
 @Service
 @RequiredArgsConstructor
 public class BasicReadStatusService implements ReadStatusService {
-    private ReadStatusRepository readStatusRepository;
-    private UserRepository userRepository;
-    private ChannelRepository channelRepository;
+    private final ReadStatusRepository readStatusRepository;
+    private final UserRepository userRepository;
+    private final ChannelRepository channelRepository;
 
-    @Override
+    @Override //ReadStatus 생성
     public ReadStatus create(ReadStatusCreateRequest request) {
         UUID userId = request.getUserId();
         UUID channelId = request.getChannelId();
 
-        if (!userRepository.existsById(userId)) {
+        if (!userRepository.existsById(userId)) { //유저 존재 검증
             throw new NoSuchElementException("user with id " + userId + " does not exist");
         }
-        if (!channelRepository.existsById(channelId)) {
+        if (!channelRepository.existsById(channelId)) { //채널 존재 검증
             throw new NoSuchElementException("channel with id " + channelId + " does not exist");
         }
+        //이미 같은 user-channel 관계가 존재하는지 확인
         if (readStatusRepository.findAllByUserId(userId).stream()
                 .anyMatch(readStatus -> readStatus.getChannelId().equals(channelId))) {
-            throw new NoSuchElementException("channel with userId " + userId + " and channelId " + channelId+ " already exists");
+            throw new NoSuchElementException("channel with userId " + userId + " and channelId " + channelId+ " already exists"); //IllegalStateException 참고
         }
         Instant lastReadAt = request.getLastReadAt();
         ReadStatus readStatus = new ReadStatus(userId, channelId, lastReadAt);
         return  readStatusRepository.save(readStatus);
     }
 
-    @Override
+    @Override //단건조회
     public ReadStatus find(UUID readStatusId) {
         return readStatusRepository.findById(readStatusId)
                 .orElseThrow(() -> new NoSuchElementException("readStatus with id " + readStatusId + " does not exist"));
     }
-     @Override
+     @Override //유저 기준 전체 조회
     public List<ReadStatus> findAllByUserId(UUID userId) {
         return readStatusRepository.findAllByUserId(userId).stream().toList();
      }
 
-    @Override
+    @Override //업데이트(미구현 상태)
     public ReadStatus update(UUID readStatusId, ReadStatusUpdateRequest readStatus) {
         return null;
     }
 
-    @Override
+    @Override //삭제
     public void delete(UUID readStatusId) {
         if (!readStatusRepository.existsById(readStatusId)) {
             throw new NoSuchElementException("readStatus with id " + readStatusId + " does not exist");

@@ -19,7 +19,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-//메시지에 대한 비즈니스 로직을 담당하는 service 계층
+//messageservice 구현체
 public class BasicMessageService implements MessageService {
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
@@ -31,13 +31,16 @@ public class BasicMessageService implements MessageService {
         UUID channelId = messageCreateRequest.getChannelId();
         UUID authorId = messageCreateRequest.getAuthorId();
 
+        //채널 존재 검증
         if (!channelRepository.existsById(channelId)) {
             throw new NoSuchElementException("Channel with id "+ channelId + " does not exist");
         }
+        //유저 존재 검증
         if (!userRepository.existsById(authorId)) {
             throw new NoSuchElementException("Author with id "+ authorId + " does not exist");
         }
 
+        //첨부 파일 생성 로직
         List<UUID> attachmentIds = binaryContentCreateRequests.stream()
                 .map(attachmentRequest->{
                     String fileName = attachmentRequest.getFileName();
@@ -78,9 +81,11 @@ public class BasicMessageService implements MessageService {
     public void delete(UUID messageId) {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(()-> new NoSuchElementException("Message with id " + messageId + " not found"));
+        //첨부파일 먼저 삭제
         message.getAttachmentIds()
                 .forEach(binaryContentRepository::deleteById);
 
+        //메시지 삭제
         messageRepository.deleteById(messageId);
     }
 }

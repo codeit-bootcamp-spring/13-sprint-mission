@@ -15,16 +15,18 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+//사용자 온라인 상태(userStatus)를 파일 시스템에 저장/조회/삭제
 @ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
 @Repository
 public class FileUserStatusRepository implements UserStatusRepository {
-    private final Path DIRECTORY;
-    private final String EXTENSION;
+    private final Path DIRECTORY; //userStatus 저장 디렉토리
+    private final String EXTENSION; //파일 확장자
 
-    public FileUserStatusRepository(StorageProperties properties) {
+    public FileUserStatusRepository(StorageProperties properties) { //생성자. storageProperties 기반 설정 주입
         this.EXTENSION = properties.getExtension();
+        //저장 경로
         this.DIRECTORY = Paths.get(System.getProperty("user.dir"), properties.getRootPath(), UserStatus.class.getSimpleName());
-        if (Files.notExists(DIRECTORY)) {
+        if (Files.notExists(DIRECTORY)) { //디렉토리가 없으면 생성
             try {
                 Files.createDirectories(DIRECTORY);
             } catch (IOException e) {
@@ -33,11 +35,12 @@ public class FileUserStatusRepository implements UserStatusRepository {
         }
     }
 
+    //UUID->파일 경로 변환
     private Path resolvePath(UUID id) {
         return DIRECTORY.resolve(id + EXTENSION);
     }
 
-    @Override
+    @Override //UserStatus 저장
     public UserStatus save(UserStatus userStatus) {
         Path path = resolvePath(userStatus.getId());
         try (
@@ -51,7 +54,7 @@ public class FileUserStatusRepository implements UserStatusRepository {
         return userStatus;
     }
 
-    @Override
+    @Override //ID로 UserStatus 조회(역직력화)
     public Optional<UserStatus> findById(UUID id) {
         UserStatus userStatusNullable = null;
         Path path = resolvePath(id);
@@ -68,14 +71,14 @@ public class FileUserStatusRepository implements UserStatusRepository {
         return Optional.ofNullable(userStatusNullable);
     }
 
-    @Override
+    @Override //userId 기준 상태 조회
     public Optional<UserStatus> findByUserId(UUID userId) {
         return findAll().stream()
                 .filter(userStatus -> userStatus.getUserId().equals(userId))
                 .findFirst();
     }
 
-    @Override
+    @Override //전체 UserStatus 조회
     public List<UserStatus> findAll() {
         try (Stream<Path> paths = Files.list(DIRECTORY)) {
             return paths
@@ -96,13 +99,13 @@ public class FileUserStatusRepository implements UserStatusRepository {
         }
     }
 
-    @Override
+    @Override //존재 여부 확인(파일 존재 여부)
     public boolean existsById(UUID id) {
         Path path = resolvePath(id);
         return Files.exists(path);
     }
 
-    @Override
+    @Override //삭제 (파일 삭제)
     public void deleteById(UUID id) {
         Path path = resolvePath(id);
         try {
@@ -112,7 +115,7 @@ public class FileUserStatusRepository implements UserStatusRepository {
         }
     }
 
-    @Override
+    @Override //userId 기준 삭제
     public void deleteByUserId(UUID userId) {
         this.findByUserId(userId)
                 .ifPresent(userStatus -> this.deleteById(userStatus.getId()));
