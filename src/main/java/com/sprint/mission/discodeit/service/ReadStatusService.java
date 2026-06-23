@@ -60,11 +60,9 @@ public class ReadStatusService {
     // 스프린트 미션 4 - 특정 채널 메시지 수신 정보 수정
     public ReadStatusResponse updateLastReadAt(UUID userId, UUID channelId) {
         ReadStatus status = readStatusRepository
-                .findByUserIdAndChannelId(userId, channelId);
-
-        if (status == null) {
-            throw new IllegalArgumentException("읽음 상태를 찾을 수 없습니다.");
-        }
+                .findByUserIdAndChannelId(userId, channelId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("읽음 상태를 찾을 수 없습니다."));
 
         status.update(Instant.now());
 

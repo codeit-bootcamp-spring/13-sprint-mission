@@ -20,6 +20,6 @@ public interface ReadStatusRepository {
 
     List<ReadStatus> findAllByUserId(UUID userId);
 
-    ReadStatus findByUserIdAndChannelId(UUID userId, UUID channelId);
+    Optional<ReadStatus> findByUserIdAndChannelId(UUID userId, UUID channelId);
 
 }

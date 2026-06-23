@@ -10,7 +10,7 @@ public interface BinaryContentRepository {
 
     void save(BinaryContent profileImage);
 
-    Optional<BinaryContent> findById(UUID Id);
+    Optional<BinaryContent> findById(UUID id);
 
     List<BinaryContent> findAll();
 
@@ -20,5 +20,5 @@ public interface BinaryContentRepository {
 
     void delete(UUID id);
 
-    List<BinaryContent> findByUserId(UUID id);
+    List<BinaryContent> findByUserId(UUID userId);
 }

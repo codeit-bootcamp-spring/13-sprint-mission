@@ -1,7 +1,8 @@
 package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import org.springframework.stereotype.Repository;
 
 import java.io.*;
@@ -13,25 +14,22 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public class FileChannelRepository implements ChannelRepository {
+public class FileReadStatusRepository implements ReadStatusRepository {
 
-    // channels 디렉토리 경로
     private static final String DATA_DIRECTORY = "data";
-    private static final String CHANNEL_DIRECTORY = "channels";
+    private static final String READSTATUS_DIRECTORY = "readstatus";
 
     private final Path directory;
 
-    public FileChannelRepository() {
-        this.directory = Paths.get(
-                System.getProperty("user.dir"),
-                DATA_DIRECTORY,
-                CHANNEL_DIRECTORY
-        );
+    public FileReadStatusRepository() {
+        this.directory =
+                Paths.get(System.getProperty("user.dir"),
+                        DATA_DIRECTORY,
+                        READSTATUS_DIRECTORY);
         init(directory);
     }
 
-    public static void init(Path directory) {
-        // 저장할 경로의 파일 초기화
+    private void init(Path directory) {
         if (!Files.exists(directory)) {
             try {
                 Files.createDirectories(directory);
@@ -42,19 +40,19 @@ public class FileChannelRepository implements ChannelRepository {
     }
 
     @Override
-    public void save(Channel channel) {
-        Path filePath = directory.resolve(channel.getId() + ".ser");
+    public void save(ReadStatus readStatus) {
+        Path filePath = directory.resolve(readStatus.getId() + ".ser");
 
         try (FileOutputStream fos = new FileOutputStream(filePath.toFile());
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-            oos.writeObject(channel);
+            oos.writeObject(readStatus);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public Optional<Channel> findById(UUID id) {
+    public Optional<ReadStatus> findById(UUID id) {
         Path filePath = directory.resolve(id + ".ser");
 
         if (!Files.exists(filePath)) {
@@ -64,14 +62,14 @@ public class FileChannelRepository implements ChannelRepository {
         try (FileInputStream fis = new FileInputStream(filePath.toFile());
              ObjectInputStream ois = new ObjectInputStream(fis))
         {
-            return Optional.of((Channel) ois.readObject());
+            return Optional.of((ReadStatus) ois.readObject());
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public List<Channel> findAll() {
+    public List<ReadStatus> findAll() {
         if (!Files.exists(directory)) {
             return List.of();
         }
@@ -81,7 +79,7 @@ public class FileChannelRepository implements ChannelRepository {
                 try (FileInputStream fis = new FileInputStream(path.toFile());
                      ObjectInputStream ois = new ObjectInputStream(fis))
                 {
-                    return (Channel) ois.readObject();
+                    return (ReadStatus) ois.readObject();
                 } catch (IOException | ClassNotFoundException e) {
                     throw new RuntimeException(e);
                 }
@@ -100,5 +98,28 @@ public class FileChannelRepository implements ChannelRepository {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public List<ReadStatus> findAllByChannelId(UUID channelId) {
+        return findAll().stream()
+                .filter(status -> status.getChannelId().equals(channelId))
+                .toList();
+    }
+
+    @Override
+    public List<ReadStatus> findAllByUserId(UUID userId) {
+        return findAll().stream()
+                .filter(status -> status.getUserId().equals(userId))
+                .toList();
+    }
+
+    @Override
+    public Optional<ReadStatus> findByUserIdAndChannelId(UUID userId, UUID channelId) {
+        return findAll().stream()
+                .filter(status ->
+                        status.getUserId().equals(userId)
+                                && status.getChannelId().equals(channelId))
+                .findFirst();
     }
 }

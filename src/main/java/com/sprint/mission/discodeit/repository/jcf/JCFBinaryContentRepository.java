@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-@Repository
 public class JCFBinaryContentRepository implements BinaryContentRepository {
 
     private final List<BinaryContent> data = new ArrayList<>();

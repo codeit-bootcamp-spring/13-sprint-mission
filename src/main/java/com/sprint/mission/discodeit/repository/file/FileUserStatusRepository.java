@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import org.springframework.stereotype.Repository;
 
 import java.io.*;
@@ -13,25 +13,22 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public class FileChannelRepository implements ChannelRepository {
+public class FileUserStatusRepository implements UserStatusRepository {
 
-    // channels 디렉토리 경로
     private static final String DATA_DIRECTORY = "data";
-    private static final String CHANNEL_DIRECTORY = "channels";
+    private static final String USERSTATUS_DIRECTORY = "user_status";
 
     private final Path directory;
 
-    public FileChannelRepository() {
-        this.directory = Paths.get(
-                System.getProperty("user.dir"),
-                DATA_DIRECTORY,
-                CHANNEL_DIRECTORY
-        );
+    public FileUserStatusRepository() {
+        this.directory =
+                Paths.get(System.getProperty("user.dir"),
+                        DATA_DIRECTORY,
+                        USERSTATUS_DIRECTORY);
         init(directory);
     }
 
-    public static void init(Path directory) {
-        // 저장할 경로의 파일 초기화
+    private void init(Path directory) {
         if (!Files.exists(directory)) {
             try {
                 Files.createDirectories(directory);
@@ -42,36 +39,19 @@ public class FileChannelRepository implements ChannelRepository {
     }
 
     @Override
-    public void save(Channel channel) {
-        Path filePath = directory.resolve(channel.getId() + ".ser");
+    public void save(UserStatus userStatus) {
+        Path filePath = directory.resolve(userStatus.getId() + ".ser");
 
         try (FileOutputStream fos = new FileOutputStream(filePath.toFile());
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-            oos.writeObject(channel);
+            oos.writeObject(userStatus);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public Optional<Channel> findById(UUID id) {
-        Path filePath = directory.resolve(id + ".ser");
-
-        if (!Files.exists(filePath)) {
-            return Optional.empty();
-        }
-
-        try (FileInputStream fis = new FileInputStream(filePath.toFile());
-             ObjectInputStream ois = new ObjectInputStream(fis))
-        {
-            return Optional.of((Channel) ois.readObject());
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public List<Channel> findAll() {
+    public List<UserStatus> findAll() {
         if (!Files.exists(directory)) {
             return List.of();
         }
@@ -81,7 +61,7 @@ public class FileChannelRepository implements ChannelRepository {
                 try (FileInputStream fis = new FileInputStream(path.toFile());
                      ObjectInputStream ois = new ObjectInputStream(fis))
                 {
-                    return (Channel) ois.readObject();
+                    return (UserStatus) ois.readObject();
                 } catch (IOException | ClassNotFoundException e) {
                     throw new RuntimeException(e);
                 }
@@ -100,5 +80,29 @@ public class FileChannelRepository implements ChannelRepository {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public Optional<UserStatus> findById(UUID id) {
+        Path filePath = directory.resolve(id + ".ser");
+
+        if (!Files.exists(filePath)) {
+            return Optional.empty();
+        }
+
+        try (FileInputStream fis = new FileInputStream(filePath.toFile());
+             ObjectInputStream ois = new ObjectInputStream(fis))
+        {
+            return Optional.of((UserStatus) ois.readObject());
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Optional<UserStatus> findByUserId(UUID userId) {
+        return findAll().stream()
+                .filter(status -> status.getUserId().equals(userId))
+                .findFirst();
     }
 }

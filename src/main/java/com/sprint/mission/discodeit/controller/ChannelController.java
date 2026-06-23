@@ -19,13 +19,13 @@ public class ChannelController {
     private final ChannelService channelService;
 
     // 공개 채널 생성
-    @RequestMapping(method = RequestMethod.POST)
+    @RequestMapping(value = "/public", method = RequestMethod.POST)
     public ChannelResponse createPublicChannel(@RequestBody CreatePublicChannelRequest request) {
         return channelService.createPublicChannel(request);
     }
 
     // 비공개 채널 생성
-    @RequestMapping(method = RequestMethod.POST)
+    @RequestMapping(value = "/private", method = RequestMethod.POST)
     public ChannelResponse createPrivateChannel(@RequestBody CreatePrivateChannelRequest request) {
         return channelService.createPrivateChannel(request);
     }

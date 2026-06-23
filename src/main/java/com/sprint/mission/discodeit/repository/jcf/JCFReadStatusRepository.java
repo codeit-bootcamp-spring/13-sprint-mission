@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-@Repository
 public class JCFReadStatusRepository implements ReadStatusRepository {
 
     private final List<ReadStatus> data = new ArrayList<>();
@@ -54,11 +53,10 @@ public class JCFReadStatusRepository implements ReadStatusRepository {
     }
 
     @Override
-    public ReadStatus findByUserIdAndChannelId(UUID userId, UUID channelId) {
+    public Optional<ReadStatus> findByUserIdAndChannelId(UUID userId, UUID channelId) {
         return data.stream()
                 .filter(status -> status.getUserId().equals(userId)
                         && status.getChannelId().equals(channelId))
-                .findFirst()
-                .orElse(null);
+                .findFirst();
     }
 }
