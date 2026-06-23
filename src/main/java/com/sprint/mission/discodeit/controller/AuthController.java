@@ -20,7 +20,6 @@ public class AuthController {
 
     private final AuthService as;
 
-    // Todo - 400, 404
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     public ResponseEntity<User> login(
             @RequestBody LoginRequest loginRequest

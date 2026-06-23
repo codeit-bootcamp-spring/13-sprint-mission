@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.input.BinaryContentCreate;
 import com.sprint.mission.discodeit.dto.input.MessageCreateRequest;
-import com.sprint.mission.discodeit.dto.input.UpdateMessageInput;
+import com.sprint.mission.discodeit.dto.input.MessageUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
@@ -66,8 +66,8 @@ public class BasicMessageService implements MessageService {
 
         Message res = new Message(
                 cmi.content(),
-                cmi.authorId(),
                 cmi.channelId(),
+                cmi.authorId(),
                 attsId
         );
 
@@ -81,13 +81,13 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public Message updateMessageData(UUID id, UpdateMessageInput umi){
+    public Message updateMessageData(UUID id, MessageUpdateRequest umi){
         Message msg = mr.findById(id)
                 .orElseThrow(
                         () -> new DiscodeitException("no message by id" + id,"Message",404)
                 );
 
-        msg.setContent(umi.newContext());
+        msg.setContent(umi.newContent());
         msg.setUpdatedAt();
         mr.save(msg);
         return msg;
@@ -100,8 +100,10 @@ public class BasicMessageService implements MessageService {
         );
 
         // delete attribute
-        for (UUID att : msg.getAttachmentIds()){
-               bcr.delete(att);
+        if (!msg.getAttachmentIds().isEmpty()){
+            for (UUID att : msg.getAttachmentIds()){
+                   bcr.delete(att);
+            }
         }
 
         mr.delete(id);

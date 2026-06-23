@@ -47,19 +47,21 @@ public class BasicUserService implements UserService {
     @Override
     public User create(UserCreateRequest cui, Optional<BinaryContentCreate> obcc){
 
-        ur.findByEmail(cui.email())
-                .orElseThrow(() -> new DiscodeitException(
+
+        if (ur.findByEmail(cui.email()).isPresent()) {
+            throw  new DiscodeitException(
                         "User with email " + cui.email() + " aready exsists",
                         "User",
                         400
-                ));
-        ur.findByName(cui.username())
-                .orElseThrow(() -> new DiscodeitException(
-                        "User with username " + cui.username() + " aready exsists",
-                        "User",
-                        400
-                ));
-
+                );
+        }
+        if (ur.findByName(cui.username()).isPresent()) {
+                throw new DiscodeitException(
+                    "User with username " + cui.username() + " aready exsists",
+                    "User",
+                    400
+            );
+        }
 
 
         User user = new User(

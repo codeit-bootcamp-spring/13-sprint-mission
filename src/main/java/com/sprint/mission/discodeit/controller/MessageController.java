@@ -3,7 +3,7 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.input.BinaryContentCreate;
 import com.sprint.mission.discodeit.dto.input.MessageCreateRequest;
-import com.sprint.mission.discodeit.dto.input.UpdateMessageInput;
+import com.sprint.mission.discodeit.dto.input.MessageUpdateRequest;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +31,7 @@ public class MessageController {
 
     @RequestMapping(value = "", method = RequestMethod.GET)
     public ResponseEntity<List<Message>> findMessageByUser(
-            @RequestParam(value = "channelId", required = true) UUID channelId
+            @RequestParam(value = "channelId") UUID channelId
     ){
         List<Message> res =  mss.findallByChannelId(channelId);
         return ResponseEntity.ok(res);
@@ -45,7 +45,7 @@ public class MessageController {
     )
     public ResponseEntity<Message> create(
             @RequestPart(value = "messageCreateRequest") MessageCreateRequest mcr,
-            @RequestPart(value = "attachments") List<MultipartFile> att
+            @RequestPart(value = "attachments", required = false) List<MultipartFile> att
     ) {
         Optional<List<BinaryContentCreate>> lbcc =  Optional.ofNullable(att).map( mp ->
                 mp.stream().map(m -> {
@@ -69,7 +69,7 @@ public class MessageController {
     @RequestMapping(value = "/{messageId}", method = RequestMethod.PATCH)
     public ResponseEntity<Message> modifyMessage(
             @PathVariable UUID messageId,
-            @RequestBody UpdateMessageInput msi
+            @RequestBody MessageUpdateRequest msi
     ) {
         Message res = mss.updateMessageData(messageId, msi);
         return ResponseEntity.ok(res);

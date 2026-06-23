@@ -5,7 +5,6 @@ import com.sprint.mission.discodeit.dto.input.*;
 import com.sprint.mission.discodeit.dto.output.ChannelDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.service.ChannelService;
-import com.sprint.mission.discodeit.service.ReadStatusService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -22,7 +21,6 @@ import java.util.UUID;
 public class ChannelController {
 
     private final ChannelService cns;
-    private final ReadStatusService rss;
 
     @RequestMapping(value = "", method = RequestMethod.GET)
     public ResponseEntity<List<ChannelDto>> findAll(

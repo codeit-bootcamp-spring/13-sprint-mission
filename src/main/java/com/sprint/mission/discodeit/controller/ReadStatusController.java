@@ -26,7 +26,7 @@ public class ReadStatusController {
             method = RequestMethod.GET
     )
     public ResponseEntity<List<ReadStatus>> findAllByUserId(
-            @RequestParam(value = "userId",required = true) UUID userId
+            @RequestParam(value = "userId") UUID userId
     ){
         List<ReadStatus> res = brss.findAllByUserID(userId);
         return ResponseEntity.ok(res);

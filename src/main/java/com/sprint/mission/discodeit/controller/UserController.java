@@ -41,7 +41,7 @@ public class UserController {
     )
     public ResponseEntity<User> create(
             @RequestPart("userCreateRequest") UserCreateRequest uci,
-            @RequestPart(value = "thumbnail", required = false) MultipartFile tmb
+            @RequestPart(value = "profile", required = false) MultipartFile tmb
     ) {
         Optional<BinaryContentCreate> bcc = Optional.ofNullable(tmb).flatMap(this::thumbnailResolver);
         User res = this.bus.create(uci, bcc);
@@ -49,11 +49,11 @@ public class UserController {
     }
 
     @RequestMapping(value = "/{userId}",method = RequestMethod.DELETE)
-    public ResponseEntity.BodyBuilder delete(
+    public ResponseEntity<Object> delete(
             @PathVariable UUID userId
     ){
         this.bus.delete(userId);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
 
@@ -64,8 +64,8 @@ public class UserController {
     )
     public ResponseEntity<User> update(
             @PathVariable UUID userId,
-            @RequestPart UserUpdateRequest uui,
-            @RequestPart (value = "thumbnail", required = false) MultipartFile tmb
+            @RequestPart("userUpdateRequest") UserUpdateRequest uui,
+            @RequestPart (value = "profile", required = false) MultipartFile tmb
     ){
         Optional<BinaryContentCreate> bcc = Optional.ofNullable(tmb).flatMap(this::thumbnailResolver);
         User res = this.bus.update(userId, uui, bcc);

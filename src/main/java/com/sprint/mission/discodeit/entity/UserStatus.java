@@ -21,9 +21,6 @@ public class UserStatus extends BaseEntity {
 
 
     public boolean online(){
-        System.out.println(lastActiveAt);
-        System.out.println(Instant.now());
-        System.out.println(Duration.between(lastActiveAt, Instant.now()).abs().toMillis());
         return timeout > Duration.between(lastActiveAt, Instant.now()).abs().toMillis();
     }
 
