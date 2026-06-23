@@ -1,8 +1,11 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.input.ChannelProfile;
+import com.sprint.mission.discodeit.dto.input.CreatePrivateChannelInput;
+import com.sprint.mission.discodeit.dto.input.CreatePublicChannelInput;
+import com.sprint.mission.discodeit.dto.input.UpdateChannelInput;
 import com.sprint.mission.discodeit.dto.output.ChannelOutput;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.exception.DiscodeitChannelException;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -23,64 +26,55 @@ public class BasicChannelService implements ChannelService {
     private final ReadStatusRepository rsr;
 
     @Override
-    public void createPublicChannel(ChannelProfile cnp){
-        cr.save(new Channel(cnp.getName(), cnp.getDescription(), ChannelType.PUBLIC));
+    public void createPublicChannel(CreatePublicChannelInput cpb){
+        if (cpb.name().isEmpty()) throw new DiscodeitChannelException("channel name is required!",400);
+        cr.save(new Channel(cpb.name(), cpb.description(), ChannelType.PUBLIC));
     }
 
     @Override
-    public void createPrivateChannel(UUID userID){
+    public void createPrivateChannel(CreatePrivateChannelInput cpv){
         Channel cnl = new Channel("", "", ChannelType.PRIVATE);
         cr.save(cnl);
-        rsr.save(new ReadStatus(userID,cnl.getId()));
+        rsr.save(new ReadStatus(UUID.fromString(cpv.id()),cnl.getId()));
     }
 
     @Override
     public ChannelOutput findChannelInfoById(UUID id) {
-        Channel cnl =  cr.findById(id);
-        // 일반 리스트 정렬시, immutableCollectios 예외를 뱉었음.
-        // stream 이나, 새로운 List 구현체를 반환해서 작업할 것.
-        List<Message> msg = mr.findByChannelID(cnl.getId())
-                .stream()
-                .sorted(Comparator.comparing(
-                        (m1) -> m1.getCreatedAt()
-                ))
-                .toList();
-
-        List<UUID> userIDs;
-        if (cnl.getType().equals(ChannelType.PRIVATE)) {
-            userIDs = rsr.findbyChennalID(cnl.getId()).stream()
-                    .map(ReadStatus::getUserID)
-                    .toList();
-        } else {
-            userIDs = List.of();
-        }
-
-        return ChannelOutput.builder()
-                .channelID(cnl.getId())
-                .channelName(cnl.getName())
-                .channelDescription(cnl.getDescription())
-                .lastMsgTime(!msg.isEmpty() ? msg.get(0).getUpdatedAt() : null)
-                .userIDs(userIDs)
-                .build();
+        return toChannelOutput(
+                cr.findById(id)
+                        .orElseThrow(
+                                () -> new DiscodeitChannelException("channel with id " + id + " not found",400)
+                        )
+        );
     }
 
     @Override
     public List<ChannelOutput> findAllByUserID(UUID userID) {
-        List<ReadStatus> rst = rsr.find(c -> c.getUserID().equals(userID));
 
-        return rst.stream()
-                .map(rs -> findChannelInfoById(rs.getChannelID()))
+        List<UUID> cnlIDinReadStatus = rsr.find(c -> c.getUserID().equals(userID))
+                .stream().map(ReadStatus::getChannelID).toList();
+
+        return cr.findAll().stream()
+                .filter(
+                        c -> c.getType().equals(ChannelType.PUBLIC)
+                                || cnlIDinReadStatus.contains(c.getId())
+                )
+                .map(this::toChannelOutput)
                 .toList();
     }
 
     @Override
-    public void updateChannelInfo(UUID id, ChannelProfile cnp) throws RuntimeException {
-        Channel cnl = cr.find(c -> c.getId().equals(id)).get(0);
+    public void updateChannelInfo(UpdateChannelInput uci) {
+        Channel cnl = cr.findById(uci.idToUUID()).orElseThrow(
+                () -> new DiscodeitChannelException("channel with id " + uci.idToUUID() + "not found", 400)
+        );
 
-        if (cnl.getType().equals(ChannelType.PRIVATE)) throw new RuntimeException("Private channel");
+        if (cnl.getType().equals(ChannelType.PRIVATE)) {
+            throw new DiscodeitChannelException("channel with id " + uci.idToUUID() + " is Private channel",400);
+        }
 
-        cnl.setName(cnp.getName());
-        cnl.setDescription(cnp.getDescription());
+        if (!uci.name().isEmpty()) cnl.setName(uci.name());
+        if (!uci.description().isEmpty()) cnl.setDescription(uci.description());
         cr.save(cnl);
     }
 
@@ -91,5 +85,31 @@ public class BasicChannelService implements ChannelService {
                 .forEach(ms -> mr.delete(ms.getId()));
         rsr.find(r -> r.getChannelID().equals(id))
                 .forEach(rs -> rsr.delete(rs.getId()));
+    }
+
+    private ChannelOutput toChannelOutput(Channel chn){
+        List<UUID> userIDs;
+
+        List<Message> msg = mr.findByChannelID(chn.getId())
+                .stream()
+                .sorted(Comparator.comparing(BaseEntity::getCreatedAt))
+                .toList();
+
+        if (chn.getType().equals(ChannelType.PRIVATE)) {
+            userIDs = rsr.findbyChennalID(chn.getId()).stream()
+                    .map(ReadStatus::getUserID)
+                    .toList();
+        } else {
+            userIDs = List.of();
+        }
+
+
+        return ChannelOutput.builder()
+                .channelID(chn.getId())
+                .channelName(chn.getName())
+                .channelDescription(chn.getDescription())
+                .lastMsgTime(!msg.isEmpty() ? msg.get(0).getUpdatedAt() : null)
+                .userIDs(userIDs)
+                .build();
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -36,9 +37,8 @@ public class JCFChannelRepository implements ChannelRepository {
     }
 
     @Override
-    public Channel findById(UUID id) {
-        List<Channel> res = find(cnl -> cnl.getId().equals(id));
-        return res.isEmpty() ? null : res.get(0);
+    public Optional<Channel> findById(UUID id) {
+        return find(cnl -> cnl.getId().equals(id)).stream().findFirst();
     }
 
     @Override

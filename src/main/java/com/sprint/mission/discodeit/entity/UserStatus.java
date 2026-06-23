@@ -19,9 +19,13 @@ import java.util.UUID;
 public class UserStatus extends BaseEntity {
     private final UUID userID;
     private Instant lastLogin;
+    private final Integer timeout = 5 * 60 * 1000;
 
     public boolean online(){
-        return 5 > Duration.between(lastLogin, Instant.now()).abs().toMillis();
+        System.out.println(lastLogin);
+        System.out.println(Instant.now());
+        System.out.println(Duration.between(lastLogin, Instant.now()).abs().toMillis());
+        return timeout > Duration.between(lastLogin, Instant.now()).abs().toMillis();
     }
 
 }

@@ -6,10 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Predicate;
 
 
@@ -33,9 +30,8 @@ public class JCFReadStatusRepository implements ReadStatusRepository {
     }
 
     @Override
-    public ReadStatus findByID(UUID id){
-        List<ReadStatus> res = find(rs -> rs.getId().equals(id));
-        return res.isEmpty() ? null : res.get(0);
+    public Optional<ReadStatus> findByID(UUID id){
+        return find(rs -> rs.getId().equals(id)).stream().findFirst();
     }
 
     @Override

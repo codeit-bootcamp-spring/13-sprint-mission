@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit;
+package com.sprint.mission.discodeit.config;
 
 
 import lombok.Getter;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @Setter
 @Component
 @ConfigurationProperties(prefix = "discodeit.repository")
-public class DiscodeitRepository {
+public class DiscodeitRepoConfig {
     private String type;
     private String path;
 }

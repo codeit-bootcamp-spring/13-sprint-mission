@@ -1,12 +1,14 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.input.Login;
-import com.sprint.mission.discodeit.dto.input.UserProfile;
+import com.sprint.mission.discodeit.dto.input.CreateUserInput;
+import com.sprint.mission.discodeit.dto.input.UpdateUserInput;
 import com.sprint.mission.discodeit.dto.output.BinaryObjectOutput;
+import com.sprint.mission.discodeit.dto.output.UserDto;
 import com.sprint.mission.discodeit.dto.output.UserOutput;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.DiscodeitUserException;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
@@ -30,111 +32,131 @@ public class BasicUserService implements UserService {
     private final BinaryContentRepository bcr;
 
     @Override
-    public void createUser(Login lgn, UserProfile upf){
-        boolean check =  fur.findByEmail(lgn.getEmail()) != null
-                || fur.find(u -> u.getName().equals(upf.getName())) != null;
+    public void createUser(CreateUserInput cui){
 
-        if (!check){
-            log.debug("User create cancel - same name or email detached.");
-            return;
-        }
+        fur.findByEmail(cui.getEmail()).orElseThrow(() -> new DiscodeitUserException("Email already exists",400));
+        fur.findByName(cui.getName()).orElseThrow(() -> new DiscodeitUserException("Name already exists",400));
 
         User user = User.builder()
-                .email(lgn.getEmail())
-                .password(lgn.getPassword())
-                .name(upf.getName())
+                .email(cui.getEmail())
+                .password(cui.getPassword())
+                .name(cui.getName())
+                .profileID(cui.getThumbnail())
                 .build();
-        fur.save(user);
 
+        if (cui.getThumbnail() != null){
+            BinaryContent bc = BinaryContent.builder()
+                    .authorID(user.getId())
+                    .contentID(cui.getThumbnail())
+                    .build();
+            bcr.save(bc);
+            user.setProfileID(bc.getId());
+            log.debug("\n >> " + cui.getThumbnail().toString() + " Thumbnail created");
+        }
+
+        fur.save(user);
+        log.debug("\n >> " + user.getId().toString() + " User created");
 
         UserStatus ust = UserStatus.builder()
                 .userID(user.getId())
                 .lastLogin(Instant.now())
                 .build();
         usr.save(ust);
-
-
-        if (upf.getThumbnail() != null){
-            bcr.save(
-                    BinaryContent.builder()
-                            .authorID(user.getId())
-                            .contentID(upf.getThumbnail())
-                            .build()
-            );
-        }
+        log.debug("\n >> " + ust.getId().toString() + " UserStatus created");
     }
 
     @Override
     public UserOutput getUserById(UUID id){
-        try {
-            User user = fur.findByID(id);
-            UserStatus ust = usr.findByUserID(user.getId());
+        User user = fur.findByID(id).orElseThrow(() -> new DiscodeitUserException("User by id " + id  + " not found",400));
+        UserStatus ust = usr.findByUserID(id).orElseThrow(
+                () -> new DiscodeitUserException("UserStatus by id " + id + " not found",400)
+        );
 
-            return UserOutput.builder()
-                    .name(user.getName())
-                    .email(user.getEmail())
-                    .online(ust.online())
-                    .build();
+        return UserOutput.builder()
+                .name(user.getName())
+                .email(user.getEmail())
+                .online(ust.online())
+                .build();
 
-        } catch (IndexOutOfBoundsException e) {
-            log.warn(e.getMessage());
-            return null;
-        }
     }
 
     @Override
-    public List<UserOutput> getUserList(){
-        return fur.find(((c) -> true))
+    public List<UserDto> getUserList(){
+        return fur.findAll()
                 .stream()
-                .map(u -> UserOutput.builder()
-                        .name(u.getName())
-                        .email(u.getEmail())
-                        .online(usr.findByUserID(u.getId()).online())
-                        .build())
+                .map(u -> {
+                    UserStatus us =  usr.findByUserID(u.getId()).orElse(null);
+                    return UserDto.builder()
+                            .id(u.getId())
+                            .createdAt(u.getCreatedAt())
+                            .updatedAt(u.getUpdatedAt())
+                            .username(u.getName())
+                            .email(u.getEmail())
+                            .online(us != null && us.online())
+                            .profileId(
+                                    u.getProfileID()
+                            )
+                            .build();
+                })
                 .toList();
     }
 
     @Override
     public BinaryObjectOutput getUserThumbnail(UUID id){
-        BinaryContent bct = bcr.findByID(id);
+        BinaryContent bct = bcr.findByID(id).orElseThrow(
+                () -> new DiscodeitUserException("Thumbnail not found",400)
+        );
         return BinaryObjectOutput.builder()
                 .contentID(bct.getContentID())
                 .build();
     }
 
+
     @Override
-    public void updateProfileInfo(UUID id, String name, String pw){
+    public void update(UpdateUserInput uui){
         // name duplicate check.
-        if (!fur.find(c -> c.getName().equals(name)).isEmpty()) return;
+        if (fur.findByName(uui.name()).isPresent()) {
+            throw new DiscodeitUserException("Not exist User on Request",400);
+        }
 
-        User user = fur.find(c -> c.getId().equals(id)).get(0);
-        user.setName(name);
-        user.setPassword(pw);
-        user.setUpdatedAt();
-
+        User user = updateUserProfile(uui.id(), uui.name(), uui.pw());
+        if (uui.thumbnail() != null) updateThumbnail(uui.id(),uui.thumbnail());
         fur.save(user);
     }
 
-    @Override
-    public void updateProfileImage(UUID id, UserProfile upf) {
-        // check user exist.
-        if (!fur.find(c -> c.getId().equals(id)).isEmpty()) return;
+    private User updateUserProfile(UUID id, String name, String password){
+        User user = fur.findByID(id).orElseThrow(
+                () -> new DiscodeitUserException("User not found",400)
+        );
+        if (name != null) user.setName(name);
+        if (password != null) user.setPassword(password);
+        return user;
+    }
 
-        bcr.delete(bcr.findByAuthorID(id).get(0).getId());
+    private void updateThumbnail(UUID authorID, UUID thumbID){
+        if (bcr.findByID(authorID).isEmpty()) throw new DiscodeitUserException("Thumbnail not existed",400);
+        bcr.delete(authorID);
         bcr.save(
                 BinaryContent.builder()
-                        .contentID(upf.getThumbnail())
-                        .authorID(id)
+                        .authorID(authorID)
+                        .contentID(thumbID)
                         .build()
         );
     }
 
     @Override
-    public void deleteUser(UUID id){
+    public void delete(UUID id){
+        User user = fur.findByID(id).orElseThrow(
+                () -> new DiscodeitUserException("User not found",400)
+        );
+        UserStatus us = usr.findByUserID(id).orElseThrow(
+                () -> new DiscodeitUserException("UserStatus not found",400)
+        );
+
         fur.delete(id);
-        usr.delete(usr.findByUserID(id).getId());
-        if (!bcr.findByAuthorID(id).isEmpty()) {
-            bcr.delete(bcr.findByAuthorID(id).get(0).getId());
+        usr.delete(us.getId());
+        if (user.getProfileID() != null) {
+            bcr.delete(user.getProfileID());
         }
     }
 }

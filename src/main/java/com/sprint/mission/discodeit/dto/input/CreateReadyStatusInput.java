@@ -1,15 +1,8 @@
 package com.sprint.mission.discodeit.dto.input;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.UUID;
 
-@Setter
-@Getter
-@Builder
-public class CreateReadyStatusInput {
-    UUID userID;
-    UUID channelID;
-}
+public record CreateReadyStatusInput (
+        UUID userID,
+        UUID channelID
+){}

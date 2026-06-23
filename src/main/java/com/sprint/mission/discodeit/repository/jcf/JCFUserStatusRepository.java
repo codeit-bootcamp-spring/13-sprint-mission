@@ -6,10 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Predicate;
 
 
@@ -35,15 +32,13 @@ public class JCFUserStatusRepository implements UserStatusRepository {
     }
 
     @Override
-    public UserStatus findByID(UUID id) {
-        List<UserStatus> res = find(us -> us.getId().equals(id));
-        return res.isEmpty() ? null : res.get(0);
+    public Optional<UserStatus> findByID(UUID id) {
+        return find(us -> us.getId().equals(id)).stream().findFirst();
     }
 
     @Override
-    public UserStatus findByUserID(UUID userID) {
-        List<UserStatus> res = find(us -> us.getUserID().equals(userID));
-        return res.isEmpty() ? null : res.get(0);
+    public Optional<UserStatus> findByUserID(UUID userID) {
+        return find(us -> us.getUserID().equals(userID)).stream().findFirst();
     }
 
     @Override

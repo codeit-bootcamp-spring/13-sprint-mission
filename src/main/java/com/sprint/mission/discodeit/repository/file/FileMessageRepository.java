@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.sprint.mission.discodeit.DiscodeitConfig;
+import com.sprint.mission.discodeit.config.DiscodeitConfig;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ public class FileMessageRepository extends FileBaseRepository implements Message
 
     @Override
     public List<Message> find(Predicate<Message> fn){
-        return rawFind(fn,dic.getFilePath().resolve("message"));
+        return read(fn,dic.getFilePath().resolve("message"));
     }
 
     @Override
