@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,9 +24,9 @@ public class ReadStatusService {
         }
 
         ReadStatus readStatus = new ReadStatus(
-                        UUID.randomUUID(),
                         request.getUserId(),
-                        request.getChannelId()
+                        request.getChannelId(),
+                        Instant.now()
         );
         readStatusRepository.save(readStatus);
 
@@ -46,11 +47,28 @@ public class ReadStatusService {
                 .toList();
     }
 
-    public ReadStatusResponse update(UpdateReadStatusRequest request) {
-        ReadStatus status = readStatusRepository.findById(request.getId())
+    public ReadStatusResponse update(UUID id, UpdateReadStatusRequest request) {
+        ReadStatus status = readStatusRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("읽음 상태를 찾을 수 없습니다."));
 
-        status.updateLastSeen(); readStatusRepository.save(status);
+        status.update(request.getLastReadAt());
+        readStatusRepository.save(status);
+
+        return ReadStatusResponse.from(status);
+    }
+
+    // 스프린트 미션 4 - 특정 채널 메시지 수신 정보 수정
+    public ReadStatusResponse updateLastReadAt(UUID userId, UUID channelId) {
+        ReadStatus status = readStatusRepository
+                .findByUserIdAndChannelId(userId, channelId);
+
+        if (status == null) {
+            throw new IllegalArgumentException("읽음 상태를 찾을 수 없습니다.");
+        }
+
+        status.update(Instant.now());
+
+        readStatusRepository.save(status);
 
         return ReadStatusResponse.from(status);
     }

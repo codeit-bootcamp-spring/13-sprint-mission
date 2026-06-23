@@ -58,8 +58,7 @@ public class BasicChannelService implements ChannelService {
 
         for (UUID userId : request.getUserIds()) {
             ReadStatus readStatus = new ReadStatus(
-                            UUID.randomUUID(),
-                            userId, channel.getId()
+                            userId, channel.getId(), Instant.now()
             );
             readStatusRepository.save(readStatus);
         }
