@@ -12,7 +12,7 @@ public class ReadStatus extends EntityRoot implements Serializable {
     //필드
     private final UUID userId;
     private final UUID channelId;
-    private Instant lastAccessTime;
+    private Instant lastReadAt;
 
     //ctor
     public ReadStatus(UUID userId, UUID channelId) {
@@ -20,12 +20,12 @@ public class ReadStatus extends EntityRoot implements Serializable {
 
         this.userId = userId;
         this.channelId = channelId;
-        this.lastAccessTime = Instant.now();
+        this.lastReadAt = Instant.now();
     }
 
     //updateMethod
-    public void updateLastAccessTime() {
-        this.lastAccessTime = Instant.now();
+    public void updateLastReadAt() {
+        this.lastReadAt = Instant.now();
 
         updateUpdatedAt();
     }

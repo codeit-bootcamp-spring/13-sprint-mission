@@ -77,9 +77,9 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public MessageUpdateResponse updateMessage(MessageUpdateRequest request, List<MultipartFile> files) {
+    public Message updateMessage(UUID messageId, MessageUpdateRequest request, List<MultipartFile> files) {
         //메시지 검색
-        Message messageTemp = messageRepository.findMessageById(request.messageId())
+        Message messageTemp = messageRepository.findMessageById(messageId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 메시지는 데이터파일에 존재하지 않습니다."));
 
         List<UUID> binaryContentIdList = messageTemp.getAttachmentIds();
@@ -114,13 +114,13 @@ public class BasicMessageService implements MessageService {
             binaryContentIdList = newBinaryContentIdList;
         }
 
-        log.info("메시지: {}가 수정됨.\n->{}", messageTemp.getContent(), request.content());
+        log.info("메시지: {}가 수정됨.\n->{}", messageTemp.getContent(), request.newContent());
 
         //메시지 업데이트
-        messageTemp.updateMessage(request.content(), binaryContentIdList);
+        messageTemp.updateMessage(request.newContent(), binaryContentIdList);
         messageRepository.save();
 
-        return MessageUpdateResponse.from(messageTemp);
+        return messageTemp;
     }
 
     @Override

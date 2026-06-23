@@ -5,8 +5,13 @@ import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.MessageUpdateResponse;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.service.MessageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,44 +21,56 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/message")
+@RequestMapping("/api/messages")
+@Tag(name = "Message", description = "Message API")
 public class MessageController {
 
     private final MessageService messageService;
 
     //메시지 생성
+    @Operation(summary = "Message 생성")
+    @ApiResponse(responseCode = "201", description = "Message가 성공적으로 생성됨")
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity<Void> createMessage(@Valid @ModelAttribute MessageCreateRequest request,
-                                              @RequestParam(value = "files", required = false) List<MultipartFile> files) {
+    public ResponseEntity<Message> createMessage(@Valid @ModelAttribute MessageCreateRequest request,
+                                                 @RequestParam(value = "files", required = false) List<MultipartFile> files) {
 
-        messageService.createMessage(request, files);
+        Message createdMessage = messageService.createMessage(request, files);
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdMessage);
     }
 
     //특정 채널의 메시지 목록 조회
-    @RequestMapping(value = "/{channelId}", method = RequestMethod.GET)
-    public ResponseEntity<List<Message>> findMessagesByChannel(@PathVariable UUID channelId) {
+    @Operation(summary = "Channel의 Message 목록 조회")
+    @ApiResponse(responseCode = "200", description = "Message 목록 조회 성공")
+    @RequestMapping(method = RequestMethod.GET)
+    public ResponseEntity<List<Message>> findAllByChannelId(@Parameter(description = "조회할 Channel ID", required = true)
+                                                            @RequestParam UUID channelId) {
         List<Message> responseList = messageService.findAllByChannelId(channelId);
 
         return ResponseEntity.ok().body(responseList);
     }
 
     //메시지 수정
-    @RequestMapping(value = "/{id}", method = RequestMethod.PATCH)
-    public ResponseEntity<MessageUpdateResponse> updateMessage(@PathVariable UUID id,
-                                                               @Valid @ModelAttribute MessageUpdateRequest request,
-                                                               @RequestParam(value = "files", required = false) List<MultipartFile> files) {
+    @Operation(summary = "Message 내용 수정")
+    @ApiResponse(responseCode = "200", description = "Message가 성공적으로 수정됨")
+    @RequestMapping(value = "/{messageId}", method = RequestMethod.PATCH)
+    public ResponseEntity<Message> updateMessage(@Parameter(description = "수정할 Message ID", required = true)
+                                                 @PathVariable UUID messageId,
+                                                 @Valid @ModelAttribute MessageUpdateRequest request,
+                                                 @RequestParam(value = "files", required = false) List<MultipartFile> files) {
 
-        MessageUpdateResponse response = messageService.updateMessage(request, files);
+        Message response = messageService.updateMessage(messageId, request, files);
 
         return ResponseEntity.ok().body(response);
     }
 
     //메시지 삭제
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
-    public ResponseEntity<Void> deleteMessage(@PathVariable UUID id) {
-         messageService.deleteMessage(id);
+    @Operation(summary = "Message 삭제")
+    @ApiResponse(responseCode = "204", description = "Message가 성공적으로 삭제됨")
+    @RequestMapping(value = "/{messageId}", method = RequestMethod.DELETE)
+    public ResponseEntity<Void> deleteMessage(@Parameter(description = "삭제할 Message ID", required = true)
+                                              @PathVariable UUID messageId) {
+        messageService.deleteMessage(messageId);
 
         return ResponseEntity.noContent().build();
     }

@@ -4,7 +4,6 @@ import com.sprint.mission.discodeit.dto.request.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ReadStatusUpdateResponse;
 import com.sprint.mission.discodeit.entity.ReadStatus;
-import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.DuplicateResourceException;
 import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -15,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -65,16 +63,16 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    public ReadStatusUpdateResponse updateReadStatus(ReadStatusUpdateRequest request) {
+    public ReadStatus updateReadStatus(UUID readStatusId, ReadStatusUpdateRequest request) {
         //ReadStatus 검색
-        ReadStatus readStatusTemp = readStatusRepository.findReadStatusById(request.readStatusId())
+        ReadStatus readStatusTemp = readStatusRepository.findReadStatusById(readStatusId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 ReadStatus는 데이터파일에 존재하지 않습니다."));
 
         //ReadStatus 업데이트
-        readStatusTemp.updateLastAccessTime();
+        readStatusTemp.updateLastReadAt();
         readStatusRepository.save();
 
-        return ReadStatusUpdateResponse.from(readStatusTemp);
+        return readStatusTemp;
     }
 
     @Override

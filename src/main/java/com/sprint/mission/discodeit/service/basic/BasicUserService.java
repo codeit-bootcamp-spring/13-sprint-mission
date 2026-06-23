@@ -35,7 +35,7 @@ public class BasicUserService implements UserService {
     @Override
     public User createUser(UserCreateRequest request, MultipartFile file) {
         //중복된 이름, 이메일로 생성 요청을 한 경우 검증
-        validateNameExists(request.name());
+        validateNameExists(request.username());
         validateEmailExists(request.email());
 
         UUID binaryContentId = null;
@@ -58,7 +58,7 @@ public class BasicUserService implements UserService {
         }
 
         //유저 생성
-        User user = new User(request.name(), request.email(), request.password(), binaryContentId);
+        User user = new User(request.username(), request.email(), request.password(), binaryContentId);
         userRepository.createUser(user);
         log.info("유저: {}가 생성됨.", user.getName());
 
@@ -97,14 +97,14 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public UserUpdateResponse updateUser(UserUpdateRequest request, MultipartFile file) {
+    public User updateUser(UUID userId, UserUpdateRequest request, MultipartFile file) {
         //유저 검색
-        User userTemp = userRepository.findUserById(request.userId())
+        User userTemp = userRepository.findUserById(userId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         //중복된 이름, 이메일로 수정 요청을 한 경우 검증
-        if (!userTemp.getName().equals(request.newName())) {
-            validateNameExists(request.newName());
+        if (!userTemp.getName().equals(request.newUsername())) {
+            validateNameExists(request.newUsername());
         }
         if (!userTemp.getEmail().equals(request.newEmail())) {
             validateEmailExists(request.newEmail());
@@ -135,13 +135,13 @@ public class BasicUserService implements UserService {
         }
 
         log.info("유저: {}가 수정됨.", userTemp.getName());
-        log.info("name: {}, email: {}, password: {}\n-> name: {}, email: {}, password: {}", userTemp.getName(), userTemp.getEmail(), userTemp.getPassword(), request.newName(), request.newEmail(), request.newPassword());
+        log.info("name: {}, email: {}, password: {}\n-> name: {}, email: {}, password: {}", userTemp.getName(), userTemp.getEmail(), userTemp.getPassword(), request.newUsername(), request.newEmail(), request.newPassword());
 
         //유저 업데이트
-        userTemp.updateUser(request.newName(), request.newEmail(), request.newPassword(), binaryContentId);
+        userTemp.updateUser(request.newUsername(), request.newEmail(), request.newPassword(), binaryContentId);
         userRepository.save();
 
-        return UserUpdateResponse.from(userTemp);
+        return userTemp;
     }
 
     @Override

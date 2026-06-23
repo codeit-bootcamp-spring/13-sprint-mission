@@ -3,7 +3,6 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.UserStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserStatusUpdateResponse;
-import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.DuplicateResourceException;
 import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
@@ -14,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -62,29 +60,16 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public UserStatusUpdateResponse updateUserStatus(UserStatusUpdateRequest request) {
-        //UserStatus 검색
-        UserStatus userStatusTemp = userStatusRepository.findUserStatusById(request.userStatusId())
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
-
-        //UserStatus 업데이트
-        userStatusTemp.updateLastAccessTime();
-        userStatusRepository.save();
-
-        return UserStatusUpdateResponse.from(userStatusTemp);
-    }
-
-    @Override
-    public UserStatusUpdateResponse updateUserStatusByUserId(UUID userId) {
+    public UserStatus updateUserStatusByUserId(UUID userId, UserStatusUpdateRequest request) {
         //UserStatus 검색
         UserStatus userStatusTemp = userStatusRepository.findUserStatusByUserId(userId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
 
         //UserStatus 업데이트
-        userStatusTemp.updateLastAccessTime();
+        userStatusTemp.updateLastActiveAt();
         userStatusRepository.save();
 
-        return UserStatusUpdateResponse.from(userStatusTemp);
+        return userStatusTemp;
     }
 
     @Override

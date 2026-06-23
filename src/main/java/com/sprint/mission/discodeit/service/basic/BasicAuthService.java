@@ -11,8 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -26,15 +24,15 @@ public class BasicAuthService implements AuthService {
     @Override
     public User login(LoginRequest request) {
         //유저 검색
-        User userTemp = userRepository.findUserByNameAndPassword(request.name(), request.password())
+        User userTemp = userRepository.findUserByNameAndPassword(request.username(), request.password())
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         //유저 상태 검색 및 마지막 접속 시간 업데이트
         UserStatus userStatus = userStatusRepository.findUserStatusByUserId(userTemp.getId())
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
-        userStatus.updateLastAccessTime();
+        userStatus.updateLastActiveAt();
 
-        log.info("유저: {} 로그인 승인.", request.name());
+        log.info("유저: {} 로그인 승인.", request.username());
 
         return userTemp;
     }

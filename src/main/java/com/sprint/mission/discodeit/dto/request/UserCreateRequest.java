@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 public record UserCreateRequest(
 
         @NotBlank(message = "name은 비워둘 수 없습니다.")
-        String name,
+        String username,
 
         @NotBlank(message = "email은 비워둘 수 없습니다.")
         String email,
