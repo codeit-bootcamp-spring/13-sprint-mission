@@ -66,10 +66,9 @@ public class FileUserRepository implements UserRepository {
     @Override
     public void delete(UUID id) {
         users.removeIf(user -> user.getId().equals(id));
-        saveToFile();
     }
 
-    private void saveToFile() {
+    public void saveToFile() {
         try {
             Path parent = userPath.getParent();
 
@@ -80,7 +79,8 @@ public class FileUserRepository implements UserRepository {
             try (ObjectOutputStream oos = new ObjectOutputStream(
                     new BufferedOutputStream(Files.newOutputStream(userPath)))) {
 
-                oos.writeObject(users);
+                oos.reset();
+                oos.writeObject(new ArrayList<>(users));
             }
 
         } catch (IOException e) {

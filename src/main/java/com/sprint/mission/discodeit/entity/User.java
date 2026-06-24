@@ -10,7 +10,7 @@ public class User extends BaseEntity implements Serializable {
 
     private String userName;
     private String email;
-    private String passWord;
+    private String password;
     private UUID profileId;
 
     public User(String userName, String email, String passWord) {
@@ -58,13 +58,13 @@ public class User extends BaseEntity implements Serializable {
         if (passWord == null || passWord.isBlank()) {
             throw new IllegalArgumentException("비밀번호 입력 필수입니다.");
         }
-        this.passWord = passWord;
+        this.password = passWord;
     }
 
     public void updatePassWord(String passWord) {
         validatePassWord(passWord);
 
-        this.passWord = passWord;
+        this.password = passWord;
         setUpdatedAt();
     }
 
@@ -73,7 +73,7 @@ public class User extends BaseEntity implements Serializable {
         return "등록 정보: " +
                 "이름 = '" + userName + '\'' +
                 ", email = '" + email + '\'' +
-                ", passWord = '" + passWord + '\'';
+                ", passWord = '" + password + '\'';
     }
 
 }

@@ -9,7 +9,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 @Repository
-//@ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
+@ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
 public class FileBinaryContentRepository implements BinaryContentRepository {
 
     private final List<BinaryContent> binaryContents = new ArrayList<>();
@@ -86,7 +86,7 @@ public class FileBinaryContentRepository implements BinaryContentRepository {
             try (ObjectOutputStream oos = new ObjectOutputStream(
                     new BufferedOutputStream(Files.newOutputStream(binaryContentPath)))) {
 
-                oos.writeObject(binaryContents);
+                oos.writeObject(new ArrayList<>(binaryContents));
                 System.out.println("binaryContents saved size = " + binaryContents.size());
                 System.out.println("binaryContentPath = " + binaryContentPath.toAbsolutePath());
             }

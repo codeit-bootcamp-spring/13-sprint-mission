@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
+import com.sprint.mission.discodeit.repository.file.*;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.*;
 import org.springframework.stereotype.*;
@@ -54,8 +55,6 @@ public class BasicUserService implements UserService {
                 request.password()
         );
 
-        repository.create(user);
-
         BinaryContent profile = null;
         MultipartFile profileImage = request.profileImage();
 
@@ -71,9 +70,16 @@ public class BasicUserService implements UserService {
 
                 binaryContentRepository.create(profile);
 
+                user.updateProfileId(profile.getId());
+
             } catch (IOException e) {
                 throw new RuntimeException("프로필 이미지 파일을 읽는 중 오류가 발생했습니다.", e);
             }
+        }
+        repository.create(user);
+
+        if (repository instanceof FileUserRepository) {
+            ((FileUserRepository) repository).saveToFile();
         }
 
         UserStatus userStatus = new UserStatus(user.getId());
