@@ -62,7 +62,24 @@ public class BasicMessageService implements MessageService {
 
         repository.create(message);
 
-        return MessageResponse.from(message, List.of());
+        List<BinaryContent> attachments = new ArrayList<>();
+
+        if (request.attachments() != null) {
+            for (MessageRequest.AttachmentRequest attachmentRequest : request.attachments()) {
+                BinaryContent binaryContent = new BinaryContent(
+                        null,
+                        message.getId(),
+                        attachmentRequest.contentType(),
+                        attachmentRequest.data(),
+                        attachmentRequest.fileName()
+                );
+
+                binaryContentRepository.create(binaryContent);
+                attachments.add(binaryContent);
+            }
+        }
+
+        return MessageResponse.from(message, attachments);
     }
 
     @Override
@@ -95,6 +112,10 @@ public class BasicMessageService implements MessageService {
             throw new IllegalArgumentException("존재하지 않는 메세지 ID입니다.");
         }
 
+        if (request == null) {
+            throw new IllegalArgumentException("메시지 수정 요청은 필수입니다.");
+        }
+
         Message message = repository.find(id);
 
         message.updateContent(request.content());
@@ -116,6 +137,12 @@ public class BasicMessageService implements MessageService {
         if (!repository.exists(id)) {
             throw new IllegalArgumentException("존재하지 않는 메세지 ID입니다.");
         }
+        List<BinaryContent> attachments =
+                binaryContentRepository.findAllByMessageId(id);
+
+        attachments.forEach(
+                attachment -> binaryContentRepository.delete(attachment.getId())
+        );
         repository.delete(id);
     }
 }

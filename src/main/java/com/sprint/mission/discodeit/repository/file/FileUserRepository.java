@@ -105,4 +105,34 @@ public class FileUserRepository implements UserRepository {
             throw new RuntimeException("유저 파일 불러오기 중 오류가 발생했습니다.", e);
         }
     }
+
+    @Override
+    public User findByEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+
+        for (User user : users) {
+            if (user.getEmail().equals(email)) {
+                return user;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public User findByUserName(String userName) {
+        if(userName == null || userName.isBlank()) {
+            return null;
+        }
+
+        for (User user : users) {
+            if (user.getUserName().equals(userName)) {
+                return user;
+            }
+        }
+
+        return null;
+    }
 }

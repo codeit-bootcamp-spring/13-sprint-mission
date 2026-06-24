@@ -6,9 +6,11 @@ import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
 import lombok.*;
+import org.springframework.stereotype.*;
 
 import java.util.*;
 
+@Service
 @RequiredArgsConstructor
 public class BasicReadStatusService implements ReadStatusService {
 
@@ -93,7 +95,7 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    public void update(UUID id, UpdateReadStatusRequest request) {
+    public ReadStatusResponse update(UUID id, UpdateReadStatusRequest request) {
         if (id == null) {
             throw new IllegalArgumentException("읽음 상태 아이디는 필수입니다.");
         }
@@ -108,7 +110,8 @@ public class BasicReadStatusService implements ReadStatusService {
         }
 
         readStatus.markAsRead(request.lastReadTime());
-
         readStatusRepository.update(readStatus);
+
+        return ReadStatusResponse.from(readStatus);
     }
 }

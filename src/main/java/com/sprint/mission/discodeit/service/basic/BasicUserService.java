@@ -25,6 +25,26 @@ public class BasicUserService implements UserService {
             throw new IllegalArgumentException("유저 생성 요청은 필수입니다.");
         }
 
+        if(request.username() == null || request.username().isBlank()) {
+            throw new IllegalArgumentException("유저의 이름은 공백이면 안됩니다.");
+        }
+
+        if (repository.findByUserName(request.username()) != null) {
+            throw new IllegalArgumentException("이미 사용 중인 유저이름입니다.");
+        }
+
+        if(request.email() == null || request.email().isBlank()) {
+            throw new IllegalArgumentException("이메알은 공백이면 안됩니다.");
+        }
+
+        if(repository.findByEmail(request.email()) != null) {
+            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+        }
+
+        if(request.password() == null || request.password().isBlank()) {
+            throw new IllegalArgumentException("비밀번호는 공백이면 안됩니다.");
+        }
+
         User user = new User(
                 request.username(),
                 request.email(),
@@ -38,6 +58,7 @@ public class BasicUserService implements UserService {
 
         return UserResponse.from(user, userStatus, null);
     }
+
     @Override
     public UserResponse find(UUID id) {
         if (id == null) {
@@ -84,6 +105,14 @@ public class BasicUserService implements UserService {
             throw new IllegalArgumentException("존재하지 않는 유저 ID입니다.");
         }
 
+        if (repository.findByEmail(request.email()) != null) {
+            throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
+        }
+
+        if (repository.findByUserName(request.username()) != null) {
+            throw new IllegalArgumentException("이미 사용중인 유저 이름입니다.");
+        }
+
         user.updateUserName(request.username());
         user.updateEmail(request.email());
         user.updatePassWord(request.password());
@@ -105,6 +134,16 @@ public class BasicUserService implements UserService {
         if (!repository.exists(id)) {
             throw new IllegalArgumentException("존재하지 않는 유저 ID입니다.");
         }
+
+        UserStatus userStatus = userStatusRepository.findByUserId(id);
+        BinaryContent profile = binaryContentRepository.findByUserId(id);
+
+       if (profile != null) {
+           binaryContentRepository.delete(profile.getId());
+       }
+       if (userStatus != null) {
+           userStatusRepository.delete(userStatus.getId());
+       }
 
         repository.delete(id);
     }
