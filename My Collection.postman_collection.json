@@ -1,0 +1,103 @@
+{
+  "info": {
+    "_postman_id": "058919b5-0ed8-4001-a4bb-3466ab57b23b",
+    "name": "My Collection",
+    "description": "### Welcome to Postman! This is your first collection. \n\nCollections are your starting point for building and testing APIs. You can use this one to:\n\n• Group related requests\n• Test your API in real-world scenarios\n• Document and share your requests\n\nUpdate the name and overview whenever you’re ready to make it yours.\n\n[Learn more about Postman Collections.](https://learning.postman.com/docs/collections/collections-overview/)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "55308257",
+    "_collection_link": "https://go.postman.co/collection/55308257-058919b5-0ed8-4001-a4bb-3466ab57b23b?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "user",
+      "item": [
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "사용자 등록  \npost / users\n\n모든 사용자 조회\n\nget / users\n\n사용자 정보 수정\n\nput / users/{userId}\n\n사용자 삭제\n\ndelete / users/{userId}\n\n온라인 상태 업데이트\n\nput / users/status/{userId}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "auth",
+      "item": [
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "로그인\n\npost / auth/login"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "channel",
+      "item": [
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "channels\n\n공개 채널 생성\n\npost / public\n\n비공개 채널 생성\n\npost / private\n\n특정 유저 채널 조회\n\nget / users/{userId}\n\n공개 채널 수정\n\nput / {channelId}\n\n삭제\n\ndelete / {channelId}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "message",
+      "item": [
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "messages\n\n메세지 생성\n\npost / messages\n\n특정 채널의 메세지 조회\n\nget / channel/{channelId}\n\n메세지 수정\n\nput / {messageId}\n\n메세지 삭제\n\ndelete / {messageId}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "binarycontent",
+      "item": [
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "readstatus",
+      "item": [
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "readstatus\n\n메세지 수신 정보 생성\n\npost /\n\n특정 사용자의 메세지 수신 정보 조회\n\nget / user/{userId}\n\n메세지 수신 정보 수정\n\nput / {readStatusId}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "New Request",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    }
+  ]
+}

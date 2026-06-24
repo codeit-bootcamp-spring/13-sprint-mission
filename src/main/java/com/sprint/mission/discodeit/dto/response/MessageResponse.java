@@ -11,12 +11,8 @@ import java.util.UUID;
 public class MessageResponse {
 
     private UUID id;
-
     private String content;
-
     private UUID channelId;
-
     private UUID authorId;
-
     private Instant createdAt;
 }
