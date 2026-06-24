@@ -1,7 +1,6 @@
 package com.sprint.mission.discodeit.service;
 
 import com.sprint.mission.discodeit.dto.request.CreateUserStatusRequest;
-import com.sprint.mission.discodeit.dto.request.UpdateUserStatusByUserIdRequest;
 import com.sprint.mission.discodeit.dto.request.UpdateUserStatusRequest;
 import com.sprint.mission.discodeit.dto.response.UserStatusResponse;
 import com.sprint.mission.discodeit.entity.User;
@@ -22,25 +21,23 @@ public class UserStatusService {
     private final UserRepository userRepository;
 
     public UserStatusResponse create(CreateUserStatusRequest request) {
-        User user = userRepository.findById(request.userId());
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
 
-        if (user == null) {
-            throw new IllegalArgumentException("존재하지 않는 유저입니다.");
-        }
-        boolean exists = userStatusRepository.findById(request.userId()) != null;
+        userStatusRepository.findByUserId(request.getUserId())
+                .ifPresent(status -> {
+                    throw new IllegalArgumentException("이미 UserStatus가 존재합니다.");
+                });
 
-        if (exists) {
-            throw new IllegalArgumentException("이미 UserStatus가 존재합니다.");
-        }
-
-        UserStatus status = new UserStatus( UUID.randomUUID(), request.userId() );
+        UserStatus status = new UserStatus( UUID.randomUUID(), request.getUserId() );
         userStatusRepository.save(status);
 
         return UserStatusResponse.from(status);
     }
 
     public UserStatusResponse find(UUID id) {
-        UserStatus status = userStatusRepository.findById(id);
+        UserStatus status = userStatusRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("유저 상태를 찾을 수 없습니다."));
 
         return UserStatusResponse.from(status);
     }
@@ -52,20 +49,10 @@ public class UserStatusService {
                 .toList();
     }
 
-    public UserStatusResponse update(UpdateUserStatusRequest request) {
-        UserStatus status = userStatusRepository.findById(request.id());
-        status.updateLastSeen();
-        userStatusRepository.save(status);
-
-        return UserStatusResponse.from(status);
-    }
-
-    public UserStatusResponse updateByUserId(UpdateUserStatusByUserIdRequest request) {
-        UserStatus status = userStatusRepository.findAll()
-                .stream()
-                .filter(s -> s.getUserId().equals(request.userId()))
-                .findFirst()
-                .orElseThrow();
+    public UserStatusResponse updateByUserId(UpdateUserStatusRequest request) {
+        UserStatus status = userStatusRepository.findByUserId(request.getUserId())
+                        .orElseThrow(() ->
+                                new IllegalArgumentException("유저 상태를 찾을 수 없습니다."));
 
         status.updateLastSeen();
         userStatusRepository.save(status);

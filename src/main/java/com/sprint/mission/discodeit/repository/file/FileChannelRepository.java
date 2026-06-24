@@ -9,19 +9,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public class FileChannelRepository implements ChannelRepository {
 
     // channels 디렉토리 경로
+    private static final String DATA_DIRECTORY = "data";
+    private static final String CHANNEL_DIRECTORY = "channels";
+
     private final Path directory;
 
     public FileChannelRepository() {
         this.directory = Paths.get(
                 System.getProperty("user.dir"),
-                "data",
-                "channels"
+                DATA_DIRECTORY,
+                CHANNEL_DIRECTORY
         );
         init(directory);
     }
@@ -38,7 +42,7 @@ public class FileChannelRepository implements ChannelRepository {
     }
 
     @Override
-    public Channel save(Channel channel) {
+    public void save(Channel channel) {
         Path filePath = directory.resolve(channel.getId() + ".ser");
 
         try (FileOutputStream fos = new FileOutputStream(filePath.toFile());
@@ -47,21 +51,20 @@ public class FileChannelRepository implements ChannelRepository {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return channel;
     }
 
     @Override
-    public Channel findById(UUID id) {
+    public Optional<Channel> findById(UUID id) {
         Path filePath = directory.resolve(id + ".ser");
 
         if (!Files.exists(filePath)) {
-            return null;
+            return Optional.empty();
         }
 
         try (FileInputStream fis = new FileInputStream(filePath.toFile());
              ObjectInputStream ois = new ObjectInputStream(fis))
         {
-            return (Channel) ois.readObject();
+            return Optional.of((Channel) ois.readObject());
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

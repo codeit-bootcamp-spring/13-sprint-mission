@@ -30,17 +30,13 @@ public class BasicChannelService implements ChannelService {
     private final ReadStatusRepository readStatusRepository;
     private final MessageRepository messageRepository;
 
-//    public BasicChannelService(ChannelRepository channelRepository) {
-//        this.channelRepository = channelRepository;
-//    }
-
 
     @Override
     public ChannelResponse createPublicChannel(CreatePublicChannelRequest request) {
         Channel channel = new Channel(
-                request.name(),
+                request.getName(),
                 PUBLIC,
-                request.description()
+                request.getDescription()
         );
         channelRepository.save(channel);
 
@@ -60,10 +56,9 @@ public class BasicChannelService implements ChannelService {
         );
         channelRepository.save(channel);
 
-        for (UUID userId : request.userIds()) {
+        for (UUID userId : request.getUserIds()) {
             ReadStatus readStatus = new ReadStatus(
-                            UUID.randomUUID(),
-                            userId, channel.getId()
+                            userId, channel.getId(), Instant.now()
             );
             readStatusRepository.save(readStatus);
         }
@@ -71,13 +66,15 @@ public class BasicChannelService implements ChannelService {
         return ChannelResponse.from(
                 channel,
                 null,
-                request.userIds()
+                request.getUserIds()
         );
     }
 
     @Override
     public ChannelResponse find(UUID id) {
-        Channel channel = channelRepository.findById(id);
+        Channel channel = channelRepository.findById(id)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("채널을 찾을 수 없습니다."));;
 
         Instant latestMessageAt = messageRepository.findAllByChannelId(channel.getId())
                 .stream().filter(message -> message.getChannelId().equals(id))
@@ -146,16 +143,20 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public void update(UpdateChannelRequest request) {
-        Channel channel = channelRepository.findById(request.channelId());
+    public ChannelResponse update(UUID id, UpdateChannelRequest request) {
+        Channel channel = channelRepository.findById(id)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("채널을 찾을 수 없습니다."));;
 
         if (channel.getType() == Channel.ChannelType.PRIVATE) {
             throw new IllegalArgumentException("PRIVATE 채널은 수정할 수 없습니다.");
         }
 
-        channel.update(request.name(), PUBLIC, request.description());
+        channel.update(request.getName(), channel.getType(), request.getDescription());
 
         channelRepository.save(channel);
+
+        return ChannelResponse.from(channel);
     }
 
     @Override

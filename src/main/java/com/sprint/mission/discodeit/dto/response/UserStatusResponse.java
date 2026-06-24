@@ -1,15 +1,20 @@
 package com.sprint.mission.discodeit.dto.response;
 
 import com.sprint.mission.discodeit.entity.UserStatus;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 import java.time.Instant;
 import java.util.UUID;
 
-public record UserStatusResponse(
-        UUID id,
-        UUID userId,
-        Instant updatedAt
-) {
+@Getter
+@AllArgsConstructor
+public class UserStatusResponse {
+
+    private UUID id;
+    private UUID userId;
+    private Instant updatedAt;
+
     public static UserStatusResponse from(UserStatus status) {
         return new UserStatusResponse(
                 status.getId(),

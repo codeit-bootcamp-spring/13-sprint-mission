@@ -10,16 +10,22 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public class FileUserRepository implements UserRepository {
 
+    private static final String DATA_DIRECTORY = "data";
+    private static final String USER_DIRECTORY = "users";
+
     private final Path directory;
 
     public FileUserRepository() {
         this.directory =
-                Paths.get(System.getProperty("user.dir"), "data", "users");
+                Paths.get(System.getProperty("user.dir"),
+                        DATA_DIRECTORY,
+                        USER_DIRECTORY);
         init(directory);
     }
 
@@ -34,7 +40,7 @@ public class FileUserRepository implements UserRepository {
     }
 
     @Override
-    public User save(User user) {
+    public void save(User user) {
         Path filePath =
                 directory.resolve(user.getId() + ".ser");
 
@@ -45,19 +51,21 @@ public class FileUserRepository implements UserRepository {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return user;
     }
 
     @Override
-    public User findById(UUID id) {
+    public Optional<User> findById(UUID id) {
         Path filePath = directory.resolve(id + ".ser");
 
         if (!Files.exists(filePath)) {
-            return null;
+            return Optional.empty();
         }
+
         try (FileInputStream fis = new FileInputStream(filePath.toFile());
              ObjectInputStream ois = new ObjectInputStream(fis)) {
-            return (User) ois.readObject();
+
+            return Optional.of((User) ois.readObject());
+
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

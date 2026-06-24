@@ -18,18 +18,19 @@ public class BinaryContentService {
 
     public BinaryContentResponse create(CreateBinaryContentRequest request) {
         BinaryContent content = new BinaryContent(
-                request.userId(),
-                request.messageId(),
-                request.filename(),
-                request.contentType(),
-                request.bytes());
+                request.getUserId(),
+                request.getMessageId(),
+                request.getFilename(),
+                request.getContentType(),
+                request.getBytes());
         binaryContentRepository.save(content);
 
         return BinaryContentResponse.from(content);
     }
 
     public BinaryContentResponse find(UUID id) {
-        BinaryContent content = binaryContentRepository.findById(id);
+        BinaryContent content = binaryContentRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("바이너리 컨텐츠가 없습니다."));
 
         return BinaryContentResponse.from(content);
     }

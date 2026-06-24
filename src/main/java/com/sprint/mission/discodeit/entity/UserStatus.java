@@ -11,7 +11,7 @@ public class UserStatus implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private UUID id;
+    private final UUID id;
     private UUID userId;
     private Instant createdAt;
     private Instant updatedAt;

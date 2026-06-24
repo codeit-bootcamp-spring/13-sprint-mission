@@ -1,8 +1,14 @@
 package com.sprint.mission.discodeit.dto.request;
 
-public record CreateProfileImageRequest (
-        String filename,
-        String contentType,
-        byte[] bytes
-) {
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@NoArgsConstructor
+public class CreateProfileImageRequest {
+
+        private String filename;
+        private String contentType;
+        private byte[] bytes;
+
 }

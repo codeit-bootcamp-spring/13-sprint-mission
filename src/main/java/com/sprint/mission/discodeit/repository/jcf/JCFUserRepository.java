@@ -3,10 +3,7 @@ package com.sprint.mission.discodeit.repository.jcf;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class JCFUserRepository implements UserRepository {
 
@@ -16,25 +13,19 @@ public class JCFUserRepository implements UserRepository {
         this.data = new ArrayList<>();
     }
 
-    // 리턴값 변경으로 인한 메서드 생성
     @Override
-    public User save(User user) {
-        return null;
+    public void save(User user) {
+        data.add(user);
     }
 
-    //    @Override
-//    public void save(User user) {
-//        data.add(user);
-//    }
-
     @Override
-    public User findById(UUID id) {
+    public Optional<User> findById(UUID id) {
         for (User user : data) {
             if (user.getId().equals(id)) {
-                return user;
+                return Optional.of(user);
             }
         }
-        throw new IllegalArgumentException("유저를 찾을 수 없습니다.");
+        return Optional.empty();
     }
 
     @Override
