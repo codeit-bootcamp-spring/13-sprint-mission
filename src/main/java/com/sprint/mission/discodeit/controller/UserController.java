@@ -9,6 +9,8 @@ import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import com.sprint.mission.discodeit.util.FileUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -20,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Tag(name = "User", description = "User API")
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -28,7 +31,7 @@ public class UserController {
     private final UserService userService;
     private final UserStatusService userStatusService;
 
-    //user 생성api
+    @Operation(summary = "User 생성 API")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserResponse> createUser(@RequestPart UserCreateRequest userCreateRequest,
                                                    @RequestPart(required = false) MultipartFile profile) {
@@ -36,7 +39,9 @@ public class UserController {
         UserResponse response = userService.createUser(userCreateRequest, profileRequest.orElse(null));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-    //user 수정 api
+
+
+    @Operation(summary = "User 수정 API")
     @PatchMapping(path = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserResponse> updateUser(@PathVariable UUID userId,
                                                    @RequestPart UserUpdateRequest userUpdateRequest,
@@ -45,27 +50,29 @@ public class UserController {
         UserResponse response = userService.updateUser(userId, userUpdateRequest, profileRequest.orElse(null));
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
-    //user 삭제 api
+
+    @Operation(summary = "User 삭제 API")
     @DeleteMapping( "/{userId}")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID userId){
         userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
     }
-    //user 단건 조회 api
+
+    @Operation(summary = "User 단건 조회 API")
     @GetMapping("/{userId}")
     public ResponseEntity<UserResponse> findUser (@PathVariable UUID userId){
         UserResponse userById = userService.findByUserId(userId);
         return ResponseEntity.status(HttpStatus.OK).body(userById);
     }
 
-    //모든 user 조회
+    @Operation(summary = "전체 User 조회 API")
     @GetMapping()
     public ResponseEntity<List<UserResponse>> findAllUser(){
         List<UserResponse> allUser = userService.findAllUser();
         return ResponseEntity.status(HttpStatus.OK).body(allUser);
     }
 
-    //사용자의 온라인 상태를 업데이트
+    @Operation(summary = "User 온라인 상태 업데이트 API")
     @PatchMapping("/{userId}/userStatus")
     public ResponseEntity<UserStatusResponse> updateUserStatus(@PathVariable UUID userId,
                                                                @RequestBody UserStatusUpdateRequest request){
