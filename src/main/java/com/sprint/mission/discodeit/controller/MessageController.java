@@ -22,30 +22,30 @@ public class MessageController {
 
 
     //message 보내기 api
-    @RequestMapping(method = RequestMethod.POST)
+    @PostMapping()
     public ResponseEntity<MessageResponse> createMessage(@RequestBody MessageCreateRequest request) {
         MessageResponse messageResponse = messageService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(messageResponse);
     }
 
     // message 수정 api
-    @RequestMapping(value = "/{messageid}", method = RequestMethod.PATCH)
-    public ResponseEntity<MessageResponse> updateMessage(@PathVariable UUID messageid, @RequestBody MessageUpdateRequest request) {
-        MessageResponse messageResponse = messageService.updateMessage(messageid, request);
+    @PatchMapping("/{messageId}")
+    public ResponseEntity<MessageResponse> updateMessage(@PathVariable UUID messageId, @RequestBody MessageUpdateRequest request) {
+        MessageResponse messageResponse = messageService.updateMessage(messageId, request);
         return ResponseEntity.status(HttpStatus.OK).body(messageResponse);
     }
 
     // message 삭제 api
-    @RequestMapping(value = "/{messageid}", method = RequestMethod.DELETE)
-    public ResponseEntity<Void> deleteMessage(@PathVariable UUID messageid) {
-        messageService.delete(messageid);
+    @DeleteMapping("/{messageId}")
+    public ResponseEntity<Void> deleteMessage(@PathVariable UUID messageId) {
+        messageService.delete(messageId);
         return ResponseEntity.noContent().build();
     }
 
     // 특정 채널 message목록 조회 api
-    @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<List<MessageResponse>> getAllMessages(@RequestParam UUID channelid) {
-        List<MessageResponse> allByChannelId = messageService.findAllByChannelId(channelid);
+    @GetMapping()
+    public ResponseEntity<List<MessageResponse>> getAllMessages(@RequestParam UUID channelId) {
+        List<MessageResponse> allByChannelId = messageService.findAllByChannelId(channelId);
         return ResponseEntity.status(HttpStatus.OK).body(allByChannelId);
     }
 

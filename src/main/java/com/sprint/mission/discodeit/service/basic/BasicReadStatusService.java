@@ -27,6 +27,8 @@ public class BasicReadStatusService implements ReadStatusService {
     private ReadStatusResponse toResponse(ReadStatus readStatus){
         return new ReadStatusResponse(
                 readStatus.getId(),
+                readStatus.getCreatedAt(),
+                readStatus.getUpdatedAt(),
                 readStatus.getUserId(),
                 readStatus.getChannelId(),
                 readStatus.getLastReadAt()

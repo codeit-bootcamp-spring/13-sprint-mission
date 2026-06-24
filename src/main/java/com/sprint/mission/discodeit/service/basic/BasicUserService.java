@@ -52,7 +52,7 @@ public class BasicUserService implements UserService {
                                    BinaryContentCreateRequest profileRequest) {
         //username 중복체크
         boolean nameDuplicate = userRepository.findAll().stream()
-                .anyMatch(user -> userCreateRequest.name().equals(user.getName()));
+                .anyMatch(user -> userCreateRequest.username().equals(user.getName()));
         if (nameDuplicate) {
             throw new IllegalArgumentException("이미 사용중인 이름 입니다.");
         }
@@ -72,12 +72,12 @@ public class BasicUserService implements UserService {
             binaryContentRepository.save(profile);
             profileId = profile.getId();
         }
-        User user = new User(userCreateRequest.name(), userCreateRequest.email(), userCreateRequest.password(),profileId);
+        User user = new User(userCreateRequest.username(), userCreateRequest.email(), userCreateRequest.password(),profileId);
         userRepository.save(user);
 
         UserStatus userStatus = new UserStatus(user.getUserId());
         userStatusRepository.save(userStatus);
-        log.info("유저 생성 완료 - name: {}, userId: {}", userCreateRequest.name(), user.getUserId());
+        log.info("유저 생성 완료 - name: {}, userId: {}", userCreateRequest.username(), user.getUserId());
         return  toResponse(user, userStatus);
 
     }

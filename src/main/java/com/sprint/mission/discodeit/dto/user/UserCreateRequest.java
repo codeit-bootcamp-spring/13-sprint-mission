@@ -1,13 +1,13 @@
 package com.sprint.mission.discodeit.dto.user;
 
 public record UserCreateRequest(
-        String name,
+        String username,
         String email,
         String password
 )
 {
     public UserCreateRequest{
-        validate(name, "이름");
+        validate(username, "이름");
         validate(email, "이메일");
         validate(password, "비밀번호");
     }

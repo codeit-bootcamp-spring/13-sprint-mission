@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public record ChannelResponse(
         UUID id,
-        ChannelType channelType,
+        ChannelType type,
         String name,
         String description,
         List<UUID> participantIds,

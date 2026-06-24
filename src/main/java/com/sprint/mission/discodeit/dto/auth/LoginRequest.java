@@ -1,12 +1,12 @@
 package com.sprint.mission.discodeit.dto.auth;
 
 public record LoginRequest(
-        String name,
+        String username,
         String password
 )
 {
     public LoginRequest {
-        validate(name, "이름");
+        validate(username, "이름");
         validate(password, "비밀번호");
     }
 

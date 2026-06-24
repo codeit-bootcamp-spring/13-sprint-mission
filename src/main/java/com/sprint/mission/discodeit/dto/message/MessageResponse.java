@@ -9,6 +9,7 @@ public record MessageResponse(
         Instant createdAt,
         Instant updatedAt,
         String content,
+        UUID channelId,
         UUID authorId,
         List<UUID> attachmentIds
 

@@ -10,7 +10,9 @@ public record BinaryContentCreateRequest(
         byte[] bytes
 )
 {
-    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; //5MB
+    private static final long BYTES_PER_MB = 1024 * 1024;
+    private static final long MAX_FILE_MB = 5;
+    private static final long MAX_FILE_SIZE = BYTES_PER_MB * MAX_FILE_MB;
 
     public BinaryContentCreateRequest{
         //파일 크기 검증
@@ -18,5 +20,4 @@ public record BinaryContentCreateRequest(
             throw new IllegalArgumentException("파일 크기는 5MB 이하여야 합니다.");
         }
     }
-
 }

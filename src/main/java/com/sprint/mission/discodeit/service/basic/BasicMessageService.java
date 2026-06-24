@@ -39,6 +39,7 @@ public class BasicMessageService implements MessageService {
                 message.getCreatedAt(),
                 message.getUpdatedAt(),
                 message.getContent(),
+                message.getChannelId(),
                 message.getAuthorId(),
                 message.getAttachmentIds()
         );
