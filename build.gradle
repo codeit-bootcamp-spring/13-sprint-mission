@@ -13,6 +13,11 @@ java {
 	}
 }
 
+// railway 에서 자바 버전인식을 위한 항목.
+// railway 배포시에는 위의 java{} 블럭을 주석처리하고 아래의 항목 주석을 풀 것.
+//sourceCompatibility = '17'
+//targetCompatibility = '17'
+
 repositories {
 	mavenCentral()
 }
@@ -37,4 +42,14 @@ tasks.named('test') {
 //	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 //	destinationDirectory = file("/home/latte/test")
 //	archiveFileName = "discodeit.jar"
+//}
+
+// railway 배포를 위한 boot.jar 항목
+// railway 설정에서 deploy -> start commend 에 build/libs/app.jar 이라 시작커맨드로 명확히 할 것.
+//bootJar {
+//	enabled = true
+//	archiveFileName = 'app.jar'
+//}
+//jar {
+//	enabled = false // plain.jar 생성을 막아 Railway가 헷갈리지 않게 합니다.
 //}
