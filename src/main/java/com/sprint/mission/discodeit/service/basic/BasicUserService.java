@@ -13,14 +13,14 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Service;
-
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -45,13 +45,22 @@ public class BasicUserService implements UserService {
 
     UUID profileId = null;
     if (profile != null && !profile.isEmpty()) {
+
+      byte[] bytes;
+
+      try {
+        bytes = profile.getBytes();
+      } catch (IOException e) {
+        throw new RuntimeException("파일 읽기 실패", e);
+      }
+
       BinaryContent binaryContent = BinaryContent.builder()
           .id(UUID.randomUUID())
           .createdAt(Instant.now())
           .fileName(profile.getOriginalFilename())
           .contentType(profile.getContentType())
           .size(profile.getSize())
-          .bytes(profile.getBytes())
+          .bytes(bytes)
           .build();
       binaryContentRepository.save(binaryContent);
       profileId = binaryContent.getId();
@@ -124,10 +133,23 @@ public class BasicUserService implements UserService {
         binaryContentRepository.delete(currentProfileId);
       }
 
+      byte[] bytes;
+
+      try {
+        bytes = profile.getBytes();
+      } catch (IOException e) {
+        throw new RuntimeException("파일 처리 실패", e);
+      }
+
       BinaryContent newBinaryContent = BinaryContent.builder()
           .id(UUID.randomUUID())
           .createdAt(Instant.now())
+          .fileName(profile.getOriginalFilename())
+          .contentType(profile.getContentType())
+          .size(profile.getSize())
+          .bytes(bytes)
           .build();
+      
       binaryContentRepository.save(newBinaryContent);
       currentProfileId = newBinaryContent.getId();
     }
