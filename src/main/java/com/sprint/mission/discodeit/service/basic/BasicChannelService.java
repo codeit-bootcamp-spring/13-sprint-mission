@@ -122,10 +122,11 @@ public class BasicChannelService implements ChannelService {
 
 
         return ChannelDto.builder()
-                .channelId(chn.getId())
+                .id(chn.getId())
+                .type(chn.getType())
                 .name(chn.getName())
                 .description(chn.getDescription())
-                .lastMessageAt(!msg.isEmpty() ? msg.get(0).getUpdatedAt() : null)
+                .lastMessageAt(!msg.isEmpty() ? msg.get(0).getUpdatedAt() : chn.getCreatedAt())
                 .participantIds(userIDs)
                 .build();
     }

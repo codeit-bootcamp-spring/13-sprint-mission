@@ -13,7 +13,7 @@ import java.util.UUID;
 @Getter
 @Builder
 public class ChannelDto {
-    private final UUID channelId;
+    private final UUID id;
     private final ChannelType type;
     private final String name;
     private final String description;

@@ -127,10 +127,10 @@ public class BasicUserService implements UserService {
                 400
         );}
 
-        user.setName(uui.newUsername());
-        user.setEmail(uui.newEmail());
-        user.setPassword(uui.newPassword());
-        user.setProfileId(profileIdFromOBCC(obcc));
+        if (uui.newUsername() != null) user.setName(uui.newUsername());
+        if (uui.newEmail() != null) user.setEmail(uui.newEmail());
+        if (uui.newPassword() != null) user.setPassword(uui.newPassword());
+        if (profileIdFromOBCC(obcc) != null) user.setProfileId(profileIdFromOBCC(obcc));
         ur.save(user);
         return user;
     }

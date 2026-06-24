@@ -13,7 +13,7 @@ public class BinaryContent extends BaseEntity{
     private final String fileName;
     private final String contentType;
     private final Long size;
-    private final byte[] content;
+    private final byte[] bytes;
 
     @Override
     public void setUpdatedAt(){}
