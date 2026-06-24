@@ -7,12 +7,16 @@ import java.util.UUID;
 
 public record UserStatusUpdateResponse(
         UUID userStatusId,
+        Instant createdAt,
+        Instant updatedAt,
         UUID userId,
         Instant lastAccessTime
 ) {
     public static UserStatusUpdateResponse from(UserStatus userStatus) {
         return new UserStatusUpdateResponse(
                 userStatus.getId(),
+                userStatus.getCreatedAt(),
+                userStatus.getUpdatedAt(),
                 userStatus.getUserId(),
                 userStatus.getLastAccessTime()
         );

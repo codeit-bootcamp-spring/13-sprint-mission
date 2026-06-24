@@ -12,13 +12,21 @@ public class BinaryContent implements Serializable {
     //필드
     private final UUID id;
     private final Instant createdAt;
-    private final String contentPath;
+
+    //개선 필드
+    private final String fileName;
+    private final Long size;
+    private final String contentType;
+    private final byte[] bytes;
 
     //ctor
-    public BinaryContent(String contentPath) {
+    public BinaryContent(String fileName, Long size, String contentType, byte[] bytes) {
         id = UUID.randomUUID();
         createdAt = Instant.now();
-        this.contentPath = contentPath;
-    }
 
+        this.fileName = fileName;
+        this.size = size;
+        this.contentType = contentType;
+        this.bytes = bytes;
+    }
 }

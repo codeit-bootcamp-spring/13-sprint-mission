@@ -5,6 +5,8 @@ import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserStatusUpdateResponse;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.DuplicateResourceException;
+import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserStatusService;
@@ -28,9 +30,6 @@ public class BasicUserStatusService implements UserStatusService {
     //interface
     @Override
     public UserStatus createUserStatus(UserStatusCreateRequest request) {
-        //입력값 검증 처리하겠습니다
-        validateUUID(request.userId());
-
         //존재하는 유저인지 검증
         validateUserExists(request.userId());
 
@@ -47,12 +46,9 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     public UserStatus findUserStatusById(UUID userStatusId) {
-        //입력값 검증 처리하겠습니다
-        validateUUID(userStatusId);
-
         //UserStatus 검색
         UserStatus userStatusTemp = userStatusRepository.findUserStatusById(userStatusId)
-                .orElseThrow(() -> new RuntimeException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
 
         return userStatusTemp;
     }
@@ -67,13 +63,9 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     public UserStatusUpdateResponse updateUserStatus(UserStatusUpdateRequest request) {
-        //입력값 검증 처리하겠습니다
-        validateUUID(request.userStatusId());
-        validateUUID(request.userId());
-
         //UserStatus 검색
         UserStatus userStatusTemp = userStatusRepository.findUserStatusById(request.userStatusId())
-                .orElseThrow(() -> new RuntimeException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
 
         //UserStatus 업데이트
         userStatusTemp.updateLastAccessTime();
@@ -84,12 +76,9 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     public UserStatusUpdateResponse updateUserStatusByUserId(UUID userId) {
-        //입력값 검증 처리하겠습니다
-        validateUUID(userId);
-
         //UserStatus 검색
         UserStatus userStatusTemp = userStatusRepository.findUserStatusByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
 
         //UserStatus 업데이트
         userStatusTemp.updateLastAccessTime();
@@ -100,12 +89,9 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     public void deleteUserStatus(UUID userStatusId) {
-        //입력값 검증 처리하겠습니다
-        validateUUID(userStatusId);
-
         //UserStatus 검색
         UserStatus userStatusTemp = userStatusRepository.findUserStatusById(userStatusId)
-                .orElseThrow(() -> new RuntimeException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
 
         userStatusRepository.deleteUserStatus(userStatusId);
 
@@ -113,22 +99,16 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
 
-    // 들어온 UUID 필드가 null인지 검증하는 메서드
-    private void validateUUID(UUID id) {
-        if (id == null) {
-            throw new IllegalArgumentException("에러: 입력값이 Null입니다.");
-        }
-    }
     // 들어온 userId 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateUserExists(UUID userId) {
         if (!userRepository.existsUserById(userId)) {
-            throw new RuntimeException("유저: " + userId + "이 존재하지 않습니다.");
+            throw new ObjectNotFoundException("유저: " + userId + "이 존재하지 않습니다.");
         }
     }
     // 생성하려는 UserStatus가 레포지터리에 이미 존재하는지 검증하는 메서드
     private void validateUserStatusExists(UUID userId) {
         if (userStatusRepository.existsUserStatusByUserId(userId)) {
-            throw new RuntimeException("만들려는 UserStatus가 이미 존재합니다.");
+            throw new DuplicateResourceException("만들려는 UserStatus가 이미 존재합니다.");
         }
     }
 }
