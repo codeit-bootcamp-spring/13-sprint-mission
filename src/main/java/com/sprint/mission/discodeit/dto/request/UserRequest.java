@@ -1,10 +1,7 @@
 package com.sprint.mission.discodeit.dto.request;
 
-import com.sprint.mission.discodeit.entity.*;
 import org.springframework.web.multipart.*;
 
-import java.time.*;
-import java.util.*;
 
 public record UserRequest(
         String userName,

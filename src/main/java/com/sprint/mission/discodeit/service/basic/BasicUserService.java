@@ -8,7 +8,9 @@ import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.*;
 import org.springframework.stereotype.*;
+import org.springframework.web.multipart.*;
 
+import java.io.*;
 import java.util.List;
 import java.util.UUID;
 
@@ -57,7 +59,36 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = new UserStatus(user.getId());
         userStatusRepository.create(userStatus);
 
-        return UserResponse.from(user, userStatus, null);
+        BinaryContent profile = null;
+
+        MultipartFile profileImage = request.profileImage();
+
+        System.out.println("profileImage = " + profileImage);
+
+        if (profileImage != null) {
+            System.out.println("fileName = " + profileImage.getOriginalFilename());
+            System.out.println("contentType = " + profileImage.getContentType());
+            System.out.println("size = " + profileImage.getSize());
+        }
+
+        if (profileImage != null && !profileImage.isEmpty()) {
+            try {
+                profile = new BinaryContent(
+                        user.getId(),
+                        null,
+                        profileImage.getContentType(),
+                        profileImage.getBytes(),
+                        profileImage.getOriginalFilename()
+                );
+
+                binaryContentRepository.create(profile);
+
+            } catch (IOException e) {
+                throw new RuntimeException("프로필 이미지 저장에 실패했습니다.", e);
+            }
+        }
+
+        return UserResponse.from(user, userStatus, profile);
     }
 
     @Override
@@ -128,6 +159,8 @@ public class BasicUserService implements UserService {
 
     @Override
     public void delete(UUID id) {
+        System.out.println("delete user id = " + id);
+
         if (id == null) {
             throw new IllegalArgumentException("유저 ID는 필수입니다.");
         }
@@ -139,13 +172,20 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = userStatusRepository.findByUserId(id);
         BinaryContent profile = binaryContentRepository.findByUserId(id);
 
-       if (profile != null) {
-           binaryContentRepository.delete(profile.getId());
-       }
-       if (userStatus != null) {
-           userStatusRepository.delete(userStatus.getId());
-       }
+        System.out.println("userStatus = " + userStatus);
+        System.out.println("profile = " + profile);
 
+        if (profile != null) {
+            System.out.println("delete profile id = " + profile.getId());
+            binaryContentRepository.delete(profile.getId());
+        }
+
+        if (userStatus != null) {
+            System.out.println("delete userStatus id = " + userStatus.getId());
+            userStatusRepository.delete(userStatus.getId());
+        }
+
+        System.out.println("delete user");
         repository.delete(id);
     }
 }

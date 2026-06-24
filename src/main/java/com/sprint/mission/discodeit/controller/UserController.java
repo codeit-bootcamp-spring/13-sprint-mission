@@ -9,6 +9,7 @@ import lombok.*;
 import lombok.extern.slf4j.*;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.*;
 
 import java.util.*;
 
@@ -21,8 +22,25 @@ public class UserController {
     private final UserService userService;
     private final UserStatusService userStatusService;
 
-    @RequestMapping(method = RequestMethod.POST)
-    public UserResponse create(@RequestBody UserRequest.CreateUserRequest request) {
+    @RequestMapping(
+            method = RequestMethod.POST,
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public UserResponse create(
+            @RequestParam String username,
+            @RequestParam String email,
+            @RequestParam String password,
+            @RequestParam("profileImage") MultipartFile profileImage
+    ) {
+
+        UserRequest.CreateUserRequest request =
+                new UserRequest.CreateUserRequest(
+                        username,
+                        email,
+                        password,
+                        profileImage
+                );
+
         return userService.create(request);
     }
 
@@ -47,10 +65,9 @@ public class UserController {
             method = RequestMethod.PATCH
     )
     public UserStatusResponse updateStatus(
-            @PathVariable UUID userId,
-            @RequestBody UpdateUserStatusRequest request
+            @PathVariable UUID userId
     ) {
-        return userStatusService.updateByUserId(userId, request);
+        return userStatusService.updateByUserId(userId);
     }
 }
 

@@ -27,11 +27,11 @@ public class BinaryContentController {
     }
 
     @RequestMapping(value = "/find", method = RequestMethod.GET)
-    public ResponseEntity<BinaryContent> findByRequestParam(
+    public ResponseEntity<BinaryContentResponse> findByRequestParam(
             @RequestParam UUID binaryContentId
     ) {
         return ResponseEntity.ok(
-                binaryContentService.findEntity(binaryContentId)
+                binaryContentService.find(binaryContentId)
         );
     }
 }
