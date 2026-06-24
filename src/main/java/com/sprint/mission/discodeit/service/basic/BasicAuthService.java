@@ -6,12 +6,14 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.NoSuchElementException;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class BasicAuthService implements AuthService {
     private final UserRepository userRepository;
 
@@ -24,8 +26,7 @@ public class BasicAuthService implements AuthService {
         if (!user.getPassword().equals(loginRequest.password())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
-
-
+        log.info("로그인 성공! name : {}, password : {}", loginRequest.username(), loginRequest.password());
         return new LoginResponse(
                 user.getUserId(),
                 user.getCreatedAt(),
