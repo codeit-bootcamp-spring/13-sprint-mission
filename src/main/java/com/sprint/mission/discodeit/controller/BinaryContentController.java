@@ -17,8 +17,14 @@ public class BinaryContentController {
     private final BinaryContentService binaryContentService;
 
     @RequestMapping(value =  "/{binaryContentId}", method = RequestMethod.GET)
-    public BinaryContentResponse find(@PathVariable UUID binaryContentId) {
-        return binaryContentService.find(binaryContentId);
+    public ResponseEntity<byte[]> find(@PathVariable UUID binaryContentId) {
+        BinaryContentResponse response = binaryContentService.find(binaryContentId);
+
+        byte[] imageBytes = Base64.getDecoder().decode(response.bytes());
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(response.contentType()))
+                .body(imageBytes);
     }
 
     @RequestMapping(method = RequestMethod.GET)
@@ -30,6 +36,8 @@ public class BinaryContentController {
     public ResponseEntity<BinaryContentResponse> findByRequestParam(
             @RequestParam UUID binaryContentId
     ) {
+        System.out.println("컨트롤러 들어옴 binaryContentId = " + binaryContentId);
+
         return ResponseEntity.ok(
                 binaryContentService.find(binaryContentId)
         );

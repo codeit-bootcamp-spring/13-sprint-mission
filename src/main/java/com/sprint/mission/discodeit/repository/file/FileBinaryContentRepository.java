@@ -9,12 +9,11 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 @Repository
-@ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
+//@ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
 public class FileBinaryContentRepository implements BinaryContentRepository {
 
     private final List<BinaryContent> binaryContents = new ArrayList<>();
     private final Path binaryContentPath;
-
 
     public FileBinaryContentRepository(Path binaryContentPath) {
         this.binaryContentPath = binaryContentPath;
@@ -88,6 +87,8 @@ public class FileBinaryContentRepository implements BinaryContentRepository {
                     new BufferedOutputStream(Files.newOutputStream(binaryContentPath)))) {
 
                 oos.writeObject(binaryContents);
+                System.out.println("binaryContents saved size = " + binaryContents.size());
+                System.out.println("binaryContentPath = " + binaryContentPath.toAbsolutePath());
             }
 
         } catch (IOException e) {
@@ -98,6 +99,7 @@ public class FileBinaryContentRepository implements BinaryContentRepository {
     @SuppressWarnings("unchecked")
     private void loadFromFile() {
         if (!Files.exists(binaryContentPath)) {
+            System.out.println("binaryContent file not exists = " + binaryContentPath.toAbsolutePath());
             return;
         }
 
@@ -107,6 +109,10 @@ public class FileBinaryContentRepository implements BinaryContentRepository {
             List<BinaryContent> loadedBinary = (List<BinaryContent>) ois.readObject();
             binaryContents.clear();
             binaryContents.addAll(loadedBinary);
+
+            System.out.println("binaryContents loaded size = " + binaryContents.size());
+            System.out.println("binaryContentPath = " + binaryContentPath.toAbsolutePath());
+
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException("파일을 불러오기 중에 오류가 발생했습니다.", e);
         }

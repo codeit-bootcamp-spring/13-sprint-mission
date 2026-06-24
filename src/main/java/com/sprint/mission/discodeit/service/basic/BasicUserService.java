@@ -37,7 +37,7 @@ public class BasicUserService implements UserService {
         }
 
         if(request.email() == null || request.email().isBlank()) {
-            throw new IllegalArgumentException("이메알은 공백이면 안됩니다.");
+            throw new IllegalArgumentException("이메일은 공백이면 안됩니다.");
         }
 
         if(repository.findByEmail(request.email()) != null) {
@@ -56,20 +56,8 @@ public class BasicUserService implements UserService {
 
         repository.create(user);
 
-        UserStatus userStatus = new UserStatus(user.getId());
-        userStatusRepository.create(userStatus);
-
         BinaryContent profile = null;
-
         MultipartFile profileImage = request.profileImage();
-
-        System.out.println("profileImage = " + profileImage);
-
-        if (profileImage != null) {
-            System.out.println("fileName = " + profileImage.getOriginalFilename());
-            System.out.println("contentType = " + profileImage.getContentType());
-            System.out.println("size = " + profileImage.getSize());
-        }
 
         if (profileImage != null && !profileImage.isEmpty()) {
             try {
@@ -84,12 +72,16 @@ public class BasicUserService implements UserService {
                 binaryContentRepository.create(profile);
 
             } catch (IOException e) {
-                throw new RuntimeException("프로필 이미지 저장에 실패했습니다.", e);
+                throw new RuntimeException("프로필 이미지 파일을 읽는 중 오류가 발생했습니다.", e);
             }
         }
 
+        UserStatus userStatus = new UserStatus(user.getId());
+        userStatusRepository.create(userStatus);
+
         return UserResponse.from(user, userStatus, profile);
     }
+
 
     @Override
     public UserResponse find(UUID id) {

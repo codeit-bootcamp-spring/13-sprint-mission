@@ -11,12 +11,18 @@ public class User extends BaseEntity implements Serializable {
     private String userName;
     private String email;
     private String passWord;
+    private UUID profileId;
 
     public User(String userName, String email, String passWord) {
         super();
         validateUserName(userName);
         validateEmail(email);
         validatePassWord(passWord);
+    }
+
+    public void updateProfileId(UUID profileId) {
+        this.profileId = profileId;
+        setUpdatedAt();
     }
 
 
