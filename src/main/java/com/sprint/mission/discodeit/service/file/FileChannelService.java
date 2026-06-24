@@ -25,7 +25,8 @@ public class FileChannelService implements ChannelService {
     @Override
     public Channel find(UUID id) {
         return channelRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("채널을 찾을수 없습니다!"));
+                .orElseThrow(() ->
+                        new IllegalArgumentException("채널을 찾을 수 없습니다."));
     }
 
     @Override

@@ -1,0 +1,15 @@
+package com.sprint.mission.discodeit.dto;
+
+public class UpdateUserRequest {
+
+    private String username;
+    private String email;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+}
