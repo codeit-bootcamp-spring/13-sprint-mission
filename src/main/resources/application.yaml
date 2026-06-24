@@ -10,3 +10,6 @@ discodeit:
   repository:
     type: jcf
     path: "/home/latte/test"
+
+#springdoc:
+#  packages-to-scan: com.sprint.mission.discodeit.controller.docs

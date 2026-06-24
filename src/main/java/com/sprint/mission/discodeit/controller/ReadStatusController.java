@@ -1,9 +1,10 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.controller.docs.ReadStatusControllerDoc;
 import com.sprint.mission.discodeit.dto.input.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.input.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.ReadStatus;
-import com.sprint.mission.discodeit.service.basic.BasicReadStatusService;
+import com.sprint.mission.discodeit.service.ReadStatusService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,9 +18,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 @RequestMapping(value = "/api/readStatuses")
-public class ReadStatusController {
+public class ReadStatusController implements ReadStatusControllerDoc {
 
-    private final BasicReadStatusService brss;
+    private final ReadStatusService readStatusService;
 
     @RequestMapping(
             value = "",
@@ -28,7 +29,7 @@ public class ReadStatusController {
     public ResponseEntity<List<ReadStatus>> findAllByUserId(
             @RequestParam(value = "userId") UUID userId
     ){
-        List<ReadStatus> res = brss.findAllByUserID(userId);
+        List<ReadStatus> res = readStatusService.findAllByUserID(userId);
         return ResponseEntity.ok(res);
     }
 
@@ -39,7 +40,7 @@ public class ReadStatusController {
     public ResponseEntity<ReadStatus> create(
             @RequestBody ReadStatusCreateRequest rscr
     ){
-        ReadStatus res = brss.create(rscr);
+        ReadStatus res = readStatusService.create(rscr);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
@@ -48,7 +49,7 @@ public class ReadStatusController {
             @PathVariable UUID readStatusId,
             @RequestBody ReadStatusUpdateRequest rsur
             ){
-        ReadStatus rs = brss.update(readStatusId,rsur);
+        ReadStatus rs = readStatusService.update(readStatusId,rsur);
         return ResponseEntity.ok(rs);
     }
 }

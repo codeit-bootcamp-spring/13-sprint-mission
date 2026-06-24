@@ -1,12 +1,13 @@
 package com.sprint.mission.discodeit.controller;
 
 
+import com.sprint.mission.discodeit.controller.docs.UserControllerDoc;
 import com.sprint.mission.discodeit.dto.input.*;
 import com.sprint.mission.discodeit.dto.output.UserDto;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
-import com.sprint.mission.discodeit.service.basic.BasicUserService;
-import com.sprint.mission.discodeit.service.basic.BasicUserStatusService;
+import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.service.UserStatusService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -24,14 +25,14 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 @RequestMapping({"/api/users"})
-public class UserController {
+public class UserController implements UserControllerDoc {
 
-    private final BasicUserService bus;
-    private final BasicUserStatusService buss;
+    private final UserService userService;
+    private final UserStatusService userStatusService;
 
     @RequestMapping(value = "",method = RequestMethod.GET)
     public ResponseEntity<List<UserDto>> findAll(){
-        return ResponseEntity.ok(this.bus.getUserList());
+        return ResponseEntity.ok(this.userService.getUserList());
     }
 
     @RequestMapping(
@@ -44,7 +45,7 @@ public class UserController {
             @RequestPart(value = "profile", required = false) MultipartFile tmb
     ) {
         Optional<BinaryContentCreate> bcc = Optional.ofNullable(tmb).flatMap(this::thumbnailResolver);
-        User res = this.bus.create(uci, bcc);
+        User res = this.userService.create(uci, bcc);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
@@ -52,7 +53,7 @@ public class UserController {
     public ResponseEntity<Object> delete(
             @PathVariable UUID userId
     ){
-        this.bus.delete(userId);
+        this.userService.delete(userId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
@@ -68,7 +69,7 @@ public class UserController {
             @RequestPart (value = "profile", required = false) MultipartFile tmb
     ){
         Optional<BinaryContentCreate> bcc = Optional.ofNullable(tmb).flatMap(this::thumbnailResolver);
-        User res = this.bus.update(userId, uui, bcc);
+        User res = this.userService.update(userId, uui, bcc);
         return ResponseEntity.ok(res);
     }
 
@@ -78,7 +79,7 @@ public class UserController {
             @PathVariable UUID userId,
             @RequestBody UserStatusUpdateRequest usur
     ){
-        UserStatus res = buss.updateByUserId(userId, usur);
+        UserStatus res = userStatusService.updateByUserId(userId, usur);
         return ResponseEntity.ok(res);
     }
 

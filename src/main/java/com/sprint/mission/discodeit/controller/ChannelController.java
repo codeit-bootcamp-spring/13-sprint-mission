@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.controller;
 
 
+import com.sprint.mission.discodeit.controller.docs.ChannelControllerDoc;
 import com.sprint.mission.discodeit.dto.input.*;
 import com.sprint.mission.discodeit.dto.output.ChannelDto;
 import com.sprint.mission.discodeit.entity.Channel;
@@ -18,22 +19,22 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 @RequestMapping({"/api/channels"})
-public class ChannelController {
+public class ChannelController implements ChannelControllerDoc {
 
-    private final ChannelService cns;
+    private final ChannelService channelService;
 
     @RequestMapping(value = "", method = RequestMethod.GET)
     public ResponseEntity<List<ChannelDto>> findAll(
             @RequestParam(value = "userId") UUID userId
     ){
-        return ResponseEntity.ok(cns.findAllByUserID(userId));
+        return ResponseEntity.ok(channelService.findAllByUserID(userId));
     }
 
     @RequestMapping(value = "/{channelId}",method = RequestMethod.DELETE)
     public ResponseEntity<Void> delete(
             @PathVariable UUID channelId
     ){
-        cns.deleteChannel(channelId);
+        channelService.deleteChannel(channelId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
@@ -42,7 +43,7 @@ public class ChannelController {
             @PathVariable UUID channelId,
             @RequestBody PublicChannelUpdateRequest pcur
     ){
-        Channel res = cns.update(channelId, pcur);
+        Channel res = channelService.update(channelId, pcur);
         return ResponseEntity.ok(res);
     }
 
@@ -51,7 +52,7 @@ public class ChannelController {
     public ResponseEntity<Channel> createPrivate(
             @RequestBody PrivateChannelCreateRequest cpi
     ){
-        Channel res = cns.createPrivateChannel(cpi);
+        Channel res = channelService.createPrivateChannel(cpi);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
@@ -59,7 +60,7 @@ public class ChannelController {
     public ResponseEntity<Channel> createPublic(
             @RequestBody PublicChannelCreateRequest cpi
     ){
-        Channel res = cns.createPublicChannel(cpi);
+        Channel res = channelService.createPublicChannel(cpi);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 }

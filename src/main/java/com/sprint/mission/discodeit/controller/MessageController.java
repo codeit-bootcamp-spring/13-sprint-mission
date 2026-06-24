@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.controller;
 
 
+import com.sprint.mission.discodeit.controller.docs.MessageControllerDoc;
 import com.sprint.mission.discodeit.dto.input.BinaryContentCreate;
 import com.sprint.mission.discodeit.dto.input.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.input.MessageUpdateRequest;
@@ -23,17 +24,17 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 @RequestMapping({"/api/messages"})
-public class MessageController {
+public class MessageController implements MessageControllerDoc {
 
-    public final MessageService mss;
+    public final MessageService messageService;
 
 
 
     @RequestMapping(value = "", method = RequestMethod.GET)
-    public ResponseEntity<List<Message>> findMessageByUser(
+    public ResponseEntity<List<Message>> findMessageByChannel(
             @RequestParam(value = "channelId") UUID channelId
     ){
-        List<Message> res =  mss.findallByChannelId(channelId);
+        List<Message> res =  messageService.findallByChannelId(channelId);
         return ResponseEntity.ok(res);
     }
 
@@ -62,7 +63,7 @@ public class MessageController {
         }).toList());
 
 
-        Message res = mss.createMessage(mcr,lbcc);
+        Message res = messageService.createMessage(mcr,lbcc);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
@@ -71,7 +72,7 @@ public class MessageController {
             @PathVariable UUID messageId,
             @RequestBody MessageUpdateRequest msi
     ) {
-        Message res = mss.updateMessageData(messageId, msi);
+        Message res = messageService.updateMessageData(messageId, msi);
         return ResponseEntity.ok(res);
     }
 
@@ -79,7 +80,7 @@ public class MessageController {
     public ResponseEntity<Void> deleteMessage(
             @PathVariable UUID messageId
     ){
-        mss.deleteMessage(messageId);
+        messageService.deleteMessage(messageId);
         return ResponseEntity.noContent().build();
     }
 
