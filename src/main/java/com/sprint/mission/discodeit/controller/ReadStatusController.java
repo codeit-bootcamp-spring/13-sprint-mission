@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-@RequestMapping("/api/readStatus")
+@RequestMapping("/api/readStatuses")
 @RestController
 @RequiredArgsConstructor
 public class ReadStatusController {
@@ -37,8 +37,8 @@ public class ReadStatusController {
 
     // 특정 사용자의 메시지 수신 정보를 조회 api
     @GetMapping()
-    public ResponseEntity<List<ReadStatusResponse>> getReadStatus(@RequestParam UUID userid){
-        List<ReadStatusResponse> allByUserId = readStatusService.findAllByUserId(userid);
+    public ResponseEntity<List<ReadStatusResponse>> getReadStatus(@RequestParam UUID userId){
+        List<ReadStatusResponse> allByUserId = readStatusService.findAllByUserId(userId);
         return ResponseEntity.status(HttpStatus.OK).body(allByUserId);
 
     }

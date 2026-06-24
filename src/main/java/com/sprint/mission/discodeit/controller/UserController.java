@@ -39,10 +39,10 @@ public class UserController {
     //user 수정 api
     @PatchMapping(path = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserResponse> updateUser(@PathVariable UUID userId,
-                                                   @RequestPart UserUpdateRequest request,
+                                                   @RequestPart UserUpdateRequest userUpdateRequest,
                                                    @RequestPart(required = false) MultipartFile profile){
         Optional<BinaryContentCreateRequest> profileRequest = FileUtils.toRequest(profile);
-        UserResponse response = userService.updateUser(userId, request, profileRequest.orElse(null));
+        UserResponse response = userService.updateUser(userId, userUpdateRequest, profileRequest.orElse(null));
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
     //user 삭제 api
