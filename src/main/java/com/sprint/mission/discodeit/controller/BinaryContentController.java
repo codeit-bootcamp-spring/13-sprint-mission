@@ -30,8 +30,8 @@ public class BinaryContentController {
 
     //BinaryContent 조회 api
     @GetMapping()
-    public ResponseEntity<List<BinaryContentResponse>>findAllByUserId(@RequestParam List<UUID> ids) {
-        List<BinaryContentResponse> allByIdIn = binaryContentService.findAllByIdIn(ids);
+    public ResponseEntity<List<BinaryContentResponse>>findAllByUserId(@RequestParam List<UUID> binaryContentIds) {
+        List<BinaryContentResponse> allByIdIn = binaryContentService.findAllByIdIn(binaryContentIds);
         return ResponseEntity.status(HttpStatus.OK).body(allByIdIn);
     }
 }
