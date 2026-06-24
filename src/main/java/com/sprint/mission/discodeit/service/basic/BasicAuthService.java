@@ -30,7 +30,9 @@ public class BasicAuthService implements AuthService {
         //유저 상태 검색 및 마지막 접속 시간 업데이트
         UserStatus userStatus = userStatusRepository.findUserStatusByUserId(userTemp.getId())
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
+
         userStatus.updateLastActiveAt();
+        userStatusRepository.save();
 
         log.info("유저: {} 로그인 승인.", request.username());
 

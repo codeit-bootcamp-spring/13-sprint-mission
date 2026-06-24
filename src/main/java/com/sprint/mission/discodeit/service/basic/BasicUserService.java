@@ -134,7 +134,7 @@ public class BasicUserService implements UserService {
         }
 
         log.info("유저: {}가 수정됨.", userTemp.getUsername());
-        log.info("name: {}, email: {}, password: {}\n-> name: {}, email: {}, password: {}", userTemp.getUsername(), userTemp.getEmail(), userTemp.getPassword(), request.newUsername(), request.newEmail(), request.newPassword());
+        log.info("name: {}, email: {}\n-> name: {}, email: {}", userTemp.getUsername(), userTemp.getEmail(), request.newUsername(), request.newEmail());
 
         //유저 업데이트
         userTemp.updateUser(request.newUsername(), request.newEmail(), request.newPassword(), binaryContentId);
