@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,11 +38,14 @@ public class UserController {
     //사용자 등록
     @Operation(summary = "User 등록")
     @ApiResponse(responseCode = "201", description = "User가 성공적으로 생성됨")
-    @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity<User> createUser(@Valid @ModelAttribute UserCreateRequest request,
-                                           @RequestParam(value = "profile", required = false) MultipartFile file) {
+    @RequestMapping(
+            method = RequestMethod.POST,
+            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}
+    )
+    public ResponseEntity<User> createUser(@Valid @RequestPart("userCreateRequest") UserCreateRequest request,
+                                           @RequestPart(value = "profile", required = false) MultipartFile profile) {
 
-        User createdUser = userService.createUser(request, file);
+        User createdUser = userService.createUser(request, profile);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
@@ -59,13 +63,17 @@ public class UserController {
     //사용자 정보 수정
     @Operation(summary = "User 정보 수정")
     @ApiResponse(responseCode = "200", description = "User 정보가 성공적으로 수정됨")
-    @RequestMapping(value = "/{userId}", method = RequestMethod.PATCH)
+    @RequestMapping(
+            value = "/{userId}",
+            method = RequestMethod.PATCH,
+            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}
+    )
     public ResponseEntity<User> updateUser(@Parameter(description = "수정할 User ID", required = true)
                                            @PathVariable UUID userId,
-                                           @Valid @ModelAttribute UserUpdateRequest request,
-                                           @RequestParam(value = "file", required = false) MultipartFile file) {
+                                           @Valid @RequestPart("userUpdateRequest") UserUpdateRequest request,
+                                           @RequestPart(value = "profile", required = false) MultipartFile profile) {
 
-        User response = userService.updateUser(userId, request, file);
+        User response = userService.updateUser(userId, request, profile);
 
         return ResponseEntity.ok().body(response);
     }

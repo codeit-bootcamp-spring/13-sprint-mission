@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.dto.response;
 
-import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.User;
 
 import java.time.Instant;
@@ -19,7 +18,7 @@ public record UserUpdateResponse(
                 user.getId(),
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
-                user.getName(),
+                user.getUsername(),
                 user.getEmail(),
                 user.getProfileId()
         );

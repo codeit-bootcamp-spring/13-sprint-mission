@@ -13,7 +13,6 @@ public class UserStatus extends EntityRoot implements Serializable {
     // 필드
     private final UUID userId;
     private Instant lastActiveAt;
-    private boolean online;
 
     //ctor
     public UserStatus(UUID userId) {
@@ -25,7 +24,7 @@ public class UserStatus extends EntityRoot implements Serializable {
 
     //getter
     // 유저 온라인 상태인지 체크 (5분 59초까지 온라인 상태인걸로)
-    public boolean isUserOnline() {
+    public boolean isOnline() {
         return Duration.between(lastActiveAt, Instant.now()).toMinutes() <= 5;
     }
 

@@ -77,47 +77,15 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public Message updateMessage(UUID messageId, MessageUpdateRequest request, List<MultipartFile> files) {
+    public Message updateMessage(UUID messageId, MessageUpdateRequest request) {
         //메시지 검색
         Message messageTemp = messageRepository.findMessageById(messageId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 메시지는 데이터파일에 존재하지 않습니다."));
 
-        List<UUID> binaryContentIdList = messageTemp.getAttachmentIds();
-        //첨부파일 존재 시
-        if (files != null) {
-            //이전 첨부파일 삭제
-            if (binaryContentIdList != null) {
-                for (UUID attachmentId : binaryContentIdList) {
-                    binaryContentRepository.deleteBinaryContent(attachmentId);
-                }
-            }
-
-            List<UUID> newBinaryContentIdList = new ArrayList<>();
-            for (MultipartFile file : files) {
-                if (file != null && !file.isEmpty()) {
-                    try {
-                        //binaryContent 생성
-                        BinaryContent binaryContent = new BinaryContent(
-                                file.getOriginalFilename(),
-                                (long) file.getBytes().length,
-                                file.getContentType(),
-                                file.getBytes()
-                        );
-                        binaryContentRepository.createBinaryContent(binaryContent);
-                        newBinaryContentIdList.add(binaryContent.getId());
-
-                    } catch (IOException e) {
-                        throw new FileException(e.getMessage());
-                    }
-                }
-            }
-            binaryContentIdList = newBinaryContentIdList;
-        }
-
         log.info("메시지: {}가 수정됨.\n->{}", messageTemp.getContent(), request.newContent());
 
         //메시지 업데이트
-        messageTemp.updateMessage(request.newContent(), binaryContentIdList);
+        messageTemp.updateMessage(request.newContent());
         messageRepository.save();
 
         return messageTemp;

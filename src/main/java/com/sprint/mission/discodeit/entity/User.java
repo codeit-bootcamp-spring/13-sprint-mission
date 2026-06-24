@@ -3,32 +3,30 @@ package com.sprint.mission.discodeit.entity;
 import lombok.Getter;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Getter
 public class User extends EntityRoot implements Serializable {
 
     //필드
-    private String name;
+    private String username;
     private String email;
     private String password;
     private UUID profileId;
 
     //ctor
-    public User(String name, String email, String password, UUID profileId) {
+    public User(String username, String email, String password, UUID profileId) {
         super();
 
-        this.name = name;
+        this.username = username;
         this.email = email;
         this.password = password;
         this.profileId = profileId;
     }
 
     //update Method
-    public void updateUser(String name, String email, String password, UUID profileId) {
-        this.name = name;
+    public void updateUser(String username, String email, String password, UUID profileId) {
+        this.username = username;
         this.email = email;
         this.password = password;
         this.profileId = profileId;
@@ -39,6 +37,6 @@ public class User extends EntityRoot implements Serializable {
     //method override
     @Override
     public String toString() {
-        return "[User: " + name + ", Email: " + email + "]";
+        return "[User: " + username + ", Email: " + email + "]";
     }
 }

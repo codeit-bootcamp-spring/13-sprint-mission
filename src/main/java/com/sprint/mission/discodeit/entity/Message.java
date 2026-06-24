@@ -26,9 +26,8 @@ public class Message extends EntityRoot implements Serializable {
     }
 
     //update Method
-    public void updateMessage(String content, List<UUID> attachmentIds) {
+    public void updateMessage(String content) {
         this.content = content;
-        this.attachmentIds = attachmentIds;
 
         updateUpdatedAt();
     }

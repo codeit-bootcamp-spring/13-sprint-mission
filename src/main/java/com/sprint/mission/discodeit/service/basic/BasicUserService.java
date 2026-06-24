@@ -3,7 +3,6 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserFindResponse;
-import com.sprint.mission.discodeit.dto.response.UserUpdateResponse;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.DuplicateResourceException;
 import com.sprint.mission.discodeit.exception.FileException;
@@ -60,7 +59,7 @@ public class BasicUserService implements UserService {
         //유저 생성
         User user = new User(request.username(), request.email(), request.password(), binaryContentId);
         userRepository.createUser(user);
-        log.info("유저: {}가 생성됨.", user.getName());
+        log.info("유저: {}가 생성됨.", user.getUsername());
 
         //UserStatus 생성
         UserStatus userStatus = new UserStatus(user.getId());
@@ -79,7 +78,7 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = userStatusRepository.findUserStatusByUserId(userId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
 
-        return UserFindResponse.from(userTemp, userStatus.isUserOnline());
+        return UserFindResponse.from(userTemp, userStatus.isOnline());
     }
 
     @Override
@@ -91,7 +90,7 @@ public class BasicUserService implements UserService {
                 .map(user ->
                         UserFindResponse.from(
                                 user, userStatusRepository.findUserStatusByUserId(user.getId())
-                                        .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다.")).isUserOnline()
+                                        .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다.")).isOnline()
                         ))
                 .toList();
     }
@@ -103,7 +102,7 @@ public class BasicUserService implements UserService {
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         //중복된 이름, 이메일로 수정 요청을 한 경우 검증
-        if (!userTemp.getName().equals(request.newUsername())) {
+        if (!userTemp.getUsername().equals(request.newUsername())) {
             validateNameExists(request.newUsername());
         }
         if (!userTemp.getEmail().equals(request.newEmail())) {
@@ -134,8 +133,8 @@ public class BasicUserService implements UserService {
             }
         }
 
-        log.info("유저: {}가 수정됨.", userTemp.getName());
-        log.info("name: {}, email: {}, password: {}\n-> name: {}, email: {}, password: {}", userTemp.getName(), userTemp.getEmail(), userTemp.getPassword(), request.newUsername(), request.newEmail(), request.newPassword());
+        log.info("유저: {}가 수정됨.", userTemp.getUsername());
+        log.info("name: {}, email: {}, password: {}\n-> name: {}, email: {}, password: {}", userTemp.getUsername(), userTemp.getEmail(), userTemp.getPassword(), request.newUsername(), request.newEmail(), request.newPassword());
 
         //유저 업데이트
         userTemp.updateUser(request.newUsername(), request.newEmail(), request.newPassword(), binaryContentId);
@@ -165,7 +164,7 @@ public class BasicUserService implements UserService {
         //유저 삭제
         userRepository.deleteUser(userId);
 
-        log.info("유저: {}가 삭제됨.", userTemp.getName());
+        log.info("유저: {}가 삭제됨.", userTemp.getUsername());
     }
 
     //유저 상태 검색 및 삭제

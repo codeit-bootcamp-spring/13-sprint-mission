@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,11 +31,14 @@ public class MessageController {
     //메시지 생성
     @Operation(summary = "Message 생성")
     @ApiResponse(responseCode = "201", description = "Message가 성공적으로 생성됨")
-    @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity<Message> createMessage(@Valid @ModelAttribute MessageCreateRequest request,
-                                                 @RequestParam(value = "files", required = false) List<MultipartFile> files) {
+    @RequestMapping(
+            method = RequestMethod.POST,
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<Message> createMessage(@Valid @RequestPart("messageCreateRequest") MessageCreateRequest request,
+                                                 @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments) {
 
-        Message createdMessage = messageService.createMessage(request, files);
+        Message createdMessage = messageService.createMessage(request, attachments);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(createdMessage);
     }
@@ -56,10 +60,9 @@ public class MessageController {
     @RequestMapping(value = "/{messageId}", method = RequestMethod.PATCH)
     public ResponseEntity<Message> updateMessage(@Parameter(description = "수정할 Message ID", required = true)
                                                  @PathVariable UUID messageId,
-                                                 @Valid @ModelAttribute MessageUpdateRequest request,
-                                                 @RequestParam(value = "files", required = false) List<MultipartFile> files) {
+                                                 @Valid @RequestBody MessageUpdateRequest request) {
 
-        Message response = messageService.updateMessage(messageId, request, files);
+        Message response = messageService.updateMessage(messageId, request);
 
         return ResponseEntity.ok().body(response);
     }
