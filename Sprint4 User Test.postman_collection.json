@@ -1,0 +1,407 @@
+{
+  "info": {
+    "_postman_id": "6686a851-45c5-4c97-bc1f-62a973d202b0",
+    "name": "Sprint4 User Test",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "55308177",
+    "_collection_link": "https://go.postman.co/collection/55308177-6686a851-45c5-4c97-bc1f-62a973d202b0?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "User GET",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/user/findAll",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "user",
+            "findAll"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "User POST",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"keria\",\n  \"email\": \"keria@codeit.com\",\n  \"password\": \"5678\",\n  \"profileName\": null,\n  \"profileContentType\": null,\n  \"profileBytes\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/user",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "user"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "User PUT",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"0246543e-dd0d-4619-bd51-2bcb8b98602c\",\n  \"username\": \"jessie-updated\",\n  \"email\": \"jessie-updated@codeit.com\",\n  \"password\": \"5678\",\n  \"profileName\": null,\n  \"profileContentType\": null,\n  \"profileBytes\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/user",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "user"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "User DELETE",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"0246543e-dd0d-4619-bd51-2bcb8b98602c\",\n  \"username\": \"jessie-updated\",\n  \"email\": \"jessie-updated@codeit.com\",\n  \"password\": \"5678\",\n  \"profileName\": null,\n  \"profileContentType\": null,\n  \"profileBytes\": null\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/user/b02fec0e-0cef-498a-b406-62eacd846bc0",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "user",
+            "b02fec0e-0cef-498a-b406-62eacd846bc0"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "User Status",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n  \"id\": \"d762d2fe-9e03-4b9f-969a-2aba7e09fe4f\",\n  \"lastSeenAt\": \"2026-06-19T12:00:00Z\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/user/status?userId=",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "user",
+            "status"
+          ],
+          "query": [
+            {
+              "key": "userId",
+              "value": ""
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Public Channel POST",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"general\",\n  \"description\": \"public channel\",\n  \"creatorId\": \"b6d14e33-c84d-4e0d-83f8-1a7ddeb49f57\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/channel",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "channel"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"faker\",\n  \"password\": \"1234\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Channel GET",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/channel?userId=ed744a68-5bb5-4e4a-9bc0-ea9644ef1950",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "channel"
+          ],
+          "query": [
+            {
+              "key": "userId",
+              "value": "ed744a68-5bb5-4e4a-9bc0-ea9644ef1950"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Message POST",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"content\": \"안녕하세요. 첫 번째 메시지입니다.\",\n  \"channelId\": \"697453df-08c3-4694-8729-78e034db8211\",\n  \"userId\": \"0246543e-dd0d-4619-bd51-2bcb8b98602c\",\n  \"attachments\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/message",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "message"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Message PUT",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"id\": \"498b1233-d24e-4b80-81f7-5417cc944a38\",\n  \"content\": \"수정메세지입니다.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/message",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "message"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Message GET",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Message DELETE",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"id\": \"498b1233-d24e-4b80-81f7-5417cc944a38\",\n  \"content\": \"수정메세지입니다.\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/message/498b1233-d24e-4b80-81f7-5417cc944a38",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "message",
+            "498b1233-d24e-4b80-81f7-5417cc944a38"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Private Channel POST",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"participantIds\": [\n    \"39d27d5a-faff-4670-9ac5-ad53203afcb8\",\n    \"33560585-39c2-4640-99e2-b005ce633c96\"\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/channel/private",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "channel",
+            "private"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Public Channel PUT",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Public Channel DELETE",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/channel/ed744a68-5bb5-4e4a-9bc0-ea9644ef1950",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "channel",
+            "ed744a68-5bb5-4e4a-9bc0-ea9644ef1950"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

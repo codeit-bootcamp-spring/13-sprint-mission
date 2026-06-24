@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserResponse;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -77,6 +79,14 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    public Collection<UserDto> findAllDto() {
+        return userRepository.findAll().stream()
+                .map(this::toDto)
+                .toList();
+
+    }
+
+    @Override
     public UserResponse update(UserUpdateRequest updateRequest) {
         User user= userRepository.findById(updateRequest.id());
 
@@ -136,6 +146,21 @@ public class BasicUserService implements UserService {
                 user.getEmail(),
                 user.getProfileId(),
                 isOnline);
+    }
+
+    private UserDto toDto(User user) {
+        UserStatus userStatus = userStatusRepository.findByUserId(user.getId());
+        boolean online = userStatus != null && userStatus.isOnline();
+
+        return new UserDto(
+                user.getId(),
+                user.getCreateAt(),
+                user.getUpdateAt(),
+                user.getName(),
+                user.getEmail(),
+                user.getProfileId(),
+                online
+        );
     }
 
     private void validateUniqueUser (String username, String email) {
