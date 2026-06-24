@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
-@RequestMapping("/api/binaryContent")
+@RequestMapping("/api/binaryContents")
 @RestController
 @RequiredArgsConstructor
 public class BinaryContentController {

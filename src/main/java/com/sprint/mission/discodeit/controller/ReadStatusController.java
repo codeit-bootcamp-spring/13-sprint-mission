@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
-@RequestMapping("/api/v1/read-status")
+@RequestMapping("/api/readStatuses")
 @RestController
 @RequiredArgsConstructor
 public class ReadStatusController {
@@ -21,7 +21,7 @@ public class ReadStatusController {
         return readStatusService.create(request);
     }
 
-    @RequestMapping(value = "/{readStatusId}", method = RequestMethod.PUT)
+    @RequestMapping(value = "/{readStatusId}", method = RequestMethod.PATCH)
     public ReadStatusResponse update(
             @PathVariable UUID readStatusId,
             @RequestBody UpdateReadStatusRequest request
@@ -29,9 +29,9 @@ public class ReadStatusController {
         return readStatusService.update(readStatusId, request);
     }
 
-    @RequestMapping(value = "/user/{userId}", method = RequestMethod.GET)
+    @RequestMapping(method = RequestMethod.GET)
     public List<ReadStatusResponse> findAllByUserId(
-            @PathVariable UUID userId
+            @RequestParam UUID userId
     ) {
         return readStatusService.findAllByUserId(userId);
     }

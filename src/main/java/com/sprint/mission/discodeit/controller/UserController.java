@@ -16,7 +16,7 @@ import java.util.*;
 @RestController
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("/api/user")
+@RequestMapping("/api/users")
 public class UserController {
 
     private final UserService userService;
@@ -44,7 +44,7 @@ public class UserController {
         return userService.create(request);
     }
 
-    @RequestMapping(value = "/{userId}", method = RequestMethod.PUT)
+    @RequestMapping(value = "/{userId}", method = RequestMethod.PATCH)
     public UserResponse update(@PathVariable UUID userId,
                                @RequestBody UserRequest.UpdateUserRequest request) {
         return userService.update(userId, request);
@@ -55,7 +55,7 @@ public class UserController {
         userService.delete(userId);
     }
 
-    @RequestMapping(value = "/findAll", method = RequestMethod.GET)
+    @RequestMapping(value = "/", method = RequestMethod.GET)
     public ResponseEntity<List<UserDto>> findAll() {
         return ResponseEntity.ok(userService.findAll());
     }

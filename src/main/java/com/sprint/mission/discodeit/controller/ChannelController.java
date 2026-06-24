@@ -29,7 +29,7 @@ public class ChannelController {
         return channelService.createPrivateChannel(request);
     }
 
-    @RequestMapping(value = "/{channelId}", method = RequestMethod.PUT)
+    @RequestMapping(value = "/{channelId}", method = RequestMethod.PATCH)
     public ChannelResponse update(@PathVariable UUID channelId,
                                   @RequestBody ChannelRequest.UpdateChannel request){
         return channelService.update(channelId, request);
@@ -40,9 +40,9 @@ public class ChannelController {
         channelService.delete(channelId);
     }
 
-    @RequestMapping(value = "/users/{userId}", method = RequestMethod.GET)
+    @RequestMapping (method = RequestMethod.GET)
     public List<ChannelResponse> findAllByUserId(
-            @PathVariable UUID userId
+            @RequestParam UUID userId
     ) {
         return channelService.findAllByUserId(userId);
     }
