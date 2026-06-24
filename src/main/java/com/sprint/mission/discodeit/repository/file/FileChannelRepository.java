@@ -12,16 +12,18 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Repository // File*Repository 구현체를 Repository 인터페이스의 Bean으로 등록
 public class FileChannelRepository implements ChannelRepository {
 
     private final Path DIRECTORY;
-    private final String EXTENSION=".ser";
+    private static final String EXTENSION=".ser";
+    private static final String USER_DIRECTORY = System.getProperty("user.dir"); // user.dir 또한 상수로 표현
+    private static final String FILE_STORAGE_DIR = "file-data-map"; // file-data-map 또한 처음 보는 사람도 알아볼 수 있도록 역할과 의미를 분명히 해야 한다
 
     public FileChannelRepository(){
-        this.DIRECTORY= Paths.get(System.getProperty("user.dir"),
-                "file-data-map", Channel.class.getSimpleName());
+        this.DIRECTORY= Paths.get(USER_DIRECTORY, FILE_STORAGE_DIR, Channel.class.getSimpleName());
         if (Files.notExists(DIRECTORY)){
             try {
                 Files.createDirectories(DIRECTORY);
@@ -69,8 +71,8 @@ public class FileChannelRepository implements ChannelRepository {
 
     @Override
     public List<Channel> findAll() {
-        try {
-            return Files.list(DIRECTORY)
+        try (Stream<Path> paths=Files.list(DIRECTORY)){
+            return paths
                     .filter(path -> path.toString().endsWith(EXTENSION))
                     .map(path -> {
                         try (

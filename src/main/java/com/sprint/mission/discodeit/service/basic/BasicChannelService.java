@@ -33,7 +33,7 @@ public class BasicChannelService implements ChannelService {
     // PUBLIC 채널 생성할 때는 기존 로직 유지
     @Override
     public ChannelResponse createPublicChannel(PublicChannelCreateRequest request) {
-        Channel channel=new Channel(ChannelType.PUBLIC, request.name(), request.description());
+        Channel channel=new Channel(ChannelType.PUBLIC, request.getName(), request.getDescription());
         channelRepository.save(channel);
         return ChannelResponse.from(channel, null, null);
     }
@@ -41,14 +41,14 @@ public class BasicChannelService implements ChannelService {
     // PRIVATE 채널 생성할 때 채널에 참여하는 User 정보 받아 User 별 ReadStatus 정보 생성 (name, description 속성 생략)
     @Override
     public ChannelResponse createPrivateChannel(PrivateChannelCreateRequest request) {
-        Channel channel=new Channel(ChannelType.PRIVATE);
+        Channel channel=new Channel(ChannelType.PRIVATE, null, null);
         channelRepository.save(channel);
         // 채널 생성
-        for (UUID userId : request.userIds()) {
-            ReadStatus readStatus=new ReadStatus(userId, channel.getId());
+        for (UUID userId : request.getParticipantsIds()) {
+            ReadStatus readStatus=new ReadStatus(userId, channel.getId(), Instant.MIN);
             readStatusRepository.save(readStatus);
         }
-        return ChannelResponse.from(channel, null, request.userIds());
+        return ChannelResponse.from(channel, Instant.MIN, request.getParticipantsIds());
     }
 
     @Override
@@ -95,14 +95,14 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ChannelResponse update(ChannelUpdateRequest request) {
-        Channel channel = channelRepository.findById(request.channelId())
-                .orElseThrow(() -> new NoSuchElementException(request.channelId() + " 를 찾을 수 없습니다."));
+    public ChannelResponse update(UUID channelId, ChannelUpdateRequest request) {
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> new NoSuchElementException(channelId + " 를 찾을 수 없습니다."));
         // PRIVATE 채널은 수정 불가능
         if (channel.getType() == ChannelType.PRIVATE) {
             throw new IllegalArgumentException("PRIVATE 채널은 수정할 수 없습니다.");
         }
-        channel.update(request.newType(),request.newName(),request.newDescription());
+        channel.update(request.getNewType(),request.getNewName(),request.getNewDescription());
         channelRepository.save(channel);
         return ChannelResponse.from(channel, null, null);
     }

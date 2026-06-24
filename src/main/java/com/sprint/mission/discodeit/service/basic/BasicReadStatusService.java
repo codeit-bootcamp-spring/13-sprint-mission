@@ -10,7 +10,6 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ReadStatusService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -26,15 +25,14 @@ public class BasicReadStatusService implements ReadStatusService {
     @Override
     public ReadStatusResponse create(ReadStatusCreateRequest request) {
         // 관련된 Channel이나 User가 존재하지 않으면 예외 발생
-        channelRepository.findById(request.channelId())
+        channelRepository.findById(request.getChannelId())
                 .orElseThrow(()->new NoSuchElementException("존재하지 않는 채널입니다."));
-        userRepository.findById(request.userId())
+        userRepository.findById(request.getUserId())
                 .orElseThrow(()->new NoSuchElementException("존재하지 않는 사용자입니다."));
         // 같은 Channel과 User와 관련된 객체가 이미 존재하면 예외 발생
-        readStatusRepository.findById(request.channelId())
+        readStatusRepository.findById(request.getChannelId())
                 .ifPresent(readStatus -> { throw new IllegalArgumentException("이미 존재하는 정보입니다.");});
-
-        ReadStatus readStatus = new ReadStatus(request.channelId(), request.userId());
+        ReadStatus readStatus = new ReadStatus(request.getChannelId(), request.getUserId(), request.getLastReadAt());
         readStatusRepository.save(readStatus);
         return ReadStatusResponse.from(readStatus);
     }
@@ -54,10 +52,10 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    public ReadStatusResponse update(ReadStatusUpdateRequest request) {
-        ReadStatus readStatus=readStatusRepository.findById(request.readStatusId())
-                .orElseThrow(()->new NoSuchElementException(request.readStatusId()+" 를 찾을 수 없습니다."));
-        readStatus.update(request.NewReadAt());
+    public ReadStatusResponse update(UUID readStatusId, ReadStatusUpdateRequest request) {
+        ReadStatus readStatus=readStatusRepository.findById(readStatusId)
+                .orElseThrow(()->new NoSuchElementException(readStatusId+" 를 찾을 수 없습니다."));
+        readStatus.update(request.getNewLastReadAt());
         readStatusRepository.save(readStatus);
         return ReadStatusResponse.from(readStatus);
     }

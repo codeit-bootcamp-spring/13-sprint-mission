@@ -1,17 +1,15 @@
 package com.sprint.mission.discodeit.repository.jcf;
 
-
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import lombok.NoArgsConstructor;
 
 import java.util.*;
 
+@NoArgsConstructor
 public class JCFChannelRepository implements ChannelRepository {
 
-    private final Map<UUID, Channel> data;
-    public JCFChannelRepository(){
-        this.data=new HashMap<>();
-    }
+    private static final Map<UUID, Channel> data=new HashMap<>(); // 인스턴스를 생성할 때 마다 새로운 Map을 만들지 않도록 한다
 
     @Override
     public Channel save(Channel channel) {

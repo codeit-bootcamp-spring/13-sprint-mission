@@ -2,15 +2,14 @@ package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import lombok.NoArgsConstructor;
 
 import java.util.*;
 
+@NoArgsConstructor
 public class JCFUserRepository implements UserRepository {
 
-    private final Map<UUID, User> data;
-    public JCFUserRepository(){
-        this.data=new HashMap<>();
-    }
+    private final Map<UUID, User> data = new HashMap<>(); // 인스턴스를 생성할 때 마다 새로운 Map을 만들지 않도록 한다
 
     @Override
     public User save(User user) {

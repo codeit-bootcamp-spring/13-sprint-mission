@@ -17,7 +17,8 @@ public class Channel implements Serializable {
     private final Instant createdAt;
     private Instant updatedAt; // 시간 다루는 필드 타입은 Instant로 바꾸어 가독성과 확장성 확보
     private ChannelType type;
-    private String name, description; // 채널 설명 추가
+    private String name;
+    private String description; // 채널 설명 추가
 
     // 객체 생성 시 클래스 외부에서 정의해야 하는 값만 파라미터로 정의
     public Channel(ChannelType type, String name, String description){
@@ -27,10 +28,6 @@ public class Channel implements Serializable {
         this.type=type;
         this.name=name;
         this.description=description;
-    }
-
-    public Channel(ChannelType channelType) {
-        this(channelType, "", "");
     }
 
     // 필드 수정하는 update 함수 정의

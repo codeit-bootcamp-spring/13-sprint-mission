@@ -13,7 +13,9 @@ import static java.util.UUID.randomUUID;
 public class Message implements Serializable {
     @Serial
     private static final long serialVersionUID=1L;
-    private final UUID id, channelId, authorId; // User 도메인 모델의 id와 연결하기 위해 authorId 추가
+    private final UUID id;
+    private final UUID channelId;
+    private final UUID authorId; // User 도메인 모델의 id와 연결하기 위해 authorId 추가
     private final Instant createdAt;
     private Instant updatedAt;
     private String content;

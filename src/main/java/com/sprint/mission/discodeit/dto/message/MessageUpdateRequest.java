@@ -1,8 +1,14 @@
 package com.sprint.mission.discodeit.dto.message;
 
-import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-public record MessageUpdateRequest(
-        UUID messageId,
-        String newContent
-) { }
+@Setter
+@Getter
+@ToString
+@AllArgsConstructor
+public class MessageUpdateRequest {
+    private String newContent;
+}

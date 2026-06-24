@@ -11,16 +11,23 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Repository // File*Repository 구현체를 Repository 인터페이스의 Bean으로 등록
 public class FileMessageRepository implements MessageRepository {
 
     private final Path DIRECTORY;
-    private final String EXTENSION=".ser";
+    private static final String EXTENSION=".ser";
+    private static final String USER_DIRECTORY = System.getProperty("user.dir");
+    private static final String FILE_STORAGE_DIR = "file-data-map"; // file-data-map 또한 처음 보는 사람도 알아볼 수 있도록 역할과 의미를 분명히 해야 한다
 
     public FileMessageRepository(){
-        this.DIRECTORY= Paths.get(System.getProperty("user.dir"),
-                "file-data-map", Message.class.getSimpleName());
+        this.DIRECTORY= Paths.get(USER_DIRECTORY,
+                FILE_STORAGE_DIR, Message.class.getSimpleName());
+        /*
+        가정: if msg.length()>10 - 매직넘버, 10이 뭘 뜻하는지 알 수 없다
+        -> private static final int MSG_MAX_LENGTH=10; 형식적으로 작성해야 의미 담아야 한다
+         */
         if (Files.notExists(DIRECTORY)){
             try {
                 Files.createDirectories(DIRECTORY);
@@ -67,8 +74,8 @@ public class FileMessageRepository implements MessageRepository {
 
     @Override
     public List<Message> findAll() {
-        try {
-            return Files.list(DIRECTORY)
+        try (Stream<Path> paths=Files.list(DIRECTORY)){
+            return paths
                     .filter(path -> path.toString().endsWith(EXTENSION))
                     .map(path -> {
                         try (
@@ -88,8 +95,8 @@ public class FileMessageRepository implements MessageRepository {
 
     @Override
     public List<Message> findAllByChannelId(UUID channelId) {
-        try {
-            return Files.list(DIRECTORY)
+        try (Stream<Path> paths=Files.list(DIRECTORY)){
+            return paths
                     .filter(path -> path.toString().endsWith(EXTENSION))
                     .map(path -> {
                         try (

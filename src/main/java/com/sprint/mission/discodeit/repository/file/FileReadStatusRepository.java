@@ -11,15 +11,18 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Repository
 public class FileReadStatusRepository implements ReadStatusRepository {
     private final Path DIRECTORY;
-    private final String EXTENSION = ".ser";
+    private static final String EXTENSION = ".ser";
+    private static final String USER_DIRECTORY = System.getProperty("user.dir"); // user.dir 또한 상수로 표현
+    private static final String FILE_STORAGE_DIR = "file-data-map"; // file-data-map 또한 처음 보는 사람도 알아볼 수 있도록 역할과 의미를 분명히 해야 한다
 
     public FileReadStatusRepository(){
-        this.DIRECTORY= Paths.get(System.getProperty("user.dir"),
-                "file-data-map", ReadStatus.class.getSimpleName());
+        this.DIRECTORY= Paths.get(USER_DIRECTORY,
+                FILE_STORAGE_DIR, ReadStatus.class.getSimpleName());
         if (Files.notExists(DIRECTORY)){ // Repository 생성 시점에서 폴더 존재 여부 한 번만 검사
             try {
                 Files.createDirectories(DIRECTORY);
@@ -66,8 +69,8 @@ public class FileReadStatusRepository implements ReadStatusRepository {
 
     @Override
     public List<ReadStatus> findAllByChannelId(UUID channelId) {
-        try {
-            return Files.list(DIRECTORY)
+        try (Stream<Path> paths=Files.list(DIRECTORY)){
+            return paths
                     .filter(path -> path.toString().endsWith(EXTENSION))
                     .map(path -> {
                         try (
@@ -88,8 +91,8 @@ public class FileReadStatusRepository implements ReadStatusRepository {
 
     @Override
     public List<ReadStatus> findAllByUserId(UUID userId) {
-        try {
-            return Files.list(DIRECTORY)
+        try (Stream<Path> paths=Files.list(DIRECTORY)){
+            return paths
                     .filter(path -> path.toString().endsWith(EXTENSION))
                     .map(path -> {
                         try (
