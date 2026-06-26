@@ -76,7 +76,7 @@ public class BasicMessageService implements MessageService {
     public MessageResponse findById(UUID id) {
         Message message = messageRepository.findById(id);
         if (message == null) {
-            return null;
+            throw new IllegalArgumentException("존재하지 않은 메세지 입니다.") ;
         }
         return toResponse(message);
     }
@@ -90,6 +90,10 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public MessageResponse update(MessageUpdateRequest request) {
+        if (request.content() == null) {
+            throw new IllegalArgumentException("존재하지 않은 메세지 입니다.");
+        }
+
         Message message = messageRepository.findById(request.id());
         message.update(request.content());
         messageRepository.save(message);
@@ -99,6 +103,10 @@ public class BasicMessageService implements MessageService {
     @Override
     public void delete(UUID id) {
         Message message = messageRepository.findById(id);
+
+        if (message == null) {
+            throw new IllegalArgumentException("존재하지 않은 메세지 입니다.");
+        }
 
         if (message.getAttachmentIds() != null) {
             for (UUID attachmentId : message.getAttachmentIds()) {
