@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.controller.docs.UserControllerDocs;
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserResponse;
@@ -22,16 +23,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-@Tag(name = "User", description = "User API")
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-public class UserController {
+public class UserController implements UserControllerDocs {
 
     private final UserService userService;
     private final UserStatusService userStatusService;
 
-    @Operation(summary = "User 생성 API")
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserResponse> createUser(@RequestPart UserCreateRequest userCreateRequest,
                                                    @RequestPart(required = false) MultipartFile profile) {
@@ -41,7 +41,6 @@ public class UserController {
     }
 
 
-    @Operation(summary = "User 수정 API")
     @PatchMapping(path = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserResponse> updateUser(@PathVariable UUID userId,
                                                    @RequestPart UserUpdateRequest userUpdateRequest,
@@ -51,28 +50,24 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    @Operation(summary = "User 삭제 API")
     @DeleteMapping( "/{userId}")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID userId){
         userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "User 단건 조회 API")
     @GetMapping("/{userId}")
     public ResponseEntity<UserResponse> findUser (@PathVariable UUID userId){
         UserResponse userById = userService.findByUserId(userId);
         return ResponseEntity.status(HttpStatus.OK).body(userById);
     }
 
-    @Operation(summary = "전체 User 조회 API")
     @GetMapping()
     public ResponseEntity<List<UserResponse>> findAllUser(){
         List<UserResponse> allUser = userService.findAllUser();
         return ResponseEntity.status(HttpStatus.OK).body(allUser);
     }
 
-    @Operation(summary = "User 온라인 상태 업데이트 API")
     @PatchMapping("/{userId}/userStatus")
     public ResponseEntity<UserStatusResponse> updateUserStatus(@PathVariable UUID userId,
                                                                @RequestBody UserStatusUpdateRequest request){
