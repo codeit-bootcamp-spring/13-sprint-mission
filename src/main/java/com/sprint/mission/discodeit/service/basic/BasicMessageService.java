@@ -89,12 +89,17 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public MessageResponse update(MessageUpdateRequest request) {
+    public MessageResponse update(UUID messageId, MessageUpdateRequest request) {
         if (request.content() == null) {
             throw new IllegalArgumentException("존재하지 않은 메세지 입니다.");
         }
 
-        Message message = messageRepository.findById(request.id());
+        Message message = messageRepository.findById(messageId);
+
+        if (message == null) {
+            throw new IllegalArgumentException("존재하지 않은 메세지 입니다.");
+        }
+
         message.update(request.content());
         messageRepository.save(message);
         return toResponse(message);

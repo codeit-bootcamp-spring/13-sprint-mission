@@ -68,7 +68,6 @@ public class BasicChannelService implements ChannelService {
         channelRepository.save(channel);
 
         for (UUID participantId : request.participantIds()) {
-            User user = userRepository.findById(participantId);
 
             ReadStatus readStatus = new ReadStatus(
                     participantId,
@@ -111,8 +110,8 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ChannelResponse update(ChannelUpdateRequest request) {
-        Channel channel = channelRepository.findById(request.id());
+    public ChannelResponse update(UUID channelId, ChannelUpdateRequest request) {
+        Channel channel = channelRepository.findById(channelId);
         if (channel == null) {
             throw new IllegalArgumentException("존재하지 않는 채널입니다.");
         }

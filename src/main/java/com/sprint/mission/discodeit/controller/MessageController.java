@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.message.MessageResponse;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,7 +14,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/message")
+@RequestMapping("/api/messages")
 public class MessageController {
 
     private final MessageService messageService;
@@ -22,7 +23,7 @@ public class MessageController {
     public ResponseEntity<MessageResponse> create(
             @RequestBody MessageCreateRequest request
     ) {
-        return ResponseEntity.ok(messageService.create(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(messageService.create(request));
     }
 
     @RequestMapping(method = RequestMethod.GET)
@@ -32,18 +33,19 @@ public class MessageController {
         return ResponseEntity.ok(messageService.findAllByChannelId(channelId));
     }
 
-    @RequestMapping(method = RequestMethod.PUT)
+    @RequestMapping(value = "/{messageId}", method = RequestMethod.PATCH)
     public ResponseEntity<MessageResponse> update(
+            @PathVariable UUID messageId,
             @RequestBody MessageUpdateRequest request
     ) {
-        return ResponseEntity.ok(messageService.update(request));
+        return ResponseEntity.ok(messageService.update(messageId, request));
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/{messageId}", method = RequestMethod.DELETE)
     public ResponseEntity<Void> delete(
-            @PathVariable UUID id
+            @PathVariable UUID messageId
     ) {
-        messageService.delete(id);
+        messageService.delete(messageId);
         return ResponseEntity.noContent().build();
     }
 }

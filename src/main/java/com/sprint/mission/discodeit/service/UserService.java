@@ -13,7 +13,7 @@ public interface UserService {
 	UserResponse findById(UUID id);
 	Collection<UserResponse> findAll();
 	Collection<UserDto> findAllDto();
-	UserResponse update(UserUpdateRequest updateRequest);
+	UserResponse update(UUID userId, UserUpdateRequest updateRequest);
 	void delete(UUID id);
 	
 }
