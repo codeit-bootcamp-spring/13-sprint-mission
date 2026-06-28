@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
@@ -20,11 +20,11 @@ import java.util.UUID;
         name = "type",
         havingValue = "file"
 )
-public class FileUserRepository implements UserRepository {
+public class FileUserStatusRepository implements UserStatusRepository {
 
     private final Path path;
 
-    public FileUserRepository(@Value("${file.path.user}") String path) {
+    public FileUserStatusRepository(@Value("${file.path.userStatus}") String path) {
         this.path = Paths.get(path);
 
         try {
@@ -34,91 +34,68 @@ public class FileUserRepository implements UserRepository {
         }
     }
 
-    private void saveFile(List<User> users) {
+    private void saveFile(List<UserStatus> userStatuses) {
         try (ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(Files.newOutputStream(path)))) {
-            oos.writeObject(new ArrayList<>(users));
+            oos.writeObject(new ArrayList<>(userStatuses));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private List<User> loadFile() {
+    private List<UserStatus> loadFile() {
         if (!Files.exists(path)) {
             return new ArrayList<>();
         }
 
         try (ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(Files.newInputStream(path)))) {
-            return (List<User>) ois.readObject();
+            return (List<UserStatus>) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void save(User user) {
-        List<User> users = loadFile();
+    public void save(UserStatus userStatus) {
+        List<UserStatus> userStatuses = loadFile();
 
         boolean isUpdated = false;
-        for (int i = 0; i < users.size(); i++) {
-            if (users.get(i).getId().equals(user.getId())) {
-                users.set(i, user);
+        for (int i = 0; i < userStatuses.size(); i++) {
+            if (userStatuses.get(i).getId().equals(userStatus.getId())) {
+                userStatuses.set(i, userStatus);
                 isUpdated = true;
                 break;
             }
         }
 
         if(!isUpdated) {
-            users.add(user);
+            userStatuses.add(userStatus);
         }
-        saveFile(users);
+        saveFile(userStatuses);
     }
 
     @Override
-    public User findById(UUID id) {
-        List<User> users = loadFile();
+    public UserStatus findById(UUID id) {
+        List<UserStatus> userStatuses = loadFile();
 
-        for (User user : users) {
-            if(user.getId().equals(id)) {
-                return user;
+        for (UserStatus userStatus : userStatuses) {
+            if(userStatus.getId().equals(id)) {
+                return userStatus;
             }
         }
         return null;
     }
 
     @Override
-    public User findByUserName(String userName) {
-        List<User> users = loadFile();
-        for (User user : users) {
-            if(userName.equals(user.getUserName())) {
-                return user;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public User findByEmail(String email) {
-        List<User> users = loadFile();
-
-        for (User user : users) {
-            if(user.getEmail().equals(email)) {
-                return user;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public List<User> findAll() {
+    public List<UserStatus> findAll() {
         return loadFile();
     }
 
     @Override
     public void delete(UUID id) {
-        List<User> users = loadFile();
+        List<UserStatus> userStatuses = loadFile();
 
-        if(users.removeIf(user -> user.getId().equals(id))) {
-            saveFile(users);
+        if(userStatuses.removeIf(userStatus -> userStatus.getId().equals(id))) {
+            saveFile(userStatuses);
         }
     }
 }

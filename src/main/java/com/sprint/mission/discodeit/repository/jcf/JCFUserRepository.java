@@ -2,36 +2,53 @@ package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Repository;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
+@Repository
+@ConditionalOnProperty(
+        prefix = "discodeit.repository",
+        name = "type",
+        havingValue = "jcf",
+        matchIfMissing = true
+)
 public class JCFUserRepository implements UserRepository {
-    private final Map<UUID, User> data = new HashMap<>();
 
-    @Override
-    public User create(User user) {
-        data.put(user.getId(), user);
-        return user;
+    private final Map<UUID, User> data;
+
+    public JCFUserRepository() {
+        this.data = new HashMap<>();
     }
 
     @Override
-    public User read(UUID id) {
+    public void save(User user) {
+        data.put(user.getId(), user);
+    }
+
+    @Override
+    public User findById(UUID id) {
         return data.get(id);
     }
 
     @Override
-    public List<User> readAll() {
-        return data.values().stream().toList();
+    public User findByUserName(String userName) {
+        return data.values().stream()
+                .filter(u->u.getUserName().equals(userName))
+                .findFirst().orElse(null);
     }
 
     @Override
-    public void update(User user) {
-        if (data.containsKey(user.getId())) {
-            data.put(user.getId(), user);
-        }
+    public User findByEmail(String email) {
+        return data.values().stream()
+                .filter(u->u.getEmail().equals(email))
+                .findFirst().orElse(null);
+    }
+
+    @Override
+    public List<User> findAll() {
+        return new ArrayList<>(data.values());
     }
 
     @Override

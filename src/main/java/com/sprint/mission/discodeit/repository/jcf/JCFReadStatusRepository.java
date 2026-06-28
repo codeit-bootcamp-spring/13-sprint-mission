@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.repository.jcf;
 
-import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
@@ -14,26 +14,26 @@ import java.util.*;
         havingValue = "jcf",
         matchIfMissing = true
 )
-public class JCFMessageRepository implements MessageRepository {
+public class JCFReadStatusRepository implements ReadStatusRepository {
 
-    private final Map<UUID, Message> data;
+    private final Map<UUID, ReadStatus> data;
 
-    public JCFMessageRepository() {
+    public JCFReadStatusRepository() {
         this.data = new HashMap<>();
     }
 
     @Override
-    public void save(Message message) {
-        data.put(message.getId(), message);
+    public void save(ReadStatus readStatus) {
+        data.put(readStatus.getId(), readStatus);
     }
 
     @Override
-    public Message findById(UUID id) {
+    public ReadStatus findById(UUID id) {
         return data.get(id);
     }
 
     @Override
-    public List<Message> findAll() {
+    public List<ReadStatus> findAll() {
         return new ArrayList<>(data.values());
     }
 

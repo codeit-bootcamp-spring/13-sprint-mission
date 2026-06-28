@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
@@ -20,11 +20,11 @@ import java.util.UUID;
         name = "type",
         havingValue = "file"
 )
-public class FileUserRepository implements UserRepository {
+public class FileBinaryContentRepository implements BinaryContentRepository {
 
     private final Path path;
 
-    public FileUserRepository(@Value("${file.path.user}") String path) {
+    public FileBinaryContentRepository(@Value("${file.path.binaryContent}") String path) {
         this.path = Paths.get(path);
 
         try {
@@ -34,91 +34,67 @@ public class FileUserRepository implements UserRepository {
         }
     }
 
-    private void saveFile(List<User> users) {
+    private void saveFile(List<BinaryContent> binaryContents) {
         try (ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(Files.newOutputStream(path)))) {
-            oos.writeObject(new ArrayList<>(users));
+            oos.writeObject(new ArrayList<>(binaryContents));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private List<User> loadFile() {
+    private List<BinaryContent> loadFile() {
         if (!Files.exists(path)) {
             return new ArrayList<>();
         }
 
         try (ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(Files.newInputStream(path)))) {
-            return (List<User>) ois.readObject();
+            return (List<BinaryContent>) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
-
     @Override
-    public void save(User user) {
-        List<User> users = loadFile();
+    public void save(BinaryContent binaryContent) {
+        List<BinaryContent> binaryContents = loadFile();
 
         boolean isUpdated = false;
-        for (int i = 0; i < users.size(); i++) {
-            if (users.get(i).getId().equals(user.getId())) {
-                users.set(i, user);
+        for (int i = 0; i < binaryContents.size(); i++) {
+            if (binaryContents.get(i).getId().equals(binaryContent.getId())) {
+                binaryContents.set(i, binaryContent);
                 isUpdated = true;
                 break;
             }
         }
 
         if(!isUpdated) {
-            users.add(user);
+            binaryContents.add(binaryContent);
         }
-        saveFile(users);
+        saveFile(binaryContents);
     }
 
     @Override
-    public User findById(UUID id) {
-        List<User> users = loadFile();
+    public BinaryContent findById(UUID id) {
+        List<BinaryContent> binaryContents = loadFile();
 
-        for (User user : users) {
-            if(user.getId().equals(id)) {
-                return user;
+        for (BinaryContent binaryContent : binaryContents) {
+            if(binaryContent.getId().equals(id)) {
+                return binaryContent;
             }
         }
         return null;
     }
 
     @Override
-    public User findByUserName(String userName) {
-        List<User> users = loadFile();
-        for (User user : users) {
-            if(userName.equals(user.getUserName())) {
-                return user;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public User findByEmail(String email) {
-        List<User> users = loadFile();
-
-        for (User user : users) {
-            if(user.getEmail().equals(email)) {
-                return user;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public List<User> findAll() {
+    public List<BinaryContent> findAll() {
         return loadFile();
     }
 
     @Override
     public void delete(UUID id) {
-        List<User> users = loadFile();
+        List<BinaryContent> binaryContents = loadFile();
 
-        if(users.removeIf(user -> user.getId().equals(id))) {
-            saveFile(users);
+        if(binaryContents.removeIf(binaryContent -> binaryContent.getId().equals(id))) {
+            saveFile(binaryContents);
         }
     }
 }
