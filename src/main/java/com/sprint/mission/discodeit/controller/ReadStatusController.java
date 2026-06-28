@@ -10,10 +10,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,7 +21,7 @@ public class ReadStatusController implements ReadStatusApi {
 
   private final ReadStatusService readStatusService; //읽음 상태와 관련된 비즈니스 로직을 처리하는 서비스 객체
 
-  @PostMapping("create") //새로운 읽음 상태를 생성하는 요청을 처리하는 메서드
+  @Override //새로운 읽음 상태를 생성하는 요청을 처리하는 메서드
   public ResponseEntity<ReadStatus> create(@RequestBody ReadStatusCreateRequest request) {
     ReadStatus createReadStatus = readStatusService.create(request);
     return ResponseEntity
@@ -32,7 +29,7 @@ public class ReadStatusController implements ReadStatusApi {
         .body(createReadStatus);
   }
 
-  @PatchMapping("/{readStatusId}") //기존 읽음상태를 수정하는 요청을 처리하는 메서드
+  @Override //기존 읽음상태를 수정하는 요청을 처리하는 메서드
   public ResponseEntity<ReadStatus> update(
       @PathVariable UUID readStatusId,
       @RequestBody ReadStatusUpdateRequest request) {
@@ -42,7 +39,7 @@ public class ReadStatusController implements ReadStatusApi {
         .body(updateReadStatus);
   }
 
-  @GetMapping //특정 사용자의 모든 읽음 상태를 조회하는 요청을 처리하는 메서드
+  @Override //특정 사용자의 모든 읽음 상태를 조회하는 요청을 처리하는 메서드
   public ResponseEntity<List<ReadStatus>> findAllByUserId(@RequestParam UUID userId) {
     List<ReadStatus> readStatuses = readStatusService.findAllByUserId(userId);
     return ResponseEntity

@@ -7,7 +7,6 @@ import com.sprint.mission.discodeit.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,7 +17,7 @@ public class AuthController implements AuthApi {
   private final AuthService authService;
 
   //"api/auth/Login" 요청을 처리하는 메서드
-  @PostMapping("login")
+  @Override
   public ResponseEntity<User> login(@RequestBody LoginRequest loginRequest) {
     //전달받은 로그인 요청(LoginRequest)을 AuthService로 전달하여 로그인 인증을 수행함. 인증이 성공하면 해당 사용자 객체를 반환받음.
     User user = authService.login(loginRequest);

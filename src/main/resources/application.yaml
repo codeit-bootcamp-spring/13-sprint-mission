@@ -17,3 +17,9 @@ discodeit:
   storage:
     root-path: file-data-map
     extension: .ser
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui

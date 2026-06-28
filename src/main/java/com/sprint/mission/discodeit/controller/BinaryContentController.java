@@ -9,7 +9,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,7 +19,7 @@ public class BinaryContentController implements BinaryContentApi {
 
   private final BinaryContentService binaryContentService; //바이너리 파일(BinaryComtent)관련 비즈니스 로직을 처리하는 서비스. (final로 선언하여 생성자를 통해 의존성 주입을 강제함.
 
-  @GetMapping("/{binaryContentId}") //하나의 바이너리를 조회하는 요청을 처리하는 메서드
+  @Override //하나의 바이너리를 조회하는 요청을 처리하는 메서드
   public ResponseEntity<BinaryContent> find(@PathVariable UUID binaryContentId) {
     //요청으로 전달받은 바이너리의 UUID를 이용하여 서비스 계층에서 해당 데이터를 조회함.
     BinaryContent binaryContent = binaryContentService.find(binaryContentId);
@@ -30,7 +29,7 @@ public class BinaryContentController implements BinaryContentApi {
         .body(binaryContent);
   }
 
-  @GetMapping //여러개의 바이너리를 한번에 조회하는 요청을 처리하는 메서드
+  @Override //여러개의 바이너리를 한번에 조회하는 요청을 처리하는 메서드
   public ResponseEntity<List<BinaryContent>> findAllByIdIn(
       @RequestParam List<UUID> binaryContentIds) { //요청 파라미터(binaryContentIds)로 전달된 여러 개의 UUID를 List<UUID>형테로 전달받음.
     List<BinaryContent> binaryContents = binaryContentService.findAllByIdIn(
