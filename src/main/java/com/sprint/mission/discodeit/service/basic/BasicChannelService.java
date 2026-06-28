@@ -30,16 +30,11 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public ChannelResponse createPublic(PublicChannelCreateRequest request) {
-        User creator = userRepository.findById(request.creatorId());
-
-        if (creator == null) {
-            throw new IllegalArgumentException("존재하지 않는 유저입니다.");
-        }
 
         Channel channel = new Channel(
                 request.name(),
                 request.description(),
-                creator,
+                null,
                 ChannelType.PUBLIC
         );
 

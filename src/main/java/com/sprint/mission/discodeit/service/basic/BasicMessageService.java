@@ -35,9 +35,11 @@ public class BasicMessageService implements MessageService {
         Channel channel = channelRepository.findById(request.channelId());
         User author = userRepository.findById(request.userId());
 
-        if (request.content() == null) {
-            throw new IllegalArgumentException("존재하지 않은 내용입니다.");
+        if ((request.content() == null || request.content().isBlank())
+                && (request.attachments() == null || request.attachments().isEmpty())) {
+            throw new IllegalArgumentException("메시지 내용 또는 첨부파일이 필요합니다.");
         }
+
         if (channel == null) {
             throw new IllegalArgumentException("존재하지 않는 채널의 메시지입니다.");
         }
@@ -125,6 +127,8 @@ public class BasicMessageService implements MessageService {
     private MessageResponse toResponse(Message message) {
         return new MessageResponse(
                 message.getId(),
+                message.getCreateAt(),
+                message.getUpdateAt(),
                 message.getContent(),
                 message.getChannel().getId(),
                 message.getAuthor().getId(),
