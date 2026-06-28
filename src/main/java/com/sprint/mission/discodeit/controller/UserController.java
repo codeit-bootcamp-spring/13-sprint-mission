@@ -11,52 +11,37 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
 
-    @RequestMapping(method = RequestMethod.POST)
-    public User create(
-            @RequestBody CreateUserRequest request
-    ) {
-        return userService.create(
-                new User(
-                        request.getUsername(),
-                        request.getEmail()
-                )
-        );
+    @PostMapping
+    public User create(@RequestBody CreateUserRequest request) {
+        return userService.create(new User(request.getUsername(), request.getEmail()));
     }
 
-    @RequestMapping(method = RequestMethod.GET)
+    @GetMapping
     public List<User> findAll() {
         return userService.findAll();
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public User find(
-            @PathVariable UUID id
-    ) {
+    @GetMapping("/{id}")
+    public User find(@PathVariable UUID id) {
         return userService.find(id);
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+    @PatchMapping("/{id}")
     public User update(
             @PathVariable UUID id,
             @RequestBody UpdateUserRequest request
     ) {
-        return userService.update(
-                id,
-                request.getUsername(),
-                request.getEmail()
-        );
+        return userService.update(id, request.getUsername(), request.getEmail());
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
-    public void delete(
-            @PathVariable UUID id
-    ) {
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable UUID id) {
         userService.delete(id);
     }
 }

@@ -11,16 +11,14 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/messages")
+@RequestMapping("/api/messages")
 @RequiredArgsConstructor
 public class MessageController {
 
     private final MessageService messageService;
 
-    @RequestMapping(method = RequestMethod.POST)
-    public Message create(
-            @RequestBody CreateMessageRequest request
-    ) {
+    @PostMapping
+    public Message create(@RequestBody CreateMessageRequest request) {
         return messageService.create(
                 new Message(
                         request.getContent(),
@@ -30,19 +28,17 @@ public class MessageController {
         );
     }
 
-    @RequestMapping(method = RequestMethod.GET)
+    @GetMapping
     public List<Message> findAll() {
         return messageService.findAll();
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public Message find(
-            @PathVariable UUID id
-    ) {
+    @GetMapping("/{id}")
+    public Message find(@PathVariable UUID id) {
         return messageService.find(id);
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+    @PatchMapping("/{id}")
     public Message update(
             @PathVariable UUID id,
             @RequestBody UpdateMessageRequest request
@@ -53,10 +49,8 @@ public class MessageController {
         );
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
-    public void delete(
-            @PathVariable UUID id
-    ) {
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable UUID id) {
         messageService.delete(id);
     }
 }
