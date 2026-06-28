@@ -56,11 +56,22 @@ public class UserController {
         return ResponseEntity.ok(userService.findAllDto().stream().toList());
     }
 
-    @RequestMapping (value = "/{userId}", method = RequestMethod.PATCH)
+    @RequestMapping(value = "/{userId}", method = RequestMethod.PATCH)
     public ResponseEntity<UserResponse> update(
             @PathVariable UUID userId,
-            @RequestBody UserUpdateRequest request) {
-        return ResponseEntity.ok(userService.update(userId, request));
+            @RequestPart("userUpdateRequest") UserUpdateRequest request,
+            @RequestPart(value = "profile", required = false) MultipartFile profile
+    ) throws IOException {
+        UserUpdateRequest serviceRequest = new UserUpdateRequest(
+                request.username(),
+                request.email(),
+                request.password(),
+                profile != null ? profile.getOriginalFilename() : null,
+                profile != null ? profile.getContentType() : null,
+                profile != null ? profile.getBytes() : null
+        );
+
+        return ResponseEntity.ok(userService.update(userId, serviceRequest));
     }
 
     @RequestMapping (value = "/{id}", method = RequestMethod.DELETE)

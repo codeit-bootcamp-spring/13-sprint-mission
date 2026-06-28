@@ -32,9 +32,13 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     public BinaryContentResponse findById(UUID id) {
         BinaryContent binaryContent = binaryContentRepository.findById(id);
+
+        if (binaryContent == null) {
+            throw new IllegalArgumentException("존재하지 않는 파일입니다.");
+        }
+
         return toResponse(binaryContent);
     }
-
     @Override
     public Collection<BinaryContentResponse> findAllByIdIn(Collection<UUID> ids) {
         return binaryContentRepository.findAllByIdIn(ids).stream()

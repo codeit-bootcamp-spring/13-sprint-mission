@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageResponse;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
@@ -8,8 +9,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -21,9 +26,29 @@ public class MessageController {
 
     @RequestMapping(method = RequestMethod.POST)
     public ResponseEntity<MessageResponse> create(
-            @RequestBody MessageCreateRequest request
-    ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(messageService.create(request));
+            @RequestPart("messageCreateRequest") MessageCreateRequest request,
+            @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
+    ) throws IOException {
+        List<BinaryContentCreateRequest> attachmentRequests = new ArrayList<>();
+
+        if (attachments != null) {
+            for (MultipartFile attachment : attachments) {
+                attachmentRequests.add(new BinaryContentCreateRequest(
+                        attachment.getOriginalFilename(),
+                        attachment.getContentType(),
+                        attachment.getBytes()
+                ));
+            }
+        }
+
+        MessageCreateRequest serviceRequest = new MessageCreateRequest(
+                request.content(),
+                request.channelId(),
+                request.userId(),
+                attachmentRequests
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(messageService.create(serviceRequest));
     }
 
     @RequestMapping(method = RequestMethod.GET)
