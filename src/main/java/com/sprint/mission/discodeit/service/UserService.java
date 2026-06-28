@@ -7,9 +7,15 @@ import java.util.List;
 import java.util.UUID;
 
 public interface UserService {
-    User create(String username, String email, String password, UUID profileId);
-    UserDto find(UUID userId);
-    List<UserDto> findAll();
-    User update(UUID userId, String newUsername, String newEmail, String newPassword, UUID newProfileId);
-    void delete(UUID userId);
+
+  UserDto create(String username, String email, String password, UUID profileId);
+
+  UserDto find(UUID userId);
+
+  List<UserDto> findAll();
+
+  UserDto update(UUID userId, String newUsername, String newEmail, String newPassword,
+      UUID newProfileId);
+
+  void delete(UUID userId);
 }
