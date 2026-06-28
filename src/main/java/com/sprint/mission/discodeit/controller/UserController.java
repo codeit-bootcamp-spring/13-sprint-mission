@@ -16,15 +16,9 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,7 +32,7 @@ public class UserController implements UserApi {
   private final UserStatusService userStatusService; //사용자 상태 관련 비즈니스 로직을 처리하는 서비스
 
   //새로운 사용자를 생성하는 요청을 처리하는 메서드
-  @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @Override
   public ResponseEntity<User> create(
       @RequestPart("userCreateRequest") UserCreateRequest userCreateRequest, //사용자 생성 정보를 전달받음.
       @RequestPart(value = "profile", required = false) MultipartFile profile
@@ -54,10 +48,7 @@ public class UserController implements UserApi {
   }
 
   //기존 사용자 정보를 수정하는 요청을 처리하는 메서드
-  @PatchMapping(
-      value = "/{userId}",
-      consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-  )
+  @Override
   public ResponseEntity<User> update(
       @PathVariable UUID userId, //수정한 사용자의 UUID를 전달받음.
       @RequestPart("userUpdateRequest") UserUpdateRequest userUpdateRequest, //수정할 사용자 정보를 전달받음.
@@ -72,15 +63,15 @@ public class UserController implements UserApi {
         .body(updatedUser);
   }
 
-  @DeleteMapping("/{userId}") //사용자를 삭제하는 요청을 처리하는 메서드
-  public ResponseEntity<Void> delete(@PathVariable("userId") UUID userId) {
+  @Override
+  public ResponseEntity<Void> delete(@PathVariable UUID userId) {
     userService.delete(userId);
     return ResponseEntity
         .status(HttpStatus.NO_CONTENT)
         .build();
   }
 
-  @GetMapping //모든 사용자 목록을 조회하는 요청을 처리하는 메서드
+  @Override
   public ResponseEntity<List<UserDto>> findAll() {
     List<UserDto> users = userService.findAll();
     return ResponseEntity
@@ -88,8 +79,9 @@ public class UserController implements UserApi {
         .body(users);
   }
 
-  @PatchMapping(path = "/{userId}/userStatus") //특정 사용자의 상태를 수정하는 요청을 처리하는 메서드
-  public ResponseEntity<UserStatus> updateUserStatusByUserId(@PathVariable("userId") UUID userId,
+
+  @Override
+  public ResponseEntity<UserStatus> updateUserStatusByUserId(@PathVariable UUID userId,
       @RequestBody UserStatusUpdateRequest request) {
     UserStatus updatedUserStatus = userStatusService.updateByUserId(userId, request);
     return ResponseEntity

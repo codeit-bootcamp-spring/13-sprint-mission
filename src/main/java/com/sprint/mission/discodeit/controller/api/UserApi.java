@@ -3,12 +3,15 @@ package com.sprint.mission.discodeit.controller.api;
 import com.sprint.mission.discodeit.dto.data.UserDto;
 import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserStatusUpdateRequest;
+import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Tags;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,21 +28,22 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/users")
 public interface UserApi {
 
-  @Operation(summary = "사용자 생성")]
+  @Operation(summary = "사용자 생성", description = "새로운 사용자를 생성합니다.")
   @ApiResponses({
-      @ApiResponse(responseCode ="200", desciption = "생성 성공"),
-      @ApiResponse(responseCode ="400", desciption = "잘못된 요청")
+      @ApiResponse(responseCode = "201", description = "생성 성공"),
+      @ApiResponse(responseCode = "400", description = "잘못된 요청")
   })
-  @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+      produces = MediaType.APPLICATION_JSON_VALUE)
   ResponseEntity<User> create(
-      @RequestPart("userCreateRequest") UserCreateRequest request,
+      @RequestPart("userCreateRequest") UserCreateRequest userCreateRequest,
       @RequestPart(value = "profile", required = false)
       MultipartFile profile
   );
 
   @Operation(summary = "사용자 목록 조회")
   @GetMapping
-  ResponseEntity<List<UserDto>> findALl();
+  ResponseEntity<List<UserDto>> findAll();
 
   @Operation(summary = "사용자 수정")
   @PatchMapping(
@@ -48,7 +52,7 @@ public interface UserApi {
   )
   ResponseEntity<User> update(
       @PathVariable UUID userId,
-      @RequestPart("userUpdateRequest") userUpdateRequest request,
+      @RequestPart("userUpdateRequest") UserUpdateRequest request,
       @RequestPart(value = "profile", required = false)
       MultipartFile profile
   );
