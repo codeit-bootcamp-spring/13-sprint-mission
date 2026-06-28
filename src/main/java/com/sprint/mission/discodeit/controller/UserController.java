@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.controller.api.UserApi;
 import com.sprint.mission.discodeit.dto.data.UserDto;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
@@ -31,15 +32,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RequiredArgsConstructor //final이 선언된 필드를 대상으로 생성자를 자동 생성하는 Lombok 어노테이션
 @RestController
-@RequestMapping("/api/users")//이 컨트롤러에서 처리하는 모든 요청의 공통 URL을 지정함.
-public class UserController {
+@RequestMapping("/api/usres")//이 컨트롤러에서 처리하는 모든 요청의 공통 URL을 지정함.
+public class UserController implements UserApi {
 
   private final UserService userService; //사용자 관련 비즈니스 로직을 처리하는 메서드
   private final UserStatusService userStatusService; //사용자 상태 관련 비즈니스 로직을 처리하는 서비스
 
   //새로운 사용자를 생성하는 요청을 처리하는 메서드
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-
   public ResponseEntity<User> create(
       @RequestPart("userCreateRequest") UserCreateRequest userCreateRequest, //사용자 생성 정보를 전달받음.
       @RequestPart(value = "profile", required = false) MultipartFile profile
@@ -59,7 +59,6 @@ public class UserController {
       value = "/{userId}",
       consumes = MediaType.MULTIPART_FORM_DATA_VALUE
   )
-
   public ResponseEntity<User> update(
       @PathVariable UUID userId, //수정한 사용자의 UUID를 전달받음.
       @RequestPart("userUpdateRequest") UserUpdateRequest userUpdateRequest, //수정할 사용자 정보를 전달받음.
@@ -75,7 +74,6 @@ public class UserController {
   }
 
   @DeleteMapping("/{userId}") //사용자를 삭제하는 요청을 처리하는 메서드
-
   public ResponseEntity<Void> delete(@PathVariable("userId") UUID userId) {
     userService.delete(userId);
     return ResponseEntity
@@ -84,7 +82,6 @@ public class UserController {
   }
 
   @GetMapping //모든 사용자 목록을 조회하는 요청을 처리하는 메서드
-
   public ResponseEntity<List<UserDto>> findAll() {
     List<UserDto> users = userService.findAll();
     return ResponseEntity
@@ -93,7 +90,6 @@ public class UserController {
   }
 
   @PatchMapping(path = "/{userId}/userStatus") //특정 사용자의 상태를 수정하는 요청을 처리하는 메서드
-
   public ResponseEntity<UserStatus> updateUserStatusByUserId(@PathVariable("userId") UUID userId,
       @RequestBody UserStatusUpdateRequest request) {
     UserStatus updatedUserStatus = userStatusService.updateByUserId(userId, request);

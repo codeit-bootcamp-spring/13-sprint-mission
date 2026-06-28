@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.controller;
 
 
+import com.sprint.mission.discodeit.controller.api.MessageApi;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.request.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.message.MessageUpdateRequest;
@@ -31,7 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor //final이 선언된 필드를 대상으로 생성자를 자동 생성하는 Lombok 어노테이션
 @RestController
 @RequestMapping("/api/messages")//이 컨트롤러에서 처리하는 모든 요청의 공통 URL을 지정함.
-public class MessageController {
+public class MessageController implements MessageApi {
 
   private final MessageService messageService; //메서드 관련 비즈니스 로직을 처리하는 서비스 객체
   private final PathMatcher pathMatcher;

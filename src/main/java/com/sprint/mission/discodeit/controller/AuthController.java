@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.controller.api.AuthApi;
 import com.sprint.mission.discodeit.dto.request.LoginRequest;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.AuthService;
@@ -13,8 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RequiredArgsConstructor //final이 선언된 필드를 대상으로 생성자를 자동 생성하는 Lombok 어노테이션
 @RestController
-@RequestMapping("/api/auth") //이 컨트롤러에서 처리하는 모든 요청의 공통 URL을 지정함.
-public class AuthController {
+@RequestMapping("/api/auths")//이 컨트롤러에서 처리하는 모든 요청의 공통 URL을 지정함.
+public class AuthController implements AuthApi {
 
   private final AuthService authService;
 
