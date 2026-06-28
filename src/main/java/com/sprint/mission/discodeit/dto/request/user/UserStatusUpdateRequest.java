@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.dto.request;
+package com.sprint.mission.discodeit.dto.request.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,5 +11,6 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserStatusUpdateRequest {
-       private Instant newLastActiveAt; //수정할 새로운(최근) 마지막 활동 시각
+
+  private Instant newLastActiveAt; //수정할 새로운(최근) 마지막 활동 시각
 }

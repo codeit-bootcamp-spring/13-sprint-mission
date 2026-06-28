@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.dto.request;
+package com.sprint.mission.discodeit.dto.request.readStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,6 +10,7 @@ import java.time.Instant;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReadStatusUpdateRequest{
-        private Instant newLastReadAt; //수정할 새로운 마지막 읽을 시각
+public class ReadStatusUpdateRequest {
+
+  private Instant newLastReadAt; //수정할 새로운 마지막 읽을 시각
 }

@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.dto.request;
+package com.sprint.mission.discodeit.dto.request.message;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class MessageUpdateRequest{
-        private String newContent; //수정될 새로운 메시지 내용
+public class MessageUpdateRequest {
+
+  private String newContent; //수정될 새로운 메시지 내용
 }

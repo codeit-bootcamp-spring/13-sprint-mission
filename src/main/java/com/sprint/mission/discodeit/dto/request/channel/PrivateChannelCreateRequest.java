@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.dto.request;
+package com.sprint.mission.discodeit.dto.request.channel;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,6 +11,7 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PrivateChannelCreateRequest{
-        private List<UUID> participantIds; //채널 생성 시 참여자로 등록될 사용자들의 식별자를 저잘한다.
+public class PrivateChannelCreateRequest {
+
+  private List<UUID> participantIds; //채널 생성 시 참여자로 등록될 사용자들의 식별자를 저잘한다.
 }
