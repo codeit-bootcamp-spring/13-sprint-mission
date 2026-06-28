@@ -111,6 +111,7 @@ public class BasicChannelService implements ChannelService {
                 .stream()
                 .map(readStatus -> channelRepository.findById(readStatus.getChannelId())
                         .orElseThrow())
+                .filter(channel -> channel.getChannelType().equals(ChannelType.PRIVATE))
                 .collect(Collectors.toList());
 
         List<Channel> allChannels = new ArrayList<>();

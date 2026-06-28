@@ -20,7 +20,7 @@ public class FileUtils {
                 .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 파일 형식입니다."));
         try {
             return Optional.of(new BinaryContentCreateRequest(
-                    file.getName(), file.getSize(), contentType, file.getBytes()
+                    file.getOriginalFilename(), file.getSize(), contentType, file.getBytes()
             ));
         } catch (IOException e) {
             throw new RuntimeException(e);

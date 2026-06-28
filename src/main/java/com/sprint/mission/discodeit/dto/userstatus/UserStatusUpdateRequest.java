@@ -3,12 +3,12 @@ package com.sprint.mission.discodeit.dto.userstatus;
 import java.time.Instant;
 
 public record UserStatusUpdateRequest(
-        Instant lastAccessedAt
+        Instant newLastActiveAt
 )
 
 {
     public UserStatusUpdateRequest {
-        validate(lastAccessedAt, "마지막 접속 시간");
+        validate(newLastActiveAt, "마지막 접속 시간");
     }
 
     private static void  validate(Instant value, String fieldName) {

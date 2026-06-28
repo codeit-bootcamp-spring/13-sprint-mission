@@ -47,6 +47,8 @@ public class FileUserStatusRepository implements UserStatusRepository {
         try(ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath.toFile()))) {
             return (Map<UUID, UserStatus>) ois.readObject();
         }catch (IOException | ClassNotFoundException e){
+            System.out.println("에러 타입: " + e.getClass().getName());
+            System.out.println("에러 메시지: " + e.getMessage());
             throw new RuntimeException("파일 불러오기 실패!");
         }
     }

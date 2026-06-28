@@ -127,9 +127,23 @@ public class BasicUserService implements UserService {
             user.updateUserProfileId(profile.getId());
         }
 
-        if (userUpdateRequest.name() != null) user.updateUserName(userUpdateRequest.name());
-        if (userUpdateRequest.email() != null) user.updateUserEmail(userUpdateRequest.email());
-        if (userUpdateRequest.password() != null) user.updateUserPassword(userUpdateRequest.password());
+        if (userUpdateRequest.newUsername() != null) {
+            boolean nameDuplicate = userRepository.findAll().stream()
+                            .anyMatch(u -> userUpdateRequest.newUsername().equals(u.getName()));
+            if (nameDuplicate) {
+                throw new IllegalArgumentException("이미 사용중인 이름입니다.");
+            }
+            user.updateUserName(userUpdateRequest.newUsername());
+        }
+        if (userUpdateRequest.newEmail() != null){
+            boolean emailDuplicate = userRepository.findAll().stream()
+                    .anyMatch(u -> userUpdateRequest.newEmail().equals(u.getEmail()));
+            if (emailDuplicate) {
+                throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
+            }
+            user.updateUserEmail(userUpdateRequest.newEmail());
+        }
+        if (userUpdateRequest.newPassword() != null) user.updateUserPassword(userUpdateRequest.newPassword());
         userRepository.save(user);
 
         UserStatus userStatus = userStatusRepository.findByUserId(userId)

@@ -8,15 +8,13 @@ import java.util.UUID;
 public record MessageCreateRequest(
         UUID channelId,
         UUID authorId,
-        String content,
-        List<BinaryContentCreateRequest> attachments
+        String content
 
 )
 {
     public MessageCreateRequest {
         validate(channelId, "채널 id");
         validate(authorId, "작성자 id");
-        validate(content, "메시지");
     }
 
     private void validate(UUID validate, String fieldName){
