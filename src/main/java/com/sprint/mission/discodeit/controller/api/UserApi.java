@@ -25,7 +25,11 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/users")
 public interface UserApi {
 
-  @Operation(summary = " 사용자 생성")
+  @Operation(summary = "사용자 생성")]
+  @ApiResponses({
+      @ApiResponse(responseCode ="200", desciption = "생성 성공"),
+      @ApiResponse(responseCode ="400", desciption = "잘못된 요청")
+  })
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   ResponseEntity<User> create(
       @RequestPart("userCreateRequest") UserCreateRequest request,

@@ -32,7 +32,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RequiredArgsConstructor //final이 선언된 필드를 대상으로 생성자를 자동 생성하는 Lombok 어노테이션
 @RestController
-@RequestMapping("/api/usres")//이 컨트롤러에서 처리하는 모든 요청의 공통 URL을 지정함.
 public class UserController implements UserApi {
 
   private final UserService userService; //사용자 관련 비즈니스 로직을 처리하는 메서드

@@ -15,13 +15,11 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RequiredArgsConstructor //final이 선언된 필드를 대상으로 생성자를 자동 생성하는 Lombok 어노테이션
 @RestController
-@RequestMapping("/api/readStatuses")//이 컨트롤러에서 처리하는 모든 요청의 공통 URL을 지정함.
 public class ReadStatusController implements ReadStatusApi {
 
   private final ReadStatusService readStatusService; //읽음 상태와 관련된 비즈니스 로직을 처리하는 서비스 객체

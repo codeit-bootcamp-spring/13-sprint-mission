@@ -14,9 +14,11 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "ReadStatus", description = "Message 읽음 상태 API")
+@RequestMapping("/api/readStatuses")
 public interface ReadStatusApi {
 
   @Operation(summary = "Message 읽음 상태 생성")
