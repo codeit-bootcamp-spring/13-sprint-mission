@@ -10,29 +10,26 @@ import java.util.UUID;
 
 @Getter
 @ToString
-public class UserStatus implements Serializable {
+public class BinaryContent implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     private final UUID id;
-    private final UUID userId;
     private final Instant createdAt;
-    private Instant updatedAt;
 
-    public UserStatus(UUID userId) {
+    private final String fileName;
+    private final String contentType;
+    private final Long size;
+    private final byte[] bytes;
+
+    public BinaryContent(String fileName, String contentType, Long size, byte[] bytes) {
         this.id = UUID.randomUUID();
-        this.userId = userId;
         this.createdAt = Instant.now();
-        this.updatedAt = createdAt;
-    }
 
-    public void updateActiveTime(Instant updatedAt) {
-        this.updatedAt = updatedAt;
+        this.fileName = fileName;
+        this.contentType = contentType;
+        this.size = size;
+        this.bytes = bytes;
     }
-
-    public boolean isOnline() {
-        return updatedAt.plusSeconds(300).isAfter(Instant.now());
-    }
-
 }
