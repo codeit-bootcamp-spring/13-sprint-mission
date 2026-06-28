@@ -41,7 +41,7 @@ public class BasicUserService implements UserService {
                 user.getName(),
                 user.getEmail(),
                 user.getProfileId(),
-                userStatus.isOnline()
+                userStatus != null && userStatus.isOnline() // null이면 (false)오프라인
         );
     }
 
@@ -88,7 +88,7 @@ public class BasicUserService implements UserService {
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자 입니다."));
 
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElseThrow(()-> new NoSuchElementException("존재하지 않는 UserStatus입니다."));
+                .orElse(null);
 
         log.info("유저 조회 - name: {}", user.getName());
 
@@ -105,8 +105,8 @@ public class BasicUserService implements UserService {
         return  users.stream()
                 .map(user -> {
                     UserStatus userStatus = userStatusRepository.findByUserId(user.getUserId())
-                            .orElseThrow(()-> new NoSuchElementException("존재하지 않는 UserStatus입니다."));
-                    return  toResponse(user, userStatus);
+                            .orElse(null);
+                    return toResponse(user, userStatus);
                 })
                 .collect(Collectors.toList());
     }
@@ -147,7 +147,10 @@ public class BasicUserService implements UserService {
         userRepository.save(user);
 
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElseThrow(()-> new NoSuchElementException("존재하지 않는 UserStatus입니다."));
+                .orElse(null);
+        if (userStatus == null){
+             userStatus = new UserStatus(userId);
+        }
 
         log.info("유저 수정 완료 -  name: {}, userId: {}", user.getName(), user.getUserId());
 
