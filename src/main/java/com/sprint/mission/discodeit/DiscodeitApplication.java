@@ -1,21 +1,13 @@
-package com.sprint.mission;
+package com.sprint.mission.discodeit;
 
-import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
-import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.ChannelType;
-import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.service.ChannelService;
-import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Scanner;
 
@@ -38,7 +30,7 @@ public class DiscodeitApplication { //spring boot 메인 애플리케이션 클�
         return user; //생성된 사용자 반환
     }
 
-    static Channel setupChannel(ChannelService channelService, Scanner scanner) { //채널 생성 테스트 메서드
+    /* static Channel setupChannel(ChannelService channelService, Scanner scanner) { //채널 생성 테스트 메서드
         System.out.print("채널 타입(PUBLIC/PRIVATE): ");
         ChannelType type = ChannelType.valueOf( //입력값을 대문자로 변환 후 Enum으로 변환
                 scanner.nextLine().toUpperCase());
@@ -60,7 +52,7 @@ public class DiscodeitApplication { //spring boot 메인 애플리케이션 클�
         MessageCreateRequest request = new MessageCreateRequest(content, channel.getId(), author.getId()); //메시지 생성 요청 DTO 생성
         Message message = messageService.create(request, new ArrayList<>()); //첨부 파일 없이 메시지생성 (ArrayList<>() 첨부파일 목록)
         System.out.println("메시지 생성: " + message.getId()); //생성된 메시지 ID 출력
-    }
+    }*/
 
     public static void main(String[] args) {
         ConfigurableApplicationContext context = SpringApplication.run(DiscodeitApplication.class, args);
@@ -68,15 +60,13 @@ public class DiscodeitApplication { //spring boot 메인 애플리케이션 클�
         Scanner scanner = new Scanner(System.in); //콘솔 입력 객체 생성
         //서비스 초기화
         UserService userService = context.getBean(UserService.class); //userService Bean 조회
-        ChannelService channelService = context.getBean(ChannelService.class); //channelService Bean 조회
-        MessageService messageService = context.getBean(MessageService.class); //messageService Bean 조회
+        //ChannelService channelService = context.getBean(ChannelService.class); //channelService Bean 조회
+        //MessageService messageService = context.getBean(MessageService.class); //messageService Bean 조회
 
         //셋업
         User usersetup = setupUser(userService, scanner); //사용자 생성
-        Channel channelsetup = setupChannel(channelService, scanner); //채널 생성
-
-        //테스트
-        messageCreateTest(messageService, channelsetup, usersetup, scanner); //메시지 생성
+        //Channel channelsetup = setupChannel(channelService, scanner); //채널 생성
+        //Message massagesetup = messageCreateTest(messageService, scanner) //메시지 생성
     }
 
 }

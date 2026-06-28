@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.repository.file;
 import com.sprint.mission.discodeit.config.StorageProperties;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
@@ -13,6 +14,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 //사용자 온라인 상태(userStatus)를 파일 시스템에 저장/조회/삭제
@@ -21,11 +23,15 @@ import java.util.stream.Stream;
 public class FileUserStatusRepository implements UserStatusRepository {
     private final Path DIRECTORY; //userStatus 저장 디렉토리
     private final String EXTENSION; //파일 확장자
+    private final FileLockProvider fileLockProvider;
 
-    public FileUserStatusRepository(StorageProperties properties) { //생성자. storageProperties 기반 설정 주입
+    public FileUserStatusRepository(StorageProperties properties,
+                                    @Value(".discodeit") String fileDirectory,
+                                    FileLockProvider fileLockProvider) { //생성자. storageProperties 기반 설정 주입
         this.EXTENSION = properties.getExtension();
         //저장 경로
-        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), properties.getRootPath(), UserStatus.class.getSimpleName());
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"),
+                fileDirectory, properties.getRootPath(), UserStatus.class.getSimpleName());
         if (Files.notExists(DIRECTORY)) { //디렉토리가 없으면 생성
             try {
                 Files.createDirectories(DIRECTORY);
@@ -33,6 +39,7 @@ public class FileUserStatusRepository implements UserStatusRepository {
                 throw new RuntimeException(e);
             }
         }
+        this.fileLockProvider = fileLockProvider;
     }
 
     //UUID->파일 경로 변환
@@ -43,6 +50,8 @@ public class FileUserStatusRepository implements UserStatusRepository {
     @Override //UserStatus 저장
     public UserStatus save(UserStatus userStatus) {
         Path path = resolvePath(userStatus.getId());
+        ReentrantLock lock = fileLockProvider.getLock(path);
+        lock.lock();
         try (
                 FileOutputStream fos = new FileOutputStream(path.toFile());
                 ObjectOutputStream oos = new ObjectOutputStream(fos)
@@ -50,7 +59,7 @@ public class FileUserStatusRepository implements UserStatusRepository {
             oos.writeObject(userStatus);
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
+        }finally {lock.unlock();}
         return userStatus;
     }
 
@@ -58,6 +67,8 @@ public class FileUserStatusRepository implements UserStatusRepository {
     public Optional<UserStatus> findById(UUID id) {
         UserStatus userStatusNullable = null;
         Path path = resolvePath(id);
+        ReentrantLock lock = fileLockProvider.getLock(path);
+        lock.lock();
         if (Files.exists(path)) {
             try (
                     FileInputStream fis = new FileInputStream(path.toFile());
@@ -66,7 +77,7 @@ public class FileUserStatusRepository implements UserStatusRepository {
                 userStatusNullable = (UserStatus) ois.readObject();
             } catch (IOException | ClassNotFoundException e) {
                 throw new RuntimeException(e);
-            }
+            }finally {lock.unlock();}
         }
         return Optional.ofNullable(userStatusNullable);
     }
@@ -84,6 +95,8 @@ public class FileUserStatusRepository implements UserStatusRepository {
             return paths
                     .filter(path -> path.toString().endsWith(EXTENSION))
                     .map(path -> {
+                        ReentrantLock lock = fileLockProvider.getLock(path);
+                        lock.lock();
                         try (
                                 FileInputStream fis = new FileInputStream(path.toFile());
                                 ObjectInputStream ois = new ObjectInputStream(fis)
@@ -92,6 +105,7 @@ public class FileUserStatusRepository implements UserStatusRepository {
                         } catch (IOException | ClassNotFoundException e) {
                             throw new RuntimeException(e);
                         }
+                        finally {lock.unlock();}
                     })
                     .toList();
         } catch (IOException e) {
