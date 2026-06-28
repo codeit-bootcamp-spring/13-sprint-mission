@@ -7,3 +7,10 @@ file:
     user: data/users.ser
     channel: data/channel.ser
     message: data/message.ser
+    userStatus: data/userStatus.ser
+    readStatus: data/readStatus.ser
+    binaryContent: data/binaryContent.ser
+
+discodeit:
+  repository:
+    type: file
