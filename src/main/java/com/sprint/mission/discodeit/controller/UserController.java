@@ -1,13 +1,15 @@
 package com.sprint.mission.discodeit.controller;
 
-import com.sprint.mission.discodeit.dto.request.CreateUserRequest;
-import com.sprint.mission.discodeit.dto.request.UpdateUserRequest;
-import com.sprint.mission.discodeit.dto.request.UpdateUserStatusRequest;
+import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.dto.response.UserStatusResponse;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,37 +25,47 @@ public class UserController {
     private final UserStatusService userStatusService;
 
     // 생성
-    @RequestMapping(method = RequestMethod.POST)
-    public UserResponse create(@RequestBody CreateUserRequest request) {
-        return userService.create(request, Optional.empty());
+    @PostMapping
+    public ResponseEntity<UserResponse> create(@RequestBody UserCreateRequest request) {
+        UserResponse response = userService.create(request, Optional.empty());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // 수정
-    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
-    public UserResponse update(@PathVariable UUID id, @RequestBody UpdateUserRequest request) {
-        return userService.update(
-                id,
-                request,
-                Optional.empty()
+    @PatchMapping("/{userId}")
+    public ResponseEntity<UserResponse> update(@PathVariable UUID userId, @RequestBody UserUpdateRequest request) {
+        UserResponse response =  userService.update(
+                                                userId,
+                                                request,
+                                Optional.empty()
         );
+
+        return ResponseEntity.ok(response);
     }
 
     // 삭제
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
-    public void delete(@PathVariable UUID id) {
-        userService.delete(id);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID userId) {
+        userService.delete(userId);
+
+        return ResponseEntity.noContent().build();
     }
 
     // 전체 조회
-    @RequestMapping(method = RequestMethod.GET)
-    public List<UserResponse> findAll() {
-        return userService.findAll();
+    @GetMapping
+    public ResponseEntity<List<UserResponse>> findAll() {
+        return ResponseEntity.ok(userService.findAll());
     }
 
     // 사용자 상태 업데이트
-    @RequestMapping(method = RequestMethod.PUT)
-    public UserStatusResponse update(@RequestBody UpdateUserStatusRequest request) {
-        return userStatusService.updateByUserId(request);
+    @PatchMapping("/{userId}/userStatus")
+    public ResponseEntity<UserStatusResponse> updateLastSeen(
+            @PathVariable UUID userId, @RequestBody UserStatusUpdateRequest request) {
+
+        UserStatusResponse response = userStatusService.updateLastSeen(userId, request);
+
+        return ResponseEntity.ok(response);
     }
 
 

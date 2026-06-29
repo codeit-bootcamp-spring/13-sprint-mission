@@ -7,8 +7,9 @@ import java.util.UUID;
 
 @Getter
 @NoArgsConstructor
-public class UpdateMessageRequest {
+public class ReadStatusCreateRequest {
 
-    private String content;
+    private UUID userId;
+    private UUID channelId;
 
 }

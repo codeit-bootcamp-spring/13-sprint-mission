@@ -1,8 +1,8 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.request.CreateBinaryContentRequest;
+import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.request.CreateMessageRequest;
-import com.sprint.mission.discodeit.dto.request.UpdateMessageRequest;
+import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentResponse;
 import com.sprint.mission.discodeit.dto.response.MessageResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
@@ -31,7 +31,7 @@ public class BasicMessageService implements MessageService {
 
         // 첨부파일 null 대비
         if (request.getAttachments() != null) {
-            for (CreateBinaryContentRequest file : request.getAttachments()) {
+            for (BinaryContentCreateRequest file : request.getAttachments()) {
                 BinaryContent binaryContent = new BinaryContent(
                         request.getAuthorId(),
                         message.getId(),
@@ -93,7 +93,7 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public MessageResponse update(UUID id, UpdateMessageRequest request) {
+    public MessageResponse update(UUID id, MessageUpdateRequest request) {
         Message message = messageRepository.findById(id)
                 .orElseThrow(() ->
                     new IllegalArgumentException("메시지를 찾을 수 없습니다."));

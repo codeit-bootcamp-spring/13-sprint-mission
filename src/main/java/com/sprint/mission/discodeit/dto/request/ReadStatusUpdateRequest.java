@@ -3,11 +3,12 @@ package com.sprint.mission.discodeit.dto.request;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
+
 @Getter
 @NoArgsConstructor
-public class CreatePublicChannelRequest {
+public class ReadStatusUpdateRequest {
 
-    private String name;
-    private String description;
+    private Instant lastReadAt;
 
 }

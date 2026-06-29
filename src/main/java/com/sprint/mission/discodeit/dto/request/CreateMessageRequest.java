@@ -14,7 +14,7 @@ public class CreateMessageRequest {
     private UUID channelId;
     private UUID authorId;
 
-    private List<CreateBinaryContentRequest> attachments;
+    private List<BinaryContentCreateRequest> attachments;
 
     public CreateMessageRequest(String content, UUID channelId, UUID authorId) {
         this.content = content;

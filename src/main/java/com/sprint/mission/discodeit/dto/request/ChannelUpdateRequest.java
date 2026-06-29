@@ -1,14 +1,11 @@
 package com.sprint.mission.discodeit.dto.request;
 
-import com.sprint.mission.discodeit.entity.Channel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
 @Getter
 @NoArgsConstructor
-public class UpdateChannelRequest {
+public class ChannelUpdateRequest {
 
     private String name;
     private String description;

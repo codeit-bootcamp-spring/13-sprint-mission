@@ -7,8 +7,11 @@ import java.util.UUID;
 
 @Getter
 @NoArgsConstructor
-public class CreateUserStatusRequest {
-
+public class BinaryContentCreateRequest {
     private UUID userId;
-
+    private UUID messageId;
+    private String filename;
+    private String contentType;
+    private byte[] bytes;
 }
+

@@ -1,8 +1,8 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.request.CreateProfileImageRequest;
-import com.sprint.mission.discodeit.dto.request.CreateUserRequest;
-import com.sprint.mission.discodeit.dto.request.UpdateUserRequest;
+import com.sprint.mission.discodeit.dto.request.ProfileImageCreateRequest;
+import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
@@ -13,7 +13,6 @@ import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.util.PasswordUtil;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -29,7 +28,7 @@ public class BasicUserService implements UserService {
     private final BinaryContentRepository binaryContentRepository;
 
     @Override
-    public UserResponse create(CreateUserRequest userRequest, Optional<CreateProfileImageRequest> profileImageRequest) {
+    public UserResponse create(UserCreateRequest userRequest, Optional<ProfileImageCreateRequest> profileImageRequest) {
         // username 중복 검사
         boolean existsUsername = userRepository.findAll()
                 .stream()
@@ -55,7 +54,7 @@ public class BasicUserService implements UserService {
         userRepository.save(user);
 
         if (profileImageRequest.isPresent()) {
-            CreateProfileImageRequest imageRequest = profileImageRequest.get();
+            ProfileImageCreateRequest imageRequest = profileImageRequest.get();
 
             BinaryContent profileImage = new BinaryContent(
                             user.getId(),
@@ -106,8 +105,8 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public UserResponse update(UUID id, UpdateUserRequest request,
-                       Optional<CreateProfileImageRequest> profileImageRequest) {
+    public UserResponse update(UUID id, UserUpdateRequest request,
+                       Optional<ProfileImageCreateRequest> profileImageRequest) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
@@ -118,7 +117,7 @@ public class BasicUserService implements UserService {
         userRepository.save(user);
 
         if (profileImageRequest.isPresent()) {
-            CreateProfileImageRequest image = profileImageRequest.get();
+            ProfileImageCreateRequest image = profileImageRequest.get();
 
             // 기존 이미지 삭제 또는 조회
             BinaryContent profileImage = new BinaryContent(
