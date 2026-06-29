@@ -38,6 +38,9 @@ public class FileUserRepository implements UserRepository {
 
     @Override
     public User find(UUID id) {
+        System.out.println("찾는 ID = " + id);
+        System.out.println("저장된 ID 목록 = " + users.stream().map(User::getId).toList());
+
         for (User user : users) {
             if (user.getId().equals(id)) {
                 return user;

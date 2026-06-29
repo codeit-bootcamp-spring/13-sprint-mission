@@ -11,6 +11,7 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.*;
 
+import javax.print.attribute.standard.*;
 import java.util.*;
 
 @RestController
@@ -30,7 +31,7 @@ public class UserController {
             @RequestParam String username,
             @RequestParam String email,
             @RequestParam String password,
-            @RequestParam("profileImage") MultipartFile profileImage
+            @RequestParam(value = "profileImage", required = false) MultipartFile profileImage
     ) {
 
         UserRequest.CreateUserRequest request =
@@ -44,10 +45,18 @@ public class UserController {
         return userService.create(request);
     }
 
-    @RequestMapping(value = "/{userId}", method = RequestMethod.PATCH)
+    @RequestMapping(value = "/{userId}",
+                    method = RequestMethod.PATCH,
+                    consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public UserResponse update(@PathVariable UUID userId,
-                               @RequestBody UserRequest.UpdateUserRequest request) {
-        return userService.update(userId, request);
+                               @RequestParam String username,
+                               @RequestParam String email,
+                               @RequestParam String password,
+                               @RequestParam(value = "profileImage", required = false) MultipartFile profileImage) {
+        return userService.update(
+                userId,
+                new UserRequest.UpdateUserRequest(
+                        username, email, password, profileImage));
     }
 
     @RequestMapping(value = "/{userId}", method = RequestMethod.DELETE)
