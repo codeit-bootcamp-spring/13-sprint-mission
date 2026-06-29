@@ -1,8 +1,13 @@
 package com.sprint.mission.discodeit.dto.user;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 public record UserUpdateRequest(
+    @Schema(description = "수정할 사용자 이름", example = "홍길이",  requiredMode = Schema.RequiredMode.REQUIRED)
     String newUsername,
+    @Schema(description = "수정할 이메일", example = "aaa@example.com",  requiredMode = Schema.RequiredMode.REQUIRED)
     String newEmail,
+    @Schema(description = "수정할 비밀번호", example = "0000",  requiredMode = Schema.RequiredMode.REQUIRED)
     String newPassword
 )
 {

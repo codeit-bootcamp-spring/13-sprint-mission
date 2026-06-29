@@ -1,7 +1,11 @@
 package com.sprint.mission.discodeit.dto.auth;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 public record LoginRequest(
+        @Schema(description = "사용자 이름", example = "홍길동", requiredMode = Schema.RequiredMode.REQUIRED)
         String username,
+        @Schema(description = "비밀번호", example = "1234", requiredMode = Schema.RequiredMode.REQUIRED)
         String password
 )
 {
