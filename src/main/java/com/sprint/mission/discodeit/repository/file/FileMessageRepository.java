@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -32,8 +33,13 @@ public class FileMessageRepository extends FileBaseRepository implements Message
     }
 
     @Override
+    public Optional<Message> findById(UUID id){
+        return find(m -> m.getId().equals(id)).stream().findFirst();
+    }
+
+    @Override
     public List<Message> findByChannelID(UUID channelID) {
-        return find(m -> m.getChannelID().equals(channelID));
+        return find(m -> m.getChannelId().equals(channelID));
     }
 
     @Override

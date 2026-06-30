@@ -37,8 +37,13 @@ public class FileReadStatusRepository extends FileBaseRepository implements Read
     }
 
     @Override
-    public List<ReadStatus> findbyChennalID(UUID id){
-        return find(rs -> rs.getChannelID().equals(id));
+    public List<ReadStatus> findByChennalID(UUID id){
+        return find(rs -> rs.getChannelId().equals(id));
+    }
+
+    @Override
+    public List<ReadStatus> findByUserId(UUID id) {
+        return find(rs -> rs.getUserId().equals(id));
     }
 
     @Override

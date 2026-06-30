@@ -1,22 +1,19 @@
 package com.sprint.mission.discodeit.entity;
 
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.UUID;
-
-/**
- * 바이너리 데이터 래핑용 엔티티
- */
 
 @Getter
 @Setter
-@Builder
+@AllArgsConstructor
 public class BinaryContent extends BaseEntity{
-    private final UUID authorID;
-    private final UUID contentID;
+    private final String fileName;
+    private final String contentType;
+    private final Long size;
+    private final byte[] bytes;
 
     @Override
     public void setUpdatedAt(){}

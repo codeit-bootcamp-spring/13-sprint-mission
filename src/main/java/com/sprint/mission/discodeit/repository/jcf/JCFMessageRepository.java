@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -32,8 +33,13 @@ public class JCFMessageRepository implements MessageRepository {
     }
 
     @Override
+    public Optional<Message> findById (UUID id) {
+        return Optional.ofNullable(data.get(id));
+    }
+
+    @Override
     public List<Message> findByChannelID(UUID channelID) {
-        return find(m -> m.getChannelID().equals(channelID));
+        return find(m -> m.getChannelId().equals(channelID));
     }
 
     @Override

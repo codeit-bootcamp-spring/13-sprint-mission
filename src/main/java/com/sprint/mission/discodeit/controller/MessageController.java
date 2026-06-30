@@ -1,56 +1,88 @@
 package com.sprint.mission.discodeit.controller;
 
 
-import com.sprint.mission.discodeit.dto.input.CreateMessageInput;
-import com.sprint.mission.discodeit.dto.input.IDRequestInput;
-import com.sprint.mission.discodeit.dto.input.UpdateMessageInput;
+import com.sprint.mission.discodeit.controller.docs.MessageControllerDoc;
+import com.sprint.mission.discodeit.dto.input.BinaryContentCreate;
+import com.sprint.mission.discodeit.dto.input.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.input.MessageUpdateRequest;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping({"/api/message","/api/v1/message"})
-public class MessageController {
+@RequestMapping({"/api/messages"})
+public class MessageController implements MessageControllerDoc {
 
-    public final MessageService mss;
+    public final MessageService messageService;
 
 
-    // msg id 를 반납하도록 해야하나?
-    @RequestMapping(value = "/", method = RequestMethod.POST)
-    public void sandMessage(
-            @RequestBody CreateMessageInput msi
-    ) {
-        mss.createMessage(msi);
-    }
 
-    @RequestMapping(value = "/", method = RequestMethod.PATCH)
-    public void modifyMessage(
-            @RequestBody UpdateMessageInput msi
-    ) {
-        mss.updateMessageData(msi);
-    }
-
-    @RequestMapping(value = "/", method = RequestMethod.DELETE)
-    public void deleteMessage(
-            @RequestBody IDRequestInput id
+    @RequestMapping(value = "", method = RequestMethod.GET)
+    public ResponseEntity<List<Message>> findMessageByChannel(
+            @RequestParam(value = "channelId") UUID channelId
     ){
-        mss.deleteMessage(id.getID());
+        List<Message> res =  messageService.findallByChannelId(channelId);
+        return ResponseEntity.ok(res);
     }
 
-    @RequestMapping(value = "/byChannel", method = RequestMethod.POST)
-    public List<Message> findMessageByUser(
-            @RequestBody IDRequestInput id
-    ){
-        return mss.findallByChannelId(id.getID());
+
+    @RequestMapping(
+            value = "",
+            method = RequestMethod.POST,
+            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}
+    )
+    public ResponseEntity<Message> create(
+            @RequestPart(value = "messageCreateRequest") MessageCreateRequest mcr,
+            @RequestPart(value = "attachments", required = false) List<MultipartFile> att
+    ) {
+        Optional<List<BinaryContentCreate>> lbcc =  Optional.ofNullable(att).map( mp ->
+                mp.stream().map(m -> {
+                    try {
+                        return new BinaryContentCreate(
+                                m.getOriginalFilename(),
+                                m.getContentType(),
+                                m.getSize(),
+                                m.getBytes()
+                        );
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+        }).toList());
+
+
+        Message res = messageService.createMessage(mcr,lbcc);
+        return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
+
+    @RequestMapping(value = "/{messageId}", method = RequestMethod.PATCH)
+    public ResponseEntity<Message> modifyMessage(
+            @PathVariable UUID messageId,
+            @RequestBody MessageUpdateRequest msi
+    ) {
+        Message res = messageService.updateMessageData(messageId, msi);
+        return ResponseEntity.ok(res);
+    }
+
+    @RequestMapping(value = "/{messageId}", method = RequestMethod.DELETE)
+    public ResponseEntity<Void> deleteMessage(
+            @PathVariable UUID messageId
+    ){
+        messageService.deleteMessage(messageId);
+        return ResponseEntity.noContent().build();
+    }
+
 
 }

@@ -1,10 +1,9 @@
 package com.sprint.mission.discodeit.service.basic;
 
 
-import com.sprint.mission.discodeit.dto.input.CreateReadyStatusInput;
-import com.sprint.mission.discodeit.dto.input.UpdateReadStatusInput;
+import com.sprint.mission.discodeit.dto.input.ReadStatusCreateRequest;
+import com.sprint.mission.discodeit.dto.input.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.ReadStatus;
-import com.sprint.mission.discodeit.exception.DiscodeitChannelException;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -24,36 +23,57 @@ public class BasicReadStatusService implements ReadStatusService {
     private final ChannelRepository ch;
 
     @Override
-    public void create(CreateReadyStatusInput crsi){
-        if (
-                ch.find(c -> c.getId().equals(crsi.channelID())).isEmpty()
-                || ur.find(c -> c.getId().equals(crsi.userID())).isEmpty()
-        ) throw new DiscodeitException("invalid create readstatus","ReadStatus",400);
-        if (
-                ! rsr.find(rs -> rs.getUserID().equals(crsi.userID())).isEmpty()
-                && ! rsr.find(rs -> rs.getChannelID().equals(crsi.channelID())).isEmpty()
-        ) throw new DiscodeitException("object already created","ReadStatus",400);
-        rsr.save(new ReadStatus(crsi.userID(), crsi.channelID()));
-    }
+    public ReadStatus create(ReadStatusCreateRequest rscr){
 
-    @Override
-    public ReadStatus find(UUID id){
-        return rsr.findByID(id).orElseThrow(() -> new DiscodeitException("no status by id" + id ,"ReadStatus",400));
+        // not found exception
+        ch.findById(rscr.channelId()).orElseThrow(
+                () -> new DiscodeitException(
+                        "Channel with id " + rscr.channelId() + " not found",
+                        "ReadStatus",
+                        404
+                )
+        );
+        ur.findByID(rscr.userId()).orElseThrow(
+                () -> new DiscodeitException(
+                        "User with id " + rscr.userId() + " not found",
+                        "ReadStatus",
+                        404
+                )
+        );
+
+
+        // already exist exception
+        if (
+                !rsr.findByUserId(rscr.userId()).isEmpty() | !rsr.findByChennalID(rscr.channelId()).isEmpty()
+        ) throw new DiscodeitException(
+                "ReadStatus whith userId " + rscr.userId() + "and channelId " + rscr.channelId() + " already existed",
+                "UserStatus",
+                400
+        );
+
+
+        ReadStatus res = new ReadStatus(rscr.userId(), rscr.channelId(), rscr.lastReadAt());
+
+        rsr.save(res);
+        return res;
     }
 
     @Override
     public List<ReadStatus> findAllByUserID(UUID userID){
-        return rsr.find(rs -> rs.getUserID().equals(userID));
+        return rsr.find(rs -> rs.getUserId().equals(userID));
     }
 
-    // wich field will change?
     @Override
-    public void update(UpdateReadStatusInput ursi){
-        ReadStatus rs = rsr.findByID(ursi.getReadStatusID()).orElseThrow(
-                () -> new DiscodeitException("no status by id" + ursi.getReadStatusID(),"ReadStatus",400)
+    public ReadStatus update(UUID id, ReadStatusUpdateRequest rsur){
+        ReadStatus rs = rsr.findByID(id).orElseThrow(
+                () -> new DiscodeitException(
+                        "ReadStatus with id " + id + "not found",
+                        "ReadStatus",
+                        404)
         );
-        rs.setUpdatedAt();
+        rs.setLastReadAt(rsur.newLastReadAt());
         rsr.save(rs);
+        return rs;
     }
     @Override
     public void delete(UUID id){

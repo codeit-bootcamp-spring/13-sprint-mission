@@ -15,16 +15,16 @@ import java.util.function.Predicate;
 @RequiredArgsConstructor
 @ConditionalOnProperty(name="discodeit.repository.type",havingValue = "jcf", matchIfMissing = true)
 public class JCFReadStatusRepository implements ReadStatusRepository {
-    private final Set<ReadStatus> data = new HashSet<>();
+    private final HashMap<UUID, ReadStatus> data = new HashMap<>();
 
     @Override
     public void save(ReadStatus readStatus){
-        data.add(readStatus);
+        data.put(readStatus.getId(), readStatus);
     }
 
     @Override
     public List<ReadStatus> find(Predicate<ReadStatus> fn){
-        return data.stream()
+        return data.values().stream()
                 .filter(fn)
                 .toList();
     }
@@ -35,13 +35,18 @@ public class JCFReadStatusRepository implements ReadStatusRepository {
     }
 
     @Override
-    public List<ReadStatus> findbyChennalID(UUID id){
-        return find(rs -> rs.getChannelID().equals(id));
+    public List<ReadStatus> findByChennalID(UUID id){
+        return find(rs -> rs.getChannelId().equals(id));
+    }
+
+    @Override
+    public List<ReadStatus> findByUserId(UUID id){
+        return find(rs -> rs.getUserId().equals(id));
     }
 
     @Override
     public void delete(UUID id){
-        data.remove(findByID(id));
+        data.remove(id);
     }
 
 

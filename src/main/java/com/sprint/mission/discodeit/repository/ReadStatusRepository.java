@@ -11,6 +11,7 @@ public interface ReadStatusRepository {
     void save(ReadStatus readStatus);
     List<ReadStatus> find(Predicate<ReadStatus> fn);
     Optional<ReadStatus> findByID(UUID id);
-    List<ReadStatus> findbyChennalID(UUID id);
+    List<ReadStatus> findByChennalID(UUID id);
+    List<ReadStatus> findByUserId(UUID id);
     void delete(UUID id);
 }

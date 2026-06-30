@@ -1,7 +1,9 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.input.CreateMessageInput;
-import com.sprint.mission.discodeit.dto.input.UpdateMessageInput;
+import com.sprint.mission.discodeit.dto.input.BinaryContentCreate;
+import com.sprint.mission.discodeit.dto.input.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.input.MessageUpdateRequest;
+import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -15,7 +17,9 @@ import org.springframework.stereotype.Service;
 
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class BasicMessageService implements MessageService {
@@ -25,16 +29,50 @@ public class BasicMessageService implements MessageService {
     private final BinaryContentRepository bcr;
 
     @Override
-    public void createMessage(CreateMessageInput cmi){
+    public Message createMessage(MessageCreateRequest cmi, Optional<List<BinaryContentCreate>> olbcc){
 
-        ur.findByID(cmi.userID()).orElseThrow(
-                () -> new DiscodeitException("no user by id" + cmi.userID(),"Message",400)
+        ur.findByID(cmi.authorId()).orElseThrow(
+                () -> new DiscodeitException(
+                        "no user by id " + cmi.authorId(),
+                        "Message",
+                        404
+                )
         );
-        cr.findById(cmi.channelID()).orElseThrow(
-                () -> new DiscodeitException("no channel by id" + cmi.channelID(),"Message",400)
+        cr.findById(cmi.channelId()).orElseThrow(
+                () -> new DiscodeitException(
+                        "no channel by id " + cmi.channelId(),
+                        "Message",
+                        404
+                )
         );
 
-        mr.save(new Message(cmi.userID(), cmi.channelID(), cmi.message(), cmi.dataIDs()));
+        List<UUID> attsId = olbcc.map(
+                lbcc -> lbcc.stream().map(
+                        bcc -> {
+                            BinaryContent bc = new BinaryContent(
+                                    bcc.filename(),
+                                    bcc.contentType(),
+                                    bcc.size(),
+                                    bcc.content()
+                            );
+                            bcr.save(bc);
+                            return bc.getId();
+                            }
+
+                ).toList()
+        ).orElse(null);
+
+
+
+        Message res = new Message(
+                cmi.content(),
+                cmi.channelId(),
+                cmi.authorId(),
+                attsId
+        );
+
+        mr.save(res);
+        return res;
     }
 
     @Override
@@ -43,29 +81,31 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public void updateMessageData(UpdateMessageInput umi){
-        Message msg = mr.find(m -> m.getId().equals(umi.getMessageID()))
-                .stream()
-                .findFirst()
+    public Message updateMessageData(UUID id, MessageUpdateRequest umi){
+        Message msg = mr.findById(id)
                 .orElseThrow(
-                        () -> new DiscodeitException("no message" + umi.getMessageID(),"Message",400)
+                        () -> new DiscodeitException("no message by id" + id,"Message",404)
                 );
 
-        if (umi.getText() != null) msg.setText(umi.getText());
-        if (!umi.getDataIDs().isEmpty()) {
-            msg.getAttrID().clear();
-            for (UUID dataID : umi.getDataIDs()) {
-                msg.getAttrID().add(dataID);
-            }
-        }
+        msg.setContent(umi.newContent());
         msg.setUpdatedAt();
         mr.save(msg);
+        return msg;
     }
 
     @Override
     public void deleteMessage(UUID id){
+        Message msg = mr.findById(id).orElseThrow(
+                () -> new DiscodeitException("no message by id" + id,"Message",404)
+        );
+
+        // delete attribute
+        if (!msg.getAttachmentIds().isEmpty()){
+            for (UUID att : msg.getAttachmentIds()){
+                   bcr.delete(att);
+            }
+        }
+
         mr.delete(id);
-        bcr.findByAuthorID(id)
-                .forEach(b -> bcr.delete(b.getId()));
     }
 }

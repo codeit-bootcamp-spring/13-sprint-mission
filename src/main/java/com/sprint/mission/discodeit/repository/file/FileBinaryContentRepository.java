@@ -39,10 +39,6 @@ public class FileBinaryContentRepository extends FileBaseRepository implements B
         return find(bc -> bc.getId().equals(id)).stream().findFirst();
     }
 
-    @Override
-    public List<BinaryContent> findByAuthorID(UUID userID) {
-        return find(bc -> bc.getAuthorID().equals(userID));
-    }
 
     @Override
     public void delete(UUID id) {

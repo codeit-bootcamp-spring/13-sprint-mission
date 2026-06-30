@@ -11,6 +11,5 @@ public interface BinaryContentRepository {
     void save(BinaryContent bc);
     List<BinaryContent> find(Predicate<BinaryContent> fn);
     Optional<BinaryContent> findByID(UUID id);
-    List<BinaryContent> findByAuthorID(UUID userID);
     void delete(UUID id);
 }
