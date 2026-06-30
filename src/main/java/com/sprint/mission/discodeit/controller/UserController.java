@@ -28,17 +28,14 @@ public class UserController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public UserResponse create(
-            @RequestParam String username,
-            @RequestParam String email,
-            @RequestParam String password,
-            @RequestParam(value = "profileImage", required = false) MultipartFile profileImage
+            @RequestPart("userCreateRequest") UserRequest.CreateUserRequest userCreateRequest,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
     ) {
-
         UserRequest.CreateUserRequest request =
                 new UserRequest.CreateUserRequest(
-                        username,
-                        email,
-                        password,
+                        userCreateRequest.username(),
+                        userCreateRequest.email(),
+                        userCreateRequest.password(),
                         profileImage
                 );
 
