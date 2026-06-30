@@ -8,10 +8,7 @@ import java.util.UUID;
 
 public record PrivateChannelCreateRequest(
 
-        @NotNull(message = "ChannelType은 필수입니다.")
-        ChannelType type,
-
         @NotNull(message = "userIdList는 필수입니다.")
-        List<UUID> userIdList
+        List<UUID> participantIds
 ) {
 }

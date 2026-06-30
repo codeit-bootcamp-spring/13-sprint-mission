@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
-import com.sprint.mission.discodeit.dto.request.ChannelUpdateRequest;
+import com.sprint.mission.discodeit.dto.request.PublicChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelFindResponse;
 import com.sprint.mission.discodeit.dto.response.ChannelUpdateResponse;
 import com.sprint.mission.discodeit.entity.*;
@@ -34,17 +34,13 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public Channel createPrivateChannel(PrivateChannelCreateRequest request) {
-        //채널 타입 검증
-        if (request.type() != ChannelType.PRIVATE)
-            throw new WrongTypeException("에러: 잘못된 접근입니다.");
-
         //채널 생성
-        Channel channel = new Channel(request.type());
+        Channel channel = new Channel(ChannelType.PRIVATE);
         channelRepository.createChannel(channel);
         log.info("채널: {}가 생성됨.", channel.getName());
 
         //ReadStatus 생성
-        for (UUID userId : request.userIdList()) {
+        for (UUID userId : request.participantIds()) {
             // 유저 존재하는지 검증
             validateUserExists(userId);
 
@@ -59,12 +55,8 @@ public class BasicChannelService implements ChannelService {
     //interface
     @Override
     public Channel createPublicChannel(PublicChannelCreateRequest request) {
-        //채널 타입 검증
-        if (request.type() != ChannelType.PUBLIC)
-            throw new WrongTypeException("에러: 잘못된 접근입니다.");
-
         //채널 생성
-        Channel channel = new Channel(request.type(), request.name(), request.description());
+        Channel channel = new Channel(ChannelType.PUBLIC, request.name(), request.description());
         channelRepository.createChannel(channel);
         log.info("채널: {}가 생성됨.", channel.getName());
 
@@ -110,21 +102,16 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ChannelUpdateResponse updateChannel(ChannelUpdateRequest request) {
-        //ChannelType 검증
-        if (request.type() == ChannelType.PRIVATE) {
-            throw new WrongTypeException("에러: PRIVATE 채널은 수정할 수 없습니다.");
-        }
-
+    public Channel updateChannel(UUID channelId, PublicChannelUpdateRequest request) {
         //채널 검색
-        Channel channelTemp = channelRepository.findChannelById(request.channelId())
+        Channel channelTemp = channelRepository.findChannelById(channelId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
 
         //채널 업데이트
-        channelTemp.updateChannel(request.name(), request.description());
+        channelTemp.updateChannel(request.newName(), request.newDescription());
         channelRepository.save();
 
-        return ChannelUpdateResponse.from(channelTemp);
+        return channelTemp;
     }
 
     @Override

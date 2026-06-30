@@ -13,7 +13,7 @@ public interface MessageService {
 
     Message createMessage(MessageCreateRequest request, List<MultipartFile> files);
     List<Message> findAllByChannelId(UUID channelId);
-    MessageUpdateResponse updateMessage(MessageUpdateRequest request, List<MultipartFile> files);
+    Message updateMessage(UUID messageId, MessageUpdateRequest request);
     void deleteMessage(UUID messageId);
 
 }

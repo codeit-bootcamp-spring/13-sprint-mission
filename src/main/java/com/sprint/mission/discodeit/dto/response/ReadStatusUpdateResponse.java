@@ -11,7 +11,7 @@ public record ReadStatusUpdateResponse(
         Instant updatedAt,
         UUID userId,
         UUID channelId,
-        Instant lastAccessTime
+        Instant lastReadAt
 ) {
     public static ReadStatusUpdateResponse from(ReadStatus readStatus) {
         return new ReadStatusUpdateResponse(
@@ -20,7 +20,7 @@ public record ReadStatusUpdateResponse(
                 readStatus.getUpdatedAt(),
                 readStatus.getUserId(),
                 readStatus.getChannelId(),
-                readStatus.getLastAccessTime()
+                readStatus.getLastReadAt()
         );
     }
 }

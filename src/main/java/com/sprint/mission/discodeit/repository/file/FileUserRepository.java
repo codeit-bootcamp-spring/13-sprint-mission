@@ -6,10 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
-import java.io.*;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,7 +33,7 @@ public class FileUserRepository extends FileRepositoryRoot<User> implements User
     @Override
     public boolean existsUserByName(String name) {
         return storage.stream()
-                .anyMatch(user -> user.getName().equals(name));
+                .anyMatch(user -> user.getUsername().equals(name));
     }
 
     @Override
@@ -62,7 +59,7 @@ public class FileUserRepository extends FileRepositoryRoot<User> implements User
     @Override
     public Optional<User> findUserByNameAndPassword(String username, String password) {
         return storage.stream()
-                .filter(user -> user.getName().equals(username) && user.getPassword().equals(password))
+                .filter(user -> user.getUsername().equals(username) && user.getPassword().equals(password))
                 .findFirst();
     }
 

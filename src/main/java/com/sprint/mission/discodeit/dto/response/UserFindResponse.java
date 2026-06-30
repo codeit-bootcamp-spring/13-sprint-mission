@@ -6,20 +6,20 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record UserFindResponse (
-        UUID userId,
+        UUID id,
         Instant createdAt,
         Instant updatedAt,
-        String name,
+        String username,
         String email,
         UUID profileId,
-        boolean userOnline
+        boolean online
 ) {
     public static UserFindResponse from(User user, boolean userOnline) {
         return new UserFindResponse(
                 user.getId(),
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
-                user.getName(),
+                user.getUsername(),
                 user.getEmail(),
                 user.getProfileId(),
                 userOnline

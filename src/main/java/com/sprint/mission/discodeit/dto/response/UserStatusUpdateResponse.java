@@ -18,7 +18,7 @@ public record UserStatusUpdateResponse(
                 userStatus.getCreatedAt(),
                 userStatus.getUpdatedAt(),
                 userStatus.getUserId(),
-                userStatus.getLastAccessTime()
+                userStatus.getLastActiveAt()
         );
     }
 }
