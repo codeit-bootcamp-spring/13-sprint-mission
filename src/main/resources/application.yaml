@@ -1,6 +1,24 @@
 spring:
   application:
     name: discodeit
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 30MB
+
+discodeit:
+  repository:
+    type: file
+    file-directory: .discodeit
+
+# application.yml
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
 
 server:
   port: 8080
