@@ -15,18 +15,20 @@ import java.util.UUID;
 @RequestMapping("/api/binaryContents")
 public class BinaryContentController {
 
-    private final BinaryContentService binaryContentService;
+  private final BinaryContentService binaryContentService;
 
-    @RequestMapping(value = "/{binaryContentId}", method = RequestMethod.GET)
-    public ResponseEntity<BinaryContent> find(@PathVariable UUID binaryContentId) {
-        BinaryContent findBinaryContent = binaryContentService.find(binaryContentId);
-        return ResponseEntity.status(HttpStatus.OK).body(findBinaryContent);
-    }
+  @RequestMapping(value = "/{binaryContentId}", method = RequestMethod.GET)
+  public ResponseEntity<BinaryContent> find(@PathVariable UUID binaryContentId) {
+    BinaryContent findBinaryContent = binaryContentService.find(binaryContentId);
+    return ResponseEntity.status(HttpStatus.OK).body(findBinaryContent);
+  }
 
-    @RequestMapping(value = "/search", method = RequestMethod.GET)
-    public ResponseEntity<List<BinaryContent>> findAllByIdIn(@RequestParam List<UUID> binaryContentIds){
-        List<BinaryContent> finaAllBinaryContentIdIn = binaryContentService.findAllByIdIn(binaryContentIds);
-        return ResponseEntity.status(HttpStatus.OK).body(finaAllBinaryContentIdIn);
-    }
+  @RequestMapping(method = RequestMethod.GET)
+  public ResponseEntity<List<BinaryContent>> findAllByIdIn(
+      @RequestParam List<UUID> binaryContentIds) {
+    List<BinaryContent> finaAllBinaryContentIdIn = binaryContentService.findAllByIdIn(
+        binaryContentIds);
+    return ResponseEntity.status(HttpStatus.OK).body(finaAllBinaryContentIdIn);
+  }
 
 }
