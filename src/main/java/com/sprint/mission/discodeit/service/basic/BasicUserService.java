@@ -78,10 +78,6 @@ public class BasicUserService implements UserService {
         }
         repository.create(user);
 
-        if (repository instanceof FileUserRepository) {
-            ((FileUserRepository) repository).saveToFile();
-        }
-
         UserStatus userStatus = new UserStatus(user.getId());
         userStatusRepository.create(userStatus);
 
