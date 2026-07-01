@@ -27,6 +27,8 @@ public class BasicReadStatusService implements ReadStatusService {
     private ReadStatusResponse toResponse(ReadStatus readStatus){
         return new ReadStatusResponse(
                 readStatus.getId(),
+                readStatus.getCreatedAt(),
+                readStatus.getUpdatedAt(),
                 readStatus.getUserId(),
                 readStatus.getChannelId(),
                 readStatus.getLastReadAt()
@@ -46,7 +48,12 @@ public class BasicReadStatusService implements ReadStatusService {
                 .anyMatch(rs -> rs.getChannelId().equals(request.channelId()));
 
         if (alreadyExists){
-            throw new IllegalArgumentException("이미 존재하는 ReadStatus입니다.");
+            return readStatusRepository.findAllByUserId(request.userId())
+                    .stream()
+                    .filter(rs -> rs.getChannelId().equals(request.channelId()))
+                    .findFirst()
+                    .map(this::toResponse)
+                    .orElseThrow();
         }
 
         ReadStatus readStatus = new ReadStatus(request.userId(), request.channelId());
@@ -75,7 +82,7 @@ public class BasicReadStatusService implements ReadStatusService {
     public ReadStatusResponse update(UUID id, ReadStatusUpdateRequest request) {
         ReadStatus readStatus = readStatusRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 ReadStatus입니다."));
-        readStatus.updateLastReadAt(request.lastReadAt());
+        readStatus.updateLastReadAt(request.newLastReadAt());
 
         readStatusRepository.save(readStatus);
         return toResponse(readStatus);

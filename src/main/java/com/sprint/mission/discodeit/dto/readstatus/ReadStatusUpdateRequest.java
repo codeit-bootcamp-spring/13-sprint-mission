@@ -1,14 +1,16 @@
 package com.sprint.mission.discodeit.dto.readstatus;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.Instant;
 
 public record ReadStatusUpdateRequest(
-
-        Instant lastReadAt
+        @Schema(description = "수정할 읽음 상태 정보")
+        Instant newLastReadAt
 )
 {
     public ReadStatusUpdateRequest {
-        validate(lastReadAt, "마지막 읽은 시간");
+        validate(newLastReadAt, "마지막 읽은 시간");
     }
 
     private static void  validate(Instant validate, String fieldName) {

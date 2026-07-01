@@ -41,7 +41,7 @@ public class BasicUserService implements UserService {
                 user.getName(),
                 user.getEmail(),
                 user.getProfileId(),
-                userStatus.isOnline()
+                userStatus != null && userStatus.isOnline() // null이면 (false)오프라인
         );
     }
 
@@ -52,7 +52,7 @@ public class BasicUserService implements UserService {
                                    BinaryContentCreateRequest profileRequest) {
         //username 중복체크
         boolean nameDuplicate = userRepository.findAll().stream()
-                .anyMatch(user -> userCreateRequest.name().equals(user.getName()));
+                .anyMatch(user -> userCreateRequest.username().equals(user.getName()));
         if (nameDuplicate) {
             throw new IllegalArgumentException("이미 사용중인 이름 입니다.");
         }
@@ -72,12 +72,12 @@ public class BasicUserService implements UserService {
             binaryContentRepository.save(profile);
             profileId = profile.getId();
         }
-        User user = new User(userCreateRequest.name(), userCreateRequest.email(), userCreateRequest.password(),profileId);
+        User user = new User(userCreateRequest.username(), userCreateRequest.email(), userCreateRequest.password(),profileId);
         userRepository.save(user);
 
         UserStatus userStatus = new UserStatus(user.getUserId());
         userStatusRepository.save(userStatus);
-        log.info("유저 생성 완료 - name: {}, userId: {}", userCreateRequest.name(), user.getUserId());
+        log.info("유저 생성 완료 - name: {}, userId: {}", userCreateRequest.username(), user.getUserId());
         return  toResponse(user, userStatus);
 
     }
@@ -88,7 +88,7 @@ public class BasicUserService implements UserService {
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자 입니다."));
 
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElseThrow(()-> new NoSuchElementException("존재하지 않는 UserStatus입니다."));
+                .orElse(null);
 
         log.info("유저 조회 - name: {}", user.getName());
 
@@ -105,8 +105,8 @@ public class BasicUserService implements UserService {
         return  users.stream()
                 .map(user -> {
                     UserStatus userStatus = userStatusRepository.findByUserId(user.getUserId())
-                            .orElseThrow(()-> new NoSuchElementException("존재하지 않는 UserStatus입니다."));
-                    return  toResponse(user, userStatus);
+                            .orElse(null);
+                    return toResponse(user, userStatus);
                 })
                 .collect(Collectors.toList());
     }
@@ -127,13 +127,30 @@ public class BasicUserService implements UserService {
             user.updateUserProfileId(profile.getId());
         }
 
-        if (userUpdateRequest.name() != null) user.updateUserName(userUpdateRequest.name());
-        if (userUpdateRequest.email() != null) user.updateUserEmail(userUpdateRequest.email());
-        if (userUpdateRequest.password() != null) user.updateUserPassword(userUpdateRequest.password());
+        if (userUpdateRequest.newUsername() != null) {
+            boolean nameDuplicate = userRepository.findAll().stream()
+                            .anyMatch(u -> userUpdateRequest.newUsername().equals(u.getName()));
+            if (nameDuplicate) {
+                throw new IllegalArgumentException("이미 사용중인 이름입니다.");
+            }
+            user.updateUserName(userUpdateRequest.newUsername());
+        }
+        if (userUpdateRequest.newEmail() != null){
+            boolean emailDuplicate = userRepository.findAll().stream()
+                    .anyMatch(u -> userUpdateRequest.newEmail().equals(u.getEmail()));
+            if (emailDuplicate) {
+                throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
+            }
+            user.updateUserEmail(userUpdateRequest.newEmail());
+        }
+        if (userUpdateRequest.newPassword() != null) user.updateUserPassword(userUpdateRequest.newPassword());
         userRepository.save(user);
 
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElseThrow(()-> new NoSuchElementException("존재하지 않는 UserStatus입니다."));
+                .orElse(null);
+        if (userStatus == null){
+             userStatus = new UserStatus(userId);
+        }
 
         log.info("유저 수정 완료 -  name: {}, userId: {}", user.getName(), user.getUserId());
 

@@ -9,8 +9,9 @@ public record BinaryContentResponse(
         UUID id,
         Instant createdAt,
         String fileName,
-        long fileSize,
-        ContentType contentType
+        long size,
+        ContentType contentType,
+        byte[] bytes
 )
 {
 

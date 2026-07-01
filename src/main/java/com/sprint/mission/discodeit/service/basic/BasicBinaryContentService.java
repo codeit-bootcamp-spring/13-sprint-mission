@@ -26,7 +26,8 @@ public class BasicBinaryContentService implements BinaryContentService {
                 binaryContent.getCreatedAt(),
                 binaryContent.getFileName(),
                 binaryContent.getFileSize(),
-                binaryContent.getContentType()
+                binaryContent.getContentType(),
+                binaryContent.getBytes()
         );
     }
 

@@ -1,8 +1,8 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.controller.docs.UserControllerDocs;
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
-import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserResponse;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusResponse;
@@ -10,6 +10,8 @@ import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import com.sprint.mission.discodeit.util.FileUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,65 +19,59 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
-public class UserController {
+public class UserController implements UserControllerDocs {
 
     private final UserService userService;
     private final UserStatusService userStatusService;
 
-    //user 생성api
-    @RequestMapping(method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UserResponse> createUser(@RequestPart UserCreateRequest request,
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserResponse> createUser(@RequestPart UserCreateRequest userCreateRequest,
                                                    @RequestPart(required = false) MultipartFile profile) {
         Optional<BinaryContentCreateRequest> profileRequest = FileUtils.toRequest(profile);
-        UserResponse response = userService.createUser(request, profileRequest.orElse(null));
+        UserResponse response = userService.createUser(userCreateRequest, profileRequest.orElse(null));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-    //user 수정 api
-    @RequestMapping(value = "/{userid}", method = RequestMethod.PATCH, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UserResponse> updateUser(@PathVariable UUID userid,
-                                                   @RequestPart UserUpdateRequest request,
+
+
+    @PatchMapping(path = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserResponse> updateUser(@PathVariable UUID userId,
+                                                   @RequestPart UserUpdateRequest userUpdateRequest,
                                                    @RequestPart(required = false) MultipartFile profile){
         Optional<BinaryContentCreateRequest> profileRequest = FileUtils.toRequest(profile);
-        UserResponse response = userService.updateUser(userid, request, profileRequest.orElse(null));
+        UserResponse response = userService.updateUser(userId, userUpdateRequest, profileRequest.orElse(null));
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
-    //user 삭제 api
-    @RequestMapping(value = "/{userid}", method = RequestMethod.DELETE)
-    public ResponseEntity<Void> deleteUser(@PathVariable UUID userid){
-        userService.deleteUser(userid);
+
+    @DeleteMapping( "/{userId}")
+    public ResponseEntity<Void> deleteUser(@PathVariable UUID userId){
+        userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
     }
-    //user 단건 조회 api
-    @RequestMapping(value = "/{userid}", method = RequestMethod.GET)
-    public ResponseEntity<UserResponse> findUser (@PathVariable UUID userid){
-        UserResponse userId = userService.findByUserId(userid);
-        return ResponseEntity.status(HttpStatus.OK).body(userId);
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserResponse> findUser (@PathVariable UUID userId){
+        UserResponse userById = userService.findByUserId(userId);
+        return ResponseEntity.status(HttpStatus.OK).body(userById);
     }
 
-    //모든 user 조회
-    @RequestMapping(value = "/findAll", method = RequestMethod.GET)
-    public ResponseEntity<List<UserDto>> findAllUser(){
+    @GetMapping()
+    public ResponseEntity<List<UserResponse>> findAllUser(){
         List<UserResponse> allUser = userService.findAllUser();
-        List<UserDto> dtos = allUser.stream()
-                .map(u -> new UserDto(u.id(), u.createdAt(), u.updateAt(), u.name(), u.email(),u.profileId(), u.isOnline()))
-                .collect(Collectors.toList());
-        return ResponseEntity.status(HttpStatus.OK).body(dtos);
+        return ResponseEntity.status(HttpStatus.OK).body(allUser);
     }
 
-    //사용자의 온라인 상태를 업데이트
-    @RequestMapping(value = "/{userid}/status", method = RequestMethod.PATCH)
-    public ResponseEntity<UserStatusResponse> updateUserStatus(@PathVariable UUID userid,
+    @PatchMapping("/{userId}/userStatus")
+    public ResponseEntity<UserStatusResponse> updateUserStatus(@PathVariable UUID userId,
                                                                @RequestBody UserStatusUpdateRequest request){
-        UserStatusResponse userStatusResponse = userStatusService.updateByUserId(userid, request);
+        UserStatusResponse userStatusResponse = userStatusService.updateByUserId(userId, request);
         return ResponseEntity.status(HttpStatus.OK).body(userStatusResponse);
     }
 }

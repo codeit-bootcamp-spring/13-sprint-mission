@@ -68,7 +68,7 @@ public class BasicUserStatusService implements UserStatusService {
     public UserStatusResponse update(UUID id, UserStatusUpdateRequest request) {
         UserStatus userStatus = userStatusRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 UserStatus입니다."));
-        userStatus.updateLastAccessedAt(request.lastAccessedAt());
+        userStatus.updateLastAccessedAt(request.newLastActiveAt());
         userStatusRepository.save(userStatus);
         return toResponse(userStatus);
     }
@@ -79,7 +79,7 @@ public class BasicUserStatusService implements UserStatusService {
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자 입니다."));
 
-        userStatus.updateLastAccessedAt(request.lastAccessedAt());
+        userStatus.updateLastAccessedAt(request.newLastActiveAt());
         userStatusRepository.save(userStatus);
         return toResponse(userStatus);
     }

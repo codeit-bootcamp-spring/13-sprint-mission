@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum ContentType {
 
     //이미지
@@ -19,6 +21,7 @@ public enum ContentType {
         this.value = value;
     }
 
+    @JsonValue
     public String getValue() {
         return value;
     }

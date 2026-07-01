@@ -1,22 +1,23 @@
 package com.sprint.mission.discodeit.dto.message;
 
-import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
 
-import java.util.List;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.UUID;
 
 public record MessageCreateRequest(
+        @Schema(description = "채널 ID", example = "383b89f5-3200-4504-9283-2d46cd007444", requiredMode = Schema.RequiredMode.REQUIRED)
         UUID channelId,
+        @Schema(description = "작성자 ID", example = "0df2cecb-ff53-49c0-a522-a6065eeac3b9", requiredMode = Schema.RequiredMode.REQUIRED)
         UUID authorId,
-        String content,
-        List<BinaryContentCreateRequest> attachments
+        @Schema(description = "메시지", example = "안녕하세요", requiredMode = Schema.RequiredMode.REQUIRED)
+        String content
 
 )
 {
     public MessageCreateRequest {
         validate(channelId, "채널 id");
         validate(authorId, "작성자 id");
-        validate(content, "메시지");
     }
 
     private void validate(UUID validate, String fieldName){

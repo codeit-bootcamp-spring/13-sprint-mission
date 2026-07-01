@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
+import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentResponse;
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageResponse;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
@@ -39,6 +41,7 @@ public class BasicMessageService implements MessageService {
                 message.getCreatedAt(),
                 message.getUpdatedAt(),
                 message.getContent(),
+                message.getChannelId(),
                 message.getAuthorId(),
                 message.getAttachmentIds()
         );
@@ -46,20 +49,20 @@ public class BasicMessageService implements MessageService {
 
     //메시지, 첨부파일 생성
     @Override
-    public MessageResponse create(MessageCreateRequest request) {
+    public MessageResponse create(MessageCreateRequest request, List<BinaryContentCreateRequest> attachments) {
         channelRepository.findById(request.channelId())
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널입니다."));
         userRepository.findById(request.authorId())
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자입니다."));
 
         List<UUID> attachmentIds = new ArrayList<>();
-        if (request.attachments() != null && !request.attachments().isEmpty()) {
-            request.attachments().forEach((attachmentId) -> {
+        if (attachments != null && ! attachments.isEmpty()) {
+            attachments.forEach(attachment -> {
                 BinaryContent binaryContent = new BinaryContent(
-                        attachmentId.fileName(),
-                        attachmentId.fileSize(),
-                        attachmentId.contentType(),
-                        attachmentId.bytes()
+                        attachment.fileName(),
+                        attachment.fileSize(),
+                        attachment.contentType(),
+                        attachment.bytes()
                 );
                 binaryContentRepository.save(binaryContent);
                 attachmentIds.add(binaryContent.getId());
