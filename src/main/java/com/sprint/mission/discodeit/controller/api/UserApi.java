@@ -7,6 +7,9 @@ import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,45 +31,69 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/users")
 public interface UserApi {
 
-  @Operation(summary = "사용자 생성", description = "새로운 사용자를 생성합니다.")
-  @ApiResponses({
-      @ApiResponse(responseCode = "201", description = "생성 성공"),
-      @ApiResponse(responseCode = "400", description = "잘못된 요청")
+  //생성
+  @Operation(summary = "User 등록")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "201", description = "Use가 성공적으로 생성됨"),
+      @ApiResponse(responseCode = "400", description = "같은 email 또는 username를 사용하는 User가 이미 존재함",
+          content = @Content(examples = @ExampleObject(value = "User with email {email} already exists")))
   })
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
       produces = MediaType.APPLICATION_JSON_VALUE)
   ResponseEntity<User> create(
-      @RequestPart("userCreateRequest") UserCreateRequest userCreateRequest,
-      @RequestPart(value = "profile", required = false)
+      @Parameter(description = "User 생성 정보") @RequestPart("userCreateRequest") UserCreateRequest userCreateRequest,
+      @Parameter(description = "User 프로필 이미지") @RequestPart(value = "profile", required = false)
       MultipartFile profile
   );
 
-  @Operation(summary = "사용자 목록 조회")
+  //조회
+  @Operation(summary = "전체 User 목록 조회")
+  @ApiResponse(responseCode = "200", description = "User 목록 조회 성공")
   @GetMapping
   ResponseEntity<List<UserDto>> findAll();
 
-  @Operation(summary = "사용자 수정")
+  //수정
+  @Operation(summary = "User 정보 수정")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "User 정보가 성공적으로 수정됨"),
+      @ApiResponse(responseCode = "400", description = "같은 email 또는 username를 사용하는 User가 이미 존재함",
+          content = @Content(examples = @ExampleObject(value = "user with email {newEmail} already exists"))),
+      @ApiResponse(responseCode = "404", description = "User를 찾을 수 없음",
+          content = @Content(examples = @ExampleObject(value = "User with id {userId} not found")))
+  })
   @PatchMapping(
       value = "/{userId}",
       consumes = MediaType.MULTIPART_FORM_DATA_VALUE
   )
   ResponseEntity<User> update(
-      @PathVariable UUID userId,
-      @RequestPart("userUpdateRequest") UserUpdateRequest request,
-      @RequestPart(value = "profile", required = false)
+      @Parameter(description = "수정할 User ID") @PathVariable UUID userId,
+      @Parameter(description = "수정할 User 정보") @RequestPart("userUpdateRequest") UserUpdateRequest request,
+      @Parameter(description = "수정할 User 프로필 이미지") @RequestPart(value = "profile", required = false)
       MultipartFile profile
   );
 
-  @Operation(summary = "사용자 삭제")
+  //삭제
+  @Operation(summary = "User 삭제")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "204", description = "User가 성공적으로 삭제됨"),
+      @ApiResponse(responseCode = "404", description = "User를 찾을 수 없음",
+          content = @Content(examples = @ExampleObject(value = "User with id {id} not found")))
+  })
   @DeleteMapping("/{userId}")
   ResponseEntity<Void> delete(
-      @PathVariable UUID userId
+      @Parameter(description = "삭제할 User ID") @PathVariable UUID userId
   );
 
+  //상태 변경
   @Operation(summary = "사용자 상태 변경")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "User온라인 상태가 성공적으로 업데이트됨"),
+      @ApiResponse(responseCode = "404", description = "해당 User의 UserStatus를 찾을 수 없음",
+          content = @Content(examples = @ExampleObject(value = "UserStatus with userId {userId} not found")))
+  })
   @PatchMapping("/{userId}/userStatus")
   ResponseEntity<UserStatus> updateUserStatusByUserId(
-      @PathVariable UUID userId,
+      @Parameter(description = "상태를 변경할 User ID") @PathVariable UUID userId,
       @RequestBody UserStatusUpdateRequest request
   );
 }
