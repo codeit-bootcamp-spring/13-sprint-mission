@@ -2,37 +2,39 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.service.BinaryContentService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "BinaryContent", description = "첨부 파일 관련 API")
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/binary-contents")
+@RequestMapping("/api/binaryContents")
 public class BinaryContentController {
 
-    private final BinaryContentService binaryContentService;
+  private final BinaryContentService binaryContentService;
 
-    // 1. 바이너리 파일 1개 조회 및 다운로드 처리
-    @RequestMapping(value = "/{binaryContentId}", method = RequestMethod.GET)
-    public ResponseEntity<byte[]> getBinaryContent(@PathVariable UUID binaryContentId) {
-        BinaryContent content = binaryContentService.find(binaryContentId);
+  // GET /api/binaryContents/{binaryContentId} -> 첨부 파일 1개 조회
+  @GetMapping("/{binaryContentId}")
+  public ResponseEntity<BinaryContent> find(@PathVariable("binaryContentId") UUID binaryContentId) {
+    BinaryContent binaryContent = binaryContentService.find(binaryContentId);
+    return ResponseEntity
+            .status(HttpStatus.OK)
+            .body(binaryContent);
+  }
 
-        // 파일명 브라우저 인코딩 및 컨텐트 타입 헤더 설정
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + content.getFileName() + "\"")
-                .contentType(MediaType.parseMediaType(content.getContentType()))
-                .body(content.getBytes());
-    }
-
-    // 2. 바이너리 파일 여러 개 목록 조회 (쿼리 파라미터 ?ids=uuid1,uuid2... 로 바인딩 가능)
-    @RequestMapping(method = RequestMethod.GET)
-    public List<BinaryContent> getBinaryContentsIn(@RequestParam List<UUID> ids) {
-        return binaryContentService.findAllByIdIn(ids);
-    }
+  // GET /api/binaryContents?binaryContentIds=&binaryContentIds= -> 여러 첨부 파일 조회
+  @GetMapping
+  public ResponseEntity<List<BinaryContent>> findAllByIdIn(
+          @RequestParam("binaryContentIds") List<UUID> binaryContentIds) {
+    List<BinaryContent> binaryContents = binaryContentService.findAllByIdIn(binaryContentIds);
+    return ResponseEntity
+            .status(HttpStatus.OK)
+            .body(binaryContents);
+  }
 }

@@ -4,34 +4,50 @@ import com.sprint.mission.discodeit.dto.request.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.service.ReadStatusService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "ReadStatus", description = "Message 읽음 상태 관련 API")
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/read-statuses")
+@RequestMapping("/api/readStatuses")
 public class ReadStatusController {
 
-    private final ReadStatusService readStatusService;
+  private final ReadStatusService readStatusService;
 
-    // 1. 특정 채널의 메시지 수신 정보 생성
-    @RequestMapping(method = RequestMethod.POST)
-    public ReadStatus createReadStatus(@RequestBody ReadStatusCreateRequest request) {
-        return readStatusService.create(request);
-    }
+  // GET /api/readStatuses?userId= -> User의 Message 읽음 상태 목록 조회
+  @GetMapping
+  public ResponseEntity<List<ReadStatus>> findAllByUserId(@RequestParam("userId") UUID userId) {
+    List<ReadStatus> readStatuses = readStatusService.findAllByUserId(userId);
+    return ResponseEntity
+            .status(HttpStatus.OK)
+            .body(readStatuses);
+  }
 
-    // 2. 특정 채널의 메시지 수신 정보 수정 (최근 읽은 시간 업데이트)
-    @RequestMapping(value = "/{readStatusId}", method = RequestMethod.PUT)
-    public ReadStatus updateReadStatus(@PathVariable UUID readStatusId, @RequestBody ReadStatusUpdateRequest request) {
-        return readStatusService.update(readStatusId, request);
-    }
+  // POST /api/readStatuses -> Message 읽음 상태 생성
+  @PostMapping
+  public ResponseEntity<ReadStatus> create(@RequestBody ReadStatusCreateRequest request) {
+    ReadStatus createdReadStatus = readStatusService.create(request);
+    return ResponseEntity
+            .status(HttpStatus.CREATED)
+            .body(createdReadStatus);
+  }
 
-    // 3. 특정 사용자의 메시지 수신 정보 목록 조회 (쿼리 파라미터 ?userId=... 사용)
-    @RequestMapping(method = RequestMethod.GET)
-    public List<ReadStatus> getReadStatusesByUserId(@RequestParam UUID userId) {
-        return readStatusService.findAllByUserId(userId);
-    }
+  // PATCH /api/readStatuses/{readStatusId} -> Message 읽음 상태 수정
+  @PatchMapping("/{readStatusId}")
+  public ResponseEntity<ReadStatus> update(
+          @PathVariable("readStatusId") UUID readStatusId,
+          @RequestBody ReadStatusUpdateRequest request
+  ) {
+    ReadStatus updatedReadStatus = readStatusService.update(readStatusId, request);
+    return ResponseEntity
+            .status(HttpStatus.OK)
+            .body(updatedReadStatus);
+  }
 }
