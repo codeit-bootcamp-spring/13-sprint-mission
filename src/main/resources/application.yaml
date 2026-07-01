@@ -2,7 +2,11 @@ spring:
   application:
     name: discodeit
 
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
 discodeit:
   repository:
-    type: file   # jcf | file
+    type: file
     file-directory: .discodeit

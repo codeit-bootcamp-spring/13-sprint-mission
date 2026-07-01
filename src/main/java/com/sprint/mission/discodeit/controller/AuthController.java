@@ -12,20 +12,20 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @RequiredArgsConstructor
 @Controller
 @ResponseBody
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthService authService;
+  private final AuthService authService;
 
-    // 로그인
-    @RequestMapping(
-            value = "/login",
-            method = RequestMethod.POST
-    )
-    public Object login(
-            @RequestBody LoginRequest request
-    ) {
+  // 로그인
+  @RequestMapping(
+      value = "/login",
+      method = RequestMethod.POST
+  )
+  public Object login(
+      @RequestBody LoginRequest request
+  ) {
 
-        return authService.login(request);
-    }
+    return authService.login(request);
+  }
 }
