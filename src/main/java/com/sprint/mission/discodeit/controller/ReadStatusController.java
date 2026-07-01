@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.readstatus.ReadStatusResponse;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.service.ReadStatusService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,7 +14,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/read-status")
+@RequestMapping("/api/readStatuses")
 public class ReadStatusController {
 
     private final ReadStatusService readStatusService;
@@ -22,7 +23,7 @@ public class ReadStatusController {
     public ResponseEntity<ReadStatusResponse> create(
             @RequestBody ReadStatusCreateRequest request
     ) {
-        return ResponseEntity.ok(readStatusService.create(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(readStatusService.create(request));
     }
 
     @RequestMapping(method = RequestMethod.GET)
@@ -32,10 +33,11 @@ public class ReadStatusController {
         return ResponseEntity.ok(readStatusService.findAllByUserId(userId));
     }
 
-    @RequestMapping(method = RequestMethod.PUT)
+    @RequestMapping(value = "/{readStatusId}", method = RequestMethod.PATCH)
     public ResponseEntity<ReadStatusResponse> update(
+            @PathVariable UUID readStatusId,
             @RequestBody ReadStatusUpdateRequest request
     ) {
-        return ResponseEntity.ok(readStatusService.update(request));
+        return ResponseEntity.ok(readStatusService.update(readStatusId, request));
     }
 }

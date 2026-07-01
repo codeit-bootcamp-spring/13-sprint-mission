@@ -30,16 +30,11 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public ChannelResponse createPublic(PublicChannelCreateRequest request) {
-        User creator = userRepository.findById(request.creatorId());
-
-        if (creator == null) {
-            throw new IllegalArgumentException("존재하지 않는 유저입니다.");
-        }
 
         Channel channel = new Channel(
                 request.name(),
                 request.description(),
-                creator,
+                null,
                 ChannelType.PUBLIC
         );
 
@@ -50,6 +45,14 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public ChannelResponse createPrivate(PrivateChannelCreateRequest request) {
+        for (UUID participantId : request.participantIds()) {
+            User user = userRepository.findById(participantId);
+
+            if (user == null) {
+                throw new IllegalArgumentException("존재하지 않는 유저입니다.");
+            }
+        }
+
         Channel channel = new Channel(
                 null,
                 null,
@@ -60,11 +63,6 @@ public class BasicChannelService implements ChannelService {
         channelRepository.save(channel);
 
         for (UUID participantId : request.participantIds()) {
-            User user = userRepository.findById(participantId);
-
-            if (user == null) {
-                throw new IllegalArgumentException("존재하지 않는 유저입니다.");
-            }
 
             ReadStatus readStatus = new ReadStatus(
                     participantId,
@@ -107,8 +105,8 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ChannelResponse update(ChannelUpdateRequest request) {
-        Channel channel = channelRepository.findById(request.id());
+    public ChannelResponse update(UUID channelId, ChannelUpdateRequest request) {
+        Channel channel = channelRepository.findById(channelId);
         if (channel == null) {
             throw new IllegalArgumentException("존재하지 않는 채널입니다.");
         }
@@ -124,6 +122,13 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public void delete(UUID id) {
+
+        Channel channel = channelRepository.findById(id);
+
+        if (channel == null) {
+            throw new IllegalArgumentException("존재하지 않는 채널입니다.");
+        }
+
         for (Message message : messageRepository.findAllByChannelId(id)) {
             messageRepository.delete(message.getId());
         }

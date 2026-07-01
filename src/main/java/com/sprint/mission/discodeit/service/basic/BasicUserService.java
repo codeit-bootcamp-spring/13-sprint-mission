@@ -46,27 +46,25 @@ public class BasicUserService implements UserService {
             profileId = profile.getId();
         }
 
-       User user = new User(
-               createRequest.username(),
-               createRequest.email(),
-               createRequest.password(),
-               profileId
-       );
-
-       userRepository.save(user);
+        User user = new User(
+                createRequest.username(),
+                createRequest.email(),
+                createRequest.password(),
+                profileId
+        );
+        userRepository.save(user);
 
         UserStatus userStatus = new UserStatus(user.getId(), Instant.now());
 
         userStatusRepository.save(userStatus);
-
-       return toResponse(user);
+        return toResponse(user);
     }
 
     @Override
     public UserResponse findById(UUID id) {
         User user = userRepository.findById(id);
         if (user == null) {
-            return null;
+            throw new IllegalArgumentException("존재하지 않은 유저입니다.");
         }
         return toResponse(user);
     }
@@ -87,11 +85,16 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public UserResponse update(UserUpdateRequest updateRequest) {
-        User user= userRepository.findById(updateRequest.id());
+    public UserResponse update ( UUID userId, UserUpdateRequest updateRequest) {
+
+        User user= userRepository.findById(userId);
+
+        if (user == null) {
+            throw new IllegalArgumentException("존재하지 않은 유저입니다.");
+        }
 
         validateUniqueUserForUpdate(
-                updateRequest.id(),
+                userId,
                 updateRequest.username(),
                 updateRequest.email());
 
@@ -121,6 +124,10 @@ public class BasicUserService implements UserService {
     @Override
     public void delete(UUID id) {
         User user = userRepository.findById(id);
+
+        if (user == null) {
+            throw new IllegalArgumentException("존재하지 않은 유저입니다.");
+        }
 
         UUID profileId = user.getProfileId();
         if (profileId != null) {

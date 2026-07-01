@@ -35,9 +35,11 @@ public class BasicMessageService implements MessageService {
         Channel channel = channelRepository.findById(request.channelId());
         User author = userRepository.findById(request.userId());
 
-        if (request.content() == null) {
-            throw new IllegalArgumentException("존재하지 않은 내용입니다.");
+        if ((request.content() == null || request.content().isBlank())
+                && (request.attachments() == null || request.attachments().isEmpty())) {
+            throw new IllegalArgumentException("메시지 내용 또는 첨부파일이 필요합니다.");
         }
+
         if (channel == null) {
             throw new IllegalArgumentException("존재하지 않는 채널의 메시지입니다.");
         }
@@ -76,7 +78,7 @@ public class BasicMessageService implements MessageService {
     public MessageResponse findById(UUID id) {
         Message message = messageRepository.findById(id);
         if (message == null) {
-            return null;
+            throw new IllegalArgumentException("존재하지 않은 메세지 입니다.") ;
         }
         return toResponse(message);
     }
@@ -89,8 +91,17 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public MessageResponse update(MessageUpdateRequest request) {
-        Message message = messageRepository.findById(request.id());
+    public MessageResponse update(UUID messageId, MessageUpdateRequest request) {
+        if (request.content() == null) {
+            throw new IllegalArgumentException("존재하지 않은 메세지 입니다.");
+        }
+
+        Message message = messageRepository.findById(messageId);
+
+        if (message == null) {
+            throw new IllegalArgumentException("존재하지 않은 메세지 입니다.");
+        }
+
         message.update(request.content());
         messageRepository.save(message);
         return toResponse(message);
@@ -99,6 +110,10 @@ public class BasicMessageService implements MessageService {
     @Override
     public void delete(UUID id) {
         Message message = messageRepository.findById(id);
+
+        if (message == null) {
+            throw new IllegalArgumentException("존재하지 않은 메세지 입니다.");
+        }
 
         if (message.getAttachmentIds() != null) {
             for (UUID attachmentId : message.getAttachmentIds()) {
@@ -112,6 +127,8 @@ public class BasicMessageService implements MessageService {
     private MessageResponse toResponse(Message message) {
         return new MessageResponse(
                 message.getId(),
+                message.getCreateAt(),
+                message.getUpdateAt(),
                 message.getContent(),
                 message.getChannel().getId(),
                 message.getAuthor().getId(),

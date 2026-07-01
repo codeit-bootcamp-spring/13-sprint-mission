@@ -19,7 +19,7 @@ public class ErrorResponseHandler {
                 Instant.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                e.getMessage()
+                "서버 내부 오류가 발생했습니다."
         );
 
         return ResponseEntity.badRequest().body(response);
@@ -33,7 +33,7 @@ public class ErrorResponseHandler {
                 Instant.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                e.getMessage()
+                "서버 내부 오류가 발생했습니다."
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);

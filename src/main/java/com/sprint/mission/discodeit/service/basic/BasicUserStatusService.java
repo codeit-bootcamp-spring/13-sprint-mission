@@ -59,6 +59,20 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
+    public UserStatusResponse updateByUserId(UUID userId, UserStatusUpdateRequest request) {
+        UserStatus userStatus = userStatusRepository.findByUserId(userId);
+
+        if (userStatus == null) {
+            throw new IllegalArgumentException("존재하지 않는 유저 상태입니다.");
+        }
+
+        userStatus.updateLastSeenAt(request.lastSeenAt());
+        userStatusRepository.save(userStatus);
+
+        return toResponse(userStatus);
+    }
+
+    @Override
     public UserStatusResponse findByUserId(UUID userId) {
         return toResponse(userStatusRepository.findByUserId(userId));
     }
