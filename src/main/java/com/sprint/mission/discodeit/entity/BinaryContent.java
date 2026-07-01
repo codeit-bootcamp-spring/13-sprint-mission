@@ -67,6 +67,4 @@ public class BinaryContent implements Serializable {
     }
 
 
-
-
 }

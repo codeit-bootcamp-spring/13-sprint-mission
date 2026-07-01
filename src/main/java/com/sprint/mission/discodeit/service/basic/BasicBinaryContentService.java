@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
 import lombok.*;
+import org.springframework.beans.factory.annotation.*;
 import org.springframework.stereotype.*;
 
 import java.util.*;
@@ -74,5 +75,19 @@ public class BasicBinaryContentService implements BinaryContentService {
         }
 
         repository.delete(id);
+    }
+
+    @Override
+    public BinaryContent findEntity(UUID binaryContentId) {
+        if (binaryContentId == null) {
+            throw new IllegalArgumentException("파일 ID는 필수입니다.");
+        }
+
+        if (!repository.exists(binaryContentId)) {
+            throw new IllegalArgumentException("존재하지 않는 파일 ID입니다.");
+        }
+
+        return repository.find(binaryContentId);
+
     }
 }

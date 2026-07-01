@@ -1,13 +1,17 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
+import com.sprint.mission.discodeit.repository.file.*;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.*;
 import org.springframework.stereotype.*;
+import org.springframework.web.multipart.*;
 
+import java.io.*;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,7 +38,7 @@ public class BasicUserService implements UserService {
         }
 
         if(request.email() == null || request.email().isBlank()) {
-            throw new IllegalArgumentException("이메알은 공백이면 안됩니다.");
+            throw new IllegalArgumentException("이메일은 공백이면 안됩니다.");
         }
 
         if(repository.findByEmail(request.email()) != null) {
@@ -51,13 +55,35 @@ public class BasicUserService implements UserService {
                 request.password()
         );
 
+        BinaryContent profile = null;
+        MultipartFile profileImage = request.profileImage();
+
+        if (profileImage != null && !profileImage.isEmpty()) {
+            try {
+                profile = new BinaryContent(
+                        user.getId(),
+                        null,
+                        profileImage.getContentType(),
+                        profileImage.getBytes(),
+                        profileImage.getOriginalFilename()
+                );
+
+                binaryContentRepository.create(profile);
+
+                user.updateProfileId(profile.getId());
+
+            } catch (IOException e) {
+                throw new RuntimeException("프로필 이미지 파일을 읽는 중 오류가 발생했습니다.", e);
+            }
+        }
         repository.create(user);
 
         UserStatus userStatus = new UserStatus(user.getId());
         userStatusRepository.create(userStatus);
 
-        return UserResponse.from(user, userStatus, null);
+        return UserResponse.from(user, userStatus, profile);
     }
+
 
     @Override
     public UserResponse find(UUID id) {
@@ -79,13 +105,13 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public List<UserResponse> findAll() {
+    public List<UserDto> findAll() {
         return repository.findAll().stream()
                 .map (user -> {
                 UserStatus userStatus = userStatusRepository.findByUserId(user.getId());
                 BinaryContent profile = binaryContentRepository.findByUserId(user.getId());
 
-            return UserResponse.from(user, userStatus, profile);
+                return UserDto.from(user, userStatus, profile);
         }).toList();
     }
 
@@ -127,6 +153,8 @@ public class BasicUserService implements UserService {
 
     @Override
     public void delete(UUID id) {
+        System.out.println("delete user id = " + id);
+
         if (id == null) {
             throw new IllegalArgumentException("유저 ID는 필수입니다.");
         }
@@ -138,13 +166,20 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = userStatusRepository.findByUserId(id);
         BinaryContent profile = binaryContentRepository.findByUserId(id);
 
-       if (profile != null) {
-           binaryContentRepository.delete(profile.getId());
-       }
-       if (userStatus != null) {
-           userStatusRepository.delete(userStatus.getId());
-       }
+        System.out.println("userStatus = " + userStatus);
+        System.out.println("profile = " + profile);
 
+        if (profile != null) {
+            System.out.println("delete profile id = " + profile.getId());
+            binaryContentRepository.delete(profile.getId());
+        }
+
+        if (userStatus != null) {
+            System.out.println("delete userStatus id = " + userStatus.getId());
+            userStatusRepository.delete(userStatus.getId());
+        }
+
+        System.out.println("delete user");
         repository.delete(id);
     }
 }

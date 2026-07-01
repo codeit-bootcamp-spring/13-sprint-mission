@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
-@RequestMapping("/api/v1/messages")
+@RequestMapping("/api/messages")
 @RestController
 @RequiredArgsConstructor
 public class MessageController {
@@ -20,7 +20,7 @@ public class MessageController {
         return messageService.create(request);
     }
 
-    @RequestMapping(value = ("/{messageId}"), method = RequestMethod.PUT)
+    @RequestMapping(value = ("/{messageId}"), method = RequestMethod.PATCH)
     public MessageResponse update(@PathVariable UUID messageId,
                                   @RequestBody MessageRequest.UpdateMessageRequest request) {
         return messageService.update(messageId, request);
@@ -31,9 +31,9 @@ public class MessageController {
         messageService.delete(messageId);
     }
 
-    @RequestMapping(value = "/channel/{channelId}", method = RequestMethod.GET)
+    @RequestMapping(method = RequestMethod.GET)
     public List<MessageResponse> findAll(
-            @PathVariable UUID channelId
+            @RequestParam UUID channelId
     ) {
         return messageService.findAllByChannelId(channelId);
     }

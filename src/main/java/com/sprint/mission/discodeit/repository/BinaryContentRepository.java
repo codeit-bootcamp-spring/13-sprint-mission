@@ -5,7 +5,6 @@ import org.springframework.stereotype.*;
 
 import java.util.*;
 
-@Repository
 public interface BinaryContentRepository {
     List<BinaryContent> findAllByMessageId(UUID id);
 
@@ -19,4 +18,5 @@ public interface BinaryContentRepository {
 
     void delete(UUID id);
 
+    boolean exists(UUID binaryContentId);
 }

@@ -6,26 +6,11 @@ import java.util.*;
 
 public record UserResponse(
         UUID id,
-        String userName,
+        String username,
         String email,
         boolean online,
-        ProfileResponse profile
+        UUID profileId
         ) {
-
-    public record ProfileResponse(
-            UUID id,
-            String fileName,
-            String contentType
-    ) {
-
-        public static ProfileResponse from(BinaryContent profile) {
-            return new ProfileResponse(
-                    profile.getId(),
-                    profile.getFileName(),
-                    profile.getContentType()
-            );
-        }
-    }
 
     public static UserResponse from(User user, UserStatus userStatus, BinaryContent profile) {
         return new UserResponse(
@@ -33,7 +18,7 @@ public record UserResponse(
                 user.getUserName(),
                 user.getEmail(),
                 userStatus != null && userStatus.isOnline(),
-                profile == null ? null : ProfileResponse.from(profile)
+                profile == null ? null : profile.getId()
         );
     }
 
@@ -51,10 +36,10 @@ public record UserResponse(
                 """
                 .formatted(
                         id,
-                        userName,
+                        username,
                         email,
                         online,
-                        profile == null ? "없음" : profile.fileName()
+                        profileId == null ? "없음" : profileId
                 );
     }
 

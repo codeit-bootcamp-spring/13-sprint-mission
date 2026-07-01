@@ -15,7 +15,6 @@ public class FileBinaryContentRepository implements BinaryContentRepository {
     private final List<BinaryContent> binaryContents = new ArrayList<>();
     private final Path binaryContentPath;
 
-
     public FileBinaryContentRepository(Path binaryContentPath) {
         this.binaryContentPath = binaryContentPath;
         loadFromFile();
@@ -69,6 +68,14 @@ public class FileBinaryContentRepository implements BinaryContentRepository {
         saveToFile();
     }
 
+    @Override
+    public boolean exists(UUID binaryContentId) {
+        return binaryContents.stream()
+                .anyMatch(binaryContent ->
+                        Objects.equals(binaryContent.getId(), binaryContentId)
+                );
+    }
+
     private void saveToFile() {
         try {
             Path parent = binaryContentPath.getParent();
@@ -79,7 +86,9 @@ public class FileBinaryContentRepository implements BinaryContentRepository {
             try (ObjectOutputStream oos = new ObjectOutputStream(
                     new BufferedOutputStream(Files.newOutputStream(binaryContentPath)))) {
 
-                oos.writeObject(binaryContents);
+                oos.writeObject(new ArrayList<>(binaryContents));
+                System.out.println("binaryContents saved size = " + binaryContents.size());
+                System.out.println("binaryContentPath = " + binaryContentPath.toAbsolutePath());
             }
 
         } catch (IOException e) {
@@ -90,6 +99,7 @@ public class FileBinaryContentRepository implements BinaryContentRepository {
     @SuppressWarnings("unchecked")
     private void loadFromFile() {
         if (!Files.exists(binaryContentPath)) {
+            System.out.println("binaryContent file not exists = " + binaryContentPath.toAbsolutePath());
             return;
         }
 
@@ -99,6 +109,10 @@ public class FileBinaryContentRepository implements BinaryContentRepository {
             List<BinaryContent> loadedBinary = (List<BinaryContent>) ois.readObject();
             binaryContents.clear();
             binaryContents.addAll(loadedBinary);
+
+            System.out.println("binaryContents loaded size = " + binaryContents.size());
+            System.out.println("binaryContentPath = " + binaryContentPath.toAbsolutePath());
+
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException("파일을 불러오기 중에 오류가 발생했습니다.", e);
         }

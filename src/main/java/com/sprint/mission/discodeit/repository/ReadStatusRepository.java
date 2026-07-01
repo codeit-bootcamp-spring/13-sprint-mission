@@ -6,7 +6,7 @@ import com.sprint.mission.discodeit.entity.*;
 import org.springframework.stereotype.*;
 
 import java.util.*;
-@Repository
+
 public interface ReadStatusRepository {
 
     void create(ReadStatus readStatus);

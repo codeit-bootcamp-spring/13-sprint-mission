@@ -22,7 +22,7 @@ public class BasicAuthService implements AuthService {
             throw new IllegalArgumentException("존재하지 않는 사용자입니다.");
         }
 
-        if (!user.getPassWord().equals(request.passWord())) {
+        if (!user.getPassword().equals(request.password())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 

@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.repository.jcf;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
 import org.springframework.boot.autoconfigure.condition.*;
+import org.springframework.context.annotation.*;
 import org.springframework.stereotype.*;
 
 import java.util.*;
@@ -51,5 +52,10 @@ public class JCFBinaryContentRepository implements BinaryContentRepository {
     @Override
     public void delete(UUID id) {
         data.remove(id);
+    }
+
+    @Override
+    public boolean exists(UUID binaryContentId) {
+        return data.containsKey(binaryContentId);
     }
 }

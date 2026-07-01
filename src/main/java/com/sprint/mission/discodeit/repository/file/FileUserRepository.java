@@ -38,6 +38,9 @@ public class FileUserRepository implements UserRepository {
 
     @Override
     public User find(UUID id) {
+        System.out.println("찾는 ID = " + id);
+        System.out.println("저장된 ID 목록 = " + users.stream().map(User::getId).toList());
+
         for (User user : users) {
             if (user.getId().equals(id)) {
                 return user;
@@ -66,10 +69,9 @@ public class FileUserRepository implements UserRepository {
     @Override
     public void delete(UUID id) {
         users.removeIf(user -> user.getId().equals(id));
-        saveToFile();
     }
 
-    private void saveToFile() {
+    public void saveToFile() {
         try {
             Path parent = userPath.getParent();
 
@@ -80,7 +82,8 @@ public class FileUserRepository implements UserRepository {
             try (ObjectOutputStream oos = new ObjectOutputStream(
                     new BufferedOutputStream(Files.newOutputStream(userPath)))) {
 
-                oos.writeObject(users);
+                oos.reset();
+                oos.writeObject(new ArrayList<>(users));
             }
 
         } catch (IOException e) {

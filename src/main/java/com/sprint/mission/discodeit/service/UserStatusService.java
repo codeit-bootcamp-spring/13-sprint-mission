@@ -18,6 +18,6 @@ public interface UserStatusService {
 
     UserStatusResponse update(UUID id, UpdateUserStatusRequest request);
 
-    UserStatusResponse updateByUserId(UUID userId, UpdateUserStatusRequest request);
+    UserStatusResponse updateByUserId(UUID userId);
 
 }

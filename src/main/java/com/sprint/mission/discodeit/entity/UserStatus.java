@@ -37,9 +37,6 @@ public class UserStatus extends BaseEntity implements Serializable {
         setUpdatedAt();
     }
 
-
-
-    // 현재 사용자가 온라인에 접속중인지 확인하는 메서드
     public boolean isOnline() {
         if (lastOnlineAt == null) return false;
         Instant now = Instant.now();

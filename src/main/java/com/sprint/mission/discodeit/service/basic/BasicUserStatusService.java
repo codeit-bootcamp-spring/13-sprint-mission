@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.service.*;
 import lombok.*;
 import org.springframework.stereotype.*;
 
+import java.time.*;
 import java.util.*;
 @Service
 @RequiredArgsConstructor
@@ -104,13 +105,9 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public UserStatusResponse updateByUserId(UUID userId, UpdateUserStatusRequest request) {
+    public UserStatusResponse updateByUserId(UUID userId) {
         if (userId == null) {
             throw new IllegalArgumentException("유저 아이디는 필수입니다.");
-        }
-
-        if (request == null) {
-            throw new IllegalArgumentException("업데이트할 유저가 없습니다.");
         }
 
         UserStatus userStatus = userStatusRepository.findByUserId(userId);
@@ -119,7 +116,7 @@ public class BasicUserStatusService implements UserStatusService {
             throw new IllegalArgumentException("업데이트할 유저 정보가 없습니다.");
         }
 
-        userStatus.updateLastOnlineAt(request.lastOnlineTime());
+        userStatus.updateLastOnlineAt(Instant.now());
 
         userStatusRepository.update(userStatus);
 
