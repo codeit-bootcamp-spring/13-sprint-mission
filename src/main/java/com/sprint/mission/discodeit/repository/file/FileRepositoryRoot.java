@@ -1,7 +1,5 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.sprint.mission.discodeit.entity.EntityRoot;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;

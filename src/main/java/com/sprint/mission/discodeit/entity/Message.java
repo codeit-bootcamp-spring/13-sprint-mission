@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
 import lombok.Getter;
 
 import java.io.Serializable;
@@ -7,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Getter
-public class Message extends EntityRoot implements Serializable {
+public class Message extends BaseUpdatableEntity {
 
     //필드
     private String content;
