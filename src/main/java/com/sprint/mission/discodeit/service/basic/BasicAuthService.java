@@ -10,24 +10,30 @@ import org.springframework.stereotype.Service;
 
 import java.util.NoSuchElementException;
 
+//AuthService 기본 구현체 (로그인 기능을 담당하는 서비스)
 @Service
 @RequiredArgsConstructor
 public class BasicAuthService implements AuthService {
-    private final UserRepository userRepository;
+    private final UserRepository userRepository; //사용자 데이터 접근 계층( DB/File,JCF 교체 가능)
 
+    //로그인 처리 로직
     @SneakyThrows
     @Override
     public User login(LoginRequest loginRequest) {
-        String username = loginRequest.username();
-        String password = loginRequest.password();
+        //1.요청 데이터 분리
+        String username = loginRequest.getUsername();
+        String password = loginRequest.getPassword();
 
+        //2.username으로 사용자 조회
         User user = userRepository.findByUsername(username)
                 .orElseThrow(()-> new NoSuchElementException("User with username " + username +" not found"));
 
+        //3.비밀번호 검증
         if (!user.getPassword().equals(password)) {
             //throw new AuthenticationException("Wrong password");
-            throw new IllegalAccessException("Wrong password");
+            throw new IllegalAccessException("Wrong password"); //인증 실패 처리
         }
+       //4. 로그인 성공->User 반환
         return user;
     }
 }

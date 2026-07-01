@@ -13,5 +13,5 @@ public interface MessageRepository {
     List<Message> findAllByChannelId(UUID channelId); //전체 메시지 조회
     boolean existsById(UUID id); //메시지 존재 여부 확인
     void deleteById(UUID id); //메시지 삭제
-    void deleteAllByChannelId(UUID channelId);
+    void deleteAllByChannelId(UUID channelId); //특정 채널에 속한 모든 메시지 삭제
 }
