@@ -1,65 +1,50 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
+import lombok.ToString;
+
+import java.io.Serial;
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.UUID;
 
+@Getter
+@ToString
 public class User implements Serializable {
+
+    @Serial
     private static final long serialVersionUID = 1L;
 
-    private UUID id;
-    private Long createdAt;
-    private Long updatedAt;
+    private final UUID id;
+    private final Instant createdAt;
+    private Instant updatedAt;
     private String userName;
     private String email;
-    private String pw;
+    private String password;
 
-    public User(String userName, String pw, String email) {
+    private UUID profileId;
+
+    public User(String userName, String email, String password) {
+        this(userName, email, password, null);
+    }
+
+    public User(String userName, String email, String password, UUID profileId) {
         this.id = UUID.randomUUID();
-        this.createdAt = System.currentTimeMillis();
+        this.createdAt = Instant.now();
         this.updatedAt = createdAt;
 
         this.userName = userName;
-        this.pw = pw;
         this.email = email;
+        this.password = password;
+        this.profileId = profileId;
     }
 
-    public UUID getId() {
-        return id;
-    }
+    public void update(String userName, String email, String password, UUID profileId) {
+        this.updatedAt = Instant.now();
 
-    public Long getCreatedAt() {
-        return createdAt;
-    }
-
-    public Long getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getPw() {
-        return pw;
-    }
-
-    public void update(String userName, String email, String pw) {
         this.userName = userName;
         this.email = email;
-        this.pw = pw;
-        this.updatedAt = System.currentTimeMillis();
-    }
-
-    @Override
-    public String toString() {
-        return "User{" +
-                "userName='" + userName + '\'' +
-                ", pw='" + pw + '\'' +
-                ", email='" + email + '\'' +
-                '}';
+        this.password = password;
+        this.profileId = profileId;
     }
 }

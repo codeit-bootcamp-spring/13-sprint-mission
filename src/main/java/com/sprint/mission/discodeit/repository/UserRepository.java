@@ -6,13 +6,16 @@ import java.util.List;
 import java.util.UUID;
 
 public interface UserRepository {
-    void create(User user);
 
-    User read(UUID id);
+    void save(User user);
 
-    List<User> readAll();
+    User findById(UUID id);
 
-    void update(User user);
+    User findByUserName(String userName);
+
+    User findByEmail(String email);
+
+    List<User> findAll();
 
     void delete(UUID id);
 }

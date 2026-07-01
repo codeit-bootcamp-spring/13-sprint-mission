@@ -6,13 +6,12 @@ import java.util.List;
 import java.util.UUID;
 
 public interface MessageRepository {
-    void create(Message message);
 
-    Message read(UUID id);
+    void save(Message message);
 
-    List<Message> readAll();
+    Message findById(UUID id);
 
-    void update(Message message);
+    List<Message> findAll();
 
     void delete(UUID id);
 }

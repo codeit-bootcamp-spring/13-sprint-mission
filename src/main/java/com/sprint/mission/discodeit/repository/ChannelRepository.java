@@ -6,13 +6,12 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ChannelRepository {
-    void create(Channel channel);
 
-    Channel read(UUID id);
+    void save(Channel channel);
 
-    List<Channel> readAll();
+    Channel findById(UUID id);
 
-    void update(Channel channel);
+    List<Channel> findAll();
 
     void delete(UUID id);
 }
