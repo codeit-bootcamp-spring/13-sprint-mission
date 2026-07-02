@@ -44,7 +44,8 @@ public class BasicChannelService implements ChannelService {
 
     //참여자 목록을 readStatus로 변환
     request.getParticipantIds().stream()
-        .map(userId -> new ReadStatus(userId, createChannel.getId(), Instant.MIN))
+        .map(userId -> new ReadStatus(userId, createChannel.getId(),
+            channel.getCreatedAt())) //forEach(readStatusRepository::save);
         .forEach(readStatusRepository::save);
     return createChannel;
   }
