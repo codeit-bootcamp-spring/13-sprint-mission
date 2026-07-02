@@ -1,46 +1,39 @@
 package com.sprint.mission.discodeit.entity;
 
 
+import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Entity
+@Table(name = "messages")
 public class Message extends BaseUpdatableEntity {
+    @Column
     private String content;
-    private final Channel channel;
-    private final User author;
-    private final List<BinaryContent> attachment;
 
-    public Message(
-            UUID id,
-            Instant ctime,
-            Instant mtime,
-            String content,
-            Channel channel,
-            User author,
-            List<BinaryContent> attachment) {
-        super(id, ctime, mtime);
-        this.content = content;
-        this.channel = channel;
-        this.author = author;
-        this.attachment = attachment;
-    }
+    @ManyToOne(cascade = CascadeType.REMOVE,optional = false)
+    @JoinColumn(name = "channel_id")
+    private Channel channel;
 
-    public Message(
-            String content,
-            Channel channel,
-            User author,
-            List<BinaryContent> attachment
-    ){
-        super();
-        this.content = content;
-        this.channel = channel;
-        this.author = author;
-        this.attachment = attachment;
-    }
+    @ManyToOne
+    @JoinColumn(name = "author_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    private User author;
+
+   @ManyToMany
+   @JoinTable(
+           name = "message_attachments"
+           , joinColumns = @JoinColumn(name = "attachment_id")
+           , inverseJoinColumns = @JoinColumn(name = "message_id")
+   )
+    private List<BinaryContent> attachment;
 }

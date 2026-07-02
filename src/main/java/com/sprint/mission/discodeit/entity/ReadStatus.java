@@ -1,39 +1,23 @@
 package com.sprint.mission.discodeit.entity;
 
 
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Getter
 @Setter
+@Entity
+@Table(name = "read_statuses")
 public class ReadStatus extends BaseUpdatableEntity {
-    private final User user;
-    private final Channel channel;
+    @ManyToOne(cascade = CascadeType.REMOVE,optional = false)
+    @JoinColumn(name="user_id")
+    private User user;
+    @ManyToOne(cascade = CascadeType.REMOVE,optional = false)
+    @JoinColumn(name="channel_id")
+    private Channel channel;
+    @Column(nullable = false)
     private Instant lastReadAt;
-
-    // restore
-    public ReadStatus(
-            UUID id,
-            Instant ctime,
-            Instant mtime,
-            User user,
-            Channel channel) {
-        super(id, ctime, mtime);
-        this.user = user;
-        this.channel = channel;
-        this.lastReadAt = ctime;
-    }
-
-    // generator
-    public ReadStatus(User user, Channel channel) {
-        this.user = user;
-        this.channel = channel;
-        this.lastReadAt = Instant.now();
-    }
-
-
-
 }
