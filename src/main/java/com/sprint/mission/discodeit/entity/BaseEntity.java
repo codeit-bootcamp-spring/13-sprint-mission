@@ -10,7 +10,12 @@ import java.util.UUID;
 @Getter
 @RequiredArgsConstructor
 public abstract class BaseEntity {
-    private final UUID id = UUID.randomUUID();
+    private final UUID id;
     @CreatedDate
-    private final Instant createdAt = Instant.now();
+    private final Instant createdAt;
+
+    public BaseEntity() {
+        this.id = UUID.randomUUID();
+        this.createdAt = Instant.now();
+    }
 }

@@ -1,7 +1,6 @@
 package com.sprint.mission.discodeit.entity;
 
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,9 +9,30 @@ import java.util.UUID;
 
 @Getter
 @Setter
-@AllArgsConstructor
 public class ReadStatus extends BaseUpdatableEntity {
-    private final UUID userId;
-    private final UUID channelId;
+    private final User user;
+    private final Channel channel;
     private Instant lastReadAt;
+
+    // restore
+    public ReadStatus(
+            UUID id,
+            Instant ctime,
+            Instant mtime,
+            User user,
+            Channel channel) {
+        super(id, ctime, mtime);
+        this.user = user;
+        this.channel = channel;
+        this.lastReadAt = ctime;
+    }
+
+    // generator
+    public ReadStatus(User user) {
+        this.user = user;
+        this.lastReadAt = Instant.now();
+    }
+
+
+
 }
