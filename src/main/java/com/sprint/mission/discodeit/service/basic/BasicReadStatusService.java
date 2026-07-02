@@ -3,7 +3,9 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ReadStatusUpdateResponse;
+import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.DuplicateResourceException;
 import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -30,15 +32,18 @@ public class BasicReadStatusService implements ReadStatusService {
     //interface
     @Override
     public ReadStatus createReadStatus(ReadStatusCreateRequest request) {
-        //존재하는 유저, 채널인지 검증
-        validateUserExists(request.userId());
-        validateChannelExists(request.channelId());
+        //유저 검색
+        User userTemp = userRepository.findUserById(request.userId())
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+        //채널 검색
+        Channel channelTemp = channelRepository.findChannelById(request.channelId())
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
 
         //ReadStatus 존재 검증
         validateReadStatusExists(request.userId(), request.channelId());
 
         //ReadStatus 생성
-        ReadStatus readStatus = new ReadStatus(request.userId(), request.channelId());
+        ReadStatus readStatus = new ReadStatus(userTemp, channelTemp);
         readStatusRepository.createReadStatus(readStatus);
         log.info("ReadStatus가 생성됨.");
 

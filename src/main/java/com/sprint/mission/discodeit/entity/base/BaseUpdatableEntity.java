@@ -19,15 +19,4 @@ public abstract class BaseUpdatableEntity extends BaseEntity {
     @LastModifiedDate
     private Instant updatedAt;
 
-    //ctor
-    public BaseUpdatableEntity() {
-        super();
-        updatedAt = getCreatedAt();
-    }
-
-    //updateMethod
-    public void updateUpdatedAt(){
-        updatedAt = Instant.now();
-    }
-
 }

@@ -44,14 +44,14 @@ public class FileMessageRepository extends FileRepositoryRoot<Message> implement
     @Override
     public List<Message> findAllMessagesByChannelId(UUID channelId) {
         return storage.stream()
-                .filter(message -> message.getChannelId().equals(channelId))
+                .filter(message -> message.getChannel().getId().equals(channelId))
                 .toList();
     }
 
     @Override
     public List<Message> findAllMessagesByUserId(UUID userId) {
         return storage.stream()
-                .filter(message -> message.getAuthorId().equals(userId))
+                .filter(message -> message.getAuthor().getId().equals(userId))
                 .toList();
     }
 
@@ -64,7 +64,7 @@ public class FileMessageRepository extends FileRepositoryRoot<Message> implement
     public void deleteMessagesByChannelId(UUID channelId) {
         storage.removeAll(
                 storage.stream()
-                        .filter(message -> message.getChannelId().equals(channelId))
+                        .filter(message -> message.getChannel().getId().equals(channelId))
                         .toList()
         );
 

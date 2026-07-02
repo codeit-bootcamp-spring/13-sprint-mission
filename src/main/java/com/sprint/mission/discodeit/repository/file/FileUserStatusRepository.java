@@ -27,7 +27,7 @@ public class FileUserStatusRepository extends FileRepositoryRoot<UserStatus> imp
     @Override
     public boolean existsUserStatusByUserId(UUID userId) {
         return storage.stream()
-                .anyMatch(userStatus -> userStatus.getUserId().equals(userId));
+                .anyMatch(userStatus -> userStatus.getUser().getId().equals(userId));
     }
 
     @Override
@@ -47,7 +47,7 @@ public class FileUserStatusRepository extends FileRepositoryRoot<UserStatus> imp
     @Override
     public Optional<UserStatus> findUserStatusByUserId(UUID userId) {
         return storage.stream()
-                .filter(userStatus -> userStatus.getUserId().equals(userId))
+                .filter(userStatus -> userStatus.getUser().getId().equals(userId))
                 .findFirst();
     }
 

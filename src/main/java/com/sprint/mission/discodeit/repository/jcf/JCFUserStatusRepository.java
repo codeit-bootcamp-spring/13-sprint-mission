@@ -27,7 +27,7 @@ public class JCFUserStatusRepository implements UserStatusRepository {
     @Override
     public boolean existsUserStatusByUserId(UUID userId) {
         return userStatuses.stream()
-                .anyMatch(userStatus -> userStatus.getUserId().equals(userId));
+                .anyMatch(userStatus -> userStatus.getUser().getId().equals(userId));
     }
 
     @Override
@@ -45,7 +45,7 @@ public class JCFUserStatusRepository implements UserStatusRepository {
     @Override
     public Optional<UserStatus> findUserStatusByUserId(UUID userId) {
         return userStatuses.stream()
-                .filter(userStatus -> userStatus.getUserId().equals(userId))
+                .filter(userStatus -> userStatus.getUser().getId().equals(userId))
                 .findFirst();
     }
 

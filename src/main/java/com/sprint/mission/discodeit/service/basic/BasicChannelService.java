@@ -41,10 +41,11 @@ public class BasicChannelService implements ChannelService {
 
         //ReadStatus 생성
         for (UUID userId : request.participantIds()) {
-            // 유저 존재하는지 검증
-            validateUserExists(userId);
+            // 유저 검색
+            User userTemp = userRepository.findUserById(userId)
+                    .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
-            ReadStatus readStatus = new ReadStatus(userId, channel.getId());
+            ReadStatus readStatus = new ReadStatus(userTemp, channel);
             readStatusRepository.createReadStatus(readStatus);
             log.info("ReadStatus가 생성됨.");
         }
@@ -83,7 +84,7 @@ public class BasicChannelService implements ChannelService {
         //ChannelType이 PRIVATE인 것만 진행
         for (ReadStatus readStatus : readStatuses) {
             //채널 검색
-            Channel channelTemp = channelRepository.findChannelById(readStatus.getChannelId())
+            Channel channelTemp = channelRepository.findChannelById(readStatus.getChannel().getId())
                     .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
 
             if (channelTemp.getType() == ChannelType.PUBLIC)
@@ -123,8 +124,8 @@ public class BasicChannelService implements ChannelService {
         //채널 내 메시지 삭제
         List<Message> messageList = messageRepository.findAllMessagesByChannelId(channelId);
         for (Message message : messageList) {
-            for (UUID attachmentId : message.getAttachmentIds()) {
-                binaryContentRepository.deleteBinaryContent(attachmentId);
+            for (BinaryContent attachment : message.getAttachments()) {
+                binaryContentRepository.deleteBinaryContent(attachment.getId());
             }
             messageRepository.deleteMessageById(message.getId());
         }
@@ -150,7 +151,7 @@ public class BasicChannelService implements ChannelService {
         //해당 채널에 참여하고 있는 userId들 추출
         List<ReadStatus> readStatusListTemp = readStatusRepository.findAllReadStatusByChannelId(channel.getId());
         List<UUID> usersId = readStatusListTemp.stream()
-                .map(ReadStatus::getUserId)
+                .map(readStatus -> readStatus.getUser().getId())
                 .toList();
 
         //가장 최근 메시지가 존재하면 해당 메시지의 시간 정보, 존재하지 않으면 Instant 기본값으로 DTO 생성

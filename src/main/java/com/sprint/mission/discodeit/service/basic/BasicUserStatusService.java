@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.UserStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserStatusUpdateResponse;
+import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.DuplicateResourceException;
 import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
@@ -28,14 +29,15 @@ public class BasicUserStatusService implements UserStatusService {
     //interface
     @Override
     public UserStatus createUserStatus(UserStatusCreateRequest request) {
-        //존재하는 유저인지 검증
-        validateUserExists(request.userId());
+        //유저 검색
+        User userTemp = userRepository.findUserById(request.userId())
+                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         //UserStatus 존재 검증
         validateUserStatusExists(request.userId());
 
         //UserStatus 생성
-        UserStatus userStatus = new UserStatus(request.userId());
+        UserStatus userStatus = new UserStatus(userTemp);
         userStatusRepository.createUserStatus(userStatus);
         log.info("UserStatus가 생성됨.");
 

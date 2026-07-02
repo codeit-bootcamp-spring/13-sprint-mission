@@ -18,8 +18,8 @@ public record ReadStatusUpdateResponse(
                 readStatus.getId(),
                 readStatus.getCreatedAt(),
                 readStatus.getUpdatedAt(),
-                readStatus.getUserId(),
-                readStatus.getChannelId(),
+                readStatus.getUser().getId(),
+                readStatus.getChannel().getId(),
                 readStatus.getLastReadAt()
         );
     }

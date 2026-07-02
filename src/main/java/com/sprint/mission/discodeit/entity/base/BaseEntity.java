@@ -22,9 +22,4 @@ public abstract class BaseEntity {
     @Column(updatable = false, nullable = false)
     private Instant createdAt;
 
-    //ctor
-    public BaseEntity() {
-        id = UUID.randomUUID();
-        createdAt = Instant.now();
-    }
 }

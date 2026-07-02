@@ -10,11 +10,11 @@ spring:
 
   sql:
     init:
-      mode: always
+      mode: never
 
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
 
 discodeit:
   repository:

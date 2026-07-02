@@ -27,7 +27,7 @@ public class FileReadStatusRepository extends FileRepositoryRoot<ReadStatus> imp
     @Override
     public boolean existsReadStatusByUserIdAndChannelId(UUID userId, UUID channelId) {
         return storage.stream()
-                .anyMatch(readStatus -> readStatus.getUserId().equals(userId) && readStatus.getChannelId().equals(channelId));
+                .anyMatch(readStatus -> readStatus.getUser().getId().equals(userId) && readStatus.getChannel().getId().equals(channelId));
     }
 
     @Override
@@ -47,14 +47,14 @@ public class FileReadStatusRepository extends FileRepositoryRoot<ReadStatus> imp
     @Override
     public List<ReadStatus> findAllReadStatusByChannelId(UUID channelId) {
         return storage.stream()
-                .filter(readStatus -> readStatus.getChannelId().equals(channelId))
+                .filter(readStatus -> readStatus.getChannel().getId().equals(channelId))
                 .toList();
     }
 
     @Override
     public List<ReadStatus> findAllReadStatusByUserId(UUID userId) {
         return storage.stream()
-                .filter(readStatus -> readStatus.getUserId().equals(userId))
+                .filter(readStatus -> readStatus.getUser().getId().equals(userId))
                 .toList();
     }
 
@@ -67,7 +67,7 @@ public class FileReadStatusRepository extends FileRepositoryRoot<ReadStatus> imp
     public void deleteReadStatusByChannelId(UUID channelId) {
         storage.removeAll(
                 storage.stream()
-                        .filter(readStatus -> readStatus.getChannelId().equals(channelId))
+                        .filter(readStatus -> readStatus.getChannel().getId().equals(channelId))
                         .toList()
         );
 

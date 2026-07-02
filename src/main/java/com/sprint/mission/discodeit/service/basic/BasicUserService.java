@@ -37,19 +37,18 @@ public class BasicUserService implements UserService {
         validateNameExists(request.username());
         validateEmailExists(request.email());
 
-        UUID binaryContentId = null;
+        BinaryContent binaryContent = null;
         //프로필 사진 파일 존재 시
         if (file != null && !file.isEmpty()) {
             try {
                 //binaryContent 생성
-                BinaryContent binaryContent = new BinaryContent(
+                binaryContent = new BinaryContent(
                         file.getOriginalFilename(),
                         (long) file.getBytes().length,
                         file.getContentType(),
                         file.getBytes()
                 );
                 binaryContentRepository.createBinaryContent(binaryContent);
-                binaryContentId = binaryContent.getId();
 
             } catch (IOException e) {
                 throw new FileException(e.getMessage());
@@ -57,12 +56,12 @@ public class BasicUserService implements UserService {
         }
 
         //유저 생성
-        User user = new User(request.username(), request.email(), request.password(), binaryContentId);
+        User user = new User(request.username(), request.email(), request.password(), binaryContent);
         userRepository.createUser(user);
         log.info("유저: {}가 생성됨.", user.getUsername());
 
         //UserStatus 생성
-        UserStatus userStatus = new UserStatus(user.getId());
+        UserStatus userStatus = new UserStatus(user);
         userStatusRepository.createUserStatus(userStatus);
 
         return user;
@@ -109,24 +108,23 @@ public class BasicUserService implements UserService {
             validateEmailExists(request.newEmail());
         }
 
-        UUID binaryContentId = userTemp.getProfileId();
+        BinaryContent binaryContent = userTemp.getProfile();
         //프로필 사진 파일 존재 시
         if (file != null && !file.isEmpty()) {
             //기존 프로필 이미지 삭제
-            if (binaryContentId != null) {
-                binaryContentRepository.deleteBinaryContent(binaryContentId);
+            if (binaryContent != null) {
+                binaryContentRepository.deleteBinaryContent(binaryContent.getId());
             }
 
             try {
                 //binaryContent 생성
-                BinaryContent binaryContent = new BinaryContent(
+                binaryContent = new BinaryContent(
                         file.getOriginalFilename(),
                         (long) file.getBytes().length,
                         file.getContentType(),
                         file.getBytes()
                 );
                 binaryContentRepository.createBinaryContent(binaryContent);
-                binaryContentId = binaryContent.getId();
 
             } catch (IOException e) {
                 throw new FileException(e.getMessage());
@@ -137,7 +135,7 @@ public class BasicUserService implements UserService {
         log.info("name: {}, email: {}\n-> name: {}, email: {}", userTemp.getUsername(), userTemp.getEmail(), request.newUsername(), request.newEmail());
 
         //유저 업데이트
-        userTemp.updateUser(request.newUsername(), request.newEmail(), request.newPassword(), binaryContentId);
+        userTemp.updateUser(request.newUsername(), request.newEmail(), request.newPassword(), binaryContent);
         userRepository.save();
 
         return userTemp;
@@ -186,8 +184,8 @@ public class BasicUserService implements UserService {
     private void deleteUserMessages(UUID userId) {
         List<Message> messageList = messageRepository.findAllMessagesByUserId(userId);
         for (Message message : messageList) {
-            for (UUID attachmentId : message.getAttachmentIds()) {
-                binaryContentRepository.deleteBinaryContent(attachmentId);
+            for (BinaryContent attachment : message.getAttachments()) {
+                binaryContentRepository.deleteBinaryContent(attachment.getId());
             }
             messageRepository.deleteMessageById(message.getId());
         }
@@ -195,7 +193,7 @@ public class BasicUserService implements UserService {
 
     //유저의 현재 프로필 이미지가 존재한다면 삭제하기
     private void deleteProfileImage(User user) {
-        UUID binaryContentId = user.getProfileId();
+        UUID binaryContentId = user.getProfile().getId();
 
         if (binaryContentId != null) {
             binaryContentRepository.deleteBinaryContent(binaryContentId);

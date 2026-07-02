@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.dto.response;
 
 import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.entity.base.BaseEntity;
 
 import java.time.Instant;
 import java.util.List;
@@ -21,9 +22,11 @@ public record MessageUpdateResponse(
                 message.getCreatedAt(),
                 message.getUpdatedAt(),
                 message.getContent(),
-                message.getChannelId(),
-                message.getAuthorId(),
-                message.getAttachmentIds()
+                message.getChannel().getId(),
+                message.getAuthor().getId(),
+                message.getAttachments().stream()
+                        .map(BaseEntity::getId)
+                        .toList()
         );
     }
 

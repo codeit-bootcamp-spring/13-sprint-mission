@@ -27,7 +27,7 @@ public class JCFReadStatusRepository implements ReadStatusRepository {
     @Override
     public boolean existsReadStatusByUserIdAndChannelId(UUID userId, UUID channelId) {
         return readStatuses.stream()
-                .anyMatch(readStatus -> readStatus.getUserId().equals(userId) && readStatus.getChannelId().equals(channelId));
+                .anyMatch(readStatus -> readStatus.getUser().getId().equals(userId) && readStatus.getChannel().getId().equals(channelId));
     }
 
     @Override
@@ -45,14 +45,14 @@ public class JCFReadStatusRepository implements ReadStatusRepository {
     @Override
     public List<ReadStatus> findAllReadStatusByChannelId(UUID channelId) {
         return readStatuses.stream()
-                .filter(readStatus -> readStatus.getChannelId().equals(channelId))
+                .filter(readStatus -> readStatus.getChannel().getId().equals(channelId))
                 .toList();
     }
 
     @Override
     public List<ReadStatus> findAllReadStatusByUserId(UUID userId) {
         return readStatuses.stream()
-                .filter(readStatus -> readStatus.getUserId().equals(userId))
+                .filter(readStatus -> readStatus.getUser().getId().equals(userId))
                 .toList();
     }
 
@@ -65,7 +65,7 @@ public class JCFReadStatusRepository implements ReadStatusRepository {
     public void deleteReadStatusByChannelId(UUID channelId) {
         readStatuses.removeAll(
                 readStatuses.stream()
-                        .filter(readStatus -> readStatus.getChannelId().equals(channelId))
+                        .filter(readStatus -> readStatus.getChannel().getId().equals(channelId))
                         .toList()
         );
     }

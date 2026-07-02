@@ -1,7 +1,10 @@
 package com.sprint.mission.discodeit.entity;
 
 import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -9,17 +12,22 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Getter
+@Entity
+@Table(name = "user_statuses")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserStatus extends BaseUpdatableEntity {
 
     // 필드
-    private final UUID userId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
+
+    @Column(nullable = false)
     private Instant lastActiveAt;
 
     //ctor
-    public UserStatus(UUID userId) {
-        super();
-
-        this.userId = userId;
+    public UserStatus(User user) {
+        this.user = user;
         this.lastActiveAt = Instant.EPOCH;
     }
 
@@ -32,8 +40,6 @@ public class UserStatus extends BaseUpdatableEntity {
     //updateMethod
     public void updateLastActiveAt() {
         this.lastActiveAt = Instant.now();
-
-        updateUpdatedAt();
     }
 
 }
