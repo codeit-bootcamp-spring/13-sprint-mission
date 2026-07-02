@@ -11,7 +11,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @AllArgsConstructor
-public class ReadStatus extends BaseEntity {
+public class ReadStatus extends BaseUpdatableEntity {
     private final UUID userId;
     private final UUID channelId;
     private Instant lastReadAt;

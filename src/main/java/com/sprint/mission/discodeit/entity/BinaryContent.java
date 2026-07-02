@@ -1,20 +1,16 @@
 package com.sprint.mission.discodeit.entity;
 
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-
 
 @Getter
 @Setter
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class BinaryContent extends BaseEntity{
     private final String fileName;
     private final String contentType;
     private final Long size;
     private final byte[] bytes;
-
-    @Override
-    public void setUpdatedAt(){}
 }

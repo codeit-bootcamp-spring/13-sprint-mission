@@ -12,7 +12,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @AllArgsConstructor
-public class UserStatus extends BaseEntity {
+public class UserStatus extends BaseUpdatableEntity {
     private final UUID userId;
     private Instant lastActiveAt;
 

@@ -10,8 +10,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @AllArgsConstructor
-public class User extends BaseEntity {
-
+public class User extends BaseUpdatableEntity {
     private String email;
     private String password;
     private String name;

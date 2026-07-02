@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
-public class Channel extends BaseEntity {
+public class Channel extends BaseUpdatableEntity {
     private String name;
     private String description;
     private ChannelType type;

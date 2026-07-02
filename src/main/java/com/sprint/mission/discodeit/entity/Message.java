@@ -11,7 +11,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @AllArgsConstructor
-public class Message extends BaseEntity {
+public class Message extends BaseUpdatableEntity {
     private String content;
     private final UUID channelId;
     private final UUID authorId;
