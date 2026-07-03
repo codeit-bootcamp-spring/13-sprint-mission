@@ -123,7 +123,7 @@ public class BasicUserService implements UserService {
     BinaryContent currentProfile = user.getProfile();
     if (profile != null && !profile.isEmpty()) {
       if (currentProfile != null) {
-        binaryContentRepository.delete(currentProfile.getId());
+        binaryContentRepository.deleteById(currentProfile.getId());
       }
 
       byte[] bytes;
@@ -161,14 +161,14 @@ public class BasicUserService implements UserService {
         .orElseThrow(() -> new UserNotFoundException(userId));
 
     if (user.getProfile() != null) {
-      binaryContentRepository.delete(user.getProfile().getId());
+      binaryContentRepository.deleteById(user.getProfile().getId());
     }
     UserStatus userStatus = userStatusRepository.findByUserId(userId).orElse(null);
     if (userStatus != null) {
-      userStatusRepository.delete(userStatus.getId());
+      userStatusRepository.deleteById(userStatus.getId());
     }
 
-    userRepository.delete(userId);
+    userRepository.deleteById(userId);
 
   }
 }

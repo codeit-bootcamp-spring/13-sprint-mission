@@ -131,15 +131,15 @@ public class BasicChannelService implements ChannelService {
         .filter(m -> m.getChannel().getId().equals(id))
         .toList();
 
-    messages.forEach(m -> messageRepository.delete(m.getId()));
+    messages.forEach(m -> messageRepository.deleteById(m.getId()));
 
     List<ReadStatus> readStatuses = readStatusRepository.findAll().stream()
         .filter(rs -> rs.getChannel().getId().equals(id))
         .toList();
 
-    readStatuses.forEach(rs -> readStatusRepository.delete(rs.getId()));
+    readStatuses.forEach(rs -> readStatusRepository.deleteById(rs.getId()));
 
-    channelRepository.delete(channel.getId());
+    channelRepository.deleteById(channel.getId());
   }
 
   private ChannelDto convertToDto(Channel channel) {

@@ -103,10 +103,10 @@ public class BasicMessageService implements MessageService {
     List<BinaryContent> attachments = message.getAttachments();
 
     for (BinaryContent content : attachments) {
-      binaryContentRepository.delete(content.getId());
+      binaryContentRepository.deleteById(content.getId());
     }
 
-    messageRepository.delete(messageId);
+    messageRepository.deleteById(messageId);
   }
 
   private MessageDto convertToResponse(Message message) {
