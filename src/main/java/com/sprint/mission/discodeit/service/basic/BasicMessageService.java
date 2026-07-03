@@ -17,6 +17,7 @@ import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -37,12 +38,13 @@ public class BasicMessageService implements MessageService {
 
     //interface
     @Override
+    @Transactional
     public Message createMessage(MessageCreateRequest request, List<MultipartFile> files) {
         //유저 검색
-        User userTemp = userRepository.findUserById(request.authorId())
+        User userTemp = userRepository.findById(request.authorId())
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
         //채널 검색
-        Channel channelTemp = channelRepository.findChannelById(request.channelId())
+        Channel channelTemp = channelRepository.findById(request.channelId())
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
 
         List<BinaryContent> binaryContentList = new ArrayList<>();
@@ -58,7 +60,7 @@ public class BasicMessageService implements MessageService {
                                 file.getContentType(),
                                 file.getBytes()
                         );
-                        binaryContentRepository.createBinaryContent(binaryContent);
+                        binaryContent = binaryContentRepository.save(binaryContent);
                         binaryContentList.add(binaryContent);
 
                     } catch (IOException e) {
@@ -70,45 +72,49 @@ public class BasicMessageService implements MessageService {
 
         //메세지 생성
         Message message = new Message(request.content(), channelTemp, userTemp, binaryContentList);
-        messageRepository.createMessage(message);
+        message = messageRepository.save(message);
         log.info("메시지: {}가 생성됨.", message.getContent());
 
         return message;
     }
 
     @Override
+    @Transactional
     public List<Message> findAllByChannelId(UUID channelId) {
-        return messageRepository.findAllMessagesByChannelId(channelId);
+        return messageRepository.findAllByChannelId(channelId);
     }
 
     @Override
+    @Transactional
     public Message updateMessage(UUID messageId, MessageUpdateRequest request) {
         //메시지 검색
-        Message messageTemp = messageRepository.findMessageById(messageId)
+        Message messageTemp = messageRepository.findById(messageId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 메시지는 데이터파일에 존재하지 않습니다."));
 
         log.info("메시지: {}가 수정됨.\n->{}", messageTemp.getContent(), request.newContent());
 
         //메시지 업데이트
         messageTemp.updateMessage(request.newContent());
-        messageRepository.save();
+        //dirty checking
+        //messageTemp = messageRepository.save(messageTemp);
 
         return messageTemp;
     }
 
     @Override
+    @Transactional
     public void deleteMessage(UUID messageId) {
         //메시지 검색
-        Message messageTemp = messageRepository.findMessageById(messageId)
+        Message messageTemp = messageRepository.findById(messageId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 메시지는 데이터파일에 존재하지 않습니다."));
 
         //첨부파일 삭제
         for (BinaryContent attachment : messageTemp.getAttachments()) {
-            binaryContentRepository.deleteBinaryContent(attachment.getId());
+            binaryContentRepository.deleteById(attachment.getId());
         }
 
         //메시지 삭제
-        messageRepository.deleteMessageById(messageTemp.getId());
+        messageRepository.deleteById(messageTemp.getId());
 
         log.info("메시지: {}가 삭제됨.", messageTemp.getContent());
     }
@@ -116,13 +122,13 @@ public class BasicMessageService implements MessageService {
 
     // 들어온 userId 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateUserExists(UUID userId) {
-        if (!userRepository.existsUserById(userId)) {
+        if (!userRepository.existsById(userId)) {
             throw new ObjectNotFoundException("유저: " + userId + "이 존재하지 않습니다.");
         }
     }
     // 들어온 channelId필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateChannelExists(UUID channelId) {
-        if (!channelRepository.existsChannelById(channelId)) {
+        if (!channelRepository.existsById(channelId)) {
             throw new ObjectNotFoundException("채널: " + channelId + "이 존재하지 않습니다.");
         }
     }

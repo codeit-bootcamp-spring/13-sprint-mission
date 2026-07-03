@@ -13,6 +13,7 @@ import com.sprint.mission.discodeit.service.UserStatusService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,9 +29,10 @@ public class BasicUserStatusService implements UserStatusService {
 
     //interface
     @Override
+    @Transactional
     public UserStatus createUserStatus(UserStatusCreateRequest request) {
         //유저 검색
-        User userTemp = userRepository.findUserById(request.userId())
+        User userTemp = userRepository.findById(request.userId())
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         //UserStatus 존재 검증
@@ -38,49 +40,54 @@ public class BasicUserStatusService implements UserStatusService {
 
         //UserStatus 생성
         UserStatus userStatus = new UserStatus(userTemp);
-        userStatusRepository.createUserStatus(userStatus);
+        userStatus = userStatusRepository.save(userStatus);
         log.info("UserStatus가 생성됨.");
 
         return userStatus;
     }
 
     @Override
+    @Transactional
     public UserStatus findUserStatusById(UUID userStatusId) {
         //UserStatus 검색
-        UserStatus userStatusTemp = userStatusRepository.findUserStatusById(userStatusId)
+        UserStatus userStatusTemp = userStatusRepository.findById(userStatusId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
 
         return userStatusTemp;
     }
 
     @Override
+    @Transactional
     public List<UserStatus> findAllUserStatus() {
         //UserStatus들 검색
-        List<UserStatus> userStatusList = userStatusRepository.findAllUserStatus();
+        List<UserStatus> userStatusList = userStatusRepository.findAll();
 
         return userStatusList;
     }
 
     @Override
+    @Transactional
     public UserStatus updateUserStatusByUserId(UUID userId, UserStatusUpdateRequest request) {
         //UserStatus 검색
-        UserStatus userStatusTemp = userStatusRepository.findUserStatusByUserId(userId)
+        UserStatus userStatusTemp = userStatusRepository.findByUserId(userId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
 
         //UserStatus 업데이트
         userStatusTemp.updateLastActiveAt();
-        userStatusRepository.save();
+        //dirty checking
+        //userStatusTemp = userStatusRepository.save(userStatusTemp);
 
         return userStatusTemp;
     }
 
     @Override
+    @Transactional
     public void deleteUserStatus(UUID userStatusId) {
         //UserStatus 검색
-        UserStatus userStatusTemp = userStatusRepository.findUserStatusById(userStatusId)
+        UserStatus userStatusTemp = userStatusRepository.findById(userStatusId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
 
-        userStatusRepository.deleteUserStatus(userStatusId);
+        userStatusRepository.deleteById(userStatusId);
 
         log.info("UserStatus: {}가 삭제됨.", userStatusTemp.getId());
     }
@@ -88,13 +95,13 @@ public class BasicUserStatusService implements UserStatusService {
 
     // 들어온 userId 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateUserExists(UUID userId) {
-        if (!userRepository.existsUserById(userId)) {
+        if (!userRepository.existsById(userId)) {
             throw new ObjectNotFoundException("유저: " + userId + "이 존재하지 않습니다.");
         }
     }
     // 생성하려는 UserStatus가 레포지터리에 이미 존재하는지 검증하는 메서드
     private void validateUserStatusExists(UUID userId) {
-        if (userStatusRepository.existsUserStatusByUserId(userId)) {
+        if (userStatusRepository.existsByUserId(userId)) {
             throw new DuplicateResourceException("만들려는 UserStatus가 이미 존재합니다.");
         }
     }

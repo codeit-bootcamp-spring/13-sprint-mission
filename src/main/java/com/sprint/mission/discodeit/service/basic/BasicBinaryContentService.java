@@ -9,6 +9,7 @@ import com.sprint.mission.discodeit.service.BinaryContentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,6 +25,7 @@ public class BasicBinaryContentService implements BinaryContentService {
 
     //interface
     @Override
+    @Transactional
     public BinaryContent createBinaryContent(BinaryContentCreateRequest request) {
         BinaryContent binaryContent;
         try {
@@ -34,7 +36,7 @@ public class BasicBinaryContentService implements BinaryContentService {
                     request.file().getContentType(),
                     request.file().getBytes()
             );
-            binaryContentRepository.createBinaryContent(binaryContent);
+            binaryContent = binaryContentRepository.save(binaryContent);
             log.info("BinaryContent가 생성됨.");
 
         } catch (IOException e) {
@@ -45,29 +47,32 @@ public class BasicBinaryContentService implements BinaryContentService {
     }
 
     @Override
+    @Transactional
     public BinaryContent findBinaryContentById(UUID binaryContentId) {
         //BinaryContent 검색
-        BinaryContent binaryContentTemp = binaryContentRepository.findBinaryContentById(binaryContentId)
+        BinaryContent binaryContentTemp = binaryContentRepository.findById(binaryContentId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
 
         return binaryContentTemp;
     }
 
     @Override
+    @Transactional
     public List<BinaryContent> findAllBinaryContentByIdIn(List<UUID> binaryContentIds) {
         //BinaryContent들 검색
-        List<BinaryContent> binaryContentList = binaryContentRepository.findAllBinaryContentByIdIn(binaryContentIds);
+        List<BinaryContent> binaryContentList = binaryContentRepository.findAllByIdIn(binaryContentIds);
 
         return binaryContentList;
     }
 
     @Override
+    @Transactional
     public void deleteBinaryContent(UUID binaryContentId) {
         //BinaryContent 검색
-        BinaryContent binaryContentTemp = binaryContentRepository.findBinaryContentById(binaryContentId)
+        BinaryContent binaryContentTemp = binaryContentRepository.findById(binaryContentId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
 
-        binaryContentRepository.deleteBinaryContent(binaryContentId);
+        binaryContentRepository.deleteById(binaryContentId);
 
         log.info("BinaryContent: {}가 삭제됨.", binaryContentTemp.getId());
     }
