@@ -1,13 +1,10 @@
 package com.sprint.mission.discodeit.repository;
 
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.Optional;
 import java.util.UUID;
 
 
-public interface BinaryContentRepository {
-    void save(BinaryContent binaryContent);
-    Optional<BinaryContent> find(UUID id);
-    void delete(UUID id);
+public interface BinaryContentRepository extends JpaRepository<BinaryContent, UUID> {
 }
