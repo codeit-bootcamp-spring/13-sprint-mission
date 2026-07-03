@@ -4,20 +4,26 @@ package com.sprint.mission.discodeit.entity;
 
 import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
-
-import java.util.UUID;
 
 @Entity
 @Table(name = "users")
 @Getter
-public class User extends BaseUpdatableEntity {//
+public class User extends BaseUpdatableEntity {
 
   private String userName;
   private String password;
   private String email;
-  private UUID profileId;
+
+  @OneToOne
+  @JoinColumn(name = "profile_id")
+  private BinaryContent profile;
+
+  @OneToOne(mappedBy = "user")//FK주인은 UserStatus의 user필드
+  private UserStatus userStatus;
 
   public User() {
   }
@@ -28,8 +34,8 @@ public class User extends BaseUpdatableEntity {//
     this.email = email;
   }
 
-  public void updateProfileId(UUID profileId) {
-    this.profileId = profileId;
+  public void updateProfileId(BinaryContent profileId) {
+    this.profile = profileId;
   }
 
   public void update(String newUsername, String newEmail, String newPassword) {

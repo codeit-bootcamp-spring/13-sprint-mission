@@ -39,7 +39,7 @@ public class BasicUserService implements UserService {
     UserStatus userStatus = userStatusRepository.save(new UserStatus(user.getId(), Instant.now()));
     return new UserDto(user.getId(), user.getCreatedAt(),
         user.getUpdatedAt(), user.getUserName(), user.getEmail(),
-        user.getProfileId(), userStatus.isOnline());
+        user.getProfile(), userStatus.isOnline());
   }
 
   @Override
@@ -51,7 +51,7 @@ public class BasicUserService implements UserService {
         .orElse(false);
     return new UserDto(user.getId(), user.getCreatedAt(), user.getUpdatedAt(), user.getUserName(),
         user.getEmail(),
-        user.getProfileId(), online);
+        user.getProfile(), online);
   }
 
   @Override
@@ -63,7 +63,7 @@ public class BasicUserService implements UserService {
               .orElse(false);
           return new UserDto(user.getId(), user.getCreatedAt(), user.getUpdatedAt(),
               user.getUserName(), user.getEmail(),
-              user.getProfileId(), online);
+              user.getProfile(), online);
         })
         .toList();
   }
@@ -84,15 +84,15 @@ public class BasicUserService implements UserService {
 
     return new UserDto(user.getId(), user.getCreatedAt(),
         user.getUpdatedAt(), user.getUserName(), user.getEmail(),
-        user.getProfileId(), online);
+        user.getProfile(), online);
   }
 
   @Override
   public void delete(UUID userId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new NoSuchElementException("User with id " + userId + " not found"));
-    if (user.getProfileId() != null) {
-      binaryContentRepository.deleteById(user.getProfileId());
+    if (user.getProfile() != null) {
+      binaryContentRepository.deleteById(user.getProfile());
     }
     userStatusRepository.findByUserId(userId)
         .ifPresent(s -> userStatusRepository.deleteById(s.getId()));

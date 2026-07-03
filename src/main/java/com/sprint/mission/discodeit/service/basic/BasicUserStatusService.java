@@ -66,7 +66,7 @@ public class BasicUserStatusService implements UserStatusService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new NoSuchElementException("User with id " + userId + " not found"));
     return new UserDto(user.getId(), user.getCreatedAt(), user.getUpdatedAt(), user.getUserName(),
-        user.getEmail(), user.getProfileId(), userStatus.isOnline());
+        user.getEmail(), user.getProfile(), userStatus.isOnline());
   }
 
   @Override

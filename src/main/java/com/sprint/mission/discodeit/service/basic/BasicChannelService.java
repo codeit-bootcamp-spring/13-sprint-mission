@@ -48,7 +48,7 @@ public class BasicChannelService implements ChannelService {
         .orElseThrow(
             () -> new NoSuchElementException("Channel with id " + channelId + " not found"));
     Instant lastMessageAt = messageRepository.findAll().stream()
-        .filter(m -> m.getChannelId().equals(channelId))
+        .filter(m -> m.getChannel_Id().equals(channelId))
         .map(Message::getCreatedAt)
         .max(Instant::compareTo)
         .orElse(null);
@@ -92,7 +92,7 @@ public class BasicChannelService implements ChannelService {
       throw new NoSuchElementException("Channel with id " + channelId + " not found");
     }
     messageRepository.findAll().stream()
-        .filter(m -> m.getChannelId().equals(channelId))
+        .filter(m -> m.getChannel_Id().equals(channelId))
         .forEach(m -> messageRepository.deleteById(m.getId()));
     readStatusRepository.findAllByChannelId(channelId)
         .forEach(r -> readStatusRepository.deleteById(r.getId()));
