@@ -19,9 +19,11 @@ public class BasicAuthService implements AuthService {
   private final UserStatusRepository userStatusRepository;
 
   @Override
-  public UserDto login(String username, String password) {
+  public UserDto login(String username, String password) {//validation으로 유효성 검증 완.
     User user = userRepository.findAll().stream()
-        .filter(u -> u.getUserName().equals(username) && u.getPassword().equals(password))
+        .filter(u -> u.getUserName() != null//혹시 다른 경로로 오는 것도 방지.
+            && u.getUserName().equals(username)
+            && u.getPassword().equals(password))
         .findFirst()
         .orElseThrow(() -> new NoSuchElementException("username 또는 password가 틀렸습니다."));
 

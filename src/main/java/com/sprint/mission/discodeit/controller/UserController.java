@@ -10,6 +10,7 @@ import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import jakarta.validation.Valid;
 import java.io.IOException;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -51,7 +52,15 @@ public class UserController {
         request.username(), // (@RequestBody UserCreateRequest의 Get은 변수.record의 필드명
         request.email(),    //record에서 값을 가져오는 건 getter가 아니라 접근자 메서드(accessor method)라고 한다.
         request.password(),
-        content != null ? content.getId() : null
+        Optional.ofNullable(content)
+            .map(BinaryContent::getId)
+            .orElse(null)
+        //Optional-> 단일 객체 Optional로 변환시 사용/ stream은 복수 객체의 타입을 변환시 사용
+        //ofNullable() -> 객체를 Optional로 감쌈.(null이여도 감싼다.)
+        //Optional에 map: 위에서 Optional로 감싼게 null이면 map 스킵,
+        // 값이 있으면 Optional로 감싼 객체의id를 꺼내서 Optional로 감싸서 반환.
+        //.orElse(null) -> 옵셔널로 감싼 값(id)을 다시 꺼내서 반환
+        //-> ofNullable에서 null이였으면 map 스킵되고 바로 orElse(null)에서 null을 꺼내서 반환.
     );
     return ResponseEntity.status(HttpStatus.CREATED).body(userDto);
   }                                                //└>새로운 리소스 추가
