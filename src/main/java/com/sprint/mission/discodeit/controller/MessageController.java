@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.service.MessageService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -22,11 +23,12 @@ public class MessageController {
 
   @RequestMapping(method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<Message> create(
-      @RequestPart("messageCreateRequest") MessageCreateRequest messageCreateRequest) {
+      @RequestPart("messageCreateRequest") @Valid MessageCreateRequest messageCreateRequest) {
     Message message = messageService.create(messageCreateRequest);
     return ResponseEntity.status(HttpStatus.CREATED).body(message);
   }
 
+  
   @RequestMapping(value = "/{messageId}", method = RequestMethod.GET)
   public ResponseEntity<Message> find(@PathVariable UUID messageId) {
     Message findMessage = messageService.find(messageId);

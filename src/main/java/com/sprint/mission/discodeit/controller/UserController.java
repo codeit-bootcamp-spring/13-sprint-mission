@@ -5,11 +5,10 @@ import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
+import jakarta.validation.Valid;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -35,7 +34,7 @@ public class UserController {
   @RequestMapping(method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<UserDto> create(
       @RequestPart(value = "profile", required = false) MultipartFile profile,
-      @RequestPart("userCreateRequest") UserCreateRequest request) {
+      @RequestPart("userCreateRequest") @Valid UserCreateRequest request) {
     //└> @RequestBody JSON -> Java 객체로              //└> Dto를 인수로 넣음
     BinaryContent content = null;
     if (profile != null) {
