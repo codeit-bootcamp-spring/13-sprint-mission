@@ -2,8 +2,7 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.UserListResponse;
-import com.sprint.mission.discodeit.dto.response.UserResponse;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
@@ -33,17 +32,17 @@ public class BasicUserService implements UserService {
   private final UserStatusRepository userStatusRepository;
 
   @Override
-  public UserResponse create(UserCreateRequest request, MultipartFile profile) {
+  public UserDto create(UserCreateRequest request, MultipartFile profile) {
 
     if (userRepository.findByUsername(request.username()).isPresent()) {
-      throw new IllegalArgumentException("이미 존재하는 유저 이름입니다.");
+      throw new DuplicateUserException("이미 존재하는 유저 이름입니다.");
     }
 
     if (userRepository.findByEmail(request.email()).isPresent()) {
-      throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
+      throw new DuplicateUserException("이미 존재하는 이메일입니다.");
     }
 
-    UUID profileId = null;
+    BinaryContent profileContent = null;
     if (profile != null && !profile.isEmpty()) {
 
       byte[] bytes;
@@ -54,63 +53,57 @@ public class BasicUserService implements UserService {
         throw new RuntimeException("파일 읽기 실패", e);
       }
 
-      BinaryContent binaryContent = BinaryContent.builder()
-          .id(UUID.randomUUID())
-          .createdAt(Instant.now())
-          .fileName(profile.getOriginalFilename())
-          .contentType(profile.getContentType())
-          .size(profile.getSize())
-          .bytes(bytes)
-          .build();
+      BinaryContent binaryContent = new BinaryContent(
+          profile.getOriginalFilename(),
+          profile.getSize(),
+          profile.getContentType(),
+          bytes
+      );
+
       binaryContentRepository.save(binaryContent);
-      profileId = binaryContent.getId();
+      profileContent = binaryContent;
     }
 
-    User user = User.builder()
-        .id(UUID.randomUUID())
-        .username(request.username())
-        .email(request.email())
-        .password(request.password())
-        .profileId(profileId)
-        .createdAt(Instant.now())
-        .updatedAt(Instant.now())
-        .build();
+    User user = new User(
+        request.username(),
+        request.email(),
+        request.password(),
+        profileContent
+    );
+
     userRepository.save(user);
 
-    UserStatus userStatus = UserStatus.builder()
-        .id(UUID.randomUUID())
-        .user(user)
-        .lastActiveAt(Instant.now())
-        .createdAt(Instant.now())
-        .updatedAt(Instant.now())
-        .build();
+    UserStatus userStatus = new UserStatus(user, Instant.now());
     userStatusRepository.save(userStatus);
 
-    return UserResponse.from(user);
+    return UserDto.from(user, userStatus.isOnline());
   }
 
   @Override
-  public UserResponse findById(UUID userId) {
+  public UserDto findById(UUID userId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new NoSuchElementException("유저를 찾을 수 없습니다."));
 
-    return UserResponse.from(user);
+    UserStatus status = userStatusRepository.findByUserId(user.getId()).orElse(null);
+    boolean isOnline = status != null && status.isOnline();
+
+    return UserDto.from(user, isOnline);
 
   }
 
   @Override
-  public List<UserListResponse> findAll() {
+  public List<UserDto> findAll() {
     return userRepository.findAll().stream()
         .map(user -> {
           UserStatus status = userStatusRepository.findByUserId(user.getId()).orElse(null);
           boolean isOnLine = (status != null) && status.isOnline();
-          return UserListResponse.from(user, isOnLine);
+          return UserDto.from(user, isOnLine);
         })
         .toList();
   }
 
   @Override
-  public UserResponse update(UUID id, UserUpdateRequest request, MultipartFile profile) {
+  public UserDto update(UUID id, UserUpdateRequest request, MultipartFile profile) {
 
     User user = userRepository.findById(id)
         .orElseThrow(() -> new UserNotFoundException(id));
@@ -127,10 +120,10 @@ public class BasicUserService implements UserService {
       throw new DuplicateUserException("이미 존재하는 이메일입니다.");
     }
 
-    UUID currentProfileId = user.getProfileId();
+    BinaryContent currentProfile = user.getProfile();
     if (profile != null && !profile.isEmpty()) {
-      if (currentProfileId != null) {
-        binaryContentRepository.delete(currentProfileId);
+      if (currentProfile != null) {
+        binaryContentRepository.delete(currentProfile.getId());
       }
 
       byte[] bytes;
@@ -141,24 +134,25 @@ public class BasicUserService implements UserService {
         throw new RuntimeException("파일 처리 실패", e);
       }
 
-      BinaryContent newBinaryContent = BinaryContent.builder()
-          .id(UUID.randomUUID())
-          .createdAt(Instant.now())
-          .fileName(profile.getOriginalFilename())
-          .contentType(profile.getContentType())
-          .size(profile.getSize())
-          .bytes(bytes)
-          .build();
-      
-      binaryContentRepository.save(newBinaryContent);
-      currentProfileId = newBinaryContent.getId();
+      BinaryContent newProfile = new BinaryContent(
+          profile.getOriginalFilename(),
+          profile.getSize(),
+          profile.getContentType(),
+          bytes
+      );
+
+      binaryContentRepository.save(newProfile);
+      currentProfile = newProfile;
     }
 
-    user.update(request.newUsername(), request.newEmail(), request.newPassword(), currentProfileId);
+    user.update(request.newUsername(), request.newEmail(), request.newPassword(), currentProfile);
 
     userRepository.save(user);
 
-    return UserResponse.from(user);
+    UserStatus status = userStatusRepository.findByUserId(user.getId()).orElse(null);
+    boolean isOnline = status != null && status.isOnline();
+
+    return UserDto.from(user, isOnline);
   }
 
   @Override
@@ -166,8 +160,8 @@ public class BasicUserService implements UserService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new UserNotFoundException(userId));
 
-    if (user.getProfileId() != null) {
-      binaryContentRepository.delete(user.getProfileId());
+    if (user.getProfile() != null) {
+      binaryContentRepository.delete(user.getProfile().getId());
     }
     UserStatus userStatus = userStatusRepository.findByUserId(userId).orElse(null);
     if (userStatus != null) {

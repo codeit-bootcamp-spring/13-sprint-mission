@@ -1,40 +1,43 @@
 package com.sprint.mission.discodeit.entity;
 
-import lombok.Builder;
-import lombok.Getter;
-
-import java.io.Serializable;
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
-import java.util.UUID;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
-public class ReadStatus implements Serializable {
+@NoArgsConstructor
+@Entity
+@Table(name = "read_statuses", uniqueConstraints = {
+    @UniqueConstraint(name = "UK_READ_STATUSES_USER_CHANNEL",
+        columnNames = {"user_id", "channel_id"})})
+public class ReadStatus extends BaseUpdatableEntity {
 
-  private static final long serialVersionUID = 1L;
+  @ManyToOne
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user;
 
-  private UUID id;
-  private Instant createdAt;
-  private Instant updatedAt;
-  //
-  private UUID userId;
-  private UUID channelId;
-  private Instant readAt;
+  @ManyToOne
+  @JoinColumn(name = "channel_id", nullable = false)
+  private Channel channel;
 
-  @Builder
-  public ReadStatus(UUID id, Instant createdAt, Instant updatedAt, UUID userId, UUID channelId,
-      Instant readAt) {
-    this.id = id;
-    this.createdAt = createdAt;
-    this.updatedAt = updatedAt;
-    this.userId = userId;
-    this.channelId = channelId;
-    this.readAt = readAt;
+  @Column(name = "last_read_at", nullable = false)
+  private Instant lastReadAt;
 
+  public ReadStatus(User user, Channel channel, Instant lastReadAt) {
+    this.user = user;
+    this.channel = channel;
+    this.lastReadAt = lastReadAt;
   }
 
-  public void update(Instant newLastReadAt) {
-    this.readAt = newLastReadAt;
-    this.updatedAt = Instant.now();
-  }
+  public void updateLastReadAt(Instant lastReadAt) {
+    this.lastReadAt = lastReadAt;
 
+  }
 }

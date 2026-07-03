@@ -1,20 +1,15 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
-import com.sprint.mission.discodeit.dto.response.BinaryContentResponse;
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.exception.BinaryContentNotFoundException;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Service;
-
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Service;
 
 @Service
 @Primary
@@ -27,7 +22,7 @@ public class BasicBinaryContentService implements BinaryContentService {
   }
 
   @Override
-  public BinaryContentResponse find(UUID id) {
+  public BinaryContentDto find(UUID id) {
     BinaryContent binaryContent = binaryContentRepository.findById(id)
         .orElseThrow(() -> new BinaryContentNotFoundException(id));
 
@@ -35,7 +30,7 @@ public class BasicBinaryContentService implements BinaryContentService {
   }
 
   @Override
-  public List<BinaryContentResponse> findByIdIn(List<UUID> ids) {
+  public List<BinaryContentDto> findByIdIn(List<UUID> ids) {
     return binaryContentRepository.findAll().stream()
         .filter(b -> ids.contains(b.getId()))
         .map(this::convertToResponse)
@@ -43,15 +38,13 @@ public class BasicBinaryContentService implements BinaryContentService {
   }
 
 
-  private BinaryContentResponse convertToResponse(BinaryContent binaryContent) {
+  private BinaryContentDto convertToResponse(BinaryContent binaryContent) {
 
-    return new BinaryContentResponse(
+    return new BinaryContentDto(
         binaryContent.getId(),
-        binaryContent.getCreatedAt(),
         binaryContent.getFileName(),
         binaryContent.getSize(),
-        binaryContent.getContentType(),
-        binaryContent.getBytes()
+        binaryContent.getContentType()
     );
   }
 }

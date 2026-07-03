@@ -1,70 +1,47 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
 import lombok.Getter;
-
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.UUID;
+import lombok.NoArgsConstructor;
 
 @Getter
-public class Channel implements Serializable {
+@NoArgsConstructor
+@Entity
+@Table(name = "channels")
+public class Channel extends BaseUpdatableEntity {
 
-  private static final long serialVersionUID = 1L;
-
-  private UUID id;
-  private Instant createdAt;
-  private Instant updatedAt;
-  private String name;
-  private String description; // 채널 설명
+  @Enumerated(EnumType.STRING)
+  @Column(name = "type", length = 10, nullable = false)
   private ChannelType type;
-  ;
+
+  @Column(length = 100)
+  private String name;
+
+  @Column(length = 500)
+  private String description;
+
 
   public enum ChannelType {
     PUBLIC, PRIVATE
   }
 
   public Channel(String name, String description, ChannelType type) {
-    this.id = UUID.randomUUID();
-    this.createdAt = Instant.now();
-    this.updatedAt = Instant.now();
     this.type = type;
     this.name = name;
     this.description = description;
   }
 
   public void update(String name, String description) {
-      if (name != null) {
-          this.name = name;
-      }
-      if (description != null) {
-          this.description = description;
-      }
-    this.updatedAt = Instant.now();
-  }
-
-
-  public void updateName(String name) {
-    this.name = name;
-    this.updatedAt = Instant.now();
-  }
-
-  public void updateDescription(String description) {
-    this.description = description;
-    this.updatedAt = Instant.now();
-  }
-
-  public void updateType(ChannelType type) {
-    this.type = type;
-    this.updatedAt = Instant.now();
-  }
-
-  @Override
-  public String toString() {
-    return "Channel{" +
-        "id=" + id +
-        ", name='" + name + '\'' +
-        ", description='" + description + '\'' +
-        ", type=" + type +
-        '}';
+    if (name != null) {
+      this.name = name;
+    }
+    if (description != null) {
+      this.description = description;
+    }
   }
 }
