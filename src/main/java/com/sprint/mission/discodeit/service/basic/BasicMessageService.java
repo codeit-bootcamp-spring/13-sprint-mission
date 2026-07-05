@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.MessageUpdateResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
@@ -9,6 +10,7 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.FileException;
 import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
+import com.sprint.mission.discodeit.mapper.MessageMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
@@ -35,11 +37,12 @@ public class BasicMessageService implements MessageService {
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
     private final BinaryContentRepository binaryContentRepository;
+    private final MessageMapper messageMapper;
 
     //interface
     @Override
     @Transactional
-    public Message createMessage(MessageCreateRequest request, List<MultipartFile> files) {
+    public MessageDto createMessage(MessageCreateRequest request, List<MultipartFile> files) {
         //유저 검색
         User userTemp = userRepository.findById(request.authorId())
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
@@ -75,18 +78,20 @@ public class BasicMessageService implements MessageService {
         message = messageRepository.save(message);
         log.info("메시지: {}가 생성됨.", message.getContent());
 
-        return message;
+        return messageMapper.toDto(message);
     }
 
     @Override
     @Transactional
-    public List<Message> findAllByChannelId(UUID channelId) {
-        return messageRepository.findAllByChannelId(channelId);
+    public List<MessageDto> findAllByChannelId(UUID channelId) {
+        return messageRepository.findAllByChannelId(channelId).stream()
+                .map(messageMapper::toDto)
+                .toList();
     }
 
     @Override
     @Transactional
-    public Message updateMessage(UUID messageId, MessageUpdateRequest request) {
+    public MessageDto updateMessage(UUID messageId, MessageUpdateRequest request) {
         //메시지 검색
         Message messageTemp = messageRepository.findById(messageId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 메시지는 데이터파일에 존재하지 않습니다."));
@@ -98,7 +103,7 @@ public class BasicMessageService implements MessageService {
         //dirty checking
         //messageTemp = messageRepository.save(messageTemp);
 
-        return messageTemp;
+        return messageMapper.toDto(messageTemp);
     }
 
     @Override

@@ -2,12 +2,14 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.ReadStatusUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.ReadStatusDto;
 import com.sprint.mission.discodeit.dto.response.ReadStatusUpdateResponse;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.DuplicateResourceException;
 import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
+import com.sprint.mission.discodeit.mapper.ReadStatusMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -29,11 +31,12 @@ public class BasicReadStatusService implements ReadStatusService {
     private final ReadStatusRepository readStatusRepository;
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
+    private final ReadStatusMapper readStatusMapper;
 
     //interface
     @Override
     @Transactional
-    public ReadStatus createReadStatus(ReadStatusCreateRequest request) {
+    public ReadStatusDto createReadStatus(ReadStatusCreateRequest request) {
         //유저 검색
         User userTemp = userRepository.findById(request.userId())
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
@@ -49,31 +52,30 @@ public class BasicReadStatusService implements ReadStatusService {
         readStatus = readStatusRepository.save(readStatus);
         log.info("ReadStatus가 생성됨.");
 
-        return readStatus;
+        return readStatusMapper.toDto(readStatus);
     }
 
     @Override
     @Transactional
-    public ReadStatus findReadStatus(UUID readStatusId) {
+    public ReadStatusDto findReadStatus(UUID readStatusId) {
         //ReadStatus 검색
         ReadStatus readStatusTemp = readStatusRepository.findById(readStatusId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 ReadStatus는 데이터파일에 존재하지 않습니다."));
 
-        return readStatusTemp;
+        return readStatusMapper.toDto(readStatusTemp);
     }
 
     @Override
     @Transactional
-    public List<ReadStatus> findAllReadStatusByUserId(UUID userId) {
-        //ReadStatus들 검색
-        List<ReadStatus> readStatusList = readStatusRepository.findAllByUserId(userId);
-
-        return readStatusList;
+    public List<ReadStatusDto> findAllReadStatusByUserId(UUID userId) {
+        return readStatusRepository.findAllByUserId(userId).stream()
+                .map(readStatusMapper::toDto)
+                .toList();
     }
 
     @Override
     @Transactional
-    public ReadStatus updateReadStatus(UUID readStatusId, ReadStatusUpdateRequest request) {
+    public ReadStatusDto updateReadStatus(UUID readStatusId, ReadStatusUpdateRequest request) {
         //ReadStatus 검색
         ReadStatus readStatusTemp = readStatusRepository.findById(readStatusId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 ReadStatus는 데이터파일에 존재하지 않습니다."));
@@ -83,7 +85,7 @@ public class BasicReadStatusService implements ReadStatusService {
         //dirty checking
         //readStatusTemp = readStatusRepository.save(readStatusTemp);
 
-        return readStatusTemp;
+        return readStatusMapper.toDto(readStatusTemp);
     }
 
     @Override

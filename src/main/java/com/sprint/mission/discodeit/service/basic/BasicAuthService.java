@@ -1,9 +1,11 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.LoginRequest;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.AuthService;
@@ -20,11 +22,12 @@ public class BasicAuthService implements AuthService {
     //필드
     private final UserRepository userRepository;
     private final UserStatusRepository userStatusRepository;
+    private final UserMapper userMapper;
 
     //interface
     @Override
     @Transactional
-    public User login(LoginRequest request) {
+    public UserDto login(LoginRequest request) {
         //유저 검색
         User userTemp = userRepository.findByUsernameAndPassword(request.username(), request.password())
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
@@ -39,7 +42,7 @@ public class BasicAuthService implements AuthService {
 
         log.info("유저: {} 로그인 승인.", request.username());
 
-        return userTemp;
+        return userMapper.toDto(userTemp);
     }
 
 }

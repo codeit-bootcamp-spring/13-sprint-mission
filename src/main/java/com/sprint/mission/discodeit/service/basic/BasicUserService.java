@@ -2,11 +2,13 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.dto.response.UserFindResponse;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.DuplicateResourceException;
 import com.sprint.mission.discodeit.exception.FileException;
 import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -30,11 +32,12 @@ public class BasicUserService implements UserService {
     private final UserStatusRepository userStatusRepository;
     private final ReadStatusRepository readStatusRepository;
     private final MessageRepository messageRepository;
+    private final UserMapper userMapper;
 
     //interface
     @Override
     @Transactional
-    public User createUser(UserCreateRequest request, MultipartFile file) {
+    public UserDto createUser(UserCreateRequest request, MultipartFile file) {
         //중복된 이름, 이메일로 생성 요청을 한 경우 검증
         validateNameExists(request.username());
         validateEmailExists(request.email());
@@ -66,12 +69,12 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = new UserStatus(user);
         userStatus = userStatusRepository.save(userStatus);
 
-        return user;
+        return userMapper.toDto(user);
     }
 
     @Override
     @Transactional
-    public UserFindResponse findUser(UUID userId) {
+    public UserDto findUser(UUID userId) {
         //유저 검색
         User userTemp = userRepository.findById(userId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
@@ -80,27 +83,23 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
 
-        return UserFindResponse.from(userTemp, userStatus.isOnline());
+        return userMapper.toDto(userTemp);
     }
 
     @Override
     @Transactional
-    public List<UserFindResponse> findAllUsers() {
+    public List<UserDto> findAllUsers() {
         //유저들 검색
         List<User> users = userRepository.findAll();
 
         return users.stream()
-                .map(user ->
-                        UserFindResponse.from(
-                                user, userStatusRepository.findByUserId(user.getId())
-                                        .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다.")).isOnline()
-                        ))
+                .map(userMapper::toDto)
                 .toList();
     }
 
     @Override
     @Transactional
-    public User updateUser(UUID userId, UserUpdateRequest request, MultipartFile file) {
+    public UserDto updateUser(UUID userId, UserUpdateRequest request, MultipartFile file) {
         //유저 검색
         User userTemp = userRepository.findById(userId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
@@ -144,7 +143,7 @@ public class BasicUserService implements UserService {
         //dirty checking
         //userTemp = userRepository.save(userTemp);
 
-        return userTemp;
+        return userMapper.toDto(userTemp);
     }
 
     @Override

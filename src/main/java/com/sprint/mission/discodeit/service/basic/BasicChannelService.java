@@ -3,11 +3,13 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.PublicChannelUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.dto.response.ChannelFindResponse;
 import com.sprint.mission.discodeit.dto.response.ChannelUpdateResponse;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
 import com.sprint.mission.discodeit.exception.WrongTypeException;
+import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
@@ -32,11 +34,12 @@ public class BasicChannelService implements ChannelService {
     private final UserRepository userRepository;
     private final ReadStatusRepository readStatusRepository;
     private final BinaryContentRepository binaryContentRepository;
+    private final ChannelMapper channelMapper;
 
     //interface
     @Override
     @Transactional
-    public Channel createPrivateChannel(PrivateChannelCreateRequest request) {
+    public ChannelDto createPrivateChannel(PrivateChannelCreateRequest request) {
         //채널 생성
         Channel channel = new Channel(ChannelType.PRIVATE);
         channel = channelRepository.save(channel);
@@ -53,35 +56,35 @@ public class BasicChannelService implements ChannelService {
             log.info("ReadStatus가 생성됨.");
         }
 
-        return channel;
+        return channelMapper.toDto(channel);
     }
 
     @Override
     @Transactional
-    public Channel createPublicChannel(PublicChannelCreateRequest request) {
+    public ChannelDto createPublicChannel(PublicChannelCreateRequest request) {
         //채널 생성
         Channel channel = new Channel(ChannelType.PUBLIC, request.name(), request.description());
         channel = channelRepository.save(channel);
         log.info("채널: {}가 생성됨.", channel.getName());
 
-        return channel;
+        return channelMapper.toDto(channel);
     }
 
     @Override
     @Transactional
-    public ChannelFindResponse findChannel(UUID channelId) {
+    public ChannelDto findChannel(UUID channelId) {
         //채널 검색
         Channel channelTemp = channelRepository.findById(channelId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
 
-        return makeChannelFindResponse(channelTemp);
+        return channelMapper.toDto(channelTemp);
     }
 
     @Override
     @Transactional
-    public List<ChannelFindResponse> findAllByUserId(UUID userId) {
+    public List<ChannelDto> findAllByUserId(UUID userId) {
         //반환할 리스트
-        List<ChannelFindResponse> channelFindResponseList = new ArrayList<>();
+        List<Channel> channelFindList = new ArrayList<>();
 
         //해당 유저가 참가해있는 readStatus들 검색
         List<ReadStatus> readStatuses = readStatusRepository.findAllByUserId(userId);
@@ -95,21 +98,21 @@ public class BasicChannelService implements ChannelService {
             if (channelTemp.getType() == ChannelType.PUBLIC)
                 continue;
 
-            channelFindResponseList.add(makeChannelFindResponse(channelTemp));
+            channelFindList.add(channelTemp);
         }
 
         //ChannelType이 PUBLIC인 것만 진행
         List<Channel> publicChannelListTemp = channelRepository.findAllByType(ChannelType.PUBLIC);
-        for (Channel channelTemp : publicChannelListTemp) {
-            channelFindResponseList.add(makeChannelFindResponse(channelTemp));
-        }
+        channelFindList.addAll(publicChannelListTemp);
 
-        return channelFindResponseList;
+        return channelFindList.stream()
+                .map(channelMapper::toDto)
+                .toList();
     }
 
     @Override
     @Transactional
-    public Channel updateChannel(UUID channelId, PublicChannelUpdateRequest request) {
+    public ChannelDto updateChannel(UUID channelId, PublicChannelUpdateRequest request) {
         //채널 검색
         Channel channelTemp = channelRepository.findById(channelId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
@@ -119,7 +122,7 @@ public class BasicChannelService implements ChannelService {
         //dirty checking
         //channelTemp = channelRepository.save(channelTemp);
 
-        return channelTemp;
+        return channelMapper.toDto(channelTemp);
     }
 
     @Override

@@ -1,9 +1,11 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.exception.FileException;
 import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
+import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import lombok.RequiredArgsConstructor;
@@ -22,11 +24,12 @@ public class BasicBinaryContentService implements BinaryContentService {
 
     //필드
     private final BinaryContentRepository binaryContentRepository;
+    private final BinaryContentMapper binaryContentMapper;
 
     //interface
     @Override
     @Transactional
-    public BinaryContent createBinaryContent(BinaryContentCreateRequest request) {
+    public BinaryContentDto createBinaryContent(BinaryContentCreateRequest request) {
         BinaryContent binaryContent;
         try {
             //binaryContent 생성
@@ -43,26 +46,28 @@ public class BasicBinaryContentService implements BinaryContentService {
             throw new FileException(e.getMessage());
         }
 
-        return binaryContent;
+        return binaryContentMapper.toDto(binaryContent);
     }
 
     @Override
     @Transactional
-    public BinaryContent findBinaryContentById(UUID binaryContentId) {
+    public BinaryContentDto findBinaryContentById(UUID binaryContentId) {
         //BinaryContent 검색
         BinaryContent binaryContentTemp = binaryContentRepository.findById(binaryContentId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
 
-        return binaryContentTemp;
+        return binaryContentMapper.toDto(binaryContentTemp);
     }
 
     @Override
     @Transactional
-    public List<BinaryContent> findAllBinaryContentByIdIn(List<UUID> binaryContentIds) {
+    public List<BinaryContentDto> findAllBinaryContentByIdIn(List<UUID> binaryContentIds) {
         //BinaryContent들 검색
         List<BinaryContent> binaryContentList = binaryContentRepository.findAllByIdIn(binaryContentIds);
 
-        return binaryContentList;
+        return binaryContentList.stream()
+                .map(binaryContentMapper::toDto)
+                .toList();
     }
 
     @Override

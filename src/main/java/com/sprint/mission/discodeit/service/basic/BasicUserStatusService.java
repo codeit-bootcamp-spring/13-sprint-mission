@@ -2,11 +2,13 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.UserStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.dto.response.UserStatusUpdateResponse;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.DuplicateResourceException;
 import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
+import com.sprint.mission.discodeit.mapper.UserStatusMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserStatusService;
@@ -26,11 +28,12 @@ public class BasicUserStatusService implements UserStatusService {
     //필드
     private final UserStatusRepository userStatusRepository;
     private final UserRepository userRepository;
+    private final UserStatusMapper userStatusMapper;
 
     //interface
     @Override
     @Transactional
-    public UserStatus createUserStatus(UserStatusCreateRequest request) {
+    public UserStatusDto createUserStatus(UserStatusCreateRequest request) {
         //유저 검색
         User userTemp = userRepository.findById(request.userId())
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
@@ -43,31 +46,30 @@ public class BasicUserStatusService implements UserStatusService {
         userStatus = userStatusRepository.save(userStatus);
         log.info("UserStatus가 생성됨.");
 
-        return userStatus;
+        return userStatusMapper.toDto(userStatus);
     }
 
     @Override
     @Transactional
-    public UserStatus findUserStatusById(UUID userStatusId) {
+    public UserStatusDto findUserStatusById(UUID userStatusId) {
         //UserStatus 검색
         UserStatus userStatusTemp = userStatusRepository.findById(userStatusId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
 
-        return userStatusTemp;
+        return userStatusMapper.toDto(userStatusTemp);
     }
 
     @Override
     @Transactional
-    public List<UserStatus> findAllUserStatus() {
-        //UserStatus들 검색
-        List<UserStatus> userStatusList = userStatusRepository.findAll();
-
-        return userStatusList;
+    public List<UserStatusDto> findAllUserStatus() {
+        return userStatusRepository.findAll().stream()
+                .map(userStatusMapper::toDto)
+                .toList();
     }
 
     @Override
     @Transactional
-    public UserStatus updateUserStatusByUserId(UUID userId, UserStatusUpdateRequest request) {
+    public UserStatusDto updateUserStatusByUserId(UUID userId, UserStatusUpdateRequest request) {
         //UserStatus 검색
         UserStatus userStatusTemp = userStatusRepository.findByUserId(userId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
@@ -77,7 +79,7 @@ public class BasicUserStatusService implements UserStatusService {
         //dirty checking
         //userStatusTemp = userStatusRepository.save(userStatusTemp);
 
-        return userStatusTemp;
+        return userStatusMapper.toDto(userStatusTemp);
     }
 
     @Override
