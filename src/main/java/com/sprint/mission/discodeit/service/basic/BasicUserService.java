@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.dto.response.UserFindResponse;
 import com.sprint.mission.discodeit.entity.*;
@@ -11,6 +12,7 @@ import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,6 +35,7 @@ public class BasicUserService implements UserService {
     private final ReadStatusRepository readStatusRepository;
     private final MessageRepository messageRepository;
     private final UserMapper userMapper;
+    private final BinaryContentStorage binaryContentStorage;
 
     //interface
     @Override
@@ -45,19 +48,8 @@ public class BasicUserService implements UserService {
         BinaryContent binaryContent = null;
         //프로필 사진 파일 존재 시
         if (file != null && !file.isEmpty()) {
-            try {
-                //binaryContent 생성
-                binaryContent = new BinaryContent(
-                        file.getOriginalFilename(),
-                        (long) file.getBytes().length,
-                        file.getContentType(),
-                        file.getBytes()
-                );
-                binaryContent = binaryContentRepository.save(binaryContent);
-
-            } catch (IOException e) {
-                throw new FileException(e.getMessage());
-            }
+            //binaryContent 생성
+            binaryContent = createBinaryContent(file);
         }
 
         //유저 생성
@@ -119,20 +111,8 @@ public class BasicUserService implements UserService {
             if (binaryContent != null) {
                 binaryContentRepository.deleteById(binaryContent.getId());
             }
-
-            try {
-                //binaryContent 생성
-                binaryContent = new BinaryContent(
-                        file.getOriginalFilename(),
-                        (long) file.getBytes().length,
-                        file.getContentType(),
-                        file.getBytes()
-                );
-                binaryContent = binaryContentRepository.save(binaryContent);
-
-            } catch (IOException e) {
-                throw new FileException(e.getMessage());
-            }
+            //binaryContent 생성
+            binaryContent = createBinaryContent(file);
         }
 
         log.info("유저: {}가 수정됨.", userTemp.getUsername());
@@ -170,6 +150,26 @@ public class BasicUserService implements UserService {
         userRepository.deleteById(userId);
 
         log.info("유저: {}가 삭제됨.", userTemp.getUsername());
+    }
+
+    //binaryContent 생성
+    private BinaryContent createBinaryContent(MultipartFile file) {
+        BinaryContent binaryContent = null;
+        try {
+            //binaryContent 생성
+            binaryContent = new BinaryContent(
+                    file.getOriginalFilename(),
+                    (long) file.getBytes().length,
+                    file.getContentType()
+            );
+            binaryContent = binaryContentRepository.save(binaryContent);
+            binaryContentStorage.put(binaryContent.getId(), file.getBytes());
+
+        } catch (IOException e) {
+            throw new FileException(e.getMessage());
+        }
+
+        return binaryContent;
     }
 
     //유저 상태 검색 및 삭제

@@ -21,6 +21,11 @@ discodeit:
     type: jcf     # jcf | file
     file-directory: data
 
+  storage:
+    type: local
+    local:
+      root-path: storage
+
 logging:
   level:
     com.sprintlog: debug
