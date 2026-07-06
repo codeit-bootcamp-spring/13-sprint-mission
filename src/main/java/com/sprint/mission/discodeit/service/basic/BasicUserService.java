@@ -15,17 +15,16 @@ import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class BasicUserService implements UserService {
 
     private final UserRepository userRepository;
@@ -35,12 +34,12 @@ public class BasicUserService implements UserService {
 
     private UserResponse toResponse(User user, UserStatus userStatus) {
         return new UserResponse(
-                user.getUserId(),
+                user.getId(),
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
-                user.getName(),
+                user.getUsername(),
                 user.getEmail(),
-                user.getProfileId(),
+                Optional.ofNullable(user.getProfile()).map(BinaryContent::getId).orElse(null),
                 userStatus != null && userStatus.isOnline() // null이면 (false)오프라인
         );
     }
@@ -50,38 +49,35 @@ public class BasicUserService implements UserService {
     @Override
     public UserResponse createUser(UserCreateRequest userCreateRequest,
                                    BinaryContentCreateRequest profileRequest) {
-        //username 중복체크
-        boolean nameDuplicate = userRepository.findAll().stream()
-                .anyMatch(user -> userCreateRequest.username().equals(user.getName()));
-        if (nameDuplicate) {
+
+        //userName 중복 검사
+        if (userRepository.existsByUsername(userCreateRequest.username())){
             throw new IllegalArgumentException("이미 사용중인 이름 입니다.");
         }
 
         //email 중복 체크
-        boolean emailDuplicate = userRepository.findAll().stream()
-                .anyMatch(user -> userCreateRequest.email().equals(user.getEmail()));
-        if (emailDuplicate) {
+        if (userRepository.existsByEmail(userCreateRequest.email())) {
             throw new IllegalArgumentException("이미 사용중인 이메일 입니다.");
         }
 
         //프로필 이미지 처리
-        UUID profileId = null;
+        BinaryContent profile = null;
         if (profileRequest != null) {
-            BinaryContent profile = new BinaryContent(profileRequest.fileName(), profileRequest.fileSize(),
-                    profileRequest.contentType(),profileRequest.bytes());
+             profile = new BinaryContent(profileRequest.fileName(),
+                    profileRequest.fileSize(), profileRequest.contentType(), profileRequest.bytes());
             binaryContentRepository.save(profile);
-            profileId = profile.getId();
         }
-        User user = new User(userCreateRequest.username(), userCreateRequest.email(), userCreateRequest.password(),profileId);
+        User user = new User(userCreateRequest.username(), userCreateRequest.email(), userCreateRequest.password(), profile, null);
         userRepository.save(user);
 
-        UserStatus userStatus = new UserStatus(user.getUserId());
+        UserStatus userStatus = new UserStatus(user);
         userStatusRepository.save(userStatus);
-        log.info("유저 생성 완료 - name: {}, userId: {}", userCreateRequest.username(), user.getUserId());
+        log.info("유저 생성 완료 - name: {}, userId: {}", userCreateRequest.username(),  user.getId());
         return  toResponse(user, userStatus);
 
     }
 
+    @Transactional(readOnly = true)
     @Override
     public UserResponse findByUserId(UUID userId) {
         User user = userRepository.findById(userId)
@@ -90,11 +86,12 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
                 .orElse(null);
 
-        log.info("유저 조회 - name: {}", user.getName());
+        log.info("유저 조회 - name: {}", user.getUsername());
 
         return toResponse(user, userStatus);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<UserResponse> findAllUser() {
         List<User> users = userRepository.findAll();
@@ -104,7 +101,7 @@ public class BasicUserService implements UserService {
         log.info("전체 유저 조회 완료 - 총 {}명", users.size());
         return  users.stream()
                 .map(user -> {
-                    UserStatus userStatus = userStatusRepository.findByUserId(user.getUserId())
+                    UserStatus userStatus = userStatusRepository.findByUserId(user.getId())
                             .orElse(null);
                     return toResponse(user, userStatus);
                 })
@@ -118,41 +115,40 @@ public class BasicUserService implements UserService {
 
         //프로필 이미지 선택적 처리
         if (profileRequest != null) {
-            if (user.getProfileId() != null){
-                binaryContentRepository.delete(user.getProfileId());
+            if (user.getProfile() != null){
+                binaryContentRepository.deleteById(user.getProfile().getId());
             }
+
             BinaryContent profile = new BinaryContent(
                     profileRequest.fileName(), profileRequest.fileSize(), profileRequest.contentType(),profileRequest.bytes());
             binaryContentRepository.save(profile);
-            user.updateUserProfileId(profile.getId());
+            user.updateUserProfileId(profile);
         }
-
         if (userUpdateRequest.newUsername() != null) {
-            boolean nameDuplicate = userRepository.findAll().stream()
-                            .anyMatch(u -> userUpdateRequest.newUsername().equals(u.getName()));
-            if (nameDuplicate) {
+            if (userRepository.existsByUsername(userUpdateRequest.newUsername())){
                 throw new IllegalArgumentException("이미 사용중인 이름입니다.");
             }
             user.updateUserName(userUpdateRequest.newUsername());
         }
-        if (userUpdateRequest.newEmail() != null){
-            boolean emailDuplicate = userRepository.findAll().stream()
-                    .anyMatch(u -> userUpdateRequest.newEmail().equals(u.getEmail()));
-            if (emailDuplicate) {
+
+        if (userUpdateRequest.newEmail() != null) {
+            if (userRepository.existsByEmail(userUpdateRequest.newEmail())) {
                 throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
             }
             user.updateUserEmail(userUpdateRequest.newEmail());
         }
-        if (userUpdateRequest.newPassword() != null) user.updateUserPassword(userUpdateRequest.newPassword());
+
+        if (userUpdateRequest.newPassword() != null)
+            user.updateUserPassword(userUpdateRequest.newPassword());
         userRepository.save(user);
 
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
                 .orElse(null);
         if (userStatus == null){
-             userStatus = new UserStatus(userId);
+             userStatus = new UserStatus(user);
         }
 
-        log.info("유저 수정 완료 -  name: {}, userId: {}", user.getName(), user.getUserId());
+        log.info("유저 수정 완료 -  name: {}, userId: {}", user.getUsername(), user.getId());
 
         return toResponse(user, userStatus);
     }
@@ -161,12 +157,11 @@ public class BasicUserService implements UserService {
     public void deleteUser(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(()->new NoSuchElementException("존재하지 않는 사용자 입니다."));
-        if (user.getProfileId() != null){
-            binaryContentRepository.delete(user.getProfileId());
+        if (user.getProfile() != null){
+            binaryContentRepository.delete(user.getProfile());
         }
-        userStatusRepository.deleteById(user.getUserId());
         readStatusRepository.deleteByUserId(userId);
         userRepository.deleteById(userId);
-        log.info("유저 삭제 - name: {}, userId: {}", user.getName(), user.getUserId());
+        log.info("유저 삭제 - name: {}, userId: {}", user.getUsername(), user.getId());
     }
 }
