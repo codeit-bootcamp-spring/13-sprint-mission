@@ -4,7 +4,6 @@ package com.sprint.mission.discodeit.controller;
 import com.sprint.mission.discodeit.controller.docs.UserControllerDoc;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;

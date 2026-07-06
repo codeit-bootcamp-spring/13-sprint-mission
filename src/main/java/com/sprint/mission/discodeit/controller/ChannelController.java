@@ -4,7 +4,6 @@ package com.sprint.mission.discodeit.controller;
 import com.sprint.mission.discodeit.controller.docs.ChannelControllerDoc;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
-import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
