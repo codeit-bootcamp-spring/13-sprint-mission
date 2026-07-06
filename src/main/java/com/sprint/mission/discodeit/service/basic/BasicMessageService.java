@@ -4,18 +4,21 @@ import com.sprint.mission.discodeit.dto.input.BinaryContentCreate;
 import com.sprint.mission.discodeit.dto.input.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.input.MessageUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
-import com.sprint.mission.discodeit.repository.BinaryContentRepository;
-import com.sprint.mission.discodeit.repository.ChannelRepository;
-import com.sprint.mission.discodeit.repository.MessageRepository;
-import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.repository.JPABinaryContentRepository;
+import com.sprint.mission.discodeit.repository.JPAChannelRepository;
+import com.sprint.mission.discodeit.repository.JPAMessageRepository;
+import com.sprint.mission.discodeit.repository.JPAUserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 
-
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,22 +26,23 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class BasicMessageService implements MessageService {
-    private final MessageRepository mr;
-    private final UserRepository ur;
-    private final ChannelRepository cr;
-    private final BinaryContentRepository bcr;
+    private final JPAMessageRepository JPAMessageRepository;
+    private final JPAUserRepository JPAUserRepository;
+    private final JPAChannelRepository JPAChannelRepository;
+    private final JPABinaryContentRepository binaryContentRepository;
 
     @Override
+    @Transactional
     public Message createMessage(MessageCreateRequest cmi, Optional<List<BinaryContentCreate>> olbcc){
 
-        ur.findByID(cmi.authorId()).orElseThrow(
+        User user = JPAUserRepository.findById(cmi.authorId()).orElseThrow(
                 () -> new DiscodeitException(
                         "no user by id " + cmi.authorId(),
                         "Message",
                         404
                 )
         );
-        cr.findById(cmi.channelId()).orElseThrow(
+        Channel channel = JPAChannelRepository.findById(cmi.channelId()).orElseThrow(
                 () -> new DiscodeitException(
                         "no channel by id " + cmi.channelId(),
                         "Message",
@@ -46,7 +50,7 @@ public class BasicMessageService implements MessageService {
                 )
         );
 
-        List<UUID> attsId = olbcc.map(
+        List<BinaryContent> attsId = olbcc.map(
                 lbcc -> lbcc.stream().map(
                         bcc -> {
                             BinaryContent bc = new BinaryContent(
@@ -55,9 +59,8 @@ public class BasicMessageService implements MessageService {
                                     bcc.size(),
                                     bcc.content()
                             );
-                            bcr.save(bc);
-                            return bc.getId();
-                            }
+                            return binaryContentRepository.save(bc);
+                        }
 
                 ).toList()
         ).orElse(null);
@@ -66,46 +69,46 @@ public class BasicMessageService implements MessageService {
 
         Message res = new Message(
                 cmi.content(),
-                cmi.channelId(),
-                cmi.authorId(),
+                channel,
+                user,
                 attsId
         );
 
-        mr.save(res);
+        JPAMessageRepository.save(res);
         return res;
     }
 
     @Override
     public List<Message> findallByChannelId(UUID cannelID){
-        return mr.findByChannelID(cannelID);
+        return JPAMessageRepository.findByChannelId(cannelID);
     }
 
     @Override
+    @Transactional
     public Message updateMessageData(UUID id, MessageUpdateRequest umi){
-        Message msg = mr.findById(id)
+        Message msg = JPAMessageRepository.findById(id)
                 .orElseThrow(
                         () -> new DiscodeitException("no message by id" + id,"Message",404)
                 );
 
         msg.setContent(umi.newContent());
-        msg.setUpdatedAt();
-        mr.save(msg);
+        msg.setUpdatedAt(Instant.now());
+        JPAMessageRepository.save(msg);
         return msg;
     }
 
     @Override
+    @Transactional
     public void deleteMessage(UUID id){
-        Message msg = mr.findById(id).orElseThrow(
+        Message msg = JPAMessageRepository.findById(id).orElseThrow(
                 () -> new DiscodeitException("no message by id" + id,"Message",404)
         );
 
         // delete attribute
-        if (!msg.getAttachmentIds().isEmpty()){
-            for (UUID att : msg.getAttachmentIds()){
-                   bcr.delete(att);
-            }
+        if (!msg.getAttachment().isEmpty()){
+            binaryContentRepository.deleteAll(msg.getAttachment());
         }
 
-        mr.delete(id);
+        JPAMessageRepository.delete(msg);
     }
 }

@@ -3,8 +3,9 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
-import com.sprint.mission.discodeit.repository.BinaryContentRepository;
+import com.sprint.mission.discodeit.repository.JPABinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,11 +16,11 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class BasicBinaryContentService implements BinaryContentService {
-    private final BinaryContentRepository bcr;
+    private final JPABinaryContentRepository bcr;
 
     @Override
     public BinaryContent findByID(UUID id){
-        return bcr.findByID(id).orElseThrow(
+        return bcr.findById(id).stream().findFirst().orElseThrow(
                 () -> new DiscodeitException("Content not existed ","BinaryContent",404)
         );
     }
@@ -27,14 +28,15 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     public List<BinaryContent> findAllByIdIn(List<UUID> ids){
         return ids.stream()
-                .map(id -> bcr.findByID(id).orElse(null))
+                .map(id -> bcr.findById(id).stream().findFirst().orElse(null))
                 .filter(Objects::nonNull)
                 .toList();
     }
 
     @Override
+    @Transactional
     public void delete(UUID id){
-        bcr.delete(id);
+        bcr.deleteById(id);
     }
 
 }

@@ -3,12 +3,15 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.input.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.input.ReadStatusUpdateRequest;
+import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
-import com.sprint.mission.discodeit.repository.ChannelRepository;
-import com.sprint.mission.discodeit.repository.ReadStatusRepository;
-import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.repository.JPAChannelRepository;
+import com.sprint.mission.discodeit.repository.JAPReadStatusRepository;
+import com.sprint.mission.discodeit.repository.JPAUserRepository;
 import com.sprint.mission.discodeit.service.ReadStatusService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,22 +21,23 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class BasicReadStatusService implements ReadStatusService {
-    private final ReadStatusRepository rsr;
-    private final UserRepository ur;
-    private final ChannelRepository ch;
+    private final JAPReadStatusRepository JAPReadStatusrepository;
+    private final JPAUserRepository JPAUserRepository;
+    private final JPAChannelRepository JPAChannelRepository;
 
     @Override
+    @Transactional
     public ReadStatus create(ReadStatusCreateRequest rscr){
 
         // not found exception
-        ch.findById(rscr.channelId()).orElseThrow(
+        Channel channel = JPAChannelRepository.findById(rscr.channelId()).stream().findFirst().orElseThrow(
                 () -> new DiscodeitException(
                         "Channel with id " + rscr.channelId() + " not found",
                         "ReadStatus",
                         404
                 )
         );
-        ur.findByID(rscr.userId()).orElseThrow(
+        User user = JPAUserRepository.findById(rscr.userId()).stream().findFirst().orElseThrow(
                 () -> new DiscodeitException(
                         "User with id " + rscr.userId() + " not found",
                         "ReadStatus",
@@ -44,7 +48,7 @@ public class BasicReadStatusService implements ReadStatusService {
 
         // already exist exception
         if (
-                !rsr.findByUserId(rscr.userId()).isEmpty() | !rsr.findByChennalID(rscr.channelId()).isEmpty()
+                !JAPReadStatusrepository.findByUserId(rscr.userId()).isEmpty() | !JAPReadStatusrepository.findByChannelId(rscr.channelId()).isEmpty()
         ) throw new DiscodeitException(
                 "ReadStatus whith userId " + rscr.userId() + "and channelId " + rscr.channelId() + " already existed",
                 "UserStatus",
@@ -52,31 +56,30 @@ public class BasicReadStatusService implements ReadStatusService {
         );
 
 
-        ReadStatus res = new ReadStatus(rscr.userId(), rscr.channelId(), rscr.lastReadAt());
 
-        rsr.save(res);
-        return res;
+        return JAPReadStatusrepository.save(new ReadStatus(user, channel, rscr.lastReadAt()));
     }
 
     @Override
     public List<ReadStatus> findAllByUserID(UUID userID){
-        return rsr.find(rs -> rs.getUserId().equals(userID));
+        return JAPReadStatusrepository.findByUserId(userID);
     }
 
     @Override
+    @Transactional
     public ReadStatus update(UUID id, ReadStatusUpdateRequest rsur){
-        ReadStatus rs = rsr.findByID(id).orElseThrow(
+        ReadStatus readStatus = JAPReadStatusrepository.findById(id).stream().findFirst().orElseThrow(
                 () -> new DiscodeitException(
                         "ReadStatus with id " + id + "not found",
                         "ReadStatus",
                         404)
         );
-        rs.setLastReadAt(rsur.newLastReadAt());
-        rsr.save(rs);
-        return rs;
+        readStatus.setLastReadAt(rsur.newLastReadAt());
+        return readStatus;
     }
     @Override
+    @Transactional
     public void delete(UUID id){
-        rsr.delete(id);
+        JAPReadStatusrepository.deleteById(id);
     }
 }

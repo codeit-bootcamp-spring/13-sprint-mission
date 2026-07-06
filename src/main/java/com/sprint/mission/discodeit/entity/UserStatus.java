@@ -16,13 +16,22 @@ import java.time.Instant;
 @Table(name= "user_statuses")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserStatus extends BaseUpdatableEntity {
-    @OneToOne
+    // activation timeout ( 5min )
+    private final Integer timeout = 5 * 60 * 1000;
+
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id",unique = true)
     private User user;
     @Column(nullable = false)
     private Instant lastActiveAt;
-    // activation timeout ( 5min )
-    private final Integer timeout = 5 * 60 * 1000;
+
+
+    public UserStatus(User user, Instant lastActiveAt) {
+        this.user = user;
+        this.lastActiveAt = lastActiveAt;
+    }
+
+
     public boolean online(){
         return timeout > Duration.between(lastActiveAt, Instant.now()).abs().toMillis();
     }

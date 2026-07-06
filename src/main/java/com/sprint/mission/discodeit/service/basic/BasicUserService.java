@@ -8,14 +8,15 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
-import com.sprint.mission.discodeit.repository.BinaryContentRepository;
-import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.repository.JPABinaryContentRepository;
+import com.sprint.mission.discodeit.repository.JPAUserRepository;
+import com.sprint.mission.discodeit.repository.JPAUserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
 
 import java.time.Instant;
 import java.util.*;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,12 +27,12 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class BasicUserService implements UserService {
 
-    private final UserRepository ur;
-    private final UserStatusRepository usr;
-    private final BinaryContentRepository bcr;
+    private final JPAUserRepository JPAUserRepository;
+    private final JPAUserStatusRepository JPAUserStatusRepository;
+    private final JPABinaryContentRepository binaryContentRepository;
 
 
-    private UUID profileIdFromOBCC(Optional<BinaryContentCreate> obcc){
+    private BinaryContent profileIdFromOBCC(Optional<BinaryContentCreate> obcc){
         return obcc.map(bcc -> {
             BinaryContent bc = new BinaryContent(
                     bcc.filename(),
@@ -39,23 +40,23 @@ public class BasicUserService implements UserService {
                     bcc.size(),
                     bcc.content()
             );
-            bcr.save(bc);
-            return bc.getId();
+            return binaryContentRepository.save(bc);
         }).orElse(null);
     }
 
     @Override
+    @Transactional
     public User create(UserCreateRequest cui, Optional<BinaryContentCreate> obcc){
 
 
-        if (ur.findByEmail(cui.email()).isPresent()) {
+        if ( !JPAUserRepository.findByEmail(cui.email()).isEmpty() ) {
             throw  new DiscodeitException(
                         "User with email " + cui.email() + " aready exsists",
                         "User",
                         400
                 );
         }
-        if (ur.findByName(cui.username()).isPresent()) {
+        if ( !JPAUserRepository.findByUsername(cui.username()).isEmpty() ) {
                 throw new DiscodeitException(
                     "User with username " + cui.username() + " aready exsists",
                     "User",
@@ -64,40 +65,42 @@ public class BasicUserService implements UserService {
         }
 
 
+
+
         User user = new User(
                 cui.email(),
                 cui.password(),
                 cui.username(),
-                profileIdFromOBCC(obcc)
+                profileIdFromOBCC(obcc),
+                null
         );
-        ur.save(user);
-
-
         UserStatus ust = new UserStatus(
-                user.getId(),
+                user,
                 Instant.now()
         );
-        usr.save(ust);
+        user.setStatus(ust);
 
+        JPAUserStatusRepository.save(ust);
+        JPAUserRepository.save(user);
         return user;
     }
 
 
     @Override
     public List<UserDto> getUserList(){
-        return ur.findAll()
+        return JPAUserRepository.findAll()
                 .stream()
                 .map(u -> {
-                    UserStatus us =  usr.findByUserID(u.getId()).orElse(null);
+                    UserStatus us =  JPAUserStatusRepository.findByUserId(u.getId()).stream().findFirst().orElse(null);
                     return UserDto.builder()
                             .id(u.getId())
                             .createdAt(u.getCreatedAt())
                             .updatedAt(u.getUpdatedAt())
-                            .username(u.getName())
+                            .username(u.getUsername())
                             .email(u.getEmail())
                             .online(us != null && us.online())
                             .profileId(
-                                    u.getProfileId()
+                                    u.getProfile() != null ? u.getProfile().getId() : null
                             )
                             .build();
                 })
@@ -106,51 +109,52 @@ public class BasicUserService implements UserService {
 
 
     @Override
+    @Transactional
     public User update(UUID id, UserUpdateRequest uui, Optional<BinaryContentCreate> obcc){
-        User user = ur.findByID(id).orElseThrow(
+        User user = JPAUserRepository.findById(id).orElseThrow(
             () -> new DiscodeitException(
                     "User with id" + id + " not found",
                     "User",
                     404)
         );
 
-        Optional<User> sameNameChecker = ur.findByName(uui.newUsername());
+        Optional<User> sameNameChecker = JPAUserRepository.findByUsername(uui.newUsername()).stream().findFirst();
         if(sameNameChecker.isPresent()){ throw new DiscodeitException(
                 "user with name " + uui.newUsername() + " already used",
                 "User",
                 400
         );}
-        Optional<User> sameEmailChecker = ur.findByEmail(uui.newEmail());
+        Optional<User> sameEmailChecker = JPAUserRepository.findByEmail(uui.newEmail()).stream().findFirst();
         if(sameEmailChecker.isPresent()){ throw new DiscodeitException(
                 "user with email " + uui.newEmail() + " already used",
                 "User",
                 400
         );}
 
-        if (uui.newUsername() != null) user.setName(uui.newUsername());
+        if (uui.newUsername() != null) user.setUsername(uui.newUsername());
         if (uui.newEmail() != null) user.setEmail(uui.newEmail());
         if (uui.newPassword() != null) user.setPassword(uui.newPassword());
-        if (profileIdFromOBCC(obcc) != null) user.setProfileId(profileIdFromOBCC(obcc));
-        ur.save(user);
+        if (profileIdFromOBCC(obcc) != null) user.setProfile(profileIdFromOBCC(obcc));
         return user;
     }
 
 
     @Override
+    @Transactional
     public void delete(UUID id){
-        User user = ur.findByID(id).orElseThrow(
+        User user = JPAUserRepository.findById(id).orElseThrow(
                 () -> new DiscodeitException(
                         "User with id" + id + " not found",
                         "User",
                         404)
         );
-        Optional<UserStatus> us = usr.findByUserID(id);
+        Optional<UserStatus> us = JPAUserStatusRepository.findByUserId(id).stream().findFirst();
 
-        ur.delete(id);
+        JPAUserRepository.delete(user);
 
-        us.ifPresent(u -> usr.delete(u.getId()));
-        if (user.getProfileId() != null) {
-            bcr.delete(user.getProfileId());
+        us.ifPresent(JPAUserStatusRepository::delete);
+        if (user.getProfile() != null) {
+            binaryContentRepository.delete(user.getProfile());
         }
     }
 }

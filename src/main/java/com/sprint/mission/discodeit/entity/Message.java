@@ -20,20 +20,33 @@ public class Message extends BaseUpdatableEntity {
     @Column
     private String content;
 
-    @ManyToOne(cascade = CascadeType.REMOVE,optional = false)
+    @ManyToOne(cascade = CascadeType.REMOVE,optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "channel_id")
     private Channel channel;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id")
     @OnDelete(action = OnDeleteAction.SET_NULL)
     private User author;
 
-   @ManyToMany
+   @ManyToMany(fetch = FetchType.LAZY)
    @JoinTable(
            name = "message_attachments"
            , joinColumns = @JoinColumn(name = "attachment_id")
            , inverseJoinColumns = @JoinColumn(name = "message_id")
    )
     private List<BinaryContent> attachment;
+
+   public  Message(
+           String content,
+           Channel channel,
+           User user,
+           List<BinaryContent> attachment
+   ){
+       this.content = content;
+       this.channel = channel;
+       this.author = user;
+       this.attachment = attachment;
+   }
+
 }
