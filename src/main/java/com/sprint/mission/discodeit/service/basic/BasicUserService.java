@@ -8,10 +8,12 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.DuplicateUserException;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
@@ -20,16 +22,21 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
 @Primary
+@Transactional
 public class BasicUserService implements UserService {
 
   private final UserRepository userRepository;
   private final BinaryContentRepository binaryContentRepository;
   private final UserStatusRepository userStatusRepository;
+  private final UserMapper userMapper;
+  private final BinaryContentStorage binaryContentStorage;
+
 
   @Override
   public UserDto create(UserCreateRequest request, MultipartFile profile) {
@@ -53,15 +60,15 @@ public class BasicUserService implements UserService {
         throw new RuntimeException("파일 읽기 실패", e);
       }
 
-      BinaryContent binaryContent = new BinaryContent(
+      BinaryContent content = new BinaryContent(
           profile.getOriginalFilename(),
           profile.getSize(),
-          profile.getContentType(),
-          bytes
+          profile.getContentType()
       );
 
-      binaryContentRepository.save(binaryContent);
-      profileContent = binaryContent;
+      binaryContentRepository.save(content);
+      binaryContentStorage.put(content.getId(), bytes);
+      profileContent = content;
     }
 
     User user = new User(
@@ -71,34 +78,28 @@ public class BasicUserService implements UserService {
         profileContent
     );
 
+    UserStatus userStatus = new UserStatus(user, Instant.now());
+    user.updateStatus(userStatus);
+
     userRepository.save(user);
 
-    UserStatus userStatus = new UserStatus(user, Instant.now());
-    userStatusRepository.save(userStatus);
-
-    return UserDto.from(user, userStatus.isOnline());
+    return userMapper.toDto(user);
   }
 
+  @Transactional(readOnly = true)
   @Override
   public UserDto findById(UUID userId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new NoSuchElementException("유저를 찾을 수 없습니다."));
 
-    UserStatus status = userStatusRepository.findByUserId(user.getId()).orElse(null);
-    boolean isOnline = status != null && status.isOnline();
-
-    return UserDto.from(user, isOnline);
-
+    return userMapper.toDto(user);
   }
 
+  @Transactional(readOnly = true)
   @Override
   public List<UserDto> findAll() {
     return userRepository.findAll().stream()
-        .map(user -> {
-          UserStatus status = userStatusRepository.findByUserId(user.getId()).orElse(null);
-          boolean isOnLine = (status != null) && status.isOnline();
-          return UserDto.from(user, isOnLine);
-        })
+        .map(user -> userMapper.toDto(user))
         .toList();
   }
 
@@ -137,22 +138,17 @@ public class BasicUserService implements UserService {
       BinaryContent newProfile = new BinaryContent(
           profile.getOriginalFilename(),
           profile.getSize(),
-          profile.getContentType(),
-          bytes
+          profile.getContentType()
       );
 
       binaryContentRepository.save(newProfile);
+      binaryContentStorage.put(newProfile.getId(), bytes);
       currentProfile = newProfile;
     }
 
     user.update(request.newUsername(), request.newEmail(), request.newPassword(), currentProfile);
 
-    userRepository.save(user);
-
-    UserStatus status = userStatusRepository.findByUserId(user.getId()).orElse(null);
-    boolean isOnline = status != null && status.isOnline();
-
-    return UserDto.from(user, isOnline);
+    return userMapper.toDto(user);
   }
 
   @Override
@@ -163,12 +159,12 @@ public class BasicUserService implements UserService {
     if (user.getProfile() != null) {
       binaryContentRepository.deleteById(user.getProfile().getId());
     }
-    UserStatus userStatus = userStatusRepository.findByUserId(userId).orElse(null);
+    UserStatus userStatus = userStatusRepository.findByUser_Id(userId).orElse(null);
     if (userStatus != null) {
       userStatusRepository.deleteById(userStatus.getId());
     }
 
-    userRepository.deleteById(userId);
+    userRepository.delete(user);
 
   }
 }

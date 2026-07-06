@@ -8,11 +8,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ReadStatusRepository extends JpaRepository<ReadStatus, UUID> {
 
-  Optional<ReadStatus> findByUserIdAndChannelId(UUID userId, UUID channelId);
+  Optional<ReadStatus> findByUser_IdAndChannel_Id(UUID userId, UUID channelId);
 
-  List<ReadStatus> findByUserId(UUID userId);
+  List<ReadStatus> findByUser_Id(UUID userId);
 
-  List<ReadStatus> findByChannelId(UUID channelId);
+  List<ReadStatus> findByChannel_Id(UUID channelId);
 
-  void deleteByChannelId(UUID channelId);
+  void deleteByChannel_Id(UUID channelId);
 }

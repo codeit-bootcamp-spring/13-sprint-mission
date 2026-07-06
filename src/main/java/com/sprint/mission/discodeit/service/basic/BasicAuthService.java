@@ -3,24 +3,26 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.LoginRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.exception.WrongPasswordException;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Primary
 @RequiredArgsConstructor
+@Transactional
 public class BasicAuthService implements AuthService {
 
   private final UserRepository userRepository;
-  private final UserStatusRepository userStatusRepository;
+  private final UserMapper userMapper;
 
+  @Transactional(readOnly = true)
   @Override
   public UserDto login(LoginRequest loginRequest) {
     User user = userRepository.findByUsername(loginRequest.username())
@@ -30,9 +32,6 @@ public class BasicAuthService implements AuthService {
       throw new WrongPasswordException();
     }
 
-    UserStatus status = userStatusRepository.findByUserId(user.getId()).orElse(null);
-    boolean isOnline = status != null && status.isOnline();
-
-    return UserDto.from(user, isOnline);
+    return userMapper.toDto(user);
   }
 }

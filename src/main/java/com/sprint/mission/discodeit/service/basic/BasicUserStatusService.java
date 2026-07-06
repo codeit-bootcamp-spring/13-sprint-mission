@@ -1,52 +1,36 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.UserStatusResponse;
+import com.sprint.mission.discodeit.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.UserStatusNotFoundException;
-import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.mapper.UserStatusMapper;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserStatusService;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
-
-
-import java.util.UUID;
-
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Primary
+@RequiredArgsConstructor
+@Transactional
 public class BasicUserStatusService implements UserStatusService {
 
   private final UserStatusRepository userStatusRepository;
-
-  public BasicUserStatusService(UserStatusRepository userStatusRepository) {
-    this.userStatusRepository = userStatusRepository;
-  }
+  private final UserStatusMapper userStatusMapper;
 
 
   @Override
-  public UserStatusResponse updateByUserId(UUID userId, UserStatusUpdateRequest request) {
-    UserStatus userStatus = userStatusRepository.findByUserId(userId)
+  public UserStatusDto updateByUserId(UUID userId, UserStatusUpdateRequest request) {
+    UserStatus userStatus = userStatusRepository.findByUser_Id(userId)
         .orElseThrow(() -> new UserStatusNotFoundException(userId));
 
     userStatus.updateOnlineStatus(request.newLastActiveAt());
 
-    userStatusRepository.save(userStatus);
-
-    return convertToResponse(userStatus);
+    return userStatusMapper.toDto(userStatus);
   }
 
-
-  private UserStatusResponse convertToResponse(UserStatus userStatus) {
-
-    return new UserStatusResponse(
-        userStatus.getId(),
-        userStatus.getCreatedAt(),
-        userStatus.getUpdatedAt(),
-        userStatus.getUser().getId(),
-        userStatus.getLastActiveAt(),
-        userStatus.isOnline()
-    );
-  }
 }

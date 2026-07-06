@@ -7,9 +7,10 @@ spring:
 
 
 discodeit:
-  repository:
-    type: file
-    file-directory: .discodeit
+  storage:
+    type: local
+    local:
+      root-path: ./storage
 
 server:
   port: ${PORT:8080}

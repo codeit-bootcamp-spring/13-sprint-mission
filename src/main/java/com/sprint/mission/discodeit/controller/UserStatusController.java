@@ -1,8 +1,9 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.UserStatusResponse;
+import com.sprint.mission.discodeit.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.service.UserStatusService;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -11,8 +12,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.UUID;
 
 @RestController
 @Slf4j
@@ -23,13 +22,12 @@ public class UserStatusController {
   private final UserStatusService userStatusService;
 
   @PatchMapping("/{userId}/userStatus")
-  public ResponseEntity<UserStatusResponse> updateStatus(
+  public ResponseEntity<UserStatusDto> updateStatus(
       @PathVariable("userId") UUID id,
       @RequestBody UserStatusUpdateRequest request
   ) {
-    UserStatusResponse response = userStatusService.updateByUserId(id, request);
+    UserStatusDto response = userStatusService.updateByUserId(id, request);
 
     return ResponseEntity.ok(response);
   }
-
 }
