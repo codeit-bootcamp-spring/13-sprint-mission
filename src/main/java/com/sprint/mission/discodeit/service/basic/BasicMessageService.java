@@ -13,6 +13,7 @@ import com.sprint.mission.discodeit.repository.JPAChannelRepository;
 import com.sprint.mission.discodeit.repository.JPAMessageRepository;
 import com.sprint.mission.discodeit.repository.JPAUserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ public class BasicMessageService implements MessageService {
     private final JPAUserRepository JPAUserRepository;
     private final JPAChannelRepository JPAChannelRepository;
     private final JPABinaryContentRepository binaryContentRepository;
+    private final BinaryContentStorage binaryContentStorage;
 
     @Override
     @Transactional
@@ -53,13 +55,16 @@ public class BasicMessageService implements MessageService {
         List<BinaryContent> attsId = olbcc.map(
                 lbcc -> lbcc.stream().map(
                         bcc -> {
+                            byte[] dumi = {0x40};
                             BinaryContent bc = new BinaryContent(
                                     bcc.filename(),
                                     bcc.contentType(),
                                     bcc.size(),
-                                    bcc.content()
+                                    dumi
                             );
-                            return binaryContentRepository.save(bc);
+                            binaryContentRepository.save(bc);
+                            binaryContentStorage.put(bc.getId(),bcc.content());
+                            return bc;
                         }
 
                 ).toList()

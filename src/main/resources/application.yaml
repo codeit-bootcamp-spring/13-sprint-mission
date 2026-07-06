@@ -26,6 +26,9 @@ discodeit:
   repository:
     type: jcf
     path: "/home/latte/test"
+  storage:
+    local:
+      root-path: "data"
 
 
 

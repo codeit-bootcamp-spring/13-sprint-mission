@@ -1,14 +1,18 @@
 package com.sprint.mission.discodeit.service.basic;
 
 
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.JPABinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -16,19 +20,29 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class BasicBinaryContentService implements BinaryContentService {
-    private final JPABinaryContentRepository bcr;
+    private final JPABinaryContentRepository binaryContentRepository;
+    private final BinaryContentStorage binaryContentStorage;
+    private final BinaryContentMapper binaryContentMapper;
 
     @Override
-    public BinaryContent findByID(UUID id){
-        return bcr.findById(id).stream().findFirst().orElseThrow(
+    public BinaryContentDto findByID(UUID id){
+        BinaryContent bc = binaryContentRepository.findById(id).stream().findFirst().orElseThrow(
                 () -> new DiscodeitException("Content not existed ","BinaryContent",404)
         );
+
+        return binaryContentMapper.toDto(bc,getDataFromId(id));
     }
 
     @Override
-    public List<BinaryContent> findAllByIdIn(List<UUID> ids){
+    public List<BinaryContentDto> findAllByIdIn(List<UUID> ids){
         return ids.stream()
-                .map(id -> bcr.findById(id).stream().findFirst().orElse(null))
+                .map(id -> {
+                    BinaryContent bc = binaryContentRepository.findById(id).orElse(null);
+                    if (bc != null){
+                        return binaryContentMapper.toDto(bc,getDataFromId(id));
+                    }
+                    return null;
+                })
                 .filter(Objects::nonNull)
                 .toList();
     }
@@ -36,7 +50,17 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     @Transactional
     public void delete(UUID id){
-        bcr.deleteById(id);
+        binaryContentRepository.deleteById(id);
+    }
+
+    private byte[] getDataFromId(UUID id){
+        byte[] data = null;
+        try{
+            data = binaryContentStorage.get(id).readAllBytes();
+        } catch(IOException e){
+            throw new RuntimeException(e);
+        }
+        return data;
     }
 
 }

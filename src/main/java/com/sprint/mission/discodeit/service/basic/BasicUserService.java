@@ -17,6 +17,7 @@ import com.sprint.mission.discodeit.service.UserService;
 import java.time.Instant;
 import java.util.*;
 
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,17 +33,23 @@ public class BasicUserService implements UserService {
     private final JPAUserStatusRepository JPAUserStatusRepository;
     private final JPABinaryContentRepository binaryContentRepository;
     private final UserMapper userMapper;
+    private final BinaryContentStorage binaryContentStorage;
 
 
     private BinaryContent profileIdFromOBCC(Optional<BinaryContentCreate> obcc){
         return obcc.map(bcc -> {
+            // add for Compatibility DB with localstorage.
+            byte[] dumi = {0x40};
+
             BinaryContent bc = new BinaryContent(
                     bcc.filename(),
                     bcc.contentType(),
                     bcc.size(),
-                    bcc.content()
+                    dumi
             );
-            return binaryContentRepository.save(bc);
+            binaryContentRepository.save(bc);
+            binaryContentStorage.put(bc.getId(),obcc.get().content());
+            return bc;
         }).orElse(null);
     }
 

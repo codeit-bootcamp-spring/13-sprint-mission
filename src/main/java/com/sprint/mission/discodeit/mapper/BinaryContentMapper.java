@@ -18,4 +18,15 @@ public class BinaryContentMapper {
                 , binaryContent.getBytes()
         );
     }
+
+    public BinaryContentDto toDto(BinaryContent binaryContent,byte[] content) {
+        return new BinaryContentDto(
+                binaryContent.getId()
+                , binaryContent.getFileName()
+                , binaryContent.getSize()
+                , binaryContent.getContentType()
+                , content
+        );
+    }
+
 }
