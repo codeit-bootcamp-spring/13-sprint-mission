@@ -4,9 +4,7 @@ import com.sprint.mission.discodeit.dto.request.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.UserFindResponse;
-import com.sprint.mission.discodeit.dto.response.UserStatusUpdateResponse;
-import com.sprint.mission.discodeit.dto.response.UserUpdateResponse;
+import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.service.UserService;
@@ -42,10 +40,10 @@ public class UserController {
             method = RequestMethod.POST,
             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}
     )
-    public ResponseEntity<User> createUser(@Valid @RequestPart("userCreateRequest") UserCreateRequest request,
+    public ResponseEntity<UserDto> createUser(@Valid @RequestPart("userCreateRequest") UserCreateRequest request,
                                            @RequestPart(value = "profile", required = false) MultipartFile profile) {
 
-        User createdUser = userService.createUser(request, profile);
+        UserDto createdUser = userService.createUser(request, profile);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
@@ -54,8 +52,8 @@ public class UserController {
     @Operation(summary = "전체 User 목록 조회")
     @ApiResponse(responseCode = "200", description = "User 목록 조회 성공")
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<List<UserFindResponse>> findAll() {
-        List<UserFindResponse> responseList = userService.findAllUsers();
+    public ResponseEntity<List<UserDto>> findAll() {
+        List<UserDto> responseList = userService.findAllUsers();
 
         return ResponseEntity.ok().body(responseList);
     }
@@ -68,12 +66,12 @@ public class UserController {
             method = RequestMethod.PATCH,
             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}
     )
-    public ResponseEntity<User> updateUser(@Parameter(description = "수정할 User ID", required = true)
+    public ResponseEntity<UserDto> updateUser(@Parameter(description = "수정할 User ID", required = true)
                                            @PathVariable UUID userId,
                                            @Valid @RequestPart("userUpdateRequest") UserUpdateRequest request,
                                            @RequestPart(value = "profile", required = false) MultipartFile profile) {
 
-        User response = userService.updateUser(userId, request, profile);
+        UserDto response = userService.updateUser(userId, request, profile);
 
         return ResponseEntity.ok().body(response);
     }
@@ -82,10 +80,10 @@ public class UserController {
     @Operation(summary = "User 온라인 상태 업데이트")
     @ApiResponse(responseCode = "200", description = "User 온라인 상태가 성공적으로 업데이트됨")
     @RequestMapping(value = "/{userId}/userStatus", method = RequestMethod.PATCH)
-    public ResponseEntity<UserStatus> updateUserStatusByUserId(@Parameter(description = "상태를 변경할 User ID", required = true)
+    public ResponseEntity<UserStatusDto> updateUserStatusByUserId(@Parameter(description = "상태를 변경할 User ID", required = true)
                                                                @PathVariable UUID userId,
                                                                @Valid @RequestBody UserStatusUpdateRequest request) {
-        UserStatus response = userStatusService.updateUserStatusByUserId(userId, request);
+        UserStatusDto response = userStatusService.updateUserStatusByUserId(userId, request);
 
         return ResponseEntity.ok().body(response);
     }

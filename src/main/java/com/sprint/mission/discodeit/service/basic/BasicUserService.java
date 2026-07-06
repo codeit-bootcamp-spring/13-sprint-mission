@@ -2,9 +2,7 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.dto.response.UserFindResponse;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.DuplicateResourceException;
 import com.sprint.mission.discodeit.exception.FileException;
@@ -189,7 +187,7 @@ public class BasicUserService implements UserService {
 
     //유저가 작성한 메세지 검색 및 삭제
     private void deleteUserMessages(UUID userId) {
-        List<Message> messageList = messageRepository.findAllByUserId(userId);
+        List<Message> messageList = messageRepository.findAllByAuthorId(userId);
         for (Message message : messageList) {
             for (BinaryContent attachment : message.getAttachments()) {
                 binaryContentRepository.deleteById(attachment.getId());

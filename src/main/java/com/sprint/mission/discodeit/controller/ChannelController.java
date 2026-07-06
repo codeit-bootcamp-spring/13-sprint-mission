@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.controller;
 import com.sprint.mission.discodeit.dto.request.PublicChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.dto.response.ChannelFindResponse;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.service.ChannelService;
@@ -31,8 +32,8 @@ public class ChannelController {
     @Operation(summary = "Private Channel 생성")
     @ApiResponse(responseCode = "201", description = "Private Channel이 성공적으로 생성됨")
     @RequestMapping(value = "/private", method = RequestMethod.POST)
-    public ResponseEntity<Channel> createPrivateChannel(@Valid @RequestBody PrivateChannelCreateRequest request) {
-        Channel createdChannel = channelService.createPrivateChannel(request);
+    public ResponseEntity<ChannelDto> createPrivateChannel(@Valid @RequestBody PrivateChannelCreateRequest request) {
+        ChannelDto createdChannel = channelService.createPrivateChannel(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(createdChannel);
     }
@@ -41,8 +42,8 @@ public class ChannelController {
     @Operation(summary = "Public Channel 생성")
     @ApiResponse(responseCode = "201", description = "Public Channel이 성공적으로 생성됨")
     @RequestMapping(value = "/public", method = RequestMethod.POST)
-    public ResponseEntity<Channel> createPublicChannel(@Valid @RequestBody PublicChannelCreateRequest request) {
-        Channel createdChannel = channelService.createPublicChannel(request);
+    public ResponseEntity<ChannelDto> createPublicChannel(@Valid @RequestBody PublicChannelCreateRequest request) {
+        ChannelDto createdChannel = channelService.createPublicChannel(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(createdChannel);
     }
@@ -51,9 +52,9 @@ public class ChannelController {
     @Operation(summary = "User가 참여 중인 Channel 목록 조회")
     @ApiResponse(responseCode = "200", description = "Channel 목록 조회 성공")
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<List<ChannelFindResponse>> findChannelsByUser(@Parameter(description = "조회할 User ID", required = true)
+    public ResponseEntity<List<ChannelDto>> findChannelsByUser(@Parameter(description = "조회할 User ID", required = true)
                                                                         @RequestParam UUID userId) {
-        List<ChannelFindResponse> responseList = channelService.findAllByUserId(userId);
+        List<ChannelDto> responseList = channelService.findAllByUserId(userId);
 
         return ResponseEntity.ok().body(responseList);
     }
@@ -62,10 +63,10 @@ public class ChannelController {
     @Operation(summary = "Channel 정보 수정")
     @ApiResponse(responseCode = "200", description = "Channel 정보가 성공적으로 수정됨")
     @RequestMapping(value = "/{channelId}", method = RequestMethod.PATCH)
-    public ResponseEntity<Channel> updateChannel(@Parameter(description = "수정할 Channel ID", required = true)
+    public ResponseEntity<ChannelDto> updateChannel(@Parameter(description = "수정할 Channel ID", required = true)
                                                  @PathVariable UUID channelId,
                                                  @Valid @RequestBody PublicChannelUpdateRequest request) {
-        Channel response = channelService.updateChannel(channelId, request);
+        ChannelDto response = channelService.updateChannel(channelId, request);
 
         return ResponseEntity.ok().body(response);
     }

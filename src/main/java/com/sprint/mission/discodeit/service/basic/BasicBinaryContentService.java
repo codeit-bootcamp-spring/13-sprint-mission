@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
 import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     //필드
     private final BinaryContentRepository binaryContentRepository;
     private final BinaryContentMapper binaryContentMapper;
+    private final BinaryContentStorage binaryContentStorage;
 
     //interface
     @Override
@@ -36,10 +38,11 @@ public class BasicBinaryContentService implements BinaryContentService {
             binaryContent = new BinaryContent(
                     request.file().getOriginalFilename(),
                     (long) request.file().getBytes().length,
-                    request.file().getContentType(),
-                    request.file().getBytes()
+                    request.file().getContentType()
             );
             binaryContent = binaryContentRepository.save(binaryContent);
+            binaryContentStorage.put(binaryContent.getId(), request.file().getBytes());
+
             log.info("BinaryContent가 생성됨.");
 
         } catch (IOException e) {
