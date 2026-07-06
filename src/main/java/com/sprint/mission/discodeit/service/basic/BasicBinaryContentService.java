@@ -54,7 +54,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     }
 
     private byte[] getDataFromId(UUID id){
-        byte[] data = null;
+        byte[] data;
         try{
             data = binaryContentStorage.get(id).readAllBytes();
         } catch(IOException e){

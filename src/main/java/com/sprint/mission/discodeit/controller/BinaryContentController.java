@@ -40,6 +40,6 @@ public class BinaryContentController implements BinaryContentControllerDoc {
         return binaryContentStorage.download(
                 binaryContentService.findByID(binaryContentId)
         );
-    };
+    }
 
 }
