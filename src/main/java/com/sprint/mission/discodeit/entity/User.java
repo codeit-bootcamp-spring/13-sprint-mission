@@ -22,12 +22,12 @@ public class User extends BaseUpdatableEntity {
     @Column(nullable = false)
     private String password;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_id",unique = true)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     private BinaryContent profile;
 
-    @OneToOne(mappedBy = "user_status", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToOne(mappedBy = "user_status", cascade = CascadeType.ALL, orphanRemoval = true)
     private UserStatus status;
 
     public User (

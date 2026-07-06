@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.controller.docs;
 
-import com.sprint.mission.discodeit.dto.input.MessageCreateRequest;
-import com.sprint.mission.discodeit.dto.input.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.entity.Message;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

@@ -1,0 +1,19 @@
+package com.sprint.mission.discodeit.mapper;
+
+import com.sprint.mission.discodeit.dto.response.UserStatusDto;
+import com.sprint.mission.discodeit.entity.UserStatus;
+import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Controller;
+
+@Controller
+@NoArgsConstructor
+public class UserStatusMapper {
+
+    public UserStatusDto toDto(UserStatus userStatus) {
+        return new UserStatusDto(
+                userStatus.getId()
+                ,userStatus.getUser().getId()
+                ,userStatus.getLastActiveAt()
+        );
+    }
+}

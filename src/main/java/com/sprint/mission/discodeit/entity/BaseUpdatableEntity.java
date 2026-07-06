@@ -14,9 +14,13 @@ import java.time.Instant;
 @Setter
 @Getter
 @MappedSuperclass
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class BaseUpdatableEntity extends BaseEntity {
     @Column()
     @LastModifiedDate
     private Instant updatedAt;
+
+    protected BaseUpdatableEntity() {
+        super();
+        this.updatedAt = Instant.now();
+    }
 }

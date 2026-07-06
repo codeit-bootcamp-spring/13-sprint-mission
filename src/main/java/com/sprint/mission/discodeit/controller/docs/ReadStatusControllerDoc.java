@@ -1,14 +1,13 @@
 package com.sprint.mission.discodeit.controller.docs;
 
-import com.sprint.mission.discodeit.dto.input.ReadStatusCreateRequest;
-import com.sprint.mission.discodeit.dto.input.ReadStatusUpdateRequest;
-import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.dto.request.ReadStatusCreateRequest;
+import com.sprint.mission.discodeit.dto.request.ReadStatusUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.ReadStatusDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +25,7 @@ public interface ReadStatusControllerDoc {
             value = "",
             method = RequestMethod.GET
     )
-    ResponseEntity<List<ReadStatus>> findAllByUserId(
+    ResponseEntity<List<ReadStatusDto>> findAllByUserId(
             @RequestParam(value = "userId") UUID userId
     );
 
@@ -54,7 +53,7 @@ public interface ReadStatusControllerDoc {
             value = "",
             method = RequestMethod.POST
     )
-    ResponseEntity<ReadStatus> create(
+    ResponseEntity<ReadStatusDto> create(
             @RequestBody ReadStatusCreateRequest rscr
     );
 
@@ -71,7 +70,7 @@ public interface ReadStatusControllerDoc {
             )
     })
     @RequestMapping(value = "/{readStatusId}", method = RequestMethod.PATCH)
-    ResponseEntity<ReadStatus> update(
+    ResponseEntity<ReadStatusDto> update(
             @PathVariable UUID readStatusId,
             @RequestBody ReadStatusUpdateRequest rsur
     );

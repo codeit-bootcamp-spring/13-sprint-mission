@@ -2,9 +2,9 @@ package com.sprint.mission.discodeit.controller;
 
 
 import com.sprint.mission.discodeit.controller.docs.MessageControllerDoc;
-import com.sprint.mission.discodeit.dto.input.BinaryContentCreate;
-import com.sprint.mission.discodeit.dto.input.MessageCreateRequest;
-import com.sprint.mission.discodeit.dto.input.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.request.BinaryContentCreate;
+import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;

@@ -1,12 +1,13 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.input.LoginRequest;
+import com.sprint.mission.discodeit.dto.request.LoginRequest;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.JPAUserRepository;
 
 import com.sprint.mission.discodeit.service.AuthService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,9 +15,10 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class BasicAuthService implements AuthService {
     private final JPAUserRepository JPAUserRepository;
+    private final UserMapper userMapper;
 
     @Override
-    public User login(LoginRequest loginRequest){
+    public UserDto login(LoginRequest loginRequest){
 
         User user = JPAUserRepository.findByEmail(loginRequest.username()).stream().findFirst()
                 .orElseThrow(
@@ -34,6 +36,6 @@ public class BasicAuthService implements AuthService {
                     400
             );
         }
-        return user;
+        return userMapper.toDto(user);
     }
 }
