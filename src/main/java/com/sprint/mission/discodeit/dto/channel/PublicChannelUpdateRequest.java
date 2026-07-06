@@ -10,9 +10,9 @@ import lombok.ToString;
 @Getter
 @ToString
 @AllArgsConstructor
-@Schema(description = "Public Channel 생성 정보")
-public class PublicChannelCreateRequest {
+@Schema(description = "수정할 Channel 정보")
+public class PublicChannelUpdateRequest { // 제공된 API 스펙에 맞추어 변경
 
-  private String name;
-  private String description; // 기존 로직 유지
+  private String newName;
+  private String newDescription;
 }
