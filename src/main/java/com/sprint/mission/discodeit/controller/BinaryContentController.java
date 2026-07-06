@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.response.BinaryContentResponse;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/binary-contents")
+@RequestMapping("/api/binaryContents")
 public class BinaryContentController {
 
     private final BinaryContentService binaryContentService;
@@ -20,20 +21,22 @@ public class BinaryContentController {
     // [ ] 바이너리 파일을 1개 또는 여러 개 조회할 수 있다.
 
     // 단건 조회
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public BinaryContentResponse getBinaryContentById(@PathVariable UUID id) {
-        return binaryContentService.find(id)
+    @GetMapping("/{binaryContentId}") // 💡 스펙의 경로 변수명({binaryContentId})과 일치시켰습니다.
+    public ResponseEntity<BinaryContentResponse> getBinaryContentById(@PathVariable UUID binaryContentId) {
+        BinaryContentResponse response = binaryContentService.find(binaryContentId)
                 .orElseThrow(() -> new DiscodeitException.FileNotFoundException("해당 파일을 찾을 수 없습니다."));
+        return ResponseEntity.ok(response);
     }
 
     // 다건 조회
-    @RequestMapping(method = RequestMethod.GET)
-    public List<BinaryContentResponse>  getBinaryContents
-            (@RequestParam(required = false) List<UUID> ids) {
-        if (ids != null && !ids.isEmpty()) {
-            return binaryContentService.findAllByIdIn(ids);
+    @GetMapping
+    public ResponseEntity<List<BinaryContentResponse>> getBinaryContents(
+            @RequestParam("binaryContentIds") List<UUID> binaryContentIds) {
+
+        if (binaryContentIds != null && !binaryContentIds.isEmpty()) {
+            return ResponseEntity.ok(binaryContentService.findAllByIdIn(binaryContentIds));
         }
-        return List.of();
+        return ResponseEntity.ok(List.of());
     }
 
 }

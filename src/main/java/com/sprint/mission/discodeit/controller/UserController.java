@@ -2,59 +2,68 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.request.UserRequest;
 import com.sprint.mission.discodeit.dto.response.UserResponse;
-import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 public class UserController {
 
     private final UserService userService;
 
     // 1. 사용자 등록
-    @RequestMapping(method = RequestMethod.POST)
-    public UserResponse createUser(@RequestBody UserRequest userRequest) {
-        return userService.create(userRequest);
-    }
-/*
-    // 2. 특정 사용자 (단건) 조회 -> ?
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public UserResponse getUser(@PathVariable UUID id) {
-        return userService.findById(id)
-                .orElseThrow(() -> new DiscodeitException.UserNotFoundException("해당 사용자를 찾을 수 없습니다."));
-    }
- */
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserResponse> createUser(
+            @RequestPart("userCreateRequest") UserRequest userRequest,
+            @RequestPart(value = "profile", required = false) MultipartFile profile) {
 
-    // 3. 전체 사용자 조회
-    @RequestMapping(method = RequestMethod.GET)
-    public List<UserResponse> getAllUsers() {
-        return userService.findAll();
+        UserResponse response = userService.create(userRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // 4. 사용자 정보 수정
-    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
-    public UserResponse updateUser(@PathVariable UUID id, @RequestBody UserRequest userRequest) {
-        return userService.update(id, userRequest);
+    // 2. 전체 사용자 조회
+    @GetMapping
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        List<UserResponse> responses = userService.findAll();
+        return ResponseEntity.ok(responses);
     }
 
-    // 5. 사용자 삭제
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
-    public void deleteUser(@PathVariable UUID id) {
-        userService.delete(id);
+    // 3. 사용자 정보 수정
+    @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable("userId") UUID userId,
+            @RequestPart("userUpdateRequest") UserRequest userRequest,
+            @RequestPart(value = "profile", required = false) MultipartFile profile) {
+
+        UserResponse response = userService.update(userId, userRequest);
+        return ResponseEntity.ok(response);
     }
 
-    // 6.
+    // 4. 사용자 삭제
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<Void> deleteUser(@PathVariable("userId") UUID userId) {
+        userService.delete(userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // 5.
     // [ ] 사용자의 온라인 상태를 업데이트할 수 있다.
-    @RequestMapping(value = "/{id}/status", method = RequestMethod.PATCH)
-    public UserResponse updateUserStatus
-    (@PathVariable UUID id, @RequestBody UserRequest request) {
-        return userService.update(id, request);
+    @PatchMapping("/{userId}/userStatus")
+    public ResponseEntity<UserResponse> updateUserStatus(
+            @PathVariable("userId") UUID userId,
+            @RequestBody UserRequest request) {
+
+        UserResponse response = userService.update(userId, request);
+        return ResponseEntity.ok(response);
     }
 }
 
