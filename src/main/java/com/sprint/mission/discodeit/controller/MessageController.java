@@ -4,6 +4,7 @@ package com.sprint.mission.discodeit.controller;
 import com.sprint.mission.discodeit.controller.docs.MessageControllerDocs;
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.message.MessageDto;
 import com.sprint.mission.discodeit.dto.message.MessageResponse;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.service.MessageService;
@@ -30,8 +31,8 @@ public class MessageController implements MessageControllerDocs {
 
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<MessageResponse> createMessage(@RequestPart MessageCreateRequest messageCreateRequest,
-                                                         @RequestPart(required = false) List<MultipartFile> attachments) {
+    public ResponseEntity<MessageDto> createMessage(@RequestPart MessageCreateRequest messageCreateRequest,
+                                                    @RequestPart(required = false) List<MultipartFile> attachments) {
         List<BinaryContentCreateRequest> attachmentRequests = attachments == null ?
                 new ArrayList<>() :
                 attachments.stream().map(FileUtils::toRequest)
@@ -39,15 +40,15 @@ public class MessageController implements MessageControllerDocs {
                 .map(Optional::get)
                 .collect(Collectors.toList());
 
-        MessageResponse messageResponse = messageService.create(messageCreateRequest, attachmentRequests);
-        return ResponseEntity.status(HttpStatus.CREATED).body(messageResponse);
+        MessageDto messageDto = messageService.create(messageCreateRequest, attachmentRequests);
+        return ResponseEntity.status(HttpStatus.CREATED).body(messageDto);
     }
 
 
     @PatchMapping("/{messageId}")
-    public ResponseEntity<MessageResponse> updateMessage(@PathVariable UUID messageId, @RequestBody MessageUpdateRequest request) {
-        MessageResponse messageResponse = messageService.updateMessage(messageId, request);
-        return ResponseEntity.status(HttpStatus.OK).body(messageResponse);
+    public ResponseEntity<MessageDto> updateMessage(@PathVariable UUID messageId, @RequestBody MessageUpdateRequest request) {
+        MessageDto messageDto = messageService.updateMessage(messageId, request);
+        return ResponseEntity.status(HttpStatus.OK).body(messageDto);
     }
 
     @DeleteMapping("/{messageId}")
@@ -57,8 +58,8 @@ public class MessageController implements MessageControllerDocs {
     }
 
     @GetMapping()
-    public ResponseEntity<List<MessageResponse>> getAllMessages(@RequestParam UUID channelId) {
-        List<MessageResponse> allByChannelId = messageService.findAllByChannelId(channelId);
+    public ResponseEntity<List<MessageDto>> getAllMessages(@RequestParam UUID channelId) {
+        List<MessageDto> allByChannelId = messageService.findAllByChannelId(channelId);
         return ResponseEntity.status(HttpStatus.OK).body(allByChannelId);
     }
 

@@ -1,10 +1,7 @@
 package com.sprint.mission.discodeit.controller.docs;
 
 
-import com.sprint.mission.discodeit.dto.channel.ChannelResponse;
-import com.sprint.mission.discodeit.dto.channel.ChannelUpdateRequest;
-import com.sprint.mission.discodeit.dto.channel.PrivateChannelRequest;
-import com.sprint.mission.discodeit.dto.channel.PublicChannelRequest;
+import com.sprint.mission.discodeit.dto.channel.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -24,7 +21,7 @@ public interface ChannelControllerDocs {
             @ApiResponse(responseCode = "201", description = "생성 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청")
     })
-    public ResponseEntity<ChannelResponse> createChannel(@RequestBody PublicChannelRequest publicRequest);
+    public ResponseEntity<ChannelDto> createChannel(@RequestBody PublicChannelRequest publicRequest);
 
     @Operation(summary = "Private 채널 생성 API")
     @PostMapping("/private")
@@ -32,7 +29,7 @@ public interface ChannelControllerDocs {
             @ApiResponse(responseCode = "201", description = "생성 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청")
     })
-    public ResponseEntity<ChannelResponse> createChannel(@RequestBody PrivateChannelRequest privateRequest);
+    public ResponseEntity<ChannelDto> createChannel(@RequestBody PrivateChannelRequest privateRequest);
 
     @Operation(summary = "Public 채널 수정 API")
     @PatchMapping("/{channelId}")
@@ -40,7 +37,7 @@ public interface ChannelControllerDocs {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "404", description = "존재하지 않음")
     })
-    public ResponseEntity<ChannelResponse> updateChannel(@PathVariable UUID channelId,
+    public ResponseEntity<ChannelDto> updateChannel(@PathVariable UUID channelId,
                                                          @RequestBody ChannelUpdateRequest request);
 
     @Operation(summary = "채널 삭제 API")
@@ -57,6 +54,6 @@ public interface ChannelControllerDocs {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "404", description = "존재하지 않음")
     })
-    public ResponseEntity<List<ChannelResponse>> findAllChannel(@RequestParam UUID userId);
+    public ResponseEntity<List<ChannelDto>> findAllChannel(@RequestParam UUID userId);
 
 }

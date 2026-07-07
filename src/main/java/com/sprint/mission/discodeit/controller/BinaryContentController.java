@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.controller.docs.BinaryContentControllerDocs;
+import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.service.BinaryContentService;
@@ -27,8 +28,8 @@ public class BinaryContentController implements BinaryContentControllerDocs {
 
 
     @GetMapping()
-    public ResponseEntity<List<BinaryContentResponse>>findAllByUserId(@RequestParam List<UUID> binaryContentIds) {
-        List<BinaryContentResponse> allByIdIn = binaryContentService.findAllByIdIn(binaryContentIds);
+    public ResponseEntity<List<BinaryContentDto>> findAllByUserId(@RequestParam List<UUID> binaryContentIds) {
+        List<BinaryContentDto> allByIdIn = binaryContentService.findAllByIdIn(binaryContentIds);
         return ResponseEntity.status(HttpStatus.OK).body(allByIdIn);
     }
 }

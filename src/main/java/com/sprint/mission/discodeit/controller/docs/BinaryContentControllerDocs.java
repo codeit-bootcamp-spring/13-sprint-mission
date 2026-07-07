@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.controller.docs;
 
 
+import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,6 +34,6 @@ public interface BinaryContentControllerDocs {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "404", description = "존재하지 않음")
     })
-    public ResponseEntity<List<BinaryContentResponse>>findAllByUserId(
+    public ResponseEntity<List<BinaryContentDto>>findAllByUserId(
             @RequestParam List<UUID> binaryContentIds);
 }

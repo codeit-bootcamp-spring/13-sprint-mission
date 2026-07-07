@@ -2,11 +2,12 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
-import com.sprint.mission.discodeit.dto.user.UserResponse;
+import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -31,24 +32,12 @@ public class BasicUserService implements UserService {
     private final UserStatusRepository userStatusRepository;
     private final BinaryContentRepository binaryContentRepository;
     private final ReadStatusRepository readStatusRepository;
-
-    private UserResponse toResponse(User user, UserStatus userStatus) {
-        return new UserResponse(
-                user.getId(),
-                user.getCreatedAt(),
-                user.getUpdatedAt(),
-                user.getUsername(),
-                user.getEmail(),
-                Optional.ofNullable(user.getProfile()).map(BinaryContent::getId).orElse(null),
-                userStatus != null && userStatus.isOnline() // null이면 (false)오프라인
-        );
-    }
-
+    private final UserMapper userMapper;
 
 
     @Override
-    public UserResponse createUser(UserCreateRequest userCreateRequest,
-                                   BinaryContentCreateRequest profileRequest) {
+    public UserDto createUser(UserCreateRequest userCreateRequest,
+                              BinaryContentCreateRequest profileRequest) {
 
         //userName 중복 검사
         if (userRepository.existsByUsername(userCreateRequest.username())){
@@ -73,13 +62,13 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = new UserStatus(user);
         userStatusRepository.save(userStatus);
         log.info("유저 생성 완료 - name: {}, userId: {}", userCreateRequest.username(),  user.getId());
-        return  toResponse(user, userStatus);
+        return  userMapper.toDto(user, userStatus);
 
     }
 
     @Transactional(readOnly = true)
     @Override
-    public UserResponse findByUserId(UUID userId) {
+    public UserDto findByUserId(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자 입니다."));
 
@@ -88,12 +77,12 @@ public class BasicUserService implements UserService {
 
         log.info("유저 조회 - name: {}", user.getUsername());
 
-        return toResponse(user, userStatus);
+        return userMapper.toDto(user, userStatus);
     }
 
     @Transactional(readOnly = true)
     @Override
-    public List<UserResponse> findAllUser() {
+    public List<UserDto> findAllUser() {
         List<User> users = userRepository.findAll();
         if (users.isEmpty()) {
             return  new ArrayList<>();
@@ -103,13 +92,13 @@ public class BasicUserService implements UserService {
                 .map(user -> {
                     UserStatus userStatus = userStatusRepository.findByUserId(user.getId())
                             .orElse(null);
-                    return toResponse(user, userStatus);
+                    return userMapper.toDto(user, userStatus);
                 })
                 .collect(Collectors.toList());
     }
 
     @Override
-    public UserResponse updateUser(UUID userId, UserUpdateRequest userUpdateRequest, BinaryContentCreateRequest profileRequest) {
+    public UserDto updateUser(UUID userId, UserUpdateRequest userUpdateRequest, BinaryContentCreateRequest profileRequest) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자입니다."));
 
@@ -150,7 +139,7 @@ public class BasicUserService implements UserService {
 
         log.info("유저 수정 완료 -  name: {}, userId: {}", user.getUsername(), user.getId());
 
-        return toResponse(user, userStatus);
+        return userMapper.toDto(user, userStatus);
     }
 
     @Override

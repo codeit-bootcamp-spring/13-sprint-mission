@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.controller.docs;
 
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.message.MessageDto;
 import com.sprint.mission.discodeit.dto.message.MessageResponse;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,7 +27,7 @@ public interface MessageControllerDocs {
             @ApiResponse(responseCode = "201", description = "생성 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청")
     })
-    public ResponseEntity<MessageResponse> createMessage(
+    public ResponseEntity<MessageDto> createMessage(
             @RequestPart MessageCreateRequest messageCreateRequest,
             @RequestPart(required = false)List<MultipartFile> attachments);
 
@@ -37,7 +38,7 @@ public interface MessageControllerDocs {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "404", description = "존재하지 않음")
     })
-    public ResponseEntity<MessageResponse> updateMessage(
+    public ResponseEntity<MessageDto> updateMessage(
             @PathVariable UUID messageId, @RequestBody MessageUpdateRequest request);
 
     @Operation(summary = "메시지 삭제 API")
@@ -54,6 +55,6 @@ public interface MessageControllerDocs {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "404", description = "존재하지 않음")
     })
-    public ResponseEntity<List<MessageResponse>> getAllMessages(@RequestParam UUID channelId);
+    public ResponseEntity<List<MessageDto>> getAllMessages(@RequestParam UUID channelId);
 
 }
