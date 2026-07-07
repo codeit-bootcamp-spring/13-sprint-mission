@@ -1,47 +1,29 @@
 package com.sprint.mission.discodeit.dto.response;
 
+import com.sprint.mission.discodeit.dto.*;
 import com.sprint.mission.discodeit.entity.*;
 
+import java.time.*;
 import java.util.*;
 
 public record UserResponse(
         UUID id,
+        Instant createdAt,
+        Instant updatedAt,
         String username,
         String email,
-        boolean online,
-        UUID profileId
-        ) {
+        UUID profileId,
+        Boolean online) {
 
     public static UserResponse from(User user, UserStatus userStatus, BinaryContent profile) {
         return new UserResponse(
                 user.getId(),
+                user.getCreatedAt(),
+                user.getUpdatedAt(),
                 user.getUserName(),
                 user.getEmail(),
-                userStatus != null && userStatus.isOnline(),
-                profile == null ? null : profile.getId()
+                profile == null ? null : profile.getId(),
+                userStatus != null && userStatus.isOnline()
         );
     }
-
-    @Override
-    public String toString() {
-        return """
-                유저 정보
-                ====================
-                ID      : %s
-                Name    : %s
-                Email   : %s
-                Online  : %s
-                Profile : %s
-                ====================
-                """
-                .formatted(
-                        id,
-                        username,
-                        email,
-                        online,
-                        profileId == null ? "없음" : profileId
-                );
-    }
-
-
 }

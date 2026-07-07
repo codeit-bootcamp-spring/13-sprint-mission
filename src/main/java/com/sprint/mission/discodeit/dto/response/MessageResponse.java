@@ -37,24 +37,4 @@ public record MessageResponse(
        );
     }
 
-    @Override
-    public String toString() {
-        return """
-            메세지 정보
-            ====================
-            ID          : %s
-            Channel ID  : %s
-            Author ID   : %s
-            Content     : %s
-            Attachments : %s
-            ====================
-            """
-                .formatted(
-                        id,
-                        channelId,
-                        authorId,
-                        content,
-                        attachments == null ? "[]" : attachments
-                );
-    }
 }

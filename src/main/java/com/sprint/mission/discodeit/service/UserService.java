@@ -13,7 +13,7 @@ public interface UserService {
 
     UserResponse find(UUID id);
 
-    List<UserDto> findAll();
+    List<UserResponse> findAll();
 
     UserResponse update(UUID id,UserRequest.UpdateUserRequest request);
 

@@ -105,13 +105,13 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public List<UserDto> findAll() {
+    public List<UserResponse> findAll() {
         return repository.findAll().stream()
                 .map (user -> {
                 UserStatus userStatus = userStatusRepository.findByUserId(user.getId());
                 BinaryContent profile = binaryContentRepository.findByUserId(user.getId());
 
-                return UserDto.from(user, userStatus, profile);
+                return UserResponse.from(user, userStatus, profile);
         }).toList();
     }
 

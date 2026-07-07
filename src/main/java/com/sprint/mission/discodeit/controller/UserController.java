@@ -62,7 +62,7 @@ public class UserController {
     }
 
     @RequestMapping(value = "/findAll", method = RequestMethod.GET)
-    public ResponseEntity<List<UserDto>> findAll() {
+    public ResponseEntity<List<UserResponse>> findAll() {
         return ResponseEntity.ok(userService.findAll());
     }
 
