@@ -3,11 +3,15 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreate;
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.MessageDto;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.mapper.MessageMapper;
+import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.JPABinaryContentRepository;
 import com.sprint.mission.discodeit.repository.JPAChannelRepository;
 import com.sprint.mission.discodeit.repository.JPAMessageRepository;
@@ -16,6 +20,8 @@ import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
 
@@ -32,10 +38,12 @@ public class BasicMessageService implements MessageService {
     private final JPAChannelRepository JPAChannelRepository;
     private final JPABinaryContentRepository binaryContentRepository;
     private final BinaryContentStorage binaryContentStorage;
+    private final PageResponseMapper pageResponseMapper;
+    private final MessageMapper messageMapper;
 
     @Override
     @Transactional
-    public Message createMessage(MessageCreateRequest cmi, Optional<List<BinaryContentCreate>> olbcc){
+    public MessageDto createMessage(MessageCreateRequest cmi, Optional<List<BinaryContentCreate>> olbcc){
 
         User user = JPAUserRepository.findById(cmi.authorId()).orElseThrow(
                 () -> new DiscodeitException(
@@ -52,7 +60,7 @@ public class BasicMessageService implements MessageService {
                 )
         );
 
-        List<BinaryContent> attsId = olbcc.map(
+        List<BinaryContent> atts = olbcc.map(
                 lbcc -> lbcc.stream().map(
                         bcc -> {
                             byte[] dumi = {0x40};
@@ -76,21 +84,23 @@ public class BasicMessageService implements MessageService {
                 cmi.content(),
                 channel,
                 user,
-                attsId
+                atts
         );
 
         JPAMessageRepository.save(res);
-        return res;
+        return messageMapper.toDto(res);
     }
 
     @Override
-    public List<Message> findallByChannelId(UUID cannelID){
-        return JPAMessageRepository.findByChannelId(cannelID);
+    public PageResponse<MessageDto> findallByChannelId(UUID cannelID, Pageable pageable){
+
+        return pageResponseMapper.fromSlice(JPAMessageRepository.findByChannelIdOrderByCreatedAtDesc(cannelID,pageable)
+                .map(messageMapper::toDto));
     }
 
     @Override
     @Transactional
-    public Message updateMessageData(UUID id, MessageUpdateRequest umi){
+    public MessageDto updateMessageData(UUID id, MessageUpdateRequest umi){
         Message msg = JPAMessageRepository.findById(id)
                 .orElseThrow(
                         () -> new DiscodeitException("no message by id" + id,"Message",404)
@@ -99,7 +109,7 @@ public class BasicMessageService implements MessageService {
         msg.setContent(umi.newContent());
         msg.setUpdatedAt(Instant.now());
         JPAMessageRepository.save(msg);
-        return msg;
+        return messageMapper.toDto(msg);
     }
 
     @Override

@@ -3,9 +3,10 @@ package com.sprint.mission.discodeit.mapper;
 import com.sprint.mission.discodeit.dto.response.ReadStatusDto;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import lombok.NoArgsConstructor;
-import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Component;
 
-@Controller
+
+@Component
 @NoArgsConstructor
 public class ReadStatusMapper {
 

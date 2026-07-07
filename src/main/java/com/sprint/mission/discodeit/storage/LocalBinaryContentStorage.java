@@ -9,16 +9,16 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
 
-@Controller
+@Component
 @NoArgsConstructor
-@ConditionalOnProperty(prefix = "discodeit.storage.type", value = "local")
+@ConditionalOnProperty(prefix = "discodeit.storage", name = "type", havingValue = "local")
 public class LocalBinaryContentStorage implements BinaryContentStorage {
     @Value(value = "${discodeit.storage.local.root-path}")
     private Path root;
@@ -47,21 +47,21 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
         return id;
     }
     @Override
-    public InputStream get(UUID id) {
-        try (
-                InputStream in = Files.newInputStream(resolvePath(id));
-                BufferedInputStream bin= new BufferedInputStream(in)
-                ){
-            return bin;
-        } catch (IOException e){
-            throw new RuntimeException(e);
-        }
+    public InputStream get(UUID id) throws IOException{
+        InputStream in = Files.newInputStream(resolvePath(id));
+        BufferedInputStream bin = new BufferedInputStream(in);
+        return bin;
     }
     @Override
     public ResponseEntity<Resource> download(BinaryContentDto binaryContentDto) {
-        return ResponseEntity.status(HttpStatus.OK).body(
-                new InputStreamResource(get(binaryContentDto.id()))
-        );
+        try{
+            InputStream in = get(binaryContentDto.id());
+            return ResponseEntity.status(HttpStatus.OK).body(
+                    new InputStreamResource(in)
+            );
+        } catch (IOException e){
+            throw new RuntimeException(e);
+        }
     }
 
     private Path resolvePath(UUID id){

@@ -1,11 +1,15 @@
 package com.sprint.mission.discodeit.mapper;
 
+
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.entity.Message;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Component;
 
-@Controller
+import java.util.List;
+
+@Component
 @RequiredArgsConstructor
 public class MessageMapper {
     private final BinaryContentMapper binaryContentMapper;
@@ -19,7 +23,12 @@ public class MessageMapper {
                 ,message.getContent()
                 ,message.getChannel().getId()
                 ,userMapper.toDto(message.getAuthor())
-                ,message.getAttachment().stream().map(binaryContentMapper::toDto).toList()
+                ,attr(message)
         );
+    }
+
+    private List<BinaryContentDto> attr(Message msg){
+        if (msg.getAttachment() == null) return null;
+        return msg.getAttachment().stream().map(binaryContentMapper::toDto).toList();
     }
 }

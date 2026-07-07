@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public record ChannelDto(
         UUID id
-        , ChannelType  channelType
+        , ChannelType type
         , String name
         , String description
         , List<UserDto> participants

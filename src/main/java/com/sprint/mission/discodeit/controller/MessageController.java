@@ -5,10 +5,18 @@ import com.sprint.mission.discodeit.controller.docs.MessageControllerDoc;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreate;
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.MessageDto;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,14 +35,18 @@ import java.util.UUID;
 public class MessageController implements MessageControllerDoc {
 
     public final MessageService messageService;
-
+    public final PageResponseMapper pageResponseMapper;
 
 
     @RequestMapping(value = "", method = RequestMethod.GET)
-    public ResponseEntity<List<Message>> findMessageByChannel(
+    public ResponseEntity<PageResponse<MessageDto>> findMessageByChannel(
             @RequestParam(value = "channelId") UUID channelId
+            ,@PageableDefault(size = 50) Pageable pageable
+//            ,@RequestParam(required = false) Integer page
+//            ,@RequestParam(required = false) Integer size
+//            ,@RequestParam(required = false) List<String> sort
     ){
-        List<Message> res =  messageService.findallByChannelId(channelId);
+        PageResponse<MessageDto> res =  messageService.findallByChannelId(channelId,pageable);
         return ResponseEntity.ok(res);
     }
 
@@ -44,7 +56,7 @@ public class MessageController implements MessageControllerDoc {
             method = RequestMethod.POST,
             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}
     )
-    public ResponseEntity<Message> create(
+    public ResponseEntity<MessageDto> create(
             @RequestPart(value = "messageCreateRequest") MessageCreateRequest mcr,
             @RequestPart(value = "attachments", required = false) List<MultipartFile> att
     ) {
@@ -63,16 +75,16 @@ public class MessageController implements MessageControllerDoc {
         }).toList());
 
 
-        Message res = messageService.createMessage(mcr,lbcc);
+        MessageDto res = messageService.createMessage(mcr,lbcc);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
     @RequestMapping(value = "/{messageId}", method = RequestMethod.PATCH)
-    public ResponseEntity<Message> modifyMessage(
+    public ResponseEntity<MessageDto> modifyMessage(
             @PathVariable UUID messageId,
             @RequestBody MessageUpdateRequest msi
     ) {
-        Message res = messageService.updateMessageData(messageId, msi);
+        MessageDto res = messageService.updateMessageData(messageId, msi);
         return ResponseEntity.ok(res);
     }
 

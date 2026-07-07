@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -56,7 +57,9 @@ public class BasicBinaryContentService implements BinaryContentService {
     private byte[] getDataFromId(UUID id){
         byte[] data;
         try{
-            data = binaryContentStorage.get(id).readAllBytes();
+            InputStream in = binaryContentStorage.get(id);
+            data = in.readAllBytes();
+            in.close();
         } catch(IOException e){
             throw new RuntimeException(e);
         }

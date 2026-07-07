@@ -7,12 +7,13 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.JAPReadStatusRepository;
 import com.sprint.mission.discodeit.repository.JPAMessageRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Component;
+
 
 import java.time.Instant;
 import java.util.List;
 
-@Controller
+@Component
 @RequiredArgsConstructor
 public class ChannelMapper {
     private final JPAMessageRepository messageRepository;

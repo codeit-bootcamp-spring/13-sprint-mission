@@ -39,16 +39,17 @@ public class BasicUserService implements UserService {
     private BinaryContent profileIdFromOBCC(Optional<BinaryContentCreate> obcc){
         return obcc.map(bcc -> {
             // add for Compatibility DB with localstorage.
-            byte[] dumi = {0x40};
+            byte[] dummy = {0x40};
 
             BinaryContent bc = new BinaryContent(
                     bcc.filename(),
                     bcc.contentType(),
                     bcc.size(),
-                    dumi
+                    dummy
             );
             binaryContentRepository.save(bc);
             binaryContentStorage.put(bc.getId(),obcc.get().content());
+            System.out.println("file save");
             return bc;
         }).orElse(null);
     }
@@ -77,9 +78,9 @@ public class BasicUserService implements UserService {
 
 
         User user = new User(
+                cui.username(),
                 cui.email(),
                 cui.password(),
-                cui.username(),
                 profileIdFromOBCC(obcc),
                 null
         );
@@ -125,10 +126,17 @@ public class BasicUserService implements UserService {
                 400
         );}
 
+        System.out.println(obcc);
+        System.out.println("call");
+
         if (uui.newUsername() != null) user.setUsername(uui.newUsername());
         if (uui.newEmail() != null) user.setEmail(uui.newEmail());
         if (uui.newPassword() != null) user.setPassword(uui.newPassword());
-        if (profileIdFromOBCC(obcc) != null) user.setProfile(profileIdFromOBCC(obcc));
+        if (profileIdFromOBCC(obcc) != null) {
+            // db save check
+            BinaryContent bc = profileIdFromOBCC(obcc);
+            user.setProfile(bc);
+        }
         return userMapper.toDto(user);
     }
 

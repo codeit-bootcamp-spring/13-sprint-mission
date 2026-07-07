@@ -32,10 +32,10 @@ public class Message extends BaseUpdatableEntity {
    @ManyToMany(fetch = FetchType.LAZY)
    @JoinTable(
            name = "message_attachments"
-           , joinColumns = @JoinColumn(name = "attachment_id")
-           , inverseJoinColumns = @JoinColumn(name = "message_id")
+           , joinColumns = @JoinColumn(name = "message_id")
+           , inverseJoinColumns = @JoinColumn(name = "attachment_id")
    )
-    private List<BinaryContent> attachment;
+   private List<BinaryContent> attachment;
 
    public  Message(
            String content,

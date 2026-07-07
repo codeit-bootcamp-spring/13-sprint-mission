@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -16,11 +17,10 @@ import java.time.Instant;
 @Table(name= "user_statuses")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserStatus extends BaseUpdatableEntity {
-    // activation timeout ( 5min )
-    private final Integer timeout = 5 * 60 * 1000;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id",unique = true)
+    @JsonIgnore
     private User user;
     @Column(nullable = false)
     private Instant lastActiveAt;
@@ -33,6 +33,8 @@ public class UserStatus extends BaseUpdatableEntity {
 
 
     public boolean online(){
+        // activation timeout ( 5min )
+        int timeout = 5 * 60 * 1000;
         return timeout > Duration.between(lastActiveAt, Instant.now()).abs().toMillis();
     }
 }

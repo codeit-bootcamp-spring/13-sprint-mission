@@ -17,6 +17,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -25,7 +26,6 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class BasicChannelService implements ChannelService {
     private final JPAChannelRepository channelRepository;
-    private final JPAMessageRepository messageRepository;
     private final JAPReadStatusRepository readStatusRepository;
     private final JPAUserRepository userRepository;
     private final ChannelMapper channelMapper;
@@ -51,7 +51,7 @@ public class BasicChannelService implements ChannelService {
                             ,400
                     )
             );
-            readStatusRepository.save(new ReadStatus(user,cnl,null));
+            readStatusRepository.save(new ReadStatus(user,cnl,Instant.now()));
         }
         return channelMapper.toDto(cnl);
     }

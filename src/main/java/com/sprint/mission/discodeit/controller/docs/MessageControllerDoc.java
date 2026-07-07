@@ -2,6 +2,8 @@ package com.sprint.mission.discodeit.controller.docs;
 
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.MessageDto;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.Message;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -9,6 +11,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -26,8 +30,9 @@ public interface MessageControllerDoc {
             @ApiResponse(responseCode = "200",description = "조회 성공")
     )
     @RequestMapping(value = "", method = RequestMethod.GET)
-    ResponseEntity<List<Message>> findMessageByChannel(
+    ResponseEntity<PageResponse<MessageDto>> findMessageByChannel(
             @RequestParam(value = "channelId") UUID channelId
+            ,@PageableDefault(size = 50) Pageable pageable
     );
 
 
@@ -48,7 +53,7 @@ public interface MessageControllerDoc {
             method = RequestMethod.POST,
             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}
     )
-    ResponseEntity<Message> create(
+    ResponseEntity<MessageDto> create(
             @Parameter(content = @Content(mediaType = "application/json"))
             @RequestPart(value = "messageCreateRequest")
             MessageCreateRequest mcr,
@@ -69,7 +74,7 @@ public interface MessageControllerDoc {
             )
     })
     @RequestMapping(value = "/{messageId}", method = RequestMethod.PATCH)
-    ResponseEntity<Message> modifyMessage(
+    ResponseEntity<MessageDto> modifyMessage(
             @PathVariable UUID messageId,
             @RequestBody MessageUpdateRequest msi
     );
