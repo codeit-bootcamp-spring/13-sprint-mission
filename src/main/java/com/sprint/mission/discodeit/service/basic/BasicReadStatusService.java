@@ -79,4 +79,20 @@ public class BasicReadStatusService implements ReadStatusService {
     return readStatusMapper.toDto(readStatus);
   }
 
+  @Override
+  public void delete(UUID id) {
+    ReadStatus readStatus = readStatusRepository.findById(id)
+        .orElseThrow(() -> new ReadStatusNotFoundException(id));
+
+    readStatusRepository.delete(readStatus);
+  }
+
+  @Transactional(readOnly = true)
+  @Override
+  public ReadStatusDto findById(UUID id) {
+    ReadStatus readStatus = readStatusRepository.findById(id)
+        .orElseThrow(() -> new ReadStatusNotFoundException(id));
+
+    return readStatusMapper.toDto(readStatus);
+  }
 }

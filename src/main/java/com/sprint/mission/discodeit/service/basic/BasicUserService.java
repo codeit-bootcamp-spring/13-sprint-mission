@@ -159,12 +159,7 @@ public class BasicUserService implements UserService {
     if (user.getProfile() != null) {
       binaryContentRepository.deleteById(user.getProfile().getId());
     }
-    UserStatus userStatus = userStatusRepository.findByUser_Id(userId).orElse(null);
-    if (userStatus != null) {
-      userStatusRepository.deleteById(userStatus.getId());
-    }
 
     userRepository.delete(user);
-
   }
 }

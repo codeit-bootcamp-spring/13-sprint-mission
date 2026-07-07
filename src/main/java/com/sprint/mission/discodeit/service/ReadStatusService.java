@@ -10,8 +10,12 @@ public interface ReadStatusService {
 
   ReadStatusDto create(ReadStatusCreateRequest request);
 
+  ReadStatusDto findById(UUID id);
+
   List<ReadStatusDto> findAllByUserId(UUID userId);
 
   ReadStatusDto updateLastReadAt(UUID id, ReadStatusUpdateRequest request);
+
+  void delete(UUID id);
 
 }

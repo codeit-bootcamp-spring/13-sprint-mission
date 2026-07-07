@@ -51,6 +51,13 @@ public class UserController {
     return ResponseEntity.ok().body(response);
   }
 
+  @GetMapping(value = "/{userId}")
+  public ResponseEntity<UserDto> findById(@PathVariable("userId") UUID id) {
+    UserDto response = userService.findById(id);
+
+    return ResponseEntity.ok(response);
+  }
+
   @GetMapping
   public ResponseEntity<List<UserDto>> findAll() {
     List<UserDto> all = userService.findAll();

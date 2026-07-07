@@ -13,6 +13,8 @@ public interface MessageService {
 
   MessageDto create(MessageCreateRequest request, List<MultipartFile> attachments);
 
+  MessageDto findById(UUID id);
+
   PageResponse<MessageDto> findAllByChannelId(UUID channelId, Pageable pageable);
 
   MessageDto update(UUID id, MessageUpdateRequest request);

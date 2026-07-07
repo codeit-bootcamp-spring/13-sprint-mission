@@ -9,5 +9,5 @@ public interface UserStatusService {
 
   UserStatusDto updateByUserId(UUID userId, UserStatusUpdateRequest request);
 
-
+  UserStatusDto findByUserId(UUID userId);
 }

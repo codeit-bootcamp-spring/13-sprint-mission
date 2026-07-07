@@ -9,7 +9,9 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.MessageNotFoundException;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
+import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -45,6 +47,7 @@ public class BasicMessageService implements MessageService {
   private final MessageMapper messageMapper;
   private final BinaryContentStorage binaryContentStorage;
   private final PageResponseMapper pageResponseMapper;
+  private final ChannelMapper channelMapper;
 
   @Override
   public MessageDto create(MessageCreateRequest request, List<MultipartFile> attachments) {
@@ -91,6 +94,14 @@ public class BasicMessageService implements MessageService {
     return messageMapper.toDto(message);
   }
 
+  @Transactional(readOnly = true)
+  @Override
+  public MessageDto findById(UUID id) {
+    Message message = messageRepository.findById(id)
+        .orElseThrow(() -> new MessageNotFoundException(id));
+
+    return messageMapper.toDto(message);
+  }
 
   @Transactional(readOnly = true)
   @Override

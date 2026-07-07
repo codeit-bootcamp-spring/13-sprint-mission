@@ -62,6 +62,13 @@ public class MessageController {
     return ResponseEntity.noContent().build();
   }
 
+  @GetMapping("/{messageId}")
+  public ResponseEntity<MessageDto> findById(@PathVariable("messageId") UUID id) {
+    MessageDto response = messageService.findById(id);
+
+    return ResponseEntity.ok(response);
+  }
+
   @GetMapping
   public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(
       @RequestParam UUID channelId,

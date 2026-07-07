@@ -4,14 +4,17 @@ import com.sprint.mission.discodeit.dto.request.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
+import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Channel.ChannelType;
+import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.PrivateChannelUnmodifiableException;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -36,6 +39,7 @@ public class BasicChannelService implements ChannelService {
   private final MessageRepository messageRepository;
   private final UserRepository userRepository;
   private final ChannelMapper channelMapper;
+  private final BinaryContentRepository binaryContentRepository;
 
   @Override
   public ChannelDto createPublicChannel(PublicChannelCreateRequest request) {
@@ -81,6 +85,15 @@ public class BasicChannelService implements ChannelService {
         .toList();
   }
 
+  @Transactional(readOnly = true)
+  @Override
+  public ChannelDto findById(UUID id) {
+    Channel channel = channelRepository.findById(id)
+        .orElseThrow(() -> new ChannelNotFoundException(id));
+
+    return channelMapper.toDto(channel);
+  }
+
   @Override
   public ChannelDto update(UUID id, ChannelUpdateRequest request) {
     Channel channel = channelRepository.findById(id)
@@ -99,11 +112,18 @@ public class BasicChannelService implements ChannelService {
     Channel channel = channelRepository.findById(id)
         .orElseThrow(() -> new ChannelNotFoundException(id));
 
-    messageRepository.findByChannel_Id(id)
-        .forEach(messageRepository::delete);
+    List<Message> messages = messageRepository.findByChannel_Id(id);
 
-    readStatusRepository.findByChannel_Id(id)
-        .forEach(readStatusRepository::delete);
+    for (Message message : messages) {
+      if (message.getAttachments() != null) {
+        for (BinaryContent attachment : message.getAttachments()) {
+          binaryContentRepository.deleteById(attachment.getId());
+        }
+      }
+      messageRepository.delete(message);
+    }
+
+    readStatusRepository.deleteByChannel_Id(id);
 
     channelRepository.delete(channel);
   }

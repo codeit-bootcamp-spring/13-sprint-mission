@@ -60,6 +60,13 @@ public class ChannelController {
     return ResponseEntity.noContent().build();
   }
 
+  @GetMapping("/channelId")
+  public ResponseEntity<ChannelDto> findById(@PathVariable("channelId") UUID id) {
+    ChannelDto response = channelService.findById(id);
+
+    return ResponseEntity.ok(response);
+  }
+
   @GetMapping
   public ResponseEntity<List<ChannelDto>> findAll(@RequestParam UUID userId) {
     List<ChannelDto> responses = channelService.findAllByUserId(userId);

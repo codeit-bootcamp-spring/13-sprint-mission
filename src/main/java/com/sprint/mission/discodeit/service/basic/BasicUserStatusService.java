@@ -33,4 +33,12 @@ public class BasicUserStatusService implements UserStatusService {
     return userStatusMapper.toDto(userStatus);
   }
 
+  @Transactional(readOnly = true)
+  @Override
+  public UserStatusDto findByUserId(UUID userId) {
+    UserStatus userStatus = userStatusRepository.findByUser_Id(userId)
+        .orElseThrow(() -> new UserStatusNotFoundException(userId));
+
+    return userStatusMapper.toDto(userStatus);
+  }
 }
