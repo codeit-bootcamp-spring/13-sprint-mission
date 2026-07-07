@@ -56,7 +56,7 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public ReadStatusDto findReadStatus(UUID readStatusId) {
         //ReadStatus 검색
         ReadStatus readStatusTemp = readStatusRepository.findById(readStatusId)
@@ -66,7 +66,7 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<ReadStatusDto> findAllReadStatusByUserId(UUID userId) {
         return readStatusRepository.findAllByUserId(userId).stream()
                 .map(readStatusMapper::toDto)

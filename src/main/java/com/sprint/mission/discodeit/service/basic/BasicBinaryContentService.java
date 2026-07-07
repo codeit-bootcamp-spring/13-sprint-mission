@@ -53,7 +53,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public BinaryContentDto findBinaryContentById(UUID binaryContentId) {
         //BinaryContent 검색
         BinaryContent binaryContentTemp = binaryContentRepository.findById(binaryContentId)
@@ -63,7 +63,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<BinaryContentDto> findAllBinaryContentByIdIn(List<UUID> binaryContentIds) {
         //BinaryContent들 검색
         List<BinaryContent> binaryContentList = binaryContentRepository.findAllByIdIn(binaryContentIds);

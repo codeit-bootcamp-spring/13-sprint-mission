@@ -65,7 +65,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public UserDto findUser(UUID userId) {
         //유저 검색
         User userTemp = userRepository.findById(userId)
@@ -79,7 +79,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<UserDto> findAllUsers() {
         //유저들 검색
         List<User> users = userRepository.findAll();

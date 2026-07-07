@@ -88,7 +88,7 @@ public class BasicMessageService implements MessageService {
         return messageMapper.toDto(message);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Pageable pageable) {
         Slice<MessageDto> messageDtoSlice = messageRepository.findAllByChannelId(channelId, pageable)
                 .map(messageMapper::toDto);

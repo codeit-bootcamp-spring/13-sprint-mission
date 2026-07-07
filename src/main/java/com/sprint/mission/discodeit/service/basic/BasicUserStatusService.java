@@ -50,7 +50,7 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public UserStatusDto findUserStatusById(UUID userStatusId) {
         //UserStatus 검색
         UserStatus userStatusTemp = userStatusRepository.findById(userStatusId)
@@ -60,7 +60,7 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<UserStatusDto> findAllUserStatus() {
         return userStatusRepository.findAll().stream()
                 .map(userStatusMapper::toDto)

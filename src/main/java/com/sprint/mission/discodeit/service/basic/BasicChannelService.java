@@ -71,7 +71,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public ChannelDto findChannel(UUID channelId) {
         //채널 검색
         Channel channelTemp = channelRepository.findById(channelId)
@@ -81,7 +81,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<ChannelDto> findAllByUserId(UUID userId) {
         //반환할 리스트
         List<Channel> channelFindList = new ArrayList<>();
