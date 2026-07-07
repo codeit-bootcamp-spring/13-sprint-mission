@@ -68,6 +68,7 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
+    @Transactional
     public List<ReadStatusDto> findAllByUserID(UUID userID){
         Stream<ReadStatusDto> rspb = readStatusRepository.findByChannelType(ChannelType.PUBLIC)
                 .stream()

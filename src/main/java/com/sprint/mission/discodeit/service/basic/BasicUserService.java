@@ -95,6 +95,7 @@ public class BasicUserService implements UserService {
 
 
     @Override
+    @Transactional
     public List<UserDto> getUserList(){
         return JPAUserRepository.findAllWithProfile()
                 .stream()

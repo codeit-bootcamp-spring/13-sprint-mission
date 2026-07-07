@@ -26,6 +26,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     private final BinaryContentMapper binaryContentMapper;
 
     @Override
+    @Transactional
     public BinaryContentDto findByID(UUID id){
         BinaryContent bc = binaryContentRepository.findById(id).stream().findFirst().orElseThrow(
                 () -> new DiscodeitException("Content not existed ","BinaryContent",404)
@@ -35,6 +36,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     }
 
     @Override
+    @Transactional
     public List<BinaryContentDto> findAllByIdIn(List<UUID> ids){
         return ids.stream()
                 .map(id -> {

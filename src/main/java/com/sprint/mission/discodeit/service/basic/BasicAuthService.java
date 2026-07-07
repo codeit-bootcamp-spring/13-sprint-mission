@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.JPAUserRepository;
 
 import com.sprint.mission.discodeit.service.AuthService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,7 @@ public class BasicAuthService implements AuthService {
     private final UserMapper userMapper;
 
     @Override
+    @Transactional
     public UserDto login(LoginRequest loginRequest){
 
         User user = JPAUserRepository.findByEmail(loginRequest.username()).stream().findFirst()

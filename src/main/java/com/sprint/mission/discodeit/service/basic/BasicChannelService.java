@@ -56,6 +56,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
+    @Transactional
     public List<ChannelDto> findAllByUserID(UUID userID) {
 
         Stream<ChannelDto> pv = readStatusRepository.findWithDetailByUserId(userID)

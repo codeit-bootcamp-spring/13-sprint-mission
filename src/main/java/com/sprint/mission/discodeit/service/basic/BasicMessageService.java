@@ -91,6 +91,7 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
+    @Transactional
     public PageResponse<MessageDto> findallByChannelId(UUID cannelID, Pageable pageable){
 
         return pageResponseMapper.fromSlice(JPAMessageRepository.findByChannelIdForMessageDto(cannelID,pageable)
