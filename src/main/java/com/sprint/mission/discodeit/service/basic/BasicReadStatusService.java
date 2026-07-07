@@ -9,6 +9,7 @@ import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.mapper.Mapper;
 import com.sprint.mission.discodeit.mapper.ReadStatusMapper;
 import com.sprint.mission.discodeit.repository.JPAChannelRepository;
 import com.sprint.mission.discodeit.repository.JAPReadStatusRepository;
@@ -29,6 +30,7 @@ public class BasicReadStatusService implements ReadStatusService {
     private final JPAUserRepository userRepository;
     private final JPAChannelRepository channelRepository;
     private final ReadStatusMapper readStatusMapper;
+    private final Mapper mapper;
 
     @Override
     @Transactional
