@@ -24,7 +24,7 @@ public class JCFUserRepository implements UserRepository {
     }
 
     @Override
-    public boolean exists(UUID id) {
+    public boolean existsById(UUID id) {
         return data.containsKey(id);
     }
 

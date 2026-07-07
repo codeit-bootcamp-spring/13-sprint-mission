@@ -23,11 +23,10 @@ public class BasicBinaryContentService implements BinaryContentService {
             throw new IllegalArgumentException("바이너리 콘텐츠 생성 요청은 필수입니다.");
         }
         BinaryContent binaryContent = new BinaryContent(
-                request.userId(),
-                request.messageId(),
+                request.fileName(),
+                (long)request.bytes().length,
                 request.contentType(),
-                request.data(),
-                request.fileName()
+                request.bytes()
         );
 
         repository.create(binaryContent);
@@ -77,17 +76,4 @@ public class BasicBinaryContentService implements BinaryContentService {
         repository.delete(id);
     }
 
-    @Override
-    public BinaryContent findEntity(UUID binaryContentId) {
-        if (binaryContentId == null) {
-            throw new IllegalArgumentException("파일 ID는 필수입니다.");
-        }
-
-        if (!repository.exists(binaryContentId)) {
-            throw new IllegalArgumentException("존재하지 않는 파일 ID입니다.");
-        }
-
-        return repository.find(binaryContentId);
-
-    }
 }

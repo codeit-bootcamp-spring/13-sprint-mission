@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.controller;
 
-import com.sprint.mission.discodeit.dto.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.repository.*;
@@ -12,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.*;
 
 import javax.print.attribute.standard.*;
+import java.io.*;
 import java.util.*;
 
 @RestController
@@ -23,24 +23,28 @@ public class UserController {
     private final UserService userService;
     private final UserStatusService userStatusService;
 
-    @RequestMapping(
-            method = RequestMethod.POST,
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    public UserResponse create(
+   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserResponse>reate(
             @RequestPart("userCreateRequest") UserRequest.CreateUserRequest userCreateRequest,
             @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
     ) {
-        UserRequest.CreateUserRequest request =
-                new UserRequest.CreateUserRequest(
-                        userCreateRequest.username(),
-                        userCreateRequest.email(),
-                        userCreateRequest.password(),
-                        profileImage
-                );
+       CreateBinaryContentRequest profileImageDto = null;
+       if (profileImage != null && !profileImage.isEmpty()) {
+           try {
+               profileImageDto = new CreateBinaryContentRequest(
+                       profileImage.getOriginalFilename(),
+                       profileImage.getContentType(),
+                       profileImage.getBytes()
+               );
+           } catch (IOException e) {
+               throw new UncheckedIOException("프로필 이미지 파일을 읽는 중 오류가 발생했습니다.", e);
+           }
+       }
 
-        return userService.create(request);
-    }
+       UserResponse userResponse = userService.create(userCreateRequest, profileImageDto);
+
+       return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
+   }
 
     @RequestMapping(value = "/{userId}",
                     method = RequestMethod.PATCH,
@@ -50,10 +54,24 @@ public class UserController {
                                @RequestParam String email,
                                @RequestParam String password,
                                @RequestParam(value = "profileImage", required = false) MultipartFile profileImage) {
-        return userService.update(
-                userId,
-                new UserRequest.UpdateUserRequest(
-                        username, email, password, profileImage));
+
+        UserRequest.UpdateUserRequest updateRequest = new UserRequest.UpdateUserRequest(
+                username, email, password, profileImage
+        );
+        CreateBinaryContentRequest profileImageDto = null;
+        if (profileImage != null && !profileImage.isEmpty()) {
+            try {
+                profileImageDto = new CreateBinaryContentRequest(
+                        profileImage.getOriginalFilename(),
+                        profileImage.getContentType(),
+                        profileImage.getBytes()
+                );
+            } catch (IOException e) {
+                throw new UncheckedIOException("프로필 이미지 파일을 읽는 중 오류가 발생했습니다.", e);
+            }
+        }
+
+        return userService.update(userId, updateRequest, profileImageDto);
     }
 
     @RequestMapping(value = "/{userId}", method = RequestMethod.DELETE)

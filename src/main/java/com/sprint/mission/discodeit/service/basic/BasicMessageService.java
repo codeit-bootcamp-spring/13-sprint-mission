@@ -9,36 +9,28 @@ import lombok.*;
 import org.springframework.stereotype.*;
 
 import java.util.*;
+import java.util.stream.*;
 
 @Service
 @RequiredArgsConstructor
 public class BasicMessageService implements MessageService {
 
-    private final MessageRepository repository;
+    private final MessageRepository messageRepository;
     private final ChannelRepository channelRepository;
     private final BinaryContentRepository binaryContentRepository;
     private final UserRepository userRepository;
 
     @Override
     public MessageResponse find(UUID id) {
-        if (id == null) {
-            throw new IllegalArgumentException("메세지 ID가 없습니다.");
-        }
+       Message message = messageRepository.findById(id)
+               .orElseThrow(()-> new NoSuchElementException("메세지 아이디를 찾을 수 없습니다"));
 
-        Message message = repository.find(id);
-
-        if (message == null) {
-            throw new IllegalArgumentException("존재하지 않는 메세지 ID입니다.");
-        }
-
-        List<BinaryContent> attachments =
-                binaryContentRepository.findAllByMessageId(id);
-
-        return MessageResponse.from(message, attachments);
+       return MessageResponse.from(message);
     }
 
     @Override
-    public MessageResponse create(MessageRequest.CreateMessageRequest request) {
+    public MessageResponse create(MessageRequest.Create request,
+                                  List<CreateBinaryContentRequest> createBinaryContentRequests) {
 
         if (request == null) {
             throw new IllegalArgumentException("메시지 생성 요청은 필수입니다.");
@@ -54,33 +46,35 @@ public class BasicMessageService implements MessageService {
             throw new IllegalArgumentException("존재하지 않는 작성자입니다.");
         }
 
+        List<UUID> attachments = new ArrayList<>();
+        if (createBinaryContentRequests != null && !createBinaryContentRequests.isEmpty()) {
+            attachments = createBinaryContentRequests.stream()
+                    .map(binaryRequest -> {
+                        // 객체 생성
+                        BinaryContent binaryContent = new BinaryContent(
+                                binaryRequest.fileName(),
+                                (long) binaryRequest.bytes().length,
+                                binaryRequest.contentType(),
+                                binaryRequest.bytes()
+                        );
+                        binaryContentRepository.create(binaryContent);
+                        return binaryContent.getId();
+                    })
+                    .toList();
+        }
+
         Message message = new Message(
                 request.content(),
                 request.channelId(),
-                request.authorId()
+                request.authorId(),
+                attachments
         );
 
-        repository.create(message);
+       messageRepository.create(message);
 
-        List<BinaryContent> attachments = new ArrayList<>();
-
-        if (request.attachments() != null) {
-            for (MessageRequest.AttachmentRequest attachmentRequest : request.attachments()) {
-                BinaryContent binaryContent = new BinaryContent(
-                        null,
-                        message.getId(),
-                        attachmentRequest.contentType(),
-                        attachmentRequest.data(),
-                        attachmentRequest.fileName()
-                );
-
-                binaryContentRepository.create(binaryContent);
-                attachments.add(binaryContent);
-            }
-        }
-
-        return MessageResponse.from(message, attachments);
+        return MessageResponse.from(message);
     }
+
 
     @Override
     public List<MessageResponse> findAllByChannelId(UUID channelId) {
@@ -92,41 +86,19 @@ public class BasicMessageService implements MessageService {
             throw new IllegalArgumentException("존재하지 않는 채널입니다.");
         }
 
-        return repository.findAllByChannelId(channelId)
+        return messageRepository.findAllByChannelId(channelId)
                 .stream()
-                .map(message -> {
-                    List<BinaryContent> attachments =
-                            binaryContentRepository.findAllByMessageId(message.getId());
-
-                    return MessageResponse.from(message, attachments);
-                })
+                .map(MessageResponse::from)
                 .toList();
+
     }
     @Override
-    public MessageResponse update(UUID id, MessageRequest.UpdateMessageRequest request) {
-        if (id == null) {
-            throw new IllegalArgumentException("메세지 ID는 필수입니다.");
-        }
-
-        if (!repository.exists(id)) {
-            throw new IllegalArgumentException("존재하지 않는 메세지 ID입니다.");
-        }
-
-        if (request == null) {
-            throw new IllegalArgumentException("메시지 수정 요청은 필수입니다.");
-        }
-
-        Message message = repository.find(id);
-
-        message.updateContent(request.content());
-
-        repository.update(id, message);
-
-        List<BinaryContent> attachments =
-                binaryContentRepository.findAllByMessageId(id);
-
-
-        return MessageResponse.from(message, attachments);
+    public MessageResponse update(UUID id, MessageRequest.Update request) {
+      String newContent = request.content();
+      Message message = messageRepository.findById(id)
+              .orElseThrow(()-> new NoSuchElementException("메세지 아이디를 찾을 수 없습니다."));
+      message.update(newContent);
+      return MessageResponse.from(message);
     }
 
     @Override
@@ -134,7 +106,7 @@ public class BasicMessageService implements MessageService {
         if (id == null) {
             throw new IllegalArgumentException("메세지 ID는 필수입니다.");
         }
-        if (!repository.exists(id)) {
+        if (!messageRepository.exists(id)) {
             throw new IllegalArgumentException("존재하지 않는 메세지 ID입니다.");
         }
         List<BinaryContent> attachments =
@@ -143,6 +115,6 @@ public class BasicMessageService implements MessageService {
         attachments.forEach(
                 attachment -> binaryContentRepository.delete(attachment.getId())
         );
-        repository.delete(id);
+        messageRepository.delete(id);
     }
 }

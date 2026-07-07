@@ -37,14 +37,12 @@ public class FileMessageRepository implements MessageRepository {
     }
 
     @Override
-    public Message find(UUID id) {
-        for (Message message : messages) {
-            if (message.getId().equals(id)) {
-                return message;
-            }
+    public Optional<Message> findById(UUID id) {
+        if (id == null) {
+            return Optional.empty();
         }
-
-        return null;
+        return messages.stream().filter(message ->
+                message.getId().equals(id)).findFirst();
     }
 
     @Override

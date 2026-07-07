@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
-@RequestMapping("/api/readStatuses")
+@RequestMapping("/api/reads-tatuses")
 @RestController
 @RequiredArgsConstructor
 public class ReadStatusController {

@@ -7,17 +7,18 @@ import java.util.*;
 
 @Getter
 public class User extends BaseEntity implements Serializable {
-
+    final static long serialVersionUID = 1L;
     private String userName;
     private String email;
     private String password;
     private UUID profileId;
 
-    public User(String userName, String email, String passWord) {
+    public User(String userName, String email, String password, UUID profileId) {
         super();
-        validateUserName(userName);
-        validateEmail(email);
-        validatePassWord(passWord);
+        this.userName = userName;
+        this.email = email;
+        this.password = password;
+        this.profileId = profileId;
     }
 
     public void updateProfileId(UUID profileId) {
@@ -25,55 +26,19 @@ public class User extends BaseEntity implements Serializable {
         setUpdatedAt();
     }
 
-
-    private void validateUserName(String userName) {
-        if (userName == null || userName.isBlank()) {
-            throw new IllegalArgumentException("이름은 필수입니다.");
-        }
-        this.userName = userName;
-    }
-
     public void updateUserName(String userName) {
-        validateUserName(userName);
-
         this.userName = userName;
         setUpdatedAt();
-    }
-
-    private void validateEmail(String email) {
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("이메일 입력은 필수입니다.");
-        }
-        this.email = email;
     }
 
     public void updateEmail(String email) {
-        validateEmail(email);
-
         this.email = email;
         setUpdatedAt();
     }
 
-    private void validatePassWord(String passWord) {
-        if (passWord == null || passWord.isBlank()) {
-            throw new IllegalArgumentException("비밀번호 입력 필수입니다.");
-        }
-        this.password = passWord;
-    }
-
-    public void updatePassWord(String passWord) {
-        validatePassWord(passWord);
-
-        this.password = passWord;
+    public void updatePassWord(String password) {
+        this.password = password;
         setUpdatedAt();
-    }
-
-    @Override
-    public String toString() {
-        return "등록 정보: " +
-                "이름 = '" + userName + '\'' +
-                ", email = '" + email + '\'' +
-                ", passWord = '" + password + '\'';
     }
 
 }

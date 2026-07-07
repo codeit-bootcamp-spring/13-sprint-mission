@@ -13,6 +13,15 @@ import java.util.*;
 @ConditionalOnProperty(name = "discodeit.repository.type", havingValue = "file")
 public class FileUserRepository implements UserRepository {
 
+
+    @Override
+    public boolean existsById(UUID id) {
+        if (id == null) {
+            return false;
+        }
+        return users.stream().anyMatch(user -> user.getId().equals(id));
+    }
+
     private final List<User> users = new ArrayList<>();
     private final Path userPath;
 
@@ -27,7 +36,7 @@ public class FileUserRepository implements UserRepository {
 
 
     @Override
-    public void create(User user) {
+    public void create(User user ) {
         users.add(user);
         saveToFile();
     }

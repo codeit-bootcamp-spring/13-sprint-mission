@@ -84,7 +84,7 @@ public class BasicReadStatusService implements ReadStatusService {
     @Override
     public void delete(UUID id) {
         if (id == null) {
-            throw new IllegalArgumentException("읽음 상태 삭제 요청 정보가 없습니다.");
+            throw new IllegalArgumentException("아이디는 필수입니다.");
         }
 
         ReadStatus readStatus = readStatusRepository.find(id);
@@ -109,7 +109,7 @@ public class BasicReadStatusService implements ReadStatusService {
             throw new IllegalArgumentException("수정할 읽음 상태 정보가 없습니다.");
         }
 
-        readStatus.markAsRead(request.lastReadTime());
+
         readStatusRepository.update(readStatus);
 
         return ReadStatusResponse.from(readStatus);

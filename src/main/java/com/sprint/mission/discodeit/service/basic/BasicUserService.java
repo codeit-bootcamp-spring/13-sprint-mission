@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
@@ -24,7 +23,7 @@ public class BasicUserService implements UserService {
     private final BinaryContentRepository binaryContentRepository;
 
     @Override
-    public UserResponse create(UserRequest.CreateUserRequest request) {
+    public UserResponse create(UserRequest.CreateUserRequest request, CreateBinaryContentRequest profileImage) {
         if (request == null) {
             throw new IllegalArgumentException("유저 생성 요청은 필수입니다.");
         }
@@ -52,32 +51,23 @@ public class BasicUserService implements UserService {
         User user = new User(
                 request.username(),
                 request.email(),
-                request.password()
+                request.password(),
+                null
+
         );
-
         BinaryContent profile = null;
-        MultipartFile profileImage = request.profileImage();
 
-        if (profileImage != null && !profileImage.isEmpty()) {
-            try {
-                profile = new BinaryContent(
-                        user.getId(),
-                        null,
-                        profileImage.getContentType(),
-                        profileImage.getBytes(),
-                        profileImage.getOriginalFilename()
-                );
-
-                binaryContentRepository.create(profile);
-
-                user.updateProfileId(profile.getId());
-
-            } catch (IOException e) {
-                throw new RuntimeException("프로필 이미지 파일을 읽는 중 오류가 발생했습니다.", e);
-            }
+        if (profileImage != null) {
+            profile = new BinaryContent(
+                    profileImage.fileName(),
+                    (long)profileImage.bytes().length,
+                    profileImage.contentType(),
+                    profileImage.bytes()
+            );
+            binaryContentRepository.create(profile);
+            user.updateProfileId(profile.getId());
         }
         repository.create(user);
-
         UserStatus userStatus = new UserStatus(user.getId());
         userStatusRepository.create(userStatus);
 
@@ -116,7 +106,8 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public UserResponse update(UUID id, UserRequest.UpdateUserRequest request) {
+    public UserResponse update(UUID id, UserRequest.UpdateUserRequest request,
+                               CreateBinaryContentRequest profileImage) {
         if (id == null) {
             throw new IllegalArgumentException("유저 ID는 필수입니다.");
         }
@@ -131,11 +122,13 @@ public class BasicUserService implements UserService {
             throw new IllegalArgumentException("존재하지 않는 유저 ID입니다.");
         }
 
-        if (repository.findByEmail(request.email()) != null) {
+        User emailOwner = repository.findByEmail(request.email());
+        if (emailOwner != null && !emailOwner.getId().equals(id)) {
             throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
         }
 
-        if (repository.findByUserName(request.username()) != null) {
+        User usernameOwner = repository.findByUserName(request.username());
+        if (usernameOwner != null && !usernameOwner.getId().equals(id)) {
             throw new IllegalArgumentException("이미 사용중인 유저 이름입니다.");
         }
 
@@ -143,10 +136,23 @@ public class BasicUserService implements UserService {
         user.updateEmail(request.email());
         user.updatePassWord(request.password());
 
+        BinaryContent profile = null;
+        if (profileImage != null) {
+            profile = new BinaryContent(
+                    profileImage.fileName(),
+                    (long)profileImage.bytes().length,
+                    profileImage.contentType(),
+                    profileImage.bytes()
+            );
+            binaryContentRepository.create(profile);
+            user.updateProfileId(profile.getId());
+        } else if (user.getProfileId() != null) {
+            profile = binaryContentRepository.find(user.getProfileId());
+        }
+
         repository.update(id, user);
 
         UserStatus userStatus = userStatusRepository.findByUserId(id);
-        BinaryContent profile = binaryContentRepository.findByUserId(id);
 
         return UserResponse.from(user, userStatus, profile);
     }
@@ -159,27 +165,19 @@ public class BasicUserService implements UserService {
             throw new IllegalArgumentException("유저 ID는 필수입니다.");
         }
 
-        if (!repository.exists(id)) {
+        User user = repository.find(id);
+        if (user == null) {
             throw new IllegalArgumentException("존재하지 않는 유저 ID입니다.");
         }
 
         UserStatus userStatus = userStatusRepository.findByUserId(id);
-        BinaryContent profile = binaryContentRepository.findByUserId(id);
-
-        System.out.println("userStatus = " + userStatus);
-        System.out.println("profile = " + profile);
-
-        if (profile != null) {
-            System.out.println("delete profile id = " + profile.getId());
-            binaryContentRepository.delete(profile.getId());
-        }
-
         if (userStatus != null) {
-            System.out.println("delete userStatus id = " + userStatus.getId());
             userStatusRepository.delete(userStatus.getId());
         }
+        if (user.getProfileId() != null) {
+            binaryContentRepository.delete(user.getProfileId());
+        }
 
-        System.out.println("delete user");
         repository.delete(id);
     }
 }

@@ -30,8 +30,8 @@ public class JCFMessageRepository implements MessageRepository {
     }
 
     @Override
-    public Message find(UUID id) {
-        return data.get(id);
+    public Optional<Message> findById(UUID id) {
+        return Optional.ofNullable(data.get(id));
     }
 
     @Override

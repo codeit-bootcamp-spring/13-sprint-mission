@@ -8,7 +8,7 @@ public interface MessageRepository {
 
     void create(Message message);
 
-    Message find(UUID id);
+    Optional<Message> findById(UUID id);
 
     List<Message> findAllByChannelId(UUID channelId);
 

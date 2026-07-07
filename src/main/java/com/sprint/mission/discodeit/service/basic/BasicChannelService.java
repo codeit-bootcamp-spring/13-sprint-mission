@@ -61,7 +61,7 @@ public class BasicChannelService implements ChannelService {
                 throw new IllegalArgumentException("참여자 ID는 필수입니다.");
             }
 
-            if(!userRepository.exists(participantId)) {
+            if(!userRepository.existsById(participantId)) {
                 throw new IllegalArgumentException("존재하지 않는 참여자 ID입니다.");
             }
 
@@ -139,8 +139,7 @@ public class BasicChannelService implements ChannelService {
 
         channel.update(
                 request.name(),
-                request.description(),
-                channel.getType()
+                request.description()
         );
 
         repository.update(channel.getId(), channel);
@@ -184,7 +183,7 @@ public class BasicChannelService implements ChannelService {
             throw new IllegalArgumentException("사용자 아이디는 필수입니다.");
         }
 
-        if (!userRepository.exists(userId)) {
+        if (!userRepository.existsById(userId)) {
             throw new IllegalArgumentException("존재하지 않는 사용자입니다.");
         }
 

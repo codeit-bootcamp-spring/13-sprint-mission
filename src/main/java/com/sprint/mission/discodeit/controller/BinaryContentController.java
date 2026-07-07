@@ -9,14 +9,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
-@RequestMapping("/api/binaryContents")
+@RequestMapping("/api/binary-contents")
 @RestController
 @RequiredArgsConstructor
 public class BinaryContentController {
 
     private final BinaryContentService binaryContentService;
 
-    @RequestMapping(value =  "/{binaryContentId}", method = RequestMethod.GET)
+    @GetMapping("/{binaryContentId}")
     public ResponseEntity<byte[]> find(@PathVariable UUID binaryContentId) {
         BinaryContentResponse response = binaryContentService.find(binaryContentId);
 
@@ -27,12 +27,12 @@ public class BinaryContentController {
                 .body(imageBytes);
     }
 
-    @RequestMapping(method = RequestMethod.GET)
+    @GetMapping
     public List<BinaryContentResponse> finaAll(@RequestParam List<UUID> ids) {
         return binaryContentService.findAllByIdIn(ids);
     }
 
-    @RequestMapping(value = "/find", method = RequestMethod.GET)
+    @GetMapping("/find")
     public ResponseEntity<BinaryContentResponse> findByRequestParam(
             @RequestParam UUID binaryContentId
     ) {

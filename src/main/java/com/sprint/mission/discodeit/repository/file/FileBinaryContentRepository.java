@@ -27,14 +27,14 @@ public class FileBinaryContentRepository implements BinaryContentRepository {
     @Override
     public List<BinaryContent> findAllByMessageId(UUID id) {
         return binaryContents.stream()
-                .filter(content -> content.getMessageId().equals(id))
+                .filter(content -> content.getId().equals(id))
                 .toList();
     }
 
     @Override
     public BinaryContent findByUserId(UUID id) {
         return binaryContents.stream()
-                .filter(content -> content.getUserId().equals(id))
+                .filter(content -> content.getId().equals(id))
                 .findFirst()
                 .orElse(null);
     }

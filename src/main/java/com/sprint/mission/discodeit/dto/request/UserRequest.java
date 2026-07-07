@@ -19,8 +19,7 @@ public record UserRequest(
     public record CreateUserRequest(
             String username,
             String email,
-            String password,
-            MultipartFile profileImage
+            String password
     ) {
     }
 

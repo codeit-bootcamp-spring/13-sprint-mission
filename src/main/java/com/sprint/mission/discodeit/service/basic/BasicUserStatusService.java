@@ -15,29 +15,23 @@ import java.util.*;
 public class BasicUserStatusService implements UserStatusService {
 
     private final UserStatusRepository userStatusRepository;
-    private final UserRepository repository;
+    private final UserRepository userRepository;
 
     @Override
     public UserStatusResponse create(CreateUserStatusRequest request) {
-        if (request == null) {
-            throw new IllegalArgumentException("유저 상태 생성 요청은 필수입니다.");
+        UUID userId = request.userId();
+
+        if (!userRepository.existsById(userId)) {
+            throw new IllegalArgumentException("유저가 존재하지 않습니다.");
         }
 
-        User user = repository.find(request.userId());
-
-        if (user == null) {
-            throw new IllegalArgumentException("유저가 없습니다.");
-        }
-
-        UserStatus existingUserStatus =
-                userStatusRepository.findByUserId(request.userId());
-
+        UserStatus existingUserStatus = userStatusRepository.findByUserId(userId);
         if (existingUserStatus != null) {
-            throw new IllegalArgumentException("이미 해당 유저의 상태 정보가 존재합니다.");
+            throw new IllegalArgumentException("이미 존재하는 유저입니다.");
         }
 
+        Instant lastOnlineAt = request.lastOnlineAt();
         UserStatus userStatus = new UserStatus(request.userId());
-
         userStatusRepository.create(userStatus);
 
         return UserStatusResponse.from(userStatus);

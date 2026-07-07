@@ -8,8 +8,8 @@ public record MessageResponse(
         UUID id,
         UUID authorId,
         UUID channelId,
-        String content,
-        List<AttachmentResponse> attachments
+        String content
+
 ) {
 
     public record AttachmentResponse(
@@ -27,13 +27,12 @@ public record MessageResponse(
     }
 
 
-    public static MessageResponse from(Message message,List<BinaryContent> attachments) {
+    public static MessageResponse from(Message message) {
        return new MessageResponse(
                message.getId(),
                message.getAuthorId(),
                message.getChannelId(),
-               message.getContent(),
-               attachments.stream().map(AttachmentResponse::from).toList()
+               message.getContent()
        );
     }
 

@@ -20,7 +20,7 @@ public class JCFBinaryContentRepository implements BinaryContentRepository {
     @Override
     public BinaryContent findByUserId(UUID id) {
         return data.values().stream()
-                .filter(content -> content.getUserId().equals(id))
+                .filter(content -> content.getId().equals(id))
                 .findFirst()
                 .orElse(null);
     }
@@ -28,7 +28,7 @@ public class JCFBinaryContentRepository implements BinaryContentRepository {
     @Override
     public List<BinaryContent> findAllByMessageId(UUID id) {
         return data.values().stream()
-                .filter(content -> content.getMessageId().equals(id))
+                .filter(content -> content.getId().equals(id))
                 .toList();
     }
 

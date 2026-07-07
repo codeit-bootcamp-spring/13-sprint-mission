@@ -12,7 +12,7 @@ public class BaseEntity {
     BaseEntity() {
         this.id = UUID.randomUUID();
         this.createdAt = Instant.now();
-        this.updatedAt = null;
+        this.updatedAt = Instant.now();
     }
 
     public void setUpdatedAt() {
