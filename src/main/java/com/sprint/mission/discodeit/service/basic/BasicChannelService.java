@@ -58,14 +58,14 @@ public class BasicChannelService implements ChannelService {
     @Override
     public List<ChannelDto> findAllByUserID(UUID userID) {
 
-        Stream<ChannelDto> pv = readStatusRepository.findByUserId(userID)
+        Stream<ChannelDto> pv = readStatusRepository.findWithDetailByUserId(userID)
                 .stream()
-                .map(
-                        rs -> channelMapper.toDto(rs.getChannel())
-                );
-
-        Stream<ChannelDto> pb = channelRepository.findByTypeIs(ChannelType.PUBLIC)
-                .stream().map(channelMapper::toDto);
+                .map(rs -> channelMapper.toDto(rs.getChannel()));
+        Stream<ChannelDto> pb = readStatusRepository.findWithDetailByChannelType(ChannelType.PUBLIC)
+                .stream()
+                .map(rs -> channelMapper.toDto(rs.getChannel()));
+//        Stream<ChannelDto> pb = channelRepository.findByTypeIs(ChannelType.PUBLIC)
+//                .stream().map(channelMapper::toDto);
 
         return Stream.concat(pv,pb).toList();
     }

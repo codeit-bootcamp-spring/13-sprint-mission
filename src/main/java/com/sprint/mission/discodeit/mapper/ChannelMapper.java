@@ -7,6 +7,9 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.JAPReadStatusRepository;
 import com.sprint.mission.discodeit.repository.JPAMessageRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 
@@ -41,7 +44,8 @@ public class ChannelMapper {
     }
 
     private Instant lastMessageAt(Channel channel) {
-        return messageRepository.findByChannelId(channel.getId())
+        Pageable pageable = PageRequest.of(0, 1, Sort.by(Sort.Order.desc("createdAt")));
+        return messageRepository.findByChannelIdOrderByCreatedAtDesc(channel.getId(),pageable)
                 .stream()
                 .findFirst()
                 .map(Message::getCreatedAt)

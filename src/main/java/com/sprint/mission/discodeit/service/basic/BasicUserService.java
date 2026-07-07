@@ -96,7 +96,7 @@ public class BasicUserService implements UserService {
 
     @Override
     public List<UserDto> getUserList(){
-        return JPAUserRepository.findAll()
+        return JPAUserRepository.findAllWithProfile()
                 .stream()
                 .map(userMapper::toDto)
                 .toList();

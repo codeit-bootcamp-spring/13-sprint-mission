@@ -93,7 +93,7 @@ public class BasicMessageService implements MessageService {
     @Override
     public PageResponse<MessageDto> findallByChannelId(UUID cannelID, Pageable pageable){
 
-        return pageResponseMapper.fromSlice(JPAMessageRepository.findByChannelIdOrderByCreatedAtDesc(cannelID,pageable)
+        return pageResponseMapper.fromSlice(JPAMessageRepository.findByChannelIdForMessageDto(cannelID,pageable)
                 .map(messageMapper::toDto));
     }
 
