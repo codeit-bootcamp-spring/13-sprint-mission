@@ -7,8 +7,8 @@ import java.util.UUID;
 
 public record MessageDto(
         UUID id
-        , Instant createaAt
-        , Instant updateaAt
+        , Instant createdAt
+        , Instant updatedAt
         , String content
         , UUID channelId
         , UserDto author

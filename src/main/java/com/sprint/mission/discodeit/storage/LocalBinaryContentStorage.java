@@ -49,8 +49,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
     @Override
     public InputStream get(UUID id) throws IOException{
         InputStream in = Files.newInputStream(resolvePath(id));
-        BufferedInputStream bin = new BufferedInputStream(in);
-        return bin;
+        return new BufferedInputStream(in);
     }
     @Override
     public ResponseEntity<Resource> download(BinaryContentDto binaryContentDto) {

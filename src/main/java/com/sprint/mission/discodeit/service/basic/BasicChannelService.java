@@ -8,7 +8,6 @@ import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.JPAChannelRepository;
-import com.sprint.mission.discodeit.repository.JPAMessageRepository;
 import com.sprint.mission.discodeit.repository.JAPReadStatusRepository;
 import com.sprint.mission.discodeit.repository.JPAUserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
