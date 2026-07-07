@@ -25,7 +25,7 @@ public interface BinaryContentControllerDocs {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "404", description = "존재하지 않음")
     })
-    public ResponseEntity<BinaryContent> findById(@PathVariable UUID binaryContentId);
+    public ResponseEntity<BinaryContentDto> findById(@PathVariable UUID binaryContentId);
 
 
     @Operation(summary = "여러 첨부 파일 조회 API")

@@ -2,13 +2,14 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- binary_contents 테이블 생성
+-- 요구 사항으로 bytes 컬럼 삭제
 CREATE TABLE binary_contents(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     file_name VARCHAR(255) NOT NULL,
     size bigint NOT NULL,
     content_type VARCHAR(100) NOT NULL,
-    bytes bytea NOT NULL
+    --bytes bytea NOT NULL
 );
 
 

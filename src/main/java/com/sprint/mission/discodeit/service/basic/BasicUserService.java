@@ -13,6 +13,7 @@ import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class BasicUserService implements UserService {
     private final BinaryContentRepository binaryContentRepository;
     private final ReadStatusRepository readStatusRepository;
     private final UserMapper userMapper;
+    private final BinaryContentStorage binaryContentStorage;
 
 
     @Override
@@ -53,8 +55,9 @@ public class BasicUserService implements UserService {
         BinaryContent profile = null;
         if (profileRequest != null) {
              profile = new BinaryContent(profileRequest.fileName(),
-                    profileRequest.fileSize(), profileRequest.contentType(), profileRequest.bytes());
+                    profileRequest.fileSize(), profileRequest.contentType());
             binaryContentRepository.save(profile);
+            binaryContentStorage.put(profile.getId(), profileRequest.bytes());
         }
         User user = new User(userCreateRequest.username(), userCreateRequest.email(), userCreateRequest.password(), profile, null);
         userRepository.save(user);
@@ -109,8 +112,9 @@ public class BasicUserService implements UserService {
             }
 
             BinaryContent profile = new BinaryContent(
-                    profileRequest.fileName(), profileRequest.fileSize(), profileRequest.contentType(),profileRequest.bytes());
+                    profileRequest.fileName(), profileRequest.fileSize(), profileRequest.contentType());
             binaryContentRepository.save(profile);
+            binaryContentStorage.put(profile.getId(), profileRequest.bytes());
             user.updateUserProfileId(profile);
         }
         if (userUpdateRequest.newUsername() != null) {

@@ -18,9 +18,10 @@ spring:
 
 #파일 저장 방식 변경 설정
 discodeit:
-  repository:
-    type: file #file
-    file-directory: data
+  storage:
+    type: local
+    local:
+      root-path: .discodeit/data
 
 logging:
   level:

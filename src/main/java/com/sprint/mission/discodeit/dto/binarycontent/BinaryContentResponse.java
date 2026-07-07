@@ -10,8 +10,7 @@ public record BinaryContentResponse(
         Instant createdAt,
         String fileName,
         long size,
-        ContentType contentType,
-        byte[] bytes
+        ContentType contentType
 )
 {
 

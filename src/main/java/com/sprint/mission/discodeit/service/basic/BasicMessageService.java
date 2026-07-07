@@ -14,6 +14,7 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class BasicMessageService implements MessageService {
     private final ChannelRepository channelRepository;
     private final BinaryContentRepository binaryContentRepository;
     private final MessageMapper messageMapper;
+    private final BinaryContentStorage binaryContentStorage;
 
 
     //메시지, 첨부파일 생성
@@ -49,10 +51,10 @@ public class BasicMessageService implements MessageService {
                 BinaryContent binaryContent = new BinaryContent(
                         attachment.fileName(),
                         attachment.fileSize(),
-                        attachment.contentType(),
-                        attachment.bytes()
+                        attachment.contentType()
                 );
                 binaryContentRepository.save(binaryContent);
+                binaryContentStorage.put(binaryContent.getId(), attachment.bytes());
                 attachmentIds.add(binaryContent);
             });
         }

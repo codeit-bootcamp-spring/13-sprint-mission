@@ -21,20 +21,12 @@ public class BinaryContent extends BaseEntity {
     @Column(nullable = false, length = 100)
     private String contentType;
 
-    @Column(nullable = false)
-    private byte[] bytes;
-
     protected BinaryContent() {}
 
-    public BinaryContent(String fileName, Long size, String contentType, byte[] bytes) {
+    public BinaryContent(String fileName, Long size, String contentType) {
         super();
         this.fileName = fileName;
         this.size = size;
         this.contentType = contentType;
-        this.bytes = bytes.clone();
-    }
-
-    public byte[] getBytes() {
-        return bytes.clone();
     }
 }
