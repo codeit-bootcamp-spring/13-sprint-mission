@@ -52,12 +52,14 @@ public class BasicUserService implements UserService {
 
         //유저 생성
         User user = new User(request.username(), request.email(), request.password(), binaryContent);
-        user = userRepository.save(user);
         log.info("유저: {}가 생성됨.", user.getUsername());
 
         //UserStatus 생성
         UserStatus userStatus = new UserStatus(user);
-        userStatus = userStatusRepository.save(userStatus);
+//        userStatus = userStatusRepository.save(userStatus);
+
+        user.assignStatus(userStatus);
+        user = userRepository.save(user);
 
         return userMapper.toDto(user);
     }
