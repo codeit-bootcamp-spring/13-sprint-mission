@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -89,8 +90,10 @@ public class BasicMessageService implements MessageService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Pageable pageable) {
-        Slice<MessageDto> messageDtoSlice = messageRepository.findAllByChannelId(channelId, pageable)
+    public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Instant cursor, Pageable pageable) {
+        Slice<MessageDto> messageDtoSlice = ((cursor == null)
+                ? messageRepository.findAllByChannelId(channelId, pageable)
+                : messageRepository.findAllByChannelId(channelId, cursor, pageable))
                 .map(messageMapper::toDto);
 
         return pageResponseMapper.fromSlice(messageDtoSlice);
