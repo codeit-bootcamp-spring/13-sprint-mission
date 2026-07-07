@@ -21,6 +21,7 @@ import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
 
@@ -96,6 +97,16 @@ public class BasicMessageService implements MessageService {
 
         return pageResponseMapper.fromSlice(JPAMessageRepository.findByChannelIdForMessageDto(cannelID,pageable)
                 .map(messageMapper::toDto));
+    }
+
+    @Transactional
+    @Override
+    public PageResponse<MessageDto> findallByChannelIdWithCursor(UUID cannelID, Pageable pageable, Instant cursor){
+        if (cursor == null) cursor = Instant.now();
+        Slice<Message> res = JPAMessageRepository.findByChannelWithCursor(cannelID,pageable,cursor);
+        List<Message> content = res.getContent();
+        Instant newCursor = content.isEmpty() ? null : content.get(content.size()-1).getCreatedAt();
+        return pageResponseMapper.fromSliceWithCursor(res.map(messageMapper::toDto),newCursor);
     }
 
     @Override

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,6 +23,9 @@ public interface JPAMessageRepository extends JpaRepository<Message, UUID> {
     @Query("SELECT m FROM Message m WHERE m.channel.id = :id")
     Slice<Message> findByChannelIdForMessageDto(@Param("id")UUID channelId, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"author","attachment"})
+    @Query("SELECT m FROM Message m WHERE m.channel.id = :id AND m.createdAt < :ctime")
+    Slice<Message> findByChannelWithCursor(@Param("id") UUID channelId, Pageable pageable,@Param("ctime") Instant ctime);
 
     // 페이징에 걸리는건지, sql 행이 리밋(페이징 기준)이 걸리는 건지 메세지를 원래대로 쿼리하지 못하는 상황이 발생.
 

@@ -4,6 +4,8 @@ import com.sprint.mission.discodeit.dto.response.PageResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Component;
+;import java.time.Instant;
+import java.util.List;
 
 @Component
 public class PageResponseMapper {
@@ -23,6 +25,16 @@ public class PageResponseMapper {
                 , pg.getSize()
                 , pg.hasNext()
                 , pg.getTotalElements()
+        );
+    }
+
+    public <T> PageResponse<T> fromSliceWithCursor(Slice<T> slc, Instant cursor){
+        return new PageResponse<>(
+                slc.getContent()
+                , cursor
+                , slc.getSize()
+                , slc.hasNext()
+                , null
         );
     }
 }

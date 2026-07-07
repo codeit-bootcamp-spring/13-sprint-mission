@@ -12,6 +12,7 @@ import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -38,12 +40,10 @@ public class MessageController implements MessageControllerDoc {
     @RequestMapping(value = "", method = RequestMethod.GET)
     public ResponseEntity<PageResponse<MessageDto>> findMessageByChannel(
             @RequestParam(value = "channelId") UUID channelId
-            ,@PageableDefault(size = 50) Pageable pageable
-//            ,@RequestParam(required = false) Integer page
-//            ,@RequestParam(required = false) Integer size
-//            ,@RequestParam(required = false) List<String> sort
+            , @RequestParam(value = "cursor", required = false) Instant cursor
+            , @PageableDefault(size = 50) Pageable pageable
     ){
-        PageResponse<MessageDto> res =  messageService.findallByChannelId(channelId,pageable);
+        PageResponse<MessageDto> res =  messageService.findallByChannelIdWithCursor(channelId,pageable,cursor);
         return ResponseEntity.ok(res);
     }
 

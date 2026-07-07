@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,7 +32,8 @@ public interface MessageControllerDoc {
     @RequestMapping(value = "", method = RequestMethod.GET)
     ResponseEntity<PageResponse<MessageDto>> findMessageByChannel(
             @RequestParam(value = "channelId") UUID channelId
-            ,@PageableDefault(size = 50) Pageable pageable
+            , @RequestParam(value = "cursor", required = false) Instant cursor
+            , @PageableDefault(size = 50) Pageable pageable
     );
 
 
