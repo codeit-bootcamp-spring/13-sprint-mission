@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -64,12 +65,12 @@ public class BasicUserService implements UserService {
 
     private boolean existsByUsername(String username) {
         return userRepository.findAll().stream()
-                .anyMatch(user -> user.getUsername().equals(username));
+                .anyMatch(user -> Objects.equals(user.getUsername(), username));
     }
 
     private boolean existsByEmail(String email) {
         return userRepository.findAll().stream()
-                .anyMatch(user -> user.getEmail().equals(email));
+                .anyMatch(user -> Objects.equals(user.getEmail(), email));
     }
 
     @Override
@@ -127,13 +128,13 @@ public class BasicUserService implements UserService {
 
     private boolean existsByUsernameExceptSelf(String username, UUID userId) {
         return userRepository.findAll().stream()
-                .anyMatch(user -> user.getUsername().equals(username)
+                .anyMatch(user -> Objects.equals(user.getUsername(), username)
                         && !user.getId().equals(userId));
     }
 
     private boolean existsByEmailExceptSelf(String email, UUID userId) {
         return userRepository.findAll().stream()
-                .anyMatch(user -> user.getEmail().equals(email)
+                .anyMatch(user -> Objects.equals(user.getEmail(), email)
                         && !user.getId().equals(userId));
     }
 

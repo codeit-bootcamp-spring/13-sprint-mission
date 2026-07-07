@@ -11,6 +11,6 @@ public record MessageResponse(
         String content,
         UUID channelId,
         UUID authorId,
-        List<UUID> attachments
+        List<UUID> attachmentIds
 ) {
 }
