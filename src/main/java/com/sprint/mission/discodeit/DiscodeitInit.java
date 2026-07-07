@@ -12,34 +12,12 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class DiscodeitInit implements CommandLineRunner {
-    ChannelService cs;
-    UserService us;
-    MessageService ms;
-    AuthService auth;
-    ReadStatusService rss;
-    UserStatusService uss;
-    BinaryContentService bcs;
-
     DiscodeitConfig dci;
 
 
     public DiscodeitInit(
-            ChannelService cs,
-            UserService us,
-            MessageService ms,
-            AuthService auth,
-            ReadStatusService rss,
-            UserStatusService uss,
-            BinaryContentService bcs,
             DiscodeitConfig dci
             ) {
-        this.cs = cs;
-        this.us = us;
-        this.ms = ms;
-        this.auth = auth;
-        this.rss = rss;
-        this.uss = uss;
-        this.bcs = bcs;
         this.dci = dci;
     }
 
