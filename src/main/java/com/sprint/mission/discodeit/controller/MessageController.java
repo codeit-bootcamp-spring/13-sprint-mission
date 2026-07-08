@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.controller;
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.service.MessageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +12,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -36,8 +36,8 @@ public class MessageController {
   }
 
   @RequestMapping(method = RequestMethod.GET)
-  public ResponseEntity<List<MessageDto>> findAllByChannelId(@RequestParam UUID channelId) {
-    List<MessageDto> allMessageByChannel = messageService.findAllByChannelId(channelId);
+  public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(@RequestParam UUID channelId) {
+    PageResponse<MessageDto> allMessageByChannel = messageService.findAllByChannelId(channelId);
     return ResponseEntity.status(HttpStatus.OK).body(allMessageByChannel);
   }
 
