@@ -1,16 +1,12 @@
 package com.sprint.mission.discodeit.repository;
 
 import com.sprint.mission.discodeit.entity.Message;
-
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface MessageRepository {
-    Message save(Message message);
-    Optional<Message> findById(UUID id);
-    List<Message> findAll();
-    void deleteById(UUID id); // Repository 계층에서는 read, create < findById, save 키워드 선호
-    boolean existById(UUID id);
-    List<Message> findAllByChannelId(UUID channelId);
+public interface MessageRepository extends JpaRepository<Message, UUID> {
+
+  // PK가 아닌 FK(channelId)를 이용해 조회 시도 - 직접 메서드 선언해야 한다
+  List<Message> findByChannelId(UUID channelId);
 }

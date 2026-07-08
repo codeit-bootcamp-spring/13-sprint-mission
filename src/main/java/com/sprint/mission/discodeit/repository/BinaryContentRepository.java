@@ -2,14 +2,10 @@ package com.sprint.mission.discodeit.repository;
 
 import com.sprint.mission.discodeit.entity.BinaryContent;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface BinaryContentRepository {
-    Optional<BinaryContent> findById(UUID id); // 단일 조회
-    BinaryContent save(BinaryContent content); // 바이너리 데이터 저장
-    void deleteById(UUID id); // 바이너리 데이터 삭제
-    boolean existById(UUID id);
-    List<BinaryContent> findAllByIdIn(List<UUID> ids);
+public interface BinaryContentRepository extends JpaRepository<BinaryContent, UUID> {
+  // JpaRepository를 상속 받으면 구현체가 알아서 세팅된다
+  // save, findById, findAll, deletedById, existById, count 가 따라온다
 }
