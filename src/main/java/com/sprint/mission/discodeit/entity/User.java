@@ -46,5 +46,8 @@ public class User extends BaseUpdatableEntity {
         this.status = status;
     }
 
+    public boolean online(){
+        return this.status.online();
+    }
 
 }

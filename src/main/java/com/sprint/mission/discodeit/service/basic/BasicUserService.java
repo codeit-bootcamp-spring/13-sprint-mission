@@ -3,12 +3,14 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreate;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
-import com.sprint.mission.discodeit.mapper.UserMapper;
+import com.sprint.mission.discodeit.mapper.MapStructMapper;
+import com.sprint.mission.discodeit.mapper.MapperMethod;
 import com.sprint.mission.discodeit.repository.JPABinaryContentRepository;
 import com.sprint.mission.discodeit.repository.JPAUserRepository;
 import com.sprint.mission.discodeit.repository.JPAUserStatusRepository;
@@ -32,8 +34,9 @@ public class BasicUserService implements UserService {
     private final JPAUserRepository JPAUserRepository;
     private final JPAUserStatusRepository JPAUserStatusRepository;
     private final JPABinaryContentRepository binaryContentRepository;
-    private final UserMapper userMapper;
     private final BinaryContentStorage binaryContentStorage;
+    private final MapStructMapper mapStructMapper;
+    private final MapperMethod mapperMethod;
 
 
     private BinaryContent profileIdFromOBCC(Optional<BinaryContentCreate> obcc){
@@ -58,52 +61,36 @@ public class BasicUserService implements UserService {
     @Transactional
     public UserDto create(UserCreateRequest cui, Optional<BinaryContentCreate> obcc){
 
+        nameCheck(cui.username());
+        emailCheck(cui.email());
 
-        if ( !JPAUserRepository.findByEmail(cui.email()).isEmpty() ) {
-            throw  new DiscodeitException(
-                        "User with email " + cui.email() + " aready exsists",
-                        "User",
-                        400
-                );
-        }
-        if ( !JPAUserRepository.findByUsername(cui.username()).isEmpty() ) {
-                throw new DiscodeitException(
-                    "User with username " + cui.username() + " aready exsists",
-                    "User",
-                    400
-            );
-        }
-
-
-
+        BinaryContent bc = profileIdFromOBCC(obcc);
 
         User user = new User(
                 cui.username(),
                 cui.email(),
                 cui.password(),
-                profileIdFromOBCC(obcc),
+                bc,
                 null
         );
-        UserStatus ust = new UserStatus(
-                user,
-                Instant.now()
-        );
+        UserStatus ust = new UserStatus(user, Instant.now());
         user.setStatus(ust);
 
-        return userMapper.toDto(JPAUserRepository.save(user));
+        JPAUserRepository.save(user);
+        return mapStructMapper.toDto(user,toBinaryDto(user),user.online());
     }
-
 
     @Override
     @Transactional
     public List<UserDto> getUserList(){
         return JPAUserRepository.findAllWithProfile()
                 .stream()
-                .map(userMapper::toDto)
+                .map(u -> mapStructMapper.toDto(u,toBinaryDto(u),u.online()))
                 .toList();
     }
 
 
+    // Todo - Profile create 2 times. why????
     @Override
     @Transactional
     public UserDto update(UUID id, UserUpdateRequest uui, Optional<BinaryContentCreate> obcc){
@@ -114,21 +101,8 @@ public class BasicUserService implements UserService {
                     404)
         );
 
-        Optional<User> sameNameChecker = JPAUserRepository.findByUsername(uui.newUsername()).stream().findFirst();
-        if(sameNameChecker.isPresent()){ throw new DiscodeitException(
-                "user with name " + uui.newUsername() + " already used",
-                "User",
-                400
-        );}
-        Optional<User> sameEmailChecker = JPAUserRepository.findByEmail(uui.newEmail()).stream().findFirst();
-        if(sameEmailChecker.isPresent()){ throw new DiscodeitException(
-                "user with email " + uui.newEmail() + " already used",
-                "User",
-                400
-        );}
-
-        System.out.println(obcc);
-        System.out.println("call");
+        nameCheck(uui.newUsername());
+        emailCheck(uui.newEmail());
 
         if (uui.newUsername() != null) user.setUsername(uui.newUsername());
         if (uui.newEmail() != null) user.setEmail(uui.newEmail());
@@ -138,7 +112,11 @@ public class BasicUserService implements UserService {
             BinaryContent bc = profileIdFromOBCC(obcc);
             user.setProfile(bc);
         }
-        return userMapper.toDto(user);
+        return mapStructMapper.toDto(
+                user
+                , toBinaryDto(user)
+                , user.online()
+        );
     }
 
 
@@ -156,8 +134,32 @@ public class BasicUserService implements UserService {
         JPAUserRepository.delete(user);
 
         us.ifPresent(JPAUserStatusRepository::delete);
-        if (user.getProfile() != null) {
-            binaryContentRepository.delete(user.getProfile());
-        }
+//        if (user.getProfile() != null) {
+//            binaryContentRepository.delete(user.getProfile());
+//        }
     }
+
+    private void nameCheck(String username){
+        Optional<User> sameNameChecker = JPAUserRepository.findByUsername(username).stream().findFirst();
+        if(sameNameChecker.isPresent()){ throw new DiscodeitException(
+                "user with name " + username + " already used",
+                "User",
+                400
+        );}
+    }
+
+    private void emailCheck(String email){
+        Optional<User> sameEmailChecker = JPAUserRepository.findByEmail(email).stream().findFirst();
+        if(sameEmailChecker.isPresent()){ throw new DiscodeitException(
+                "user with email " + email + " already used",
+                "User",
+                400
+        );}
+    }
+
+    private BinaryContentDto toBinaryDto(User user){
+        BinaryContent bc = user.getProfile();
+        return mapStructMapper.toDto(bc, mapperMethod.getByteFrom(bc));
+    }
+
 }

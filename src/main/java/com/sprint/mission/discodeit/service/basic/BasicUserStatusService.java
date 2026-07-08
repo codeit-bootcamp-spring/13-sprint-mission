@@ -4,7 +4,7 @@ import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
-import com.sprint.mission.discodeit.mapper.Mapper;
+import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.repository.JPAUserStatusRepository;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import jakarta.transaction.Transactional;
@@ -17,7 +17,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BasicUserStatusService implements UserStatusService {
     private final JPAUserStatusRepository userStatusService;
-    private final Mapper mapper;
+    private final MapStructMapper mapStructMapper;
     @Override
     @Transactional
     public UserStatusDto updateByUserId(UUID userId, UserStatusUpdateRequest usur){
@@ -25,7 +25,7 @@ public class BasicUserStatusService implements UserStatusService {
                 () -> new DiscodeitException("no UserStatus by User id" + userId,"UserStatus",404)
         );
         userStatus.setLastActiveAt(usur.newLastActiveAt());
-        return mapper.toDto(userStatus);
+        return mapStructMapper.toDto(userStatus);
     }
 }
 

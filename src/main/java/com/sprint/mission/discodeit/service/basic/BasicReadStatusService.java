@@ -9,8 +9,7 @@ import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
-import com.sprint.mission.discodeit.mapper.Mapper;
-import com.sprint.mission.discodeit.mapper.ReadStatusMapper;
+import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.repository.JPAChannelRepository;
 import com.sprint.mission.discodeit.repository.JAPReadStatusRepository;
 import com.sprint.mission.discodeit.repository.JPAUserRepository;
@@ -29,8 +28,7 @@ public class BasicReadStatusService implements ReadStatusService {
     private final JAPReadStatusRepository readStatusRepository;
     private final JPAUserRepository userRepository;
     private final JPAChannelRepository channelRepository;
-    private final ReadStatusMapper readStatusMapper;
-    private final Mapper mapper;
+    private final MapStructMapper mapStructMapper;
 
     @Override
     @Transactional
@@ -64,7 +62,7 @@ public class BasicReadStatusService implements ReadStatusService {
 
 
 
-        return readStatusMapper.toDto(
+        return mapStructMapper.toDto(
                 readStatusRepository.save(new ReadStatus(user, channel, rscr.lastReadAt()))
         );
     }
@@ -74,10 +72,10 @@ public class BasicReadStatusService implements ReadStatusService {
     public List<ReadStatusDto> findAllByUserID(UUID userID){
         Stream<ReadStatusDto> rspb = readStatusRepository.findByChannelType(ChannelType.PUBLIC)
                 .stream()
-                .map(readStatusMapper::toDto);
+                .map(mapStructMapper::toDto);
         Stream<ReadStatusDto> rspv = readStatusRepository.findByUserId(userID)
                 .stream().map(
-                        readStatusMapper::toDto
+                        mapStructMapper::toDto
                 );
         return Stream.concat(rspb, rspv).toList();
     }
@@ -92,7 +90,7 @@ public class BasicReadStatusService implements ReadStatusService {
                         404)
         );
         readStatus.setLastReadAt(rsur.newLastReadAt());
-        return readStatusMapper.toDto(readStatus);
+        return mapStructMapper.toDto(readStatus);
     }
     @Override
     @Transactional

@@ -4,7 +4,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
-import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
+import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.repository.JPABinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
@@ -23,7 +23,7 @@ import java.util.UUID;
 public class BasicBinaryContentService implements BinaryContentService {
     private final JPABinaryContentRepository binaryContentRepository;
     private final BinaryContentStorage binaryContentStorage;
-    private final BinaryContentMapper binaryContentMapper;
+    private final MapStructMapper mapStructMapper;
 
     @Override
     @Transactional
@@ -32,7 +32,7 @@ public class BasicBinaryContentService implements BinaryContentService {
                 () -> new DiscodeitException("Content not existed ","BinaryContent",404)
         );
 
-        return binaryContentMapper.toDto(bc,getDataFromId(id));
+        return mapStructMapper.toDto(bc,getDataFromId(id));
     }
 
     @Override
@@ -42,7 +42,7 @@ public class BasicBinaryContentService implements BinaryContentService {
                 .map(id -> {
                     BinaryContent bc = binaryContentRepository.findById(id).orElse(null);
                     if (bc != null){
-                        return binaryContentMapper.toDto(bc,getDataFromId(id));
+                        return mapStructMapper.toDto(bc,getDataFromId(id));
                     }
                     return null;
                 })

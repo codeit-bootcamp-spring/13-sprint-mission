@@ -3,14 +3,16 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreate;
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
-import com.sprint.mission.discodeit.mapper.MessageMapper;
+import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.JPABinaryContentRepository;
 import com.sprint.mission.discodeit.repository.JPAChannelRepository;
@@ -20,11 +22,14 @@ import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +37,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BasicMessageService implements MessageService {
     private final JPAMessageRepository JPAMessageRepository;
     private final JPAUserRepository JPAUserRepository;
@@ -39,7 +45,7 @@ public class BasicMessageService implements MessageService {
     private final JPABinaryContentRepository binaryContentRepository;
     private final BinaryContentStorage binaryContentStorage;
     private final PageResponseMapper pageResponseMapper;
-    private final MessageMapper messageMapper;
+    private final MapStructMapper mapStructMapper;
 
     @Override
     @Transactional
@@ -88,7 +94,7 @@ public class BasicMessageService implements MessageService {
         );
 
         JPAMessageRepository.save(res);
-        return messageMapper.toDto(res);
+        return mapStructMapper.toDto(res,userDto(res),attrDto(res));
     }
 
     @Override
@@ -96,7 +102,7 @@ public class BasicMessageService implements MessageService {
     public PageResponse<MessageDto> findallByChannelId(UUID cannelID, Pageable pageable){
 
         return pageResponseMapper.fromSlice(JPAMessageRepository.findByChannelIdForMessageDto(cannelID,pageable)
-                .map(messageMapper::toDto));
+                .map(m -> mapStructMapper.toDto(m,userDto(m),attrDto(m))));
     }
 
     @Transactional
@@ -106,7 +112,8 @@ public class BasicMessageService implements MessageService {
         Slice<Message> res = JPAMessageRepository.findByChannelWithCursor(cannelID,pageable,cursor);
         List<Message> content = res.getContent();
         Instant newCursor = content.isEmpty() ? null : content.get(content.size()-1).getCreatedAt();
-        return pageResponseMapper.fromSliceWithCursor(res.map(messageMapper::toDto),newCursor);
+        return pageResponseMapper.fromSliceWithCursor(
+                res.map(m -> mapStructMapper.toDto(m,userDto(m),attrDto(m))),newCursor);
     }
 
     @Override
@@ -120,7 +127,7 @@ public class BasicMessageService implements MessageService {
         msg.setContent(umi.newContent());
         msg.setUpdatedAt(Instant.now());
         JPAMessageRepository.save(msg);
-        return messageMapper.toDto(msg);
+        return mapStructMapper.toDto(msg,userDto(msg),attrDto(msg));
     }
 
     @Override
@@ -136,5 +143,29 @@ public class BasicMessageService implements MessageService {
         }
 
         JPAMessageRepository.delete(msg);
+    }
+
+    private List<BinaryContentDto> attrDto(Message msg){
+        if (msg.getAttachment() == null) return null;
+        return msg.getAttachment().stream().map(this::binaryContentDto).toList();
+    }
+
+    private UserDto userDto(Message msg){
+        User user = msg.getAuthor();
+        BinaryContent profile = user.getProfile();
+        return mapStructMapper.toDto(user,binaryContentDto(profile),user.online());
+    }
+
+    private BinaryContentDto binaryContentDto(BinaryContent bc){
+        return mapStructMapper.toDto(bc,bytesFromBinaryContent(bc));
+    }
+
+    private byte[] bytesFromBinaryContent(BinaryContent bc){
+        try (InputStream in = binaryContentStorage.get(bc.getId())){
+            return in.readAllBytes();
+        } catch (IOException e) {
+            log.error("read data errpr" + bc.getId().toString(), e);
+            return null;
+        }
     }
 }
