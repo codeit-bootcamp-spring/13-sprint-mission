@@ -9,10 +9,12 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,9 +40,10 @@ public class ChannelMapper {
                     .collect(Collectors.toList());
         }
 
-        Instant lastMessageAt = messageRepository.findAllByChannelId(channel.getId()).stream()
+        Pageable latestOne = PageRequest.of(0, 1, Sort.by("createdAt").descending());
+        Instant lastMessageAt = messageRepository.findAllByChannelId(channel.getId(), latestOne).stream()
+                .findFirst()
                 .map(Message::getCreatedAt)
-                .max(Comparator.naturalOrder())
                 .orElse(null);
 
 
@@ -54,7 +57,4 @@ public class ChannelMapper {
 
         );
     }
-
-
-
 }

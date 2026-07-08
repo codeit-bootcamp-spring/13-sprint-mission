@@ -5,11 +5,14 @@ import com.sprint.mission.discodeit.controller.docs.MessageControllerDocs;
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageDto;
-import com.sprint.mission.discodeit.dto.message.MessageResponse;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.util.FileUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -58,8 +61,9 @@ public class MessageController implements MessageControllerDocs {
     }
 
     @GetMapping()
-    public ResponseEntity<List<MessageDto>> getAllMessages(@RequestParam UUID channelId) {
-        List<MessageDto> allByChannelId = messageService.findAllByChannelId(channelId);
+    public ResponseEntity<PageResponse<MessageDto>> getAllMessages(@RequestParam UUID channelId,
+                                                                   @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        PageResponse<MessageDto> allByChannelId = messageService.findAllByChannelId(channelId, pageable);
         return ResponseEntity.status(HttpStatus.OK).body(allByChannelId);
     }
 

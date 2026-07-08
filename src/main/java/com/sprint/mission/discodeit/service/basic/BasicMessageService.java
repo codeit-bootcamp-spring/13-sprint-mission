@@ -4,11 +4,13 @@ import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageDto;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
+import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
@@ -17,6 +19,9 @@ import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +40,7 @@ public class BasicMessageService implements MessageService {
     private final BinaryContentRepository binaryContentRepository;
     private final MessageMapper messageMapper;
     private final BinaryContentStorage binaryContentStorage;
+    private final PageResponseMapper pageResponseMapper;
 
 
     //메시지, 첨부파일 생성
@@ -78,14 +84,14 @@ public class BasicMessageService implements MessageService {
     //특정 채널 메시지 조회
     @Override
     @Transactional(readOnly = true)
-    public List<MessageDto> findAllByChannelId(UUID channelId) {
+    public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Pageable pageable) {
         channelRepository.findById(channelId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널입니다."));
-        List<Message> allByChannelId = messageRepository.findAllByChannelId(channelId);
-        log.info("채널id: {}, 전체 메시지 조회 완료: {}개", channelId, allByChannelId.size());
-        return allByChannelId.stream()
-                .map(messageMapper::toDto)
-                .collect(Collectors.toList());
+
+        Slice<Message> messages = messageRepository.findAllByChannelId(channelId, pageable);
+        Slice<MessageDto> messageDtos = messages.map(messageMapper::toDto);
+        log.info("채널id: {}, 전체 메시지 조회 완료: {}개", channelId, messages.getNumberOfElements());
+        return pageResponseMapper.toDto(messageDtos);
     }
 
 
