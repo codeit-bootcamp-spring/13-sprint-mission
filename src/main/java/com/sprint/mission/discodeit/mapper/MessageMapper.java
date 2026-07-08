@@ -21,6 +21,7 @@ public class MessageMapper {
     List<BinaryContentDto> attachments = message.getAttachments().stream()
         .map(binaryContentMapper::toDto)
         .toList();
+
     UserDto author = message.getAuthor() != null
         ? userMapper.toDto(message.getAuthor())
         : null; //massageDto의 author필드 타입이 UserDto임.
