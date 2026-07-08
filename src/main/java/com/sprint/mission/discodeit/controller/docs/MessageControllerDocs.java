@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -58,6 +59,7 @@ public interface MessageControllerDocs {
             @ApiResponse(responseCode = "404", description = "존재하지 않음")
     })
     public ResponseEntity<PageResponse<MessageDto>> getAllMessages(@RequestParam UUID channelId,
+                                                                   @RequestParam(required = false) Instant cursor,
                                                                    @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable);
 
 }

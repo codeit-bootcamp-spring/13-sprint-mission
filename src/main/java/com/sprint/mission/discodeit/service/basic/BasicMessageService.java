@@ -25,6 +25,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -84,14 +85,15 @@ public class BasicMessageService implements MessageService {
     //특정 채널 메시지 조회
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Pageable pageable) {
+    public PageResponse<MessageDto> findAllByChannelIdWithCursor(UUID channelId, Instant cursor, Pageable pageable) {
         channelRepository.findById(channelId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널입니다."));
-
-        Slice<Message> messages = messageRepository.findAllByChannelId(channelId, pageable);
+        Slice<Message> messages = (cursor == null)
+                ? messageRepository.findAllByChannelIdOrderByCreatedAtDesc(channelId, pageable)
+                : messageRepository.findAllByChannelIdAndCreatedAtLessThanOrderByCreatedAtDesc(channelId, cursor, pageable);
         Slice<MessageDto> messageDtos = messages.map(messageMapper::toDto);
         log.info("채널id: {}, 전체 메시지 조회 완료: {}개", channelId, messages.getNumberOfElements());
-        return pageResponseMapper.toDto(messageDtos);
+        return pageResponseMapper.toDto(messageDtos, MessageDto::createdAt);
     }
 
 

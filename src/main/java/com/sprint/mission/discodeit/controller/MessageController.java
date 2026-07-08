@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -62,8 +63,9 @@ public class MessageController implements MessageControllerDocs {
 
     @GetMapping()
     public ResponseEntity<PageResponse<MessageDto>> getAllMessages(@RequestParam UUID channelId,
+                                                                   @RequestParam(required = false) Instant cursor,
                                                                    @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        PageResponse<MessageDto> allByChannelId = messageService.findAllByChannelId(channelId, pageable);
+        PageResponse<MessageDto> allByChannelId = messageService.findAllByChannelIdWithCursor(channelId, cursor, pageable);
         return ResponseEntity.status(HttpStatus.OK).body(allByChannelId);
     }
 
