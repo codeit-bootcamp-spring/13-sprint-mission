@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
-import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.service.MessageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,29 +22,29 @@ public class MessageController {
   private final MessageService messageService;
 
   @RequestMapping(method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public ResponseEntity<Message> create(
+  public ResponseEntity<MessageDto> create(
       @RequestPart("messageCreateRequest") @Valid MessageCreateRequest messageCreateRequest) {
-    Message message = messageService.create(messageCreateRequest);
+    MessageDto message = messageService.create(messageCreateRequest);
     return ResponseEntity.status(HttpStatus.CREATED).body(message);
   }
 
-  
+
   @RequestMapping(value = "/{messageId}", method = RequestMethod.GET)
-  public ResponseEntity<Message> find(@PathVariable UUID messageId) {
-    Message findMessage = messageService.find(messageId);
+  public ResponseEntity<MessageDto> find(@PathVariable UUID messageId) {
+    MessageDto findMessage = messageService.find(messageId);
     return ResponseEntity.status(HttpStatus.OK).body(findMessage);
   }
 
   @RequestMapping(method = RequestMethod.GET)
-  public ResponseEntity<List<Message>> findAllByChannelId(@RequestParam UUID channelId) {
-    List<Message> allMessageByChannel = messageService.findAllByChannelId(channelId);
+  public ResponseEntity<List<MessageDto>> findAllByChannelId(@RequestParam UUID channelId) {
+    List<MessageDto> allMessageByChannel = messageService.findAllByChannelId(channelId);
     return ResponseEntity.status(HttpStatus.OK).body(allMessageByChannel);
   }
 
   @RequestMapping(value = "/{messageId}", method = RequestMethod.PATCH)
-  public ResponseEntity<Message> update(@PathVariable UUID messageId,
+  public ResponseEntity<MessageDto> update(@PathVariable UUID messageId,
       @RequestBody MessageUpdateRequest messageUpdateRequest) {
-    Message updateMessage = messageService.update(messageId, messageUpdateRequest);
+    MessageDto updateMessage = messageService.update(messageId, messageUpdateRequest);
     return ResponseEntity.status(HttpStatus.OK).body(updateMessage);
   }
 

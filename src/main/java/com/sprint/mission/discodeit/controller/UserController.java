@@ -1,10 +1,10 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
-import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
@@ -37,7 +37,7 @@ public class UserController {
       @RequestPart(value = "profile", required = false) MultipartFile profile,
       @RequestPart("userCreateRequest") @Valid UserCreateRequest request) {
     //└> @RequestBody JSON -> Java 객체로              //└> Dto를 인수로 넣음
-    BinaryContent content = null;
+    BinaryContentDto content = null;
     if (profile != null) {
       try {
         content = binaryContentService.create(profile.getOriginalFilename(),
@@ -53,7 +53,7 @@ public class UserController {
         request.email(),    //record에서 값을 가져오는 건 getter가 아니라 접근자 메서드(accessor method)라고 한다.
         request.password(),
         Optional.ofNullable(content)
-            .map(BinaryContent::getId)
+            .map(BinaryContentDto::id)
             .orElse(null)
         //Optional-> 단일 객체 Optional로 변환시 사용/ stream은 복수 객체의 타입을 변환시 사용
         //ofNullable() -> 객체를 Optional로 감쌈.(null이여도 감싼다.)
@@ -87,7 +87,7 @@ public class UserController {
       @PathVariable UUID userId,
       @RequestPart("userUpdateRequest") UserUpdateRequest userUpdateRequest) {
 
-    BinaryContent content = null;
+    BinaryContentDto content = null;
     if (profile != null) {
       try {
         content = binaryContentService.create(profile.getOriginalFilename(),
@@ -100,7 +100,7 @@ public class UserController {
     UserDto newUser = userService.update(userId, userUpdateRequest.newUsername(),
         userUpdateRequest.newEmail(),
         userUpdateRequest.newPassword(),
-        content != null ? content.getId() : userUpdateRequest.newProfileId()
+        content != null ? content.id() : userUpdateRequest.newProfileId()
     );
     return ResponseEntity.status(HttpStatus.OK).body(newUser);
   }                                                 //└> 리소스 수정 200 요청 성공
