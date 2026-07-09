@@ -12,41 +12,46 @@ import java.util.UUID;
 @NoArgsConstructor
 public class UserStatus implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-    private UUID id;
-    private Instant createdAt;
-    private Instant updatedAt;
-    //
-    private User user;
-    private Instant lastActiveAt;
+  private UUID id;
+  private Instant createdAt;
+  private Instant updatedAt;
 
-    @Builder
-    public UserStatus(
-            UUID id, Instant createdAt, Instant updatedAt,
-            User user, Instant lastActiveAt) {
-        this.id = id;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.user = user;
-        this.lastActiveAt = lastActiveAt;
-    }
+  private User user;
+  private Instant lastActiveAt;
 
-    public boolean isOnline() {
-        if (this.lastActiveAt == null) return false;
+  @Builder
+  public UserStatus(
+      UUID id, Instant createdAt, Instant updatedAt,
+      User user, Instant lastActiveAt) {
+    this.id = id;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
+    this.user = user;
+    this.lastActiveAt = lastActiveAt;
+  }
 
-        Instant now = Instant.now();
-        Instant fiveMinuteAgo = now.minus(java.time.Duration.ofMinutes(5));
+  public boolean isOnline() {
+      if (this.lastActiveAt == null) {
+          return false;
+      }
+    Instant now = Instant.now();
+    Instant fiveMinuteAgo = now.minus(java.time.Duration.ofMinutes(5));
+    return this.lastActiveAt.isAfter(fiveMinuteAgo);
+  }
 
-        return this.lastActiveAt.isAfter(fiveMinuteAgo);
-    }
+  public void updateOnlineStatus(Instant newLastActiveAt) {
+    this.lastActiveAt = newLastActiveAt;
+    this.updatedAt = Instant.now();
+  }
 
-    public void updateActiveTime() {
-        this.lastActiveAt = Instant.now();
-        this.updatedAt = Instant.now();
-    }
+  public void updateActiveTime() {
+    this.lastActiveAt = Instant.now();
+    this.updatedAt = Instant.now();
+  }
 
-    public boolean isUser(UUID userId) {
-        return user != null && user.getId().equals(userId);
-    }
+  public boolean isUser(UUID userId) {
+    return user != null && user.getId().equals(userId);
+  }
 }

@@ -2,9 +2,10 @@ package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.User; // 💡 1. 대상 엔티티 변경
 import com.sprint.mission.discodeit.repository.UserRepository; // 💡 2. 인터페이스 변경
-import org.springframework.stereotype.Repository;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;

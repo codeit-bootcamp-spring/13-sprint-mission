@@ -4,7 +4,6 @@ import lombok.Getter;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 @Getter
