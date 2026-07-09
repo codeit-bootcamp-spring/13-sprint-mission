@@ -28,7 +28,7 @@ public interface ReadStatusApi {
   //생성
   @Operation(summary = "Message 읽음 상태 생성")
   @ApiResponse(responseCode = "201", description = "message 읽음 상태가 성공적으로 생성됨")
-  @PostMapping
+  @PostMapping("/{readStatusId}")
   ResponseEntity<ReadStatus> create(
       @RequestBody ReadStatusCreateRequest request
   );

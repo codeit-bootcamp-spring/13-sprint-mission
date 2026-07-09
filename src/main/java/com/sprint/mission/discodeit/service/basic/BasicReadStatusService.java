@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ReadStatusService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -23,6 +24,7 @@ public class BasicReadStatusService implements ReadStatusService {
   private final ReadStatusRepository readStatusRepository;
   private final UserRepository userRepository;
   private final ChannelRepository channelRepository;
+  private final ClientHttpRequestFactorySettings clientHttpRequestFactorySettings;
 
   @Override //ReadStatus 생성
   public ReadStatus create(ReadStatusCreateRequest request) {
@@ -59,9 +61,14 @@ public class BasicReadStatusService implements ReadStatusService {
     return readStatusRepository.findAllByUserId(userId).stream().toList();
   }
 
-  @Override //업데이트(미구현 상태)
-  public ReadStatus update(UUID readStatusId, ReadStatusUpdateRequest readStatus) {
-    return null;
+  @Override //업데이트
+  public ReadStatus update(UUID readStatusId, ReadStatusUpdateRequest request) {
+    ReadStatus readStatus = readStatusRepository.findById(readStatusId)
+        .orElseThrow(() ->
+            new NoSuchElementException("readStatus with id " + readStatusId + " does not exist"));
+    Instant newLastReadAt = request.getNewLastReadAt();
+    readStatus.update(newLastReadAt);
+    return readStatusRepository.save(readStatus);
   }
 
   @Override //삭제
