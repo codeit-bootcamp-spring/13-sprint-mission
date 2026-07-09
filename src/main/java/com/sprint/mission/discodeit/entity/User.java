@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.entity;
 //너무 내부 로직에 치우친 공부-> 메서드 호출 방향, 받은 값의 출처, 반환 값받을 누가 받는지 등을 더 참고.
 
 import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
@@ -14,6 +15,7 @@ import lombok.Getter;
 @Getter
 public class User extends BaseUpdatableEntity {
 
+  @Column(name = "username")
   private String userName;
   private String password;
   private String email;

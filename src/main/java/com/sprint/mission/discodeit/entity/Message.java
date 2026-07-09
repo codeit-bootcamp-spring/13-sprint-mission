@@ -11,6 +11,7 @@ import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.hibernate.annotations.BatchSize;
 
 @Entity
 @Table(name = "messages")
@@ -28,6 +29,7 @@ public class Message extends BaseUpdatableEntity {
   @JoinColumn(name = "channel_id")
   private Channel channel;
 
+  @BatchSize(size = 100)//100개 이하 id 조회는 한번에 묶어서.
   @ManyToMany
   @JoinTable(name = "message_attachments",//중간 테이블
       joinColumns = @JoinColumn(name = "message_id"),  //현제 엔티티의 fk

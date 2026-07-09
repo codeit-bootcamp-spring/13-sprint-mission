@@ -2,8 +2,10 @@ package com.sprint.mission.discodeit.repository;
 
 import com.sprint.mission.discodeit.entity.User;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
@@ -11,6 +13,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
   Optional<User> findByUserName(String username);
 
   Optional<User> findByEmail(String email);
-  
-  Optional<User> findByUserId(UUID userId);
+
+  @EntityGraph(attributePaths = {"userStatus", "profile"})
+  List<User> findAll();//N+! 해결
+
+  @EntityGraph(attributePaths = {"userStatus", "profile"})
+  Optional<User> findById(UUID id);//N+! 해결
 }

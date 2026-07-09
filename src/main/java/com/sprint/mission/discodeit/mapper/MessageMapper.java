@@ -3,10 +3,8 @@ package com.sprint.mission.discodeit.mapper;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Message;
 import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +14,8 @@ public class MessageMapper {
 
   private final UserMapper userMapper;
   private final BinaryContentMapper binaryContentMapper;
+
+
 
   public MessageDto toDto(Message message) {
     List<BinaryContentDto> attachments = message.getAttachments().stream()
