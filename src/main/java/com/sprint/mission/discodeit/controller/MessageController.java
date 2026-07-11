@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
-import com.sprint.mission.discodeit.dto.message.MessageResponse;
+import com.sprint.mission.discodeit.dto.message.MessageDto;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ public class MessageController {
     private final MessageService messageService;
 
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity<MessageResponse> create(
+    public ResponseEntity<MessageDto> create(
             @RequestPart("messageCreateRequest") MessageCreateRequest request,
             @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
     ) throws IOException {
@@ -52,21 +52,21 @@ public class MessageController {
     }
 
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<Collection<MessageResponse>> findAllByChannelId(
+    public ResponseEntity<Collection<MessageDto>> findAllByChannelId(
             @RequestParam UUID channelId
     ) {
         return ResponseEntity.ok(messageService.findAllByChannelId(channelId));
     }
 
     @RequestMapping(value = "/{messageId}", method = RequestMethod.GET)
-    public ResponseEntity<MessageResponse> find(
+    public ResponseEntity<MessageDto> find(
             @PathVariable UUID messageId
     ) {
         return ResponseEntity.ok(messageService.findById(messageId));
     }
 
     @RequestMapping(value = "/{messageId}", method = RequestMethod.PATCH)
-    public ResponseEntity<MessageResponse> update(
+    public ResponseEntity<MessageDto> update(
             @PathVariable UUID messageId,
             @RequestBody MessageUpdateRequest request
     ) {

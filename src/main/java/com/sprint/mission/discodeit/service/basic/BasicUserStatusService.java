@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusCreateRequest;
-import com.sprint.mission.discodeit.dto.userstatus.UserStatusResponse;
+import com.sprint.mission.discodeit.dto.userstatus.UserStatusDto;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
@@ -24,7 +24,7 @@ public class BasicUserStatusService implements UserStatusService {
     private final UserStatusMapper userStatusMapper;
 
     @Override
-    public UserStatusResponse create(UserStatusCreateRequest request) {
+    public UserStatusDto create(UserStatusCreateRequest request) {
         User user = userRepository.findById(request.userId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
@@ -39,7 +39,7 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public UserStatusResponse findById(UUID id) {
+    public UserStatusDto findById(UUID id) {
         UserStatus userStatus = userStatusRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 상태입니다."));
 
@@ -47,7 +47,7 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public Collection<UserStatusResponse> findAll() {
+    public Collection<UserStatusDto> findAll() {
         return userStatusRepository.findAll()
                 .stream()
                 .map(userStatusMapper::toDto)
@@ -55,7 +55,7 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public UserStatusResponse update(UserStatusUpdateRequest request) {
+    public UserStatusDto update(UserStatusUpdateRequest request) {
         UserStatus userStatus = userStatusRepository.findById(request.id())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 상태입니다."));
 
@@ -66,7 +66,7 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public UserStatusResponse updateByUserId(UUID userId, UserStatusUpdateRequest request) {
+    public UserStatusDto updateByUserId(UUID userId, UserStatusUpdateRequest request) {
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 상태입니다."));
 
@@ -77,7 +77,7 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public UserStatusResponse findByUserId(UUID userId) {
+    public UserStatusDto findByUserId(UUID userId) {
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 상태입니다."));
 

@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
-import com.sprint.mission.discodeit.dto.user.UserResponse;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
@@ -30,7 +29,7 @@ public class BasicUserService implements UserService {
 
 
     @Override
-    public UserResponse create(UserCreateRequest createRequest) {
+    public UserDto create(UserCreateRequest createRequest) {
 
         validateUniqueUser(
                 createRequest.username(),
@@ -58,33 +57,26 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = new UserStatus(user, Instant.now());
 
         userStatusRepository.save(userStatus);
-        return userMapper.toResponse(user);
+        return userMapper.toDto(user);
     }
 
     @Override
-    public UserResponse findById(UUID id) {
+    public UserDto findById(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 유저입니다."));
 
-        return userMapper.toResponse(user);
+        return userMapper.toDto(user);
     }
 
     @Override
-    public Collection<UserResponse> findAll() {
-        return userRepository.findAll().stream()
-                .map(userMapper::toResponse)
-                .toList();
-    }
-
-    @Override
-    public Collection<UserDto> findAllDto() {
+    public Collection<UserDto> findAll() {
         return userRepository.findAll().stream()
                 .map(userMapper::toDto)
                 .toList();
     }
 
     @Override
-    public UserResponse update ( UUID userId, UserUpdateRequest updateRequest) {
+    public UserDto update ( UUID userId, UserUpdateRequest updateRequest) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 유저입니다."));
@@ -113,7 +105,7 @@ public class BasicUserService implements UserService {
                 profile);
 
         userRepository.save(user);
-        return userMapper.toResponse(user);
+        return userMapper.toDto(user);
         }
 
     @Override

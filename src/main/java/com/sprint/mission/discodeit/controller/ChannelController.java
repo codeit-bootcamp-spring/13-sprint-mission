@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.controller;
 
-import com.sprint.mission.discodeit.dto.channel.ChannelResponse;
+import com.sprint.mission.discodeit.dto.channel.ChannelDto;
 import com.sprint.mission.discodeit.dto.channel.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.channel.PublicChannelCreateRequest;
@@ -21,33 +21,33 @@ public class ChannelController {
     private final ChannelService channelService;
 
     @RequestMapping (value = "/public", method = RequestMethod.POST)
-    public ResponseEntity<ChannelResponse> createPublic (
+    public ResponseEntity<ChannelDto> createPublic (
             @RequestBody PublicChannelCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(channelService.createPublic(request));
     }
 
     @RequestMapping (value = "/private", method = RequestMethod.POST)
-    public ResponseEntity<ChannelResponse> createPrivate(
+    public ResponseEntity<ChannelDto> createPrivate(
             @RequestBody PrivateChannelCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(channelService.createPrivate(request));
     }
 
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<Collection<ChannelResponse>> findAllByUserId(
+    public ResponseEntity<Collection<ChannelDto>> findAllByUserId(
             @RequestParam UUID userId
     ) {
         return ResponseEntity.ok(channelService.findAllByUserId(userId));
     }
 
     @RequestMapping(value = "/{channelId}", method = RequestMethod.GET)
-    public ResponseEntity<ChannelResponse> find(
+    public ResponseEntity<ChannelDto> find(
             @PathVariable UUID channelId
     ){
         return ResponseEntity.ok(channelService.findById(channelId));
     }
 
     @RequestMapping(value = "/{channelId}", method = RequestMethod.PATCH)
-    public ResponseEntity<ChannelResponse> update(
+    public ResponseEntity<ChannelDto> update(
             @PathVariable UUID channelId,
             @RequestBody ChannelUpdateRequest request
     ) {

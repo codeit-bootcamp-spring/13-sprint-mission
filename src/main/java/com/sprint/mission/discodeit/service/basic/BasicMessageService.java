@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
-import com.sprint.mission.discodeit.dto.message.MessageResponse;
+import com.sprint.mission.discodeit.dto.message.MessageDto;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
@@ -33,7 +33,7 @@ public class BasicMessageService implements MessageService {
     private final MessageMapper messageMapper;
 
     @Override
-    public MessageResponse create(MessageCreateRequest request) {
+    public MessageDto create(MessageCreateRequest request) {
         Channel channel = channelRepository.findById(request.channelId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널의 메시지입니다."));
 
@@ -74,7 +74,7 @@ public class BasicMessageService implements MessageService {
 
 
     @Override
-    public MessageResponse findById(UUID id) {
+    public MessageDto findById(UUID id) {
         Message message = messageRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 메세지 입니다."));
 
@@ -82,14 +82,14 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public Collection<MessageResponse> findAllByChannelId(UUID channelId) {
+    public Collection<MessageDto> findAllByChannelId(UUID channelId) {
         return messageRepository.findAllByChannel_Id(channelId).stream()
                 .map(messageMapper::toDto)
                 .toList();
     }
 
     @Override
-    public MessageResponse update(UUID messageId, MessageUpdateRequest request) {
+    public MessageDto update(UUID messageId, MessageUpdateRequest request) {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 메세지 입니다."));
 

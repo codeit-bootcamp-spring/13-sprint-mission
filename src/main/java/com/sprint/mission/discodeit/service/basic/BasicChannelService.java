@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.channel.ChannelResponse;
+import com.sprint.mission.discodeit.dto.channel.ChannelDto;
 import com.sprint.mission.discodeit.dto.channel.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.channel.PublicChannelCreateRequest;
@@ -31,7 +31,7 @@ public class BasicChannelService implements ChannelService {
     private final ChannelMapper channelMapper;
 
     @Override
-    public ChannelResponse createPublic(PublicChannelCreateRequest request) {
+    public ChannelDto createPublic(PublicChannelCreateRequest request) {
 
         Channel channel = new Channel(
                 request.name(),
@@ -46,7 +46,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ChannelResponse createPrivate(PrivateChannelCreateRequest request) {
+    public ChannelDto createPrivate(PrivateChannelCreateRequest request) {
         List<User> participants = new ArrayList<>();
 
         for (UUID participantId : request.participantIds()) {
@@ -79,7 +79,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ChannelResponse findById(UUID id) {
+    public ChannelDto findById(UUID id) {
         Channel channel = channelRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널입니다."));
 
@@ -87,8 +87,8 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public Collection<ChannelResponse> findAllByUserId(UUID userId) {
-        List<ChannelResponse> responses = new ArrayList<>();
+    public Collection<ChannelDto> findAllByUserId(UUID userId) {
+        List<ChannelDto> responses = new ArrayList<>();
 
         for (Channel channel : channelRepository.findAll()) {
             if (channel.getType() == ChannelType.PUBLIC) {
@@ -106,7 +106,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ChannelResponse update(UUID channelId, ChannelUpdateRequest request) {
+    public ChannelDto update(UUID channelId, ChannelUpdateRequest request) {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널입니다."));
 

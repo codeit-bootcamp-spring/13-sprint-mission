@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.mapper;
 
-import com.sprint.mission.discodeit.dto.channel.ChannelResponse;
+import com.sprint.mission.discodeit.dto.channel.ChannelDto;
+import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
@@ -19,19 +20,20 @@ public class ChannelMapper {
 
     private final MessageRepository messageRepository;
     private final ReadStatusRepository readStatusRepository;
+    private final UserMapper userMapper;
 
-    public ChannelResponse toDto(Channel channel) {
+    public ChannelDto toDto(Channel channel) {
         if (channel == null) {
             return null;
         }
 
-        return new ChannelResponse(
+        return new ChannelDto(
                 channel.getId(),
+                channel.getType(),
                 channel.getName(),
                 channel.getNameDescription(),
-                channel.getType(),
-                findLastMessageAt(channel.getId()),
-                findParticipantIds(channel)
+                findParticipants(channel),
+                findLastMessageAt(channel.getId())
         );
     }
 
@@ -42,13 +44,13 @@ public class ChannelMapper {
                 .orElse(null);
     }
 
-    private List<UUID> findParticipantIds(Channel channel) {
+    private List<UserDto> findParticipants(Channel channel) {
         if (channel.getType() == ChannelType.PUBLIC) {
             return List.of();
         }
 
         return readStatusRepository.findAllByChannel_Id(channel.getId()).stream()
-                .map(readStatus -> readStatus.getUser().getId())
+                .map(readStatus -> userMapper.toDto(readStatus.getUser()))
                 .toList();
     }
 }

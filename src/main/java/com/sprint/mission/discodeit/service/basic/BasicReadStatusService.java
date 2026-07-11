@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusCreateRequest;
-import com.sprint.mission.discodeit.dto.readstatus.ReadStatusResponse;
+import com.sprint.mission.discodeit.dto.readstatus.ReadStatusDto;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.mapper.ReadStatusMapper;
@@ -28,7 +28,7 @@ public class BasicReadStatusService implements ReadStatusService {
 
 
     @Override
-    public ReadStatusResponse create(ReadStatusCreateRequest request) {
+    public ReadStatusDto create(ReadStatusCreateRequest request) {
         User user = userRepository.findById(request.userId())
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
 
@@ -54,7 +54,7 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    public ReadStatusResponse findById(UUID id) {
+    public ReadStatusDto findById(UUID id) {
         ReadStatus readStatus = readStatusRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 읽음 상태입니다."));
 
@@ -62,14 +62,14 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    public Collection<ReadStatusResponse> findAllByUserId(UUID userId) {
+    public Collection<ReadStatusDto> findAllByUserId(UUID userId) {
         return readStatusRepository.findAllByUser_Id(userId).stream()
                 .map(readStatusMapper::toDto)
                 .toList();
     }
 
     @Override
-    public ReadStatusResponse update(UUID readStatusId, ReadStatusUpdateRequest request) {
+    public ReadStatusDto update(UUID readStatusId, ReadStatusUpdateRequest request) {
         ReadStatus readStatus = readStatusRepository.findById(readStatusId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 읽음 상태입니다."));
 
