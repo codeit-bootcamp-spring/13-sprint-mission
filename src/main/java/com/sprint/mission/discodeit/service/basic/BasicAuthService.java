@@ -10,6 +10,8 @@ import com.sprint.mission.discodeit.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class BasicAuthService implements AuthService {
@@ -18,20 +20,24 @@ public class BasicAuthService implements AuthService {
 
     @Override
     public LoginResponse login(LoginRequest request) {
-        User user = userRepository.findByName(request.username());
+        User user = userRepository.findByName(request.username())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
 
-        if (user == null || !user.getPassword().equals(request.password())) {
+        if (!user.getPassword().equals(request.password())) {
             throw new IllegalArgumentException("Invalid username or password");
         }
 
-        UserStatus userStatus = userStatusRepository.findByUserId(user.getId());
+        UserStatus userStatus = userStatusRepository.findByUserId(user.getId())
+                .orElse(null);
+
         boolean isOnline = userStatus != null && userStatus.isOnline();
+        UUID profileId = user.getProfile() == null ? null : user.getProfile().getId();
 
         return new LoginResponse(
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
-                user.getProfileId(),
+                profileId,
                 isOnline
         );
     }

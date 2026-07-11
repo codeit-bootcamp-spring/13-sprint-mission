@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.ObjLongConsumer;
 
 @Service
 @RequiredArgsConstructor
@@ -23,7 +24,7 @@ public class BasicBinaryContentService implements BinaryContentService {
         BinaryContent binaryContent = new BinaryContent(
                 request.fileName(),
                 request.contentType(),
-                request.bytes()
+                (long) request.bytes().length
         );
         binaryContentRepository.save(binaryContent);
         return toResponse(binaryContent);
@@ -31,11 +32,8 @@ public class BasicBinaryContentService implements BinaryContentService {
 
     @Override
     public BinaryContentResponse findById(UUID id) {
-        BinaryContent binaryContent = binaryContentRepository.findById(id);
-
-        if (binaryContent == null) {
-            throw new IllegalArgumentException("존재하지 않는 파일입니다.");
-        }
+        BinaryContent binaryContent = binaryContentRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 파일입니다."));
 
         return toResponse(binaryContent);
     }
@@ -48,12 +46,17 @@ public class BasicBinaryContentService implements BinaryContentService {
 
     @Override
     public void delete(UUID id) {
-        binaryContentRepository.delete(id);
+        if (!binaryContentRepository.existsById(id)) {
+            throw new IllegalArgumentException("존재하지 않는 파일입니다.");
+        }
+
+        binaryContentRepository.deleteById(id);
     }
 
     @Override
     public BinaryContent findEntityById(UUID id) {
-        return binaryContentRepository.findById(id);
+        return binaryContentRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 파일입니다."));
     }
 
     private BinaryContentResponse toResponse(BinaryContent binaryContent) {
@@ -61,7 +64,7 @@ public class BasicBinaryContentService implements BinaryContentService {
                 binaryContent.getId(),
                 binaryContent.getFileName(),
                 binaryContent.getContentType(),
-                (long) binaryContent.getBytes().length
+                binaryContent.getSize()
         );
     }
 }

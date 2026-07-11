@@ -8,5 +8,5 @@ import java.util.UUID;
 
 public interface MessageRepository extends JpaRepository<Message, UUID> {
 
-    Collection<Message> findAllByChannelId(UUID channelId);
+    Collection<Message> findAllByChannel_Id(UUID channelId);
 }

@@ -9,9 +9,9 @@ import java.util.UUID;
 
 public interface ReadStatusRepository extends JpaRepository<ReadStatus, UUID> {
 
-    Collection<ReadStatus> findAllByUserId(UUID userId);
+    Collection<ReadStatus> findAllByUser_Id(UUID userId);
 
-    Optional<ReadStatus> findByUserIdAndChannelId(UUID userId, UUID channelId);
+    Optional<ReadStatus> findByUser_IdAndChannel_Id(UUID userId, UUID channelId);
 
-    Collection<ReadStatus> findAllByChannelId(UUID channelId);
+    Collection<ReadStatus> findAllByChannel_Id(UUID channelId);
 }

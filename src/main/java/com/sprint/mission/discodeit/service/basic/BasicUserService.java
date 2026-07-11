@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -35,26 +34,26 @@ public class BasicUserService implements UserService {
                 createRequest.username(),
                 createRequest.email());
 
-        UUID profileId = null;
+        BinaryContent profile = null;
         if (createRequest.profileBytes() != null) {
-            BinaryContent profile = new BinaryContent(
+            profile = new BinaryContent(
                     createRequest.profileName(),
                     createRequest.profileContentType(),
-                    createRequest.profileBytes()
+                    (long) createRequest.profileBytes().length
             );
             binaryContentRepository.save(profile);
-            profileId = profile.getId();
         }
 
         User user = new User(
                 createRequest.username(),
                 createRequest.email(),
                 createRequest.password(),
-                profileId
+                profile
         );
+
         userRepository.save(user);
 
-        UserStatus userStatus = new UserStatus(user.getId(), Instant.now());
+        UserStatus userStatus = new UserStatus(user, Instant.now());
 
         userStatusRepository.save(userStatus);
         return toResponse(user);
@@ -62,10 +61,9 @@ public class BasicUserService implements UserService {
 
     @Override
     public UserResponse findById(UUID id) {
-        User user = userRepository.findById(id);
-        if (user == null) {
-            throw new IllegalArgumentException("존재하지 않은 유저입니다.");
-        }
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 유저입니다."));
+
         return toResponse(user);
     }
 
@@ -87,11 +85,8 @@ public class BasicUserService implements UserService {
     @Override
     public UserResponse update ( UUID userId, UserUpdateRequest updateRequest) {
 
-        User user= userRepository.findById(userId);
-
-        if (user == null) {
-            throw new IllegalArgumentException("존재하지 않은 유저입니다.");
-        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 유저입니다."));
 
         validateUniqueUserForUpdate(
                 userId,
@@ -99,23 +94,22 @@ public class BasicUserService implements UserService {
                 updateRequest.email());
 
 
-        UUID profileId = user.getProfileId();
+        BinaryContent profile = user.getProfile();
 
         if (updateRequest.profileBytes() != null) {
-            BinaryContent profile = new BinaryContent(
+            profile = new BinaryContent(
                     updateRequest.profileName(),
                     updateRequest.profileContentType(),
-                    updateRequest.profileBytes()
+                    (long) updateRequest.profileBytes().length
             );
             binaryContentRepository.save(profile);
-            profileId = profile.getId();
         }
 
         user.renew(
                 updateRequest.username(),
                 updateRequest.email(),
                 updateRequest.password(),
-                profileId);
+                profile);
 
         userRepository.save(user);
         return toResponse(user);
@@ -123,41 +117,42 @@ public class BasicUserService implements UserService {
 
     @Override
     public void delete(UUID id) {
-        User user = userRepository.findById(id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 유저입니다."));
 
-        if (user == null) {
-            throw new IllegalArgumentException("존재하지 않은 유저입니다.");
+        BinaryContent profile = user.getProfile();
+        if (profile != null) {
+            binaryContentRepository.delete(profile);
         }
 
-        UUID profileId = user.getProfileId();
-        if (profileId != null) {
-            binaryContentRepository.delete(profileId);
-        }
+        userStatusRepository.findByUserId(id)
+                .ifPresent(userStatusRepository::delete);
 
-        UserStatus userStatus = userStatusRepository.findByUserId(id);
-        if (userStatus != null) {
-            userStatusRepository.delete(userStatus.getId());
-        }
-
-        userRepository.delete(id);
+        userRepository.delete(user);
     }
 
     private UserResponse toResponse(User user) {
-        UserStatus userStatus = userStatusRepository.findByUserId(user.getId());
+        UserStatus userStatus = userStatusRepository.findByUserId(user.getId())
+                .orElse(null);
 
         boolean isOnline = userStatus != null && userStatus.isOnline();
+        UUID profileId = user.getProfile() == null ? null : user.getProfile().getId();
 
-        return  new UserResponse(
+        return new UserResponse(
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
-                user.getProfileId(),
-                isOnline);
+                profileId,
+                isOnline
+        );
     }
 
     private UserDto toDto(User user) {
-        UserStatus userStatus = userStatusRepository.findByUserId(user.getId());
+        UserStatus userStatus = userStatusRepository.findByUserId(user.getId())
+                .orElse(null);
+
         boolean online = userStatus != null && userStatus.isOnline();
+        UUID profileId = user.getProfile() == null ? null : user.getProfile().getId();
 
         return new UserDto(
                 user.getId(),
@@ -165,32 +160,33 @@ public class BasicUserService implements UserService {
                 user.getUpdateAt(),
                 user.getName(),
                 user.getEmail(),
-                user.getProfileId(),
+                profileId,
                 online
         );
     }
 
-    private void validateUniqueUser (String username, String email) {
-
-        if (userRepository.findByName(username) != null) {
+    private void validateUniqueUser(String username, String email) {
+        if (userRepository.findByName(username).isPresent()) {
             throw new IllegalArgumentException("이미 사용 중인 이름입니다.");
         }
 
-        if (userRepository.findByEmail(email) != null) {
+        if (userRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
     }
 
     private void validateUniqueUserForUpdate(UUID id, String username, String email) {
-        User userByName = userRepository.findByName(username);
-        if (userByName != null && !userByName.getId().equals(id)) {
-            throw new IllegalArgumentException("이미 사용 중인 username입니다.");
-        }
+        userRepository.findByName(username)
+                .filter(user -> !user.getId().equals(id))
+                .ifPresent(user -> {
+                    throw new IllegalArgumentException("이미 사용 중인 유저이름 입니다.");
+                });
 
-        User userByEmail = userRepository.findByEmail(email);
-        if (userByEmail != null && !userByEmail.getId().equals(id)) {
-            throw new IllegalArgumentException("이미 사용 중인 email입니다.");
-        }
+        userRepository.findByEmail(email)
+                .filter(user -> !user.getId().equals(id))
+                .ifPresent(user -> {
+                    throw new IllegalArgumentException("이미 사용 중인 E-mail입니다.");
+                });
     }
 
 }
