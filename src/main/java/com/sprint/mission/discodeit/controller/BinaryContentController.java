@@ -29,4 +29,11 @@ public class BinaryContentController {
     ) {
         return ResponseEntity.ok(binaryContentService.findAllByIdIn(binaryContentIds));
     }
+
+    @RequestMapping(value = "/{binaryContentId}/download", method = RequestMethod.GET)
+    public ResponseEntity<?> download(
+            @PathVariable UUID binaryContentId
+    ) {
+        return binaryContentService.download(binaryContentId);
+    }
 }

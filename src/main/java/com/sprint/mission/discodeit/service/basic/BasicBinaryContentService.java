@@ -6,7 +6,9 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -16,8 +18,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BasicBinaryContentService implements BinaryContentService {
 
-    private final BinaryContentMapper binaryContentMapper;
     private final BinaryContentRepository binaryContentRepository;
+    private final BinaryContentMapper binaryContentMapper;
+    private final BinaryContentStorage binaryContentStorage;
 
     @Override
     public BinaryContentDto create(BinaryContentCreateRequest request) {
@@ -27,6 +30,8 @@ public class BasicBinaryContentService implements BinaryContentService {
                 (long) request.bytes().length
         );
         binaryContentRepository.save(binaryContent);
+        binaryContentStorage.put(binaryContent.getId(), request.bytes());
+
         return binaryContentMapper.toDto(binaryContent);
     }
 
@@ -37,6 +42,7 @@ public class BasicBinaryContentService implements BinaryContentService {
 
         return binaryContentMapper.toDto(binaryContent);
     }
+
     @Override
     public Collection<BinaryContentDto> findAllByIdIn(Collection<UUID> ids) {
         return binaryContentRepository.findAllByIdIn(ids).stream()
@@ -58,5 +64,12 @@ public class BasicBinaryContentService implements BinaryContentService {
         return binaryContentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 파일입니다."));
     }
+
+    @Override
+    public ResponseEntity<?> download(UUID id) {
+        BinaryContentDto binaryContentDto = findById(id);
+
+        return binaryContentStorage.download(binaryContentDto);
+    };
 
 }

@@ -28,5 +28,7 @@ logging:
     org.hibernate.orm.jdbc.bind: trace
 
 discodeit:
-  repository:
-    file-directory: data
+  storage:
+    type: local
+    local:
+      root-path: .discodeit/storage
