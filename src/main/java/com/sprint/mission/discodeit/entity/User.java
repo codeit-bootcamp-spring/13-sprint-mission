@@ -1,33 +1,50 @@
 package com.sprint.mission.discodeit.entity;
 
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
 @Getter
-public class User extends MutableEntity {
+@Entity
+@Table(name = "users")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class User extends BaseUpdatableEntity {
 
-	private UUID profileId;
+	@Column(name = "username", nullable = false, unique = true, length = 50)
+	private String name;
+
+	@Column(name = "email", nullable = false, unique = true, length = 100)
+	private String email;
+
+	@Column(name = "password", nullable = false)
+	private String password;
+
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "profile_id")
+	private BinaryContent profile;
 	
-	String name;
-	String email;
-	String password;
-	
-	public User(String name, String email, String password, UUID profileId) {
+	public User(String name, String email, String password, BinaryContent profile) {
 		super();
 		this.name = name;
 		this.email = email;
 		this.password = password;
-		this.profileId = profileId;
+		this.profile = profile;
 	}
 
-	public void renew(String name, String email, String password, UUID profileId) {
+	public void renew(String name, String email, String password, BinaryContent profile) {
 		this.name = name;
 		this.email = email;
 		this.password = password;
-		this.profileId = profileId;
-		updateTime();
+		this.profile = profile;
+	}
+
+	public BinaryContent getProfile() {
+		return profile;
 	}
 
 	@Override
