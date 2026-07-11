@@ -25,8 +25,8 @@ public class BinaryContentController {
 
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<Collection<?>> findAllByIdIn(
-            @RequestParam Collection<UUID> ids
+            @RequestParam Collection<UUID> binaryContentIds
     ) {
-        return ResponseEntity.ok(binaryContentService.findAllByIdIn(ids));
+        return ResponseEntity.ok(binaryContentService.findAllByIdIn(binaryContentIds));
     }
 }

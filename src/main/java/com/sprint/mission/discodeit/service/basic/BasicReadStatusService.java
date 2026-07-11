@@ -52,8 +52,13 @@ public class BasicReadStatusService implements ReadStatusService {
 
     @Override
     public ReadStatusResponse findById(UUID id) {
-        return toResponse(readStatusRepository.findById(id));
+        ReadStatus readStatus = readStatusRepository.findById(id);
 
+        if (readStatus == null) {
+            throw new IllegalArgumentException("존재하지 않는 읽음 상태입니다.");
+        }
+
+        return toResponse(readStatus);
     }
 
     @Override
@@ -77,6 +82,12 @@ public class BasicReadStatusService implements ReadStatusService {
 
     @Override
     public void delete(UUID id) {
+        ReadStatus readStatus = readStatusRepository.findById(id);
+
+        if (readStatus == null) {
+            throw new IllegalArgumentException("존재하지 않는 읽음 상태입니다.");
+        }
+
         readStatusRepository.delete(id);
     }
 

@@ -6,7 +6,7 @@ public record BinaryContentResponse(
         UUID id,
         String fileName,
         String contentType,
-        byte[] bytes
+        Long size
 ) {
 
 }

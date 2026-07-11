@@ -15,11 +15,15 @@ public class ErrorResponseHandler {
     public ResponseEntity<GlobalException> handleIllegalArgumentException(
             IllegalArgumentException e
     ) {
+        HttpStatus status = isNotFoundException(e)
+                ? HttpStatus.NOT_FOUND
+                : HttpStatus.BAD_REQUEST;
+
         GlobalException response = new GlobalException(
                 Instant.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "서버 내부 오류가 발생했습니다."
+                status.value(),
+                status.getReasonPhrase(),
+                e.getMessage()
         );
 
         return ResponseEntity.badRequest().body(response);
@@ -37,5 +41,10 @@ public class ErrorResponseHandler {
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+    private boolean isNotFoundException(Exception e) {
+        String message = e.getMessage();
+        return message != null && message.contains("존재하지") || message.toLowerCase().contains("not found");
     }
 }

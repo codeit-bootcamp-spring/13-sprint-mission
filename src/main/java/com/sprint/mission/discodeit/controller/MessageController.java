@@ -58,6 +58,13 @@ public class MessageController {
         return ResponseEntity.ok(messageService.findAllByChannelId(channelId));
     }
 
+    @RequestMapping(value = "/{messageId}", method = RequestMethod.GET)
+    public ResponseEntity<MessageResponse> find(
+            @PathVariable UUID messageId
+    ) {
+        return ResponseEntity.ok(messageService.findById(messageId));
+    }
+
     @RequestMapping(value = "/{messageId}", method = RequestMethod.PATCH)
     public ResponseEntity<MessageResponse> update(
             @PathVariable UUID messageId,
