@@ -32,33 +32,29 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public MessageResponse create(MessageCreateRequest request) {
-        Channel channel = channelRepository.findById(request.channelId());
-        User author = userRepository.findById(request.userId());
+        Channel channel = channelRepository.findById(request.channelId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널의 메시지입니다."));
+
+        User author = userRepository.findById(request.userId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저의 메시지입니다."));
 
         if ((request.content() == null || request.content().isBlank())
                 && (request.attachments() == null || request.attachments().isEmpty())) {
             throw new IllegalArgumentException("메시지 내용 또는 첨부파일이 필요합니다.");
         }
 
-        if (channel == null) {
-            throw new IllegalArgumentException("존재하지 않는 채널의 메시지입니다.");
-        }
-        if (author == null) {
-            throw new IllegalArgumentException("존재하지 않는 유저의 메시지입니다.");
-        }
-
-        List<UUID> attachmentIds = new ArrayList<>();
+        List<BinaryContent> attachments = new ArrayList<>();
 
         if (request.attachments() != null) {
             for (BinaryContentCreateRequest attachmentRequest : request.attachments()) {
                 BinaryContent attachment = new BinaryContent(
                         attachmentRequest.fileName(),
                         attachmentRequest.contentType(),
-                        attachmentRequest.bytes()
+                        (long) attachmentRequest.bytes().length
                 );
 
                 binaryContentRepository.save(attachment);
-                attachmentIds.add(attachment.getId());
+                attachments.add(attachment);
             }
         }
 
@@ -66,7 +62,8 @@ public class BasicMessageService implements MessageService {
                 request.content(),
                 author,
                 channel,
-                attachmentIds);
+                attachments
+        );
 
         messageRepository.save(message);
         return toResponse(message) ;
@@ -76,31 +73,23 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public MessageResponse findById(UUID id) {
-        Message message = messageRepository.findById(id);
-        if (message == null) {
-            throw new IllegalArgumentException("존재하지 않은 메세지 입니다.") ;
-        }
+        Message message = messageRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 메세지 입니다."));
+
         return toResponse(message);
     }
 
     @Override
     public Collection<MessageResponse> findAllByChannelId(UUID channelId) {
-        return messageRepository.findAllByChannelId(channelId).stream()
+        return messageRepository.findAllByChannel_Id(channelId).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     @Override
     public MessageResponse update(UUID messageId, MessageUpdateRequest request) {
-        if (request.content() == null) {
-            throw new IllegalArgumentException("존재하지 않은 메세지 입니다.");
-        }
-
-        Message message = messageRepository.findById(messageId);
-
-        if (message == null) {
-            throw new IllegalArgumentException("존재하지 않은 메세지 입니다.");
-        }
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 메세지 입니다."));
 
         message.update(request.content());
         messageRepository.save(message);
@@ -109,22 +98,21 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public void delete(UUID id) {
-        Message message = messageRepository.findById(id);
+        Message message = messageRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 메세지 입니다."));
 
-        if (message == null) {
-            throw new IllegalArgumentException("존재하지 않은 메세지 입니다.");
+        for (BinaryContent attachment : message.getAttachments()) {
+            binaryContentRepository.delete(attachment);
         }
 
-        if (message.getAttachmentIds() != null) {
-            for (UUID attachmentId : message.getAttachmentIds()) {
-                binaryContentRepository.delete(attachmentId);
-            }
-        }
-
-        messageRepository.delete(id);
+        messageRepository.delete(message);
     }
 
     private MessageResponse toResponse(Message message) {
+        List<UUID> attachmentIds = message.getAttachments().stream()
+                .map(BinaryContent::getId)
+                .toList();
+
         return new MessageResponse(
                 message.getId(),
                 message.getCreateAt(),
@@ -132,7 +120,7 @@ public class BasicMessageService implements MessageService {
                 message.getContent(),
                 message.getChannel().getId(),
                 message.getAuthor().getId(),
-                message.getAttachmentIds()
+                attachmentIds
         );
     }
 }

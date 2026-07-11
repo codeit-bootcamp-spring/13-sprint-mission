@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+
 
 @Getter
 @Entity
@@ -34,14 +34,13 @@ public class Message extends BaseUpdatableEntity {
 			inverseJoinColumns = @JoinColumn(name = "attachment_id")
 	)
 	private List<BinaryContent> attachments = new ArrayList<>();
-	
-	public Message(String content,User author,Channel channel, List<UUID> attachments) {
-		super();
+
+	public Message(String content, User author, Channel channel, List<BinaryContent> attachments) {
 		this.content = content;
 		this.author = author;
 		this.channel = channel;
 		if (attachments != null) {
-			this.attachments = getAttachments();
+			this.attachments.addAll(attachments);
 		}
 	}
 
