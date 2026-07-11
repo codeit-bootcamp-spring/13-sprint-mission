@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.mapper.MessageMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
@@ -29,6 +30,7 @@ public class BasicMessageService implements MessageService {
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
     private final BinaryContentRepository binaryContentRepository;
+    private final MessageMapper messageMapper;
 
     @Override
     public MessageResponse create(MessageCreateRequest request) {
@@ -66,7 +68,7 @@ public class BasicMessageService implements MessageService {
         );
 
         messageRepository.save(message);
-        return toResponse(message) ;
+        return messageMapper.toDto(message);
     }
 
 
@@ -76,13 +78,13 @@ public class BasicMessageService implements MessageService {
         Message message = messageRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 메세지 입니다."));
 
-        return toResponse(message);
+        return messageMapper.toDto(message);
     }
 
     @Override
     public Collection<MessageResponse> findAllByChannelId(UUID channelId) {
         return messageRepository.findAllByChannel_Id(channelId).stream()
-                .map(this::toResponse)
+                .map(messageMapper::toDto)
                 .toList();
     }
 
@@ -93,7 +95,7 @@ public class BasicMessageService implements MessageService {
 
         message.update(request.content());
         messageRepository.save(message);
-        return toResponse(message);
+        return messageMapper.toDto(message);
     }
 
     @Override
@@ -108,19 +110,4 @@ public class BasicMessageService implements MessageService {
         messageRepository.delete(message);
     }
 
-    private MessageResponse toResponse(Message message) {
-        List<UUID> attachmentIds = message.getAttachments().stream()
-                .map(BinaryContent::getId)
-                .toList();
-
-        return new MessageResponse(
-                message.getId(),
-                message.getCreateAt(),
-                message.getUpdateAt(),
-                message.getContent(),
-                message.getChannel().getId(),
-                message.getAuthor().getId(),
-                attachmentIds
-        );
-    }
 }

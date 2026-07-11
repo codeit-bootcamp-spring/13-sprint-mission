@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.userstatus.UserStatusResponse;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.mapper.UserStatusMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserStatusService;
@@ -20,6 +21,7 @@ public class BasicUserStatusService implements UserStatusService {
 
     private final UserStatusRepository userStatusRepository;
     private final UserRepository userRepository;
+    private final UserStatusMapper userStatusMapper;
 
     @Override
     public UserStatusResponse create(UserStatusCreateRequest request) {
@@ -33,7 +35,7 @@ public class BasicUserStatusService implements UserStatusService {
         UserStatus userStatus = new UserStatus(user, request.lastSeenAt());
         userStatusRepository.save(userStatus);
 
-        return toResponse(userStatus);
+        return userStatusMapper.toDto(userStatus);
     }
 
     @Override
@@ -41,14 +43,14 @@ public class BasicUserStatusService implements UserStatusService {
         UserStatus userStatus = userStatusRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 상태입니다."));
 
-        return toResponse(userStatus);
+        return userStatusMapper.toDto(userStatus);
     }
 
     @Override
     public Collection<UserStatusResponse> findAll() {
         return userStatusRepository.findAll()
                 .stream()
-                .map(this::toResponse)
+                .map(userStatusMapper::toDto)
                 .toList();
     }
 
@@ -60,7 +62,7 @@ public class BasicUserStatusService implements UserStatusService {
         userStatus.updateLastSeenAt(request.lastSeenAt());
         userStatusRepository.save(userStatus);
 
-        return toResponse(userStatus);
+        return userStatusMapper.toDto(userStatus);
     }
 
     @Override
@@ -71,7 +73,7 @@ public class BasicUserStatusService implements UserStatusService {
         userStatus.updateLastSeenAt(request.lastSeenAt());
         userStatusRepository.save(userStatus);
 
-        return toResponse(userStatus);
+        return userStatusMapper.toDto(userStatus);
     }
 
     @Override
@@ -79,7 +81,7 @@ public class BasicUserStatusService implements UserStatusService {
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 상태입니다."));
 
-        return toResponse(userStatus);
+        return userStatusMapper.toDto(userStatus);
     }
 
     @Override
@@ -88,14 +90,5 @@ public class BasicUserStatusService implements UserStatusService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 상태입니다."));
 
         userStatusRepository.delete(userStatus);
-    }
-
-    private UserStatusResponse toResponse(UserStatus userStatus) {
-        return new UserStatusResponse(
-                userStatus.getId(),
-                userStatus.getUser().getId(),
-                userStatus.getLastSeenAt(),
-                userStatus.isOnline()
-        );
     }
 }

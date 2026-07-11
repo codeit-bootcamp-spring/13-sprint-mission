@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.controller;
 
-import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentResponse;
+import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentDto;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,14 +17,14 @@ public class BinaryContentController {
     private final BinaryContentService binaryContentService;
 
     @RequestMapping(value = "/{binaryContentId}", method = RequestMethod.GET)
-    public ResponseEntity<BinaryContentResponse> find(
+    public ResponseEntity<BinaryContentDto> find(
             @PathVariable UUID binaryContentId
     ) {
         return ResponseEntity.ok(binaryContentService.findById(binaryContentId));
     }
 
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<Collection<?>> findAllByIdIn(
+    public ResponseEntity<Collection<BinaryContentDto>> findAllByIdIn(
             @RequestParam Collection<UUID> binaryContentIds
     ) {
         return ResponseEntity.ok(binaryContentService.findAllByIdIn(binaryContentIds));

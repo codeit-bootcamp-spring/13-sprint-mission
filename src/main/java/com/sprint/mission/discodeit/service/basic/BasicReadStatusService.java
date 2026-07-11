@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.readstatus.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusResponse;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.mapper.ReadStatusMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -23,6 +24,7 @@ public class BasicReadStatusService implements ReadStatusService {
     private final ReadStatusRepository readStatusRepository;
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
+    private final ReadStatusMapper readStatusMapper;
 
 
     @Override
@@ -48,7 +50,7 @@ public class BasicReadStatusService implements ReadStatusService {
         );
 
         readStatusRepository.save(readStatus);
-        return toResponse(readStatus);
+        return readStatusMapper.toDto(readStatus);
     }
 
     @Override
@@ -56,13 +58,13 @@ public class BasicReadStatusService implements ReadStatusService {
         ReadStatus readStatus = readStatusRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 읽음 상태입니다."));
 
-        return toResponse(readStatus);
+        return readStatusMapper.toDto(readStatus);
     }
 
     @Override
     public Collection<ReadStatusResponse> findAllByUserId(UUID userId) {
         return readStatusRepository.findAllByUser_Id(userId).stream()
-                .map(this::toResponse)
+                .map(readStatusMapper::toDto)
                 .toList();
     }
 
@@ -73,7 +75,7 @@ public class BasicReadStatusService implements ReadStatusService {
 
         readStatus.updateReadAt(request.lastReadAt());
         readStatusRepository.save(readStatus);
-        return toResponse(readStatus);
+        return readStatusMapper.toDto(readStatus);
     }
 
     @Override
@@ -84,12 +86,4 @@ public class BasicReadStatusService implements ReadStatusService {
         readStatusRepository.delete(readStatus);
     }
 
-    private ReadStatusResponse toResponse(ReadStatus readStatus) {
-        return new ReadStatusResponse(
-                readStatus.getId(),
-                readStatus.getUser().getId(),
-                readStatus.getChannel().getId(),
-                readStatus.getLastReadAt()
-        );
-    }
 }

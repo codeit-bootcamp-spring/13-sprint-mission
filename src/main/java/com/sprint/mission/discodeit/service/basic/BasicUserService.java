@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
@@ -25,6 +26,7 @@ public class BasicUserService implements UserService {
     private final UserRepository userRepository;
     private final BinaryContentRepository binaryContentRepository;
     private final UserStatusRepository userStatusRepository;
+    private final UserMapper userMapper;
 
 
     @Override
@@ -56,7 +58,7 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = new UserStatus(user, Instant.now());
 
         userStatusRepository.save(userStatus);
-        return toResponse(user);
+        return userMapper.toResponse(user);
     }
 
     @Override
@@ -64,22 +66,21 @@ public class BasicUserService implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 유저입니다."));
 
-        return toResponse(user);
+        return userMapper.toResponse(user);
     }
 
     @Override
     public Collection<UserResponse> findAll() {
         return userRepository.findAll().stream()
-                .map(this::toResponse)
+                .map(userMapper::toResponse)
                 .toList();
     }
 
     @Override
     public Collection<UserDto> findAllDto() {
         return userRepository.findAll().stream()
-                .map(this::toDto)
+                .map(userMapper::toDto)
                 .toList();
-
     }
 
     @Override
@@ -112,7 +113,7 @@ public class BasicUserService implements UserService {
                 profile);
 
         userRepository.save(user);
-        return toResponse(user);
+        return userMapper.toResponse(user);
         }
 
     @Override
@@ -129,40 +130,6 @@ public class BasicUserService implements UserService {
                 .ifPresent(userStatusRepository::delete);
 
         userRepository.delete(user);
-    }
-
-    private UserResponse toResponse(User user) {
-        UserStatus userStatus = userStatusRepository.findByUserId(user.getId())
-                .orElse(null);
-
-        boolean isOnline = userStatus != null && userStatus.isOnline();
-        UUID profileId = user.getProfile() == null ? null : user.getProfile().getId();
-
-        return new UserResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                profileId,
-                isOnline
-        );
-    }
-
-    private UserDto toDto(User user) {
-        UserStatus userStatus = userStatusRepository.findByUserId(user.getId())
-                .orElse(null);
-
-        boolean online = userStatus != null && userStatus.isOnline();
-        UUID profileId = user.getProfile() == null ? null : user.getProfile().getId();
-
-        return new UserDto(
-                user.getId(),
-                user.getCreateAt(),
-                user.getUpdateAt(),
-                user.getName(),
-                user.getEmail(),
-                profileId,
-                online
-        );
     }
 
     private void validateUniqueUser(String username, String email) {
