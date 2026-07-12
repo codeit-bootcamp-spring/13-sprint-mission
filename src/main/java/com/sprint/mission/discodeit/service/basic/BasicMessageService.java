@@ -83,7 +83,7 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public MessageDto findById(UUID id) {
-        Message message = messageRepository.findById(id)
+        Message message = messageRepository.findWithDetailsById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 메세지 입니다."));
 
         return messageMapper.toDto(message);
