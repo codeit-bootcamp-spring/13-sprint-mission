@@ -1,51 +1,48 @@
 package com.sprint.mission.discodeit.entity;
 
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.UUID;
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-public class Channel implements Serializable {
+@Getter
+@Entity
+@Table(name = "channels")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Channel extends BaseUpdatableEntity {
 
-    private static final long serialVersionUID = 1L;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false, length = 10)
+    private ChannelType type;
 
-    private final UUID id;
-    private final Long createdAt;
-    private Long updatedAt;
-
+    @Column(name = "name", length = 100)
     private String name;
+
+    @Column(name = "description", length = 500)
     private String description;
 
-    public Channel(String name, String description) {
-        this.id = UUID.randomUUID();
-        this.createdAt = Instant.now().toEpochMilli();
-
+    public Channel(
+            ChannelType type,
+            String name,
+            String description
+    ) {
+        this.type = type;
         this.name = name;
         this.description = description;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public Long getCreatedAt() {
-        return createdAt;
-    }
-
-    public Long getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void update(String name, String description) {
+    public void update(
+            ChannelType type,
+            String name,
+            String description
+    ) {
+        this.type = type;
         this.name = name;
         this.description = description;
-        this.updatedAt = Instant.now().toEpochMilli();
     }
 }

@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -19,7 +19,7 @@ public class UserController {
 
     @PostMapping
     public User create(@RequestBody CreateUserRequest request) {
-        return userService.create(new User(request.getUsername(), request.getEmail()));
+        return userService.create(request);
     }
 
     @GetMapping
@@ -32,12 +32,12 @@ public class UserController {
         return userService.find(id);
     }
 
-    @PatchMapping("/{id}")
+    @PutMapping("/{id}")
     public User update(
             @PathVariable UUID id,
             @RequestBody UpdateUserRequest request
     ) {
-        return userService.update(id, request.getUsername(), request.getEmail());
+        return userService.update(id, request);
     }
 
     @DeleteMapping("/{id}")
