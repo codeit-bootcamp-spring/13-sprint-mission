@@ -17,7 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -60,7 +63,7 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = new UserStatus(user, Instant.now());
 
         userStatusRepository.save(userStatus);
-        return userMapper.toDto(user);
+        return userMapper.toDto(user, userStatus);
     }
 
     @Override
@@ -68,13 +71,25 @@ public class BasicUserService implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 유저입니다."));
 
-        return userMapper.toDto(user);
+        UserStatus userStatus = userStatusRepository.findByUserId(id).orElse(null);
+
+        return userMapper.toDto(user, userStatus);
     }
 
     @Override
     public Collection<UserDto> findAll() {
-        return userRepository.findAll().stream()
-                .map(userMapper::toDto)
+        List<User> users = userRepository.findAll();
+
+        Map<UUID, UserStatus> userStatusByUserId = userStatusRepository
+                .findAllByUser_IdIn(users.stream().map(User::getId).toList())
+                .stream()
+                .collect(Collectors.toMap(
+                        userStatus -> userStatus.getUser().getId(),
+                        userStatus -> userStatus
+                ));
+
+        return users.stream()
+                .map(user -> userMapper.toDto(user, userStatusByUserId.get(user.getId())))
                 .toList();
     }
 
@@ -108,8 +123,8 @@ public class BasicUserService implements UserService {
                 updateRequest.password(),
                 profile);
 
-        userRepository.save(user);
-        return userMapper.toDto(user);
+        UserStatus userStatus = userStatusRepository.findByUserId(userId).orElse(null);
+        return userMapper.toDto(user, userStatus);
         }
 
     @Override
