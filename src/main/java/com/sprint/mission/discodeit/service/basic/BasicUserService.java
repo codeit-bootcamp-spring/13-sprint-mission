@@ -13,6 +13,7 @@ import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -20,6 +21,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BasicUserService implements UserService {
 
     private final UserRepository userRepository;
@@ -29,6 +31,7 @@ public class BasicUserService implements UserService {
 
 
     @Override
+    @Transactional
     public UserDto create(UserCreateRequest createRequest) {
 
         validateUniqueUser(
@@ -76,6 +79,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @Transactional
     public UserDto update ( UUID userId, UserUpdateRequest updateRequest) {
 
         User user = userRepository.findById(userId)
@@ -109,6 +113,7 @@ public class BasicUserService implements UserService {
         }
 
     @Override
+    @Transactional
     public void delete(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 유저입니다."));

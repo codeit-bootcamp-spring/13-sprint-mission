@@ -10,12 +10,14 @@ import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BasicBinaryContentService implements BinaryContentService {
 
     private final BinaryContentRepository binaryContentRepository;
@@ -23,6 +25,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     private final BinaryContentStorage binaryContentStorage;
 
     @Override
+    @Transactional
     public BinaryContentDto create(BinaryContentCreateRequest request) {
         BinaryContent binaryContent = new BinaryContent(
                 request.fileName(),
@@ -51,6 +54,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     }
 
     @Override
+    @Transactional
     public void delete(UUID id) {
         if (!binaryContentRepository.existsById(id)) {
             throw new IllegalArgumentException("존재하지 않는 파일입니다.");

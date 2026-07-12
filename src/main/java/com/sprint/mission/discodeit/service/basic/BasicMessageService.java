@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BasicMessageService implements MessageService {
 
     private final MessageRepository messageRepository;
@@ -38,6 +40,7 @@ public class BasicMessageService implements MessageService {
     private final PageResponseMapper pageResponseMapper;
 
     @Override
+    @Transactional
     public MessageDto create(MessageCreateRequest request) {
         Channel channel = channelRepository.findById(request.channelId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널의 메시지입니다."));
@@ -99,6 +102,7 @@ public class BasicMessageService implements MessageService {
 
 
     @Override
+    @Transactional
     public MessageDto update(UUID messageId, MessageUpdateRequest request) {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 메세지 입니다."));
@@ -109,6 +113,7 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
+    @Transactional
     public void delete(UUID id) {
         Message message = messageRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 메세지 입니다."));
