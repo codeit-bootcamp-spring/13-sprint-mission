@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public interface MessageService {
@@ -13,7 +14,7 @@ public interface MessageService {
 
   MessageDto find(UUID messageId);
 
-  PageResponse<MessageDto> findAllByChannelId(UUID channelId);
+  PageResponse<MessageDto> findAllByChannelId(UUID channelId, Instant cursor);
 
   MessageDto update(UUID messageId, MessageUpdateRequest request);
 

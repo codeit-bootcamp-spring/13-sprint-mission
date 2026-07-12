@@ -15,6 +15,7 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
+import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -78,17 +79,30 @@ public class BasicMessageService implements MessageService {
 
   @Override
   @Transactional(readOnly = true)
-  public PageResponse<MessageDto> findAllByChannelId(UUID channelId) {
+  public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Instant cursor) {
     log.info("채널 메시지 목록 조회 요청 - channelId: {}", channelId);
 
-    PageRequest page = PageRequest.of(0, 50, Sort.by(Direction.DESC, "createdAt"));
+    PageRequest pageable = PageRequest.of(0, 50,
+        Sort.by(Direction.DESC, "createdAt"));
 
-    Slice<Message> slice = messageRepository.findAllByChannel_Id((channelId), page);
+    Slice<Message> slice;
+
+    if (cursor != null) {
+      slice = messageRepository.findAllByChannel_IdAndCreatedAtBefore(
+          channelId, cursor, pageable);
+    } else {
+      slice = messageRepository.findAllByChannel_Id(channelId, pageable);
+    }
+
     Slice<MessageDto> dtoSlice = slice.map(messageMapper::toDto);
+
+    Instant nextCursor = dtoSlice.hasNext()
+        ? dtoSlice.getContent().get(dtoSlice.getContent().size() - 1).createdAt()
+        : null;
 
     log.info("채널 메시지 목록 조회 완료 - 페이지: {}, 다음 페이지 여부: {}",
         dtoSlice.getNumber(), dtoSlice.hasNext());
-    return pageResponseMapper.fromSlice(dtoSlice);
+    return pageResponseMapper.fromSlice(dtoSlice, nextCursor);
   }
 
   @Override

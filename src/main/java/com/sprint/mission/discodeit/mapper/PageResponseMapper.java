@@ -9,10 +9,10 @@ import org.springframework.stereotype.Component;
 public class PageResponseMapper {
 
   //Slice (fromSlice)->다음 페이지 있는지만 알면 됨 (무한 스크롤)
-  public <T> PageResponse<T> fromSlice(Slice<T> slice) {
+  public <T> PageResponse<T> fromSlice(Slice<T> slice, Object nextCursor) {
     return new PageResponse<>(
         slice.getContent(),//현재 페이지의 실제 데이터 목록
-        slice.getNumber(),//현재 페이지 번호 (0부터 시작)
+        nextCursor,
         slice.getSize(),//한 페이지당 데이터 개수 (50개가 요구사항임.)
         slice.hasNext(),//다음 페이지가 있는지 여부
         null//전체 데이터 개수 (Slice는 모름)
@@ -25,7 +25,7 @@ public class PageResponseMapper {
   public <T> PageResponse<T> fromPage(Page<T> page) {
     return new PageResponse<>(
         page.getContent(),
-        page.getNumber(),
+        null,
         page.getSize(),
         page.hasNext(),
         page.getTotalElements()

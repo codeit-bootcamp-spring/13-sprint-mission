@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository;
 
 import com.sprint.mission.discodeit.entity.Message;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
@@ -19,5 +20,12 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
   Optional<Message> findFirstByChannel_IdOrderByCreatedAtDesc(UUID channelId);
   //파라미터로 받은 channelId에 속하는 message 객체들 중에
   // createdAt 기준 가장 최신의 message 객체를 Optional로 감싸서 반환 한다.
+
+
+  //cursor가 있으면 cursor이전 메세지 조회
+  @EntityGraph(attributePaths = {"author", "author.userStatus", "author.profile", "channel"})
+  Slice<Message> findAllByChannel_IdAndCreatedAtBefore(UUID channelId, Instant cursor,
+      Pageable pageable);
+
 
 }

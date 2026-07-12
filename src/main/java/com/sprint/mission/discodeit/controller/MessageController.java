@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.service.MessageService;
 import jakarta.validation.Valid;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -20,6 +21,7 @@ import java.util.UUID;
 public class MessageController {
 
   private final MessageService messageService;
+
 
   @RequestMapping(method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<MessageDto> create(
@@ -36,8 +38,8 @@ public class MessageController {
   }
 
   @RequestMapping(method = RequestMethod.GET)
-  public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(@RequestParam UUID channelId) {
-    PageResponse<MessageDto> allMessageByChannel = messageService.findAllByChannelId(channelId);
+  public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(@RequestParam UUID channelId, @RequestParam(required = false)Instant cursor) {
+    PageResponse<MessageDto> allMessageByChannel = messageService.findAllByChannelId(channelId, cursor);
     return ResponseEntity.status(HttpStatus.OK).body(allMessageByChannel);
   }
 

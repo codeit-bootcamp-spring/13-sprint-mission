@@ -19,6 +19,9 @@ public class ChannelMapper {
   private final MessageRepository messageRepository;
   private final UserMapper userMapper;
   private final ReadStatusRepository readStatusRepository;
+  //ChannelMapper는 repository를 직접 주입받음.
+  //MapStruct는 repository를 주입 못함.
+  // -> 복잡한 로직의 경우 하드코딩도 방법일 수 있음!
 
   public ChannelDto toDto(Channel channel) {
     Instant lastMessageAt = messageRepository.findFirstByChannel_IdOrderByCreatedAtDesc(
