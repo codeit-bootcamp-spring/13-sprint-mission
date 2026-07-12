@@ -2,29 +2,20 @@ package com.sprint.mission.discodeit.entity;
 
 import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Entity
 @Table(name = "messages")
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Message extends BaseUpdatableEntity {
 
-    private UUID id;
-
-    private Instant createdAt;
-    private Instant updatedAt;
-    private UUID authorId;
-    private UUID channelId;
-    private String updateContent;
-
-    @Column(columnDefinition = "text")
+    @Column(columnDefinition = "text", nullable = false)
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -32,7 +23,7 @@ public class Message extends BaseUpdatableEntity {
     private Channel channel;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "author_id")
+    @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
@@ -43,19 +34,14 @@ public class Message extends BaseUpdatableEntity {
     )
     private List<BinaryContent> attachments = new ArrayList<>();
 
-    public Message(String content) {
-        this.id = UUID.randomUUID();
+    public Message(String content, Channel channel, User author) {
         this.content = content;
-        this.createdAt = Instant.now();
-        this.updatedAt = this.createdAt;
-        this.authorId = null;
-        this.channelId = null;
-        this.updateContent = null;
+        this.channel = channel;
+        this.author = author;
     }
 
-    public void updateContent(Message requestMessage) {
-        this.content = requestMessage.getContent();
-        this.updatedAt = Instant.now();
+    public void updateContent(String newContent) {
+        this.content = newContent;
     }
 
 

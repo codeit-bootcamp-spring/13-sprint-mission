@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.entity;
 
 import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import com.sprint.mission.discodeit.entity.enums.ChannelType;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -11,6 +13,8 @@ import java.util.UUID;
 
 @Getter
 @NoArgsConstructor
+@Entity
+@Table(name = "channels")
 public class Channel extends BaseUpdatableEntity {
 
     private UUID id;
@@ -20,7 +24,10 @@ public class Channel extends BaseUpdatableEntity {
     private boolean isPrivate;
     private List<UUID> userIds;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ChannelType type;
+
     private String name;
     private String description;
 
@@ -34,14 +41,14 @@ public class Channel extends BaseUpdatableEntity {
         this.userIds = new ArrayList<>();
     }
 
-    public Channel(String channelTitles, String description, boolean isPrivate) {
+    public Channel(String channelTitles, String description, ChannelType type) {
         this.id = UUID.randomUUID();
         this.channelTitles = channelTitles;
         this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
         this.description = description;
-        this.isPrivate = isPrivate;
         this.userIds = new ArrayList<>();
+        this.type = type;
     }
 
     public void assignUsers(List<UUID> userIds) {
@@ -50,9 +57,9 @@ public class Channel extends BaseUpdatableEntity {
         }
     }
 
-    public void updateTitles(Channel channel) {
-        this.channelTitles = channel.getChannelTitles();
-        this.updatedAt = Instant.now();
+    public void updateTitles(String name, String description) {
+        this.name = name;
+        this.description = description;
     }
 
 }
