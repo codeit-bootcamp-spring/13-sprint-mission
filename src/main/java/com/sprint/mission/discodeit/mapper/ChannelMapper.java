@@ -38,9 +38,8 @@ public class ChannelMapper {
     }
 
     private Instant findLastMessageAt(UUID channelId) {
-        return messageRepository.findAllByChannel_Id(channelId).stream()
+        return messageRepository.findTopByChannel_IdOrderByCreatedAtDesc(channelId)
                 .map(Message::getCreateAt)
-                .max(Instant::compareTo)
                 .orElse(null);
     }
 

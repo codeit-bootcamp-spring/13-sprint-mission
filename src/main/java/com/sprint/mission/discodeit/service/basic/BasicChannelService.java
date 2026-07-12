@@ -94,17 +94,15 @@ public class BasicChannelService implements ChannelService {
     public Collection<ChannelDto> findAllByUserId(UUID userId) {
         List<ChannelDto> responses = new ArrayList<>();
 
-        for (Channel channel : channelRepository.findAll()) {
-            if (channel.getType() == ChannelType.PUBLIC) {
-                responses.add(channelMapper.toDto(channel));
-                continue;
-            }
+        channelRepository.findAllByType(ChannelType.PUBLIC).stream()
+                .map(channelMapper::toDto)
+                .forEach(responses::add);
 
-            if (channel.getType() == ChannelType.PRIVATE
-                    && readStatusRepository.findByUser_IdAndChannel_Id(userId, channel.getId()).isPresent()) {
-                responses.add(channelMapper.toDto(channel));
-            }
-        }
+        readStatusRepository.findAllByUser_Id(userId).stream()
+                .map(ReadStatus::getChannel)
+                .filter(channel -> channel.getType() == ChannelType.PRIVATE)
+                .map(channelMapper::toDto)
+                .forEach(responses::add);
 
         return responses;
     }

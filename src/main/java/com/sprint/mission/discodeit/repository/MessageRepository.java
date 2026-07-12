@@ -42,4 +42,6 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
     })
     Optional<Message> findWithDetailsById(UUID id);
 
+    Optional<Message> findTopByChannel_IdOrderByCreatedAtDesc(UUID channelId);
+
 }
