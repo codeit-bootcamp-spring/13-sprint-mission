@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ import java.util.UUID;
 public class BasicBinaryContentService implements BinaryContentService {
 
   private final BinaryContentRepository binaryContentRepository;
+  private final BinaryContentStorage binaryContentStorage;  // 추가
 
   @Override
   public BinaryContent create(BinaryContentCreateRequest request) {
@@ -23,12 +25,13 @@ public class BasicBinaryContentService implements BinaryContentService {
     byte[] bytes = request.bytes();
     String contentType = request.contentType();
     BinaryContent binaryContent = new BinaryContent(
-        fileName,
-        (long) bytes.length,
-        contentType,
-        bytes
+            fileName,
+            (long) bytes.length,
+            contentType  // bytes 파라미터 제거
     );
-    return binaryContentRepository.save(binaryContent);
+    BinaryContent saved = binaryContentRepository.save(binaryContent);
+    binaryContentStorage.put(saved.getId(), bytes);  // 디스크에 저장
+    return saved;
   }
 
   @Override

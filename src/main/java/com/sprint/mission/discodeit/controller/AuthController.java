@@ -1,29 +1,28 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.controller.api.AuthApi;
 import com.sprint.mission.discodeit.dto.request.LoginRequest;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.AuthService;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Auth", description = "인증 관련 API")
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/auth")
-public class AuthController {
+public class AuthController implements AuthApi {
 
   private final AuthService authService;
 
-  // POST /api/auth/login -> 로그인
-  @PostMapping("/login")
+  @PostMapping(path = "login")
   public ResponseEntity<User> login(@RequestBody LoginRequest loginRequest) {
-    User user = authService.login(loginRequest);
+    // Request DTO에서 값을 꺼내서 Service에 전달
+    User user = authService.login(
+            loginRequest.username(),
+            loginRequest.password()
+    );
     return ResponseEntity
             .status(HttpStatus.OK)
             .body(user);

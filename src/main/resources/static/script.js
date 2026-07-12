@@ -3,7 +3,7 @@ const API_BASE_URL = '/api';
 const ENDPOINTS = {
                            //GET 요청이면 그게 곧 "목록 조회"라는 뜻이므로 끝에 findAll을 붙일 필요가 없어짐
     USERS: `${API_BASE_URL}/users`,
-    BINARY_CONTENT: `${API_BASE_URL}/binaryContents`
+    BINARY_CONTENT: `${API_BASE_URL}/binary-contents`
 };
 
 // Initialize the application

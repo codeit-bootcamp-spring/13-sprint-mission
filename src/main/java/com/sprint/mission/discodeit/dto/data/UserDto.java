@@ -9,7 +9,7 @@ public record UserDto(
     Instant updatedAt,
     String username,
     String email,
-    UUID profileId,
+    BinaryContentDto profile,   // UUID profileId → BinaryContentDto로 변경
     Boolean online
 ) {
 

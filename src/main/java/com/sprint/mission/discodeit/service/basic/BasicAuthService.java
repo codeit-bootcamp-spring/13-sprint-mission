@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.request.LoginRequest;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.AuthService;
@@ -16,13 +15,11 @@ public class BasicAuthService implements AuthService {
   private final UserRepository userRepository;
 
   @Override
-  public User login(LoginRequest loginRequest) {
-    String username = loginRequest.username();
-    String password = loginRequest.password();
-
+  public User login(String username, String password) {
+    // Request DTO 대신 파라미터로 바로 받음
     User user = userRepository.findByUsername(username)
-        .orElseThrow(
-            () -> new NoSuchElementException("User with username " + username + " not found"));
+            .orElseThrow(
+                    () -> new NoSuchElementException("User with username " + username + " not found"));
 
     if (!user.getPassword().equals(password)) {
       throw new IllegalArgumentException("Wrong password");
