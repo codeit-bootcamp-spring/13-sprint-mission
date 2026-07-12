@@ -21,8 +21,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -87,12 +87,14 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Pageable pageable) {
-        Slice<MessageDto> messages = messageRepository
-                .findAllByChannel_Id(channelId, pageable)
-                .map(messageMapper::toDto);
+    public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Instant cursor, Pageable pageable) {
+        Slice<Message> messages = cursor == null
+                ? messageRepository.findAllByChannel_Id(channelId, pageable)
+                : messageRepository.findAllByChannel_IdAndCreatedAtLessThan(channelId, cursor, pageable);
 
-        return pageResponseMapper.fromSlice(messages);
+        Slice<MessageDto> messageDtos = messages.map(messageMapper::toDto);
+
+        return pageResponseMapper.fromSlice(messageDtos, MessageDto::createdAt);
     }
 
 
