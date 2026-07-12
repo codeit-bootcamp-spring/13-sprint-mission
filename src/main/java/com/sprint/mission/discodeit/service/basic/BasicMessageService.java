@@ -124,7 +124,7 @@ public class BasicMessageService implements MessageService {
   public void delete(UUID messageId) {
     log.info("메시지 삭제 요청 - messageId: {}", messageId);
 
-    Message message = messageRepository.findById(messageId)
+    messageRepository.findById(messageId)
         .orElseThrow(
             () -> new NoSuchElementException("존재하지 않는 messageId 입니다."));
     messageRepository.deleteById(messageId);
