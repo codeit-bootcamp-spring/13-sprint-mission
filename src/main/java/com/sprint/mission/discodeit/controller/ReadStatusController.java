@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusCreateRequest;
-import com.sprint.mission.discodeit.dto.readstatus.ReadStatusResponse;
+import com.sprint.mission.discodeit.dto.readstatus.ReadStatusDto;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.service.ReadStatusService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,7 +40,7 @@ public class ReadStatusController {
       @ApiResponse(responseCode = "400", description = "이미 읽음 상태가 존재함")
   })
   @RequestMapping(method = RequestMethod.POST)
-  public ResponseEntity<ReadStatusResponse> create(
+  public ResponseEntity<ReadStatusDto> create(
       @Valid @RequestBody ReadStatusCreateRequest request) {
     return ResponseEntity
         .status(HttpStatus.CREATED)
@@ -54,7 +54,7 @@ public class ReadStatusController {
       @ApiResponse(responseCode = "404", description = "Message 읽음 상태를 찾을 수 없음")
   })
   @RequestMapping(path = "/{readStatusId}", method = RequestMethod.PATCH)
-  public ResponseEntity<ReadStatusResponse> update(
+  public ResponseEntity<ReadStatusDto> update(
       @Parameter(name = "readStatusId", in = ParameterIn.PATH, description = "수정할 읽음 상태 ID", required = true,
           schema = @Schema(type = "string", format = "uuid"))
       @PathVariable UUID readStatusId,
@@ -71,9 +71,9 @@ public class ReadStatusController {
       description = "Message 읽음 상태 목록 조회 성공",
       content = @Content(
           array = @ArraySchema(
-              schema = @Schema(implementation = ReadStatusResponse.class))))
+              schema = @Schema(implementation = ReadStatusDto.class))))
   @RequestMapping(method = RequestMethod.GET)
-  public ResponseEntity<List<ReadStatusResponse>> findAllByUserId(
+  public ResponseEntity<List<ReadStatusDto>> findAllByUserId(
       @Parameter(name = "userId", in = ParameterIn.QUERY, description = "조회할 User ID", required = true,
           schema = @Schema(type = "string", format = "uuid"))
       @RequestParam UUID userId) {

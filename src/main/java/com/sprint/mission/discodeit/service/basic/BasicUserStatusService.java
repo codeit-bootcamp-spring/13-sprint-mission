@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.userstatus.UserStatusDto;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.mapper.UserStatusMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserStatusService;
@@ -24,6 +25,7 @@ public class BasicUserStatusService implements UserStatusService {
 
   private final UserStatusRepository userStatusRepository;
   private final UserRepository userRepository;
+  private final UserStatusMapper userStatusMapper;
   // 의존성 주입
 
   @Transactional
@@ -40,7 +42,7 @@ public class BasicUserStatusService implements UserStatusService {
     }
     UserStatus userStatus = new UserStatus(user, request.getLastActiveAt());
     UserStatus saved = userStatusRepository.save(userStatus);
-    return UserStatusDto.from(saved);
+    return userStatusMapper.toDto(saved);
   }
 
   @Override
@@ -48,13 +50,13 @@ public class BasicUserStatusService implements UserStatusService {
     UserStatus userStatus = userStatusRepository.findById(userStatusId)
         .orElseThrow(
             () -> new NoSuchElementException("UserStatus with id " + userStatusId + " not found"));
-    return UserStatusDto.from(userStatus);
+    return userStatusMapper.toDto(userStatus);
   }
 
   @Override
   public List<UserStatusDto> findAll() { // 모든 객체 조회
     return userStatusRepository.findAll().stream()
-        .map(UserStatusDto::from)
+        .map(userStatusMapper::toDto)
         .toList();
   }
 
@@ -65,7 +67,7 @@ public class BasicUserStatusService implements UserStatusService {
         .orElseThrow(
             () -> new NoSuchElementException("UserStatus with id " + userStatusId + " not found"));
     userStatus.update(request.getNewLastActiveAt());
-    return UserStatusDto.from(userStatus);
+    return userStatusMapper.toDto(userStatus);
   }
 
   @Transactional
@@ -77,7 +79,7 @@ public class BasicUserStatusService implements UserStatusService {
         .orElseThrow(
             () -> new NoSuchElementException("UserStatus with userId " + userId + " not found"));
     userStatus.update(newLastActiveAt);
-    return UserStatusDto.from(userStatus);
+    return userStatusMapper.toDto(userStatus);
   }
 
   @Transactional

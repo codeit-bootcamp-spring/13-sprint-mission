@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.readstatus.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.mapper.ReadStatusMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -27,6 +28,7 @@ public class BasicReadStatusService implements ReadStatusService {
   private final ReadStatusRepository readStatusRepository;
   private final UserRepository userRepository;
   private final ChannelRepository channelRepository;
+  private final ReadStatusMapper readStatusMapper;
 
   @Transactional
   @Override
@@ -48,7 +50,7 @@ public class BasicReadStatusService implements ReadStatusService {
     Instant lastReadAt = request.getLastReadAt();
     ReadStatus saved = readStatusRepository.save(new ReadStatus(user, channel, lastReadAt));
 
-    return ReadStatusDto.from(saved);
+    return readStatusMapper.toDto(saved);
   }
 
   @Override
@@ -56,13 +58,13 @@ public class BasicReadStatusService implements ReadStatusService {
     ReadStatus readStatus = readStatusRepository.findById(readStatusId)
         .orElseThrow(
             () -> new NoSuchElementException("ReadStatus with id " + readStatusId + " not found"));
-    return ReadStatusDto.from(readStatus);
+    return readStatusMapper.toDto(readStatus);
   }
 
   @Override
   public List<ReadStatusDto> findAllByUserId(UUID userId) { // userId를 조건으로 조회
     return readStatusRepository.findByUserId(userId).stream()
-        .map(ReadStatusDto::from)
+        .map(readStatusMapper::toDto)
         .toList();
   }
 
@@ -73,7 +75,7 @@ public class BasicReadStatusService implements ReadStatusService {
         .orElseThrow(
             () -> new NoSuchElementException("ReadStatus with id " + readStatusId + " not found"));
     readStatus.update(request.getNewLastReadAt());
-    return ReadStatusDto.from(readStatus);
+    return readStatusMapper.toDto(readStatus);
   }
 
   @Transactional

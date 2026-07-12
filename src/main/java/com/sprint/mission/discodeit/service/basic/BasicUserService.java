@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
@@ -29,6 +30,7 @@ public class BasicUserService implements UserService {
   private final UserRepository userRepository;
   private final BinaryContentRepository contentRepository;
   private final UserStatusRepository statusRepository;
+  private final UserMapper userMapper;
 
   @Transactional
   @Override
@@ -60,28 +62,21 @@ public class BasicUserService implements UserService {
     User savedUser = userRepository.save(user);
     // UserStatus를 같이 생성
     UserStatus userStatus = new UserStatus(savedUser, Instant.now());
-    UserStatus savedUserStatus = statusRepository.save(userStatus);
-    return UserDto.from(savedUser, savedUserStatus);
+    statusRepository.save(userStatus);
+    return userMapper.toDto(savedUser);
   }
 
   @Override
   public UserDto find(UUID userId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new NoSuchElementException("User with id " + userId + " not found"));
-    UserStatus userStatus = statusRepository.findByUserId(userId)
-        .orElseThrow(() -> new NoSuchElementException("User with id " + userId + " not found"));
-    return UserDto.from(user, userStatus);
+    return userMapper.toDto(user);
   }
 
   @Override
   public List<UserDto> findAll() {
     return userRepository.findAll().stream()
-        .map(user -> {
-          UserStatus userStatus = statusRepository.findByUserId(user.getId())
-              .orElseThrow(
-                  () -> new NoSuchElementException("User with id " + user.getId() + " not found"));
-          return UserDto.from(user, userStatus);
-        }).toList();
+        .map(userMapper::toDto).toList();
   }
 
   @Transactional
@@ -89,8 +84,6 @@ public class BasicUserService implements UserService {
   public UserDto update(UUID userId, UserUpdateRequest userUpdateRequest,
       Optional<BinaryContentCreateRequest> optionalProfileCreateRequest) {
     User user = userRepository.findById(userId)
-        .orElseThrow(() -> new NoSuchElementException("User with id " + userId + " not found"));
-    UserStatus userStatus = statusRepository.findByUserId(userId)
         .orElseThrow(() -> new NoSuchElementException("User with id " + userId + " not found"));
     String newUsername = userUpdateRequest.getNewUsername();
     String newEmail = userUpdateRequest.getNewEmail();
@@ -116,7 +109,7 @@ public class BasicUserService implements UserService {
     // 기존 프로필 삭제
     String newPassword = userUpdateRequest.getNewPassword();
     user.update(newUsername, newEmail, newPassword, profile); // profileId 추가
-    return UserDto.from(user, userStatus);
+    return userMapper.toDto(user);
   }
 
   @Transactional
@@ -128,8 +121,6 @@ public class BasicUserService implements UserService {
     if (user.getProfile() != null) {
       contentRepository.delete(user.getProfile());
     }
-    statusRepository.findByUserId(userId)
-        .ifPresent(userStatus -> statusRepository.deleteById(userStatus.getId()));
     userRepository.deleteById(userId);
   }
 }

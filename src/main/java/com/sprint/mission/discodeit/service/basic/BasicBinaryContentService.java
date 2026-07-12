@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class BasicBinaryContentService implements BinaryContentService {
 
   private final BinaryContentRepository binaryContentRepository;
+  private final BinaryContentMapper binaryContentMapper; // 매퍼 객체 사용하기 위해 의존성 주입 
 
   @Transactional // readOnly가 아닌 트랜잭션이 필요한 경우 메서드에 직접 붙여준다
   @Override
@@ -30,7 +32,7 @@ public class BasicBinaryContentService implements BinaryContentService {
         request.getBytes()
     );
     BinaryContent saved = binaryContentRepository.save(binaryContent);
-    return BinaryContentDto.from(saved);
+    return binaryContentMapper.toDto(saved);
   }
 
   @Override
@@ -39,7 +41,7 @@ public class BasicBinaryContentService implements BinaryContentService {
         .orElseThrow(
             () -> new NoSuchElementException(
                 "BinaryContent with id " + binaryContentId + " not found"));
-    return BinaryContentDto.from(binaryContent);
+    return binaryContentMapper.toDto(binaryContent);
   }
 
   @Override
@@ -48,7 +50,7 @@ public class BasicBinaryContentService implements BinaryContentService {
       return List.of();
     }
     return binaryContentRepository.findAllById(contentIds).stream()
-        .map(BinaryContentDto::from)
+        .map(binaryContentMapper::toDto)
         .toList();
   }
 

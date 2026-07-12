@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.mapper.MessageMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
@@ -31,6 +32,7 @@ public class BasicMessageService implements MessageService {
   private final ChannelRepository channelRepository;
   private final UserRepository userRepository;
   private final BinaryContentRepository contentRepository;
+  private final MessageMapper messageMapper;
 
   @Transactional
   @Override
@@ -54,7 +56,7 @@ public class BasicMessageService implements MessageService {
     Message message = new Message(messageCreateRequest.getContent(),
         channel, author, savedAttachments);
     Message saved = messageRepository.save(message);
-    return MessageDto.from(saved);
+    return messageMapper.toDto(saved);
   }
 
   @Override
@@ -62,14 +64,14 @@ public class BasicMessageService implements MessageService {
     Message foundMessage = messageRepository.findById(messageId)
         .orElseThrow(
             () -> new NoSuchElementException("Message with id " + messageId + " not found"));
-    return MessageDto.from(foundMessage);
+    return messageMapper.toDto(foundMessage);
   }
 
   @Override
   public List<MessageDto> findAllByChannelId(UUID channelId) {
     // 특정 Channel의 Message 목록 조회 조건 추가
     return messageRepository.findByChannelId(channelId).stream()
-        .map(MessageDto::from)
+        .map(messageMapper::toDto)
         .toList();
   }
 
@@ -80,7 +82,7 @@ public class BasicMessageService implements MessageService {
         .orElseThrow(
             () -> new NoSuchElementException("Message with id " + messageId + " not found"));
     message.update(request.getNewContent());
-    return MessageDto.from(message);
+    return messageMapper.toDto(message);
   }
 
   @Transactional

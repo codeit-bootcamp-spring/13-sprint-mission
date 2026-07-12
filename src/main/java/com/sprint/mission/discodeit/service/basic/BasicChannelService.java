@@ -4,12 +4,11 @@ import com.sprint.mission.discodeit.dto.channel.ChannelDto;
 import com.sprint.mission.discodeit.dto.channel.PublicChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.channel.PublicChannelCreateRequest;
-import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
-import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -18,8 +17,6 @@ import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -34,7 +31,8 @@ public class BasicChannelService implements ChannelService {
   private final ReadStatusRepository readStatusRepository;
   private final MessageRepository messageRepository;
   private final UserRepository userRepository;
-  // 의존성 주입
+  private final ChannelMapper channelMapper;
+  // 매퍼 객체를 사용하기 위해 의존성 주입
 
   // PRIVATE, PUBLIC 채널 생성 메소드 분리
   // PUBLIC 채널 생성할 때는 기존 로직 유지
@@ -43,7 +41,7 @@ public class BasicChannelService implements ChannelService {
   public ChannelDto createPublicChannel(PublicChannelCreateRequest request) {
     Channel channel = new Channel(ChannelType.PUBLIC, request.getName(), request.getDescription());
     Channel saved = channelRepository.save(channel);
-    return ChannelDto.from(saved, null, List.of());
+    return channelMapper.toDto(saved);
   }
 
   // PRIVATE 채널 생성할 때 채널에 참여하는 User 정보 받아 User 별 ReadStatus 정보 생성 (name, description 속성 생략)
@@ -59,9 +57,7 @@ public class BasicChannelService implements ChannelService {
         .map(user -> new ReadStatus(user, createdChannel, createdChannel.getCreatedAt()))
         .toList();// 초기 시간값 설정 로직 변경
     readStatusRepository.saveAll(readStatuses); // saveAll로 한 번에 저장
-    return ChannelDto.from(createdChannel, createdChannel.getCreatedAt(),
-        participants.stream().map(user -> UserDto.from(user, user.getStatus()))
-            .toList()); // User 엔티티 리스트를 UserDto 리스트로 변환해 API 스펙과 맞춘다
+    return channelMapper.toDto(createdChannel);
   }
 
   @Override
@@ -69,21 +65,7 @@ public class BasicChannelService implements ChannelService {
     Channel channel = channelRepository.findById(channelId)
         .orElseThrow(
             () -> new NoSuchElementException("Channel with id " + channelId + " not found"));
-    List<Message> allMessages = messageRepository.findByChannelId(channelId);
-    Instant lastMessageAt = allMessages.stream()
-        .map(Message::getUpdatedAt)
-        .max(Comparator.naturalOrder())
-        .orElse(null); // 메시지가 없을 때 null 처리
-    // PRIVATE 채널인 경우 참여한 User id 정보 포함
-    List<User> userIds = List.of(); // NPE 발생하지 않도록 null 대신 List.of() 대입
-    if (channel.getType() == ChannelType.PRIVATE) {
-      userIds = readStatusRepository.findByChannelId(channelId).stream()
-          .map(ReadStatus::getUser)
-          .toList();
-    }
-    return ChannelDto.from(channel, lastMessageAt,
-        userIds.stream()
-            .map(user -> UserDto.from(user, user.getStatus())).toList()); // 가장 최근 메시지의 시간 정보 포함
+    return channelMapper.toDto(channel);
   }
 
   @Override
@@ -95,21 +77,7 @@ public class BasicChannelService implements ChannelService {
     return channelRepository.findAll().stream()
         .filter(channel -> channel.getType() == ChannelType.PUBLIC || participantsId.contains(
             channel.getId()))
-        .map(channel -> {
-          Instant lastMessageAt = messageRepository.findByChannelId(channel.getId()).stream()
-              .map(Message::getUpdatedAt)
-              .max(Comparator.naturalOrder())
-              .orElse(null);
-          // PRIVATE 채널인 경우 참여한 User id 정보 포함
-          List<User> userIds = List.of();
-          if (channel.getType() == ChannelType.PRIVATE) {
-            userIds = readStatusRepository.findByChannelId(channel.getId()).stream()
-                .map(ReadStatus::getUser)
-                .toList();
-          }
-          return ChannelDto.from(channel, lastMessageAt,
-              userIds.stream().map(user -> UserDto.from(user, user.getStatus())).toList());
-        }).toList();
+        .map(channelMapper::toDto).toList();
   }
 
   @Transactional
@@ -124,7 +92,7 @@ public class BasicChannelService implements ChannelService {
       throw new IllegalArgumentException("Private channel cannot be updated"); // 제공된 API 스펙과 맞추어 수정
     }
     channel.update(request.getNewName(), request.getNewDescription());
-    return ChannelDto.from(channel, null, List.of());
+    return channelMapper.toDto(channel);
   }
 
   @Transactional
