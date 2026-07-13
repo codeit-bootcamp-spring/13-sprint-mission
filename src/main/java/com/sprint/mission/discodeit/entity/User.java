@@ -1,65 +1,71 @@
 package com.sprint.mission.discodeit.entity;
 
+import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-import java.io.Serial;
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
+
+import static jakarta.persistence.CascadeType.*;
+import static jakarta.persistence.FetchType.EAGER;
+import static jakarta.persistence.FetchType.LAZY;
 
 @Getter
-public class User implements Serializable {
+@Entity
+@Table(name = "users")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class User extends BaseUpdatableEntity {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
-
-    private final UUID id;
-
-    private final Instant createdAt;
-
-    private Instant updatedAt;
-
+    @Column(length = 50, nullable = false, unique = true)
     private String username;
 
+    @Column(length = 100, nullable = false, unique = true)
     private String email;
 
+    @Column(length = 60, nullable = false)
     private String password;
 
-    private UUID profileId;
+    @OneToOne(fetch = LAZY)
+    @JoinColumn(name = "profile_id", unique = true)
+    private BinaryContent profile;
 
-    public User(String username, String email, String password) {
-        this.id = UUID.randomUUID();
-        this.createdAt = Instant.now();
+    @OneToOne(mappedBy = "user", fetch = EAGER, cascade = ALL, orphanRemoval = true)
+    private UserStatus status;
+
+    @OneToMany(mappedBy = "user", cascade = ALL, orphanRemoval = true)
+    private final List<ReadStatus> readStatuses = new ArrayList<>();
+
+    private User(String username, String email, String password) {
         this.username = username;
         this.email = email;
         this.password = password;
     }
 
+    public static User create(String username, String email, String password) {
+        return new User(username, email, password);
+    }
+
     public void update(String newUsername, String newEmail, String newPassword) {
-        boolean flag = false;
-
-        if (newUsername != null && !newUsername.equals(this.username)) {
+        if (newUsername != null) {
             this.username = newUsername;
-            flag = true;
         }
-        if (newEmail != null && !newEmail.equals(this.email)) {
+        if (newEmail != null) {
             this.email = newEmail;
-            flag = true;
         }
-        if (newPassword != null && !newPassword.equals(this.password)) {
+        if (newPassword != null) {
             this.password = newPassword;
-            flag = true;
-        }
-
-        if (flag) {
-            this.updatedAt = Instant.now();
         }
     }
 
-    public void updateProfileId(UUID newProfileId) {
-        if (newProfileId != null && !newProfileId.equals(this.profileId)) {
-            this.profileId = newProfileId;
-            this.updatedAt = Instant.now();
+    public void updateProfile(BinaryContent newProfile) {
+        if (newProfile != null) {
+            this.profile = newProfile;
         }
+    }
+
+    public void updateStatus(UserStatus newStatus) {
+        this.status = newStatus;
     }
 }

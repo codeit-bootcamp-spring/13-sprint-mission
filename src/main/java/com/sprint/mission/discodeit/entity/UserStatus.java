@@ -1,40 +1,40 @@
 package com.sprint.mission.discodeit.entity;
 
+import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.UUID;
+
+import static jakarta.persistence.FetchType.LAZY;
 
 @Getter
-public class UserStatus implements Serializable {
+@Entity
+@Table(name = "user_statuses")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class UserStatus extends BaseUpdatableEntity {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
+    @OneToOne(fetch = LAZY)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
 
-    private final UUID id;
-
-    private final Instant createdAt;
-
-    private Instant updatedAt;
-
-    private final UUID userId;
-
+    @Column(nullable = false)
     private Instant lastActiveAt;
 
-    public UserStatus(UUID userId, Instant lastActiveAt) {
-        this.id = UUID.randomUUID();
-        this.createdAt = Instant.now();
-        this.userId = userId;
+    private UserStatus(User user, Instant lastActiveAt) {
+        this.user = user;
         this.lastActiveAt = lastActiveAt;
     }
 
+    public static UserStatus create(User user, Instant lastActiveAt) {
+        return new UserStatus(user, lastActiveAt);
+    }
+
     public void updateLastActiveAt(Instant newLastActiveAt) {
-        if (newLastActiveAt != null && !newLastActiveAt.equals(this.lastActiveAt)) {
+        if (newLastActiveAt != null) {
             this.lastActiveAt = newLastActiveAt;
-            this.updatedAt = Instant.now();
         }
     }
 

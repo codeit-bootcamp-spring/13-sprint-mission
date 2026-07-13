@@ -1,59 +1,59 @@
 package com.sprint.mission.discodeit.entity;
 
+import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-import java.io.Serial;
-import java.io.Serializable;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+
+import static jakarta.persistence.FetchType.LAZY;
 
 @Getter
-public class Message implements Serializable {
+@Entity
+@Table(name = "messages")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Message extends BaseUpdatableEntity {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
-
-    private final UUID id;
-
-    private final Instant createdAt;
-
-    private Instant updatedAt;
-
+    @Column(columnDefinition = "TEXT")
     private String content;
 
-    private final UUID channelId;
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "channel_id", nullable = false)
+    private Channel channel;
 
-    private final UUID authorId;
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "author_id")
+    private User author;
 
-    private final List<UUID> attachmentIds;
+    @ManyToMany(fetch = LAZY)
+    @JoinTable(
+            name = "message_attachments",
+            joinColumns = @JoinColumn(name = "message_id"),
+            inverseJoinColumns = @JoinColumn(name = "attachment_id")
+    )
+    private List<BinaryContent> attachments = new ArrayList<>();
 
-    public Message(String content, UUID channelId, UUID authorId) {
+    private Message(String content, Channel channel, User author, List<BinaryContent> attachments) {
+        this.content = content;
+        this.channel = channel;
+        this.author = author;
 
-        this(content, channelId, authorId, null);
+        if (attachments != null) this.attachments = new ArrayList<>(attachments);
     }
 
-    public Message(String content, UUID channelId, UUID authorId, List<UUID> attachmentIds) {
-        this.id = UUID.randomUUID();
-        this.createdAt = Instant.now();
-        this.content = content;
-        this.channelId = channelId;
-        this.authorId = authorId;
-        this.attachmentIds = attachmentIds == null ? new ArrayList<>()
-                : new ArrayList<>(attachmentIds);
+    public static Message create(String content, Channel channel, User author) {
+        return create(content, channel, author, null);
+    }
+
+    public static Message create(String content, Channel channel, User author, List<BinaryContent> attachments) {
+        return new Message(content, channel, author, attachments);
     }
 
     public void update(String newContent) {
-        boolean flag = false;
-
-        if (newContent != null && !newContent.equals(this.content)) {
+        if (newContent != null) {
             this.content = newContent;
-            flag = true;
-        }
-
-        if (flag) {
-            this.updatedAt = Instant.now();
         }
     }
 }

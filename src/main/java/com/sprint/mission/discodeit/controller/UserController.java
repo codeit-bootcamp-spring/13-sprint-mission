@@ -1,11 +1,11 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.dto.data.UserDto;
+import com.sprint.mission.discodeit.dto.data.UserStatusDto;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserStatusUpdateByUserIdRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.UserResponse;
-import com.sprint.mission.discodeit.dto.response.UserStatusResponse;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +29,8 @@ public class UserController {
     private final UserStatusService userStatusService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UserResponse> create(@RequestPart("userCreateRequest") UserCreateRequest request,
-                                               @RequestPart(value = "profile", required = false) MultipartFile profile)
+    public ResponseEntity<UserDto> create(@RequestPart("userCreateRequest") UserCreateRequest request,
+                                          @RequestPart(value = "profile", required = false) MultipartFile profile)
             throws IOException {
         UserCreateRequest createRequest = new UserCreateRequest(
                 request.username(),
@@ -43,7 +43,7 @@ public class UserController {
     }
 
     @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UserResponse> update(@PathVariable UUID userId,
+    public ResponseEntity<UserDto> update(@PathVariable UUID userId,
                                                @RequestPart("userUpdateRequest") UserUpdateRequest request,
                                                @RequestPart(value = "profile", required = false) MultipartFile profile)
             throws IOException {
@@ -65,13 +65,13 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponse>> findAll() {
+    public ResponseEntity<List<UserDto>> findAll() {
         return ResponseEntity.ok(userService.findAll());
     }
 
     @PatchMapping("/{userId}/userStatus")
-    public ResponseEntity<UserStatusResponse> updateOnlineStatus(@PathVariable UUID userId,
-                                                                 @RequestBody UserStatusUpdateByUserIdRequest request) {
+    public ResponseEntity<UserStatusDto> updateOnlineStatus(@PathVariable UUID userId,
+                                                            @RequestBody UserStatusUpdateByUserIdRequest request) {
         UserStatusUpdateByUserIdRequest updateRequest =
                 new UserStatusUpdateByUserIdRequest(userId, request.newLastActiveAt());
 
