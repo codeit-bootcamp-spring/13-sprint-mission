@@ -12,6 +12,7 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class BasicUserService implements UserService {
   private final BinaryContentRepository contentRepository;
   private final UserStatusRepository statusRepository;
   private final UserMapper userMapper;
+  private final BinaryContentStorage storage;
 
   @Transactional
   @Override
@@ -51,9 +53,10 @@ public class BasicUserService implements UserService {
           BinaryContent binaryContent = new BinaryContent(
               profileRequest.getFileName(),
               profileRequest.getContentType(),
-              (long) profileRequest.getBytes().length,
-              profileRequest.getBytes());
-          return contentRepository.save(binaryContent);
+              (long) profileRequest.getBytes().length);
+          BinaryContent saved = contentRepository.save(binaryContent);
+          storage.put(saved.getId(), profileRequest.getBytes());
+          return saved;
         })
         .orElse(null);
     // 프로필 이미지 없으면 이는 비워두고 등록
@@ -87,7 +90,8 @@ public class BasicUserService implements UserService {
         .orElseThrow(() -> new NoSuchElementException("User with id " + userId + " not found"));
     String newUsername = userUpdateRequest.getNewUsername();
     String newEmail = userUpdateRequest.getNewEmail();
-    if (userRepository.existsByEmail(newEmail)) { // API 스펙에 맞춰 추가
+    if (userRepository.existsByEmail(newEmail) && !user.getEmail()
+        .equals(newEmail)) { // API 스펙에 맞춰 추가
       throw new IllegalArgumentException("User with email " + newEmail + " already exists");
     }
     if (userRepository.existsByUsername(newUsername)) {
@@ -101,9 +105,10 @@ public class BasicUserService implements UserService {
           BinaryContent binaryContent = new BinaryContent(
               profileRequest.getFileName(),
               profileRequest.getContentType(),
-              (long) profileRequest.getBytes().length,
-              profileRequest.getBytes());
-          return contentRepository.save(binaryContent);
+              (long) profileRequest.getBytes().length);
+          BinaryContent saved = contentRepository.save(binaryContent);
+          storage.put(saved.getId(), profileRequest.getBytes());
+          return saved;
         })
         .orElse(null);
     // 기존 프로필 삭제

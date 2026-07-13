@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class BasicBinaryContentService implements BinaryContentService {
 
   private final BinaryContentRepository binaryContentRepository;
-  private final BinaryContentMapper binaryContentMapper; // 매퍼 객체 사용하기 위해 의존성 주입 
+  private final BinaryContentMapper binaryContentMapper; // 매퍼 객체 사용하기 위해 의존성 주입
+  private final BinaryContentStorage storage;
 
   @Transactional // readOnly가 아닌 트랜잭션이 필요한 경우 메서드에 직접 붙여준다
   @Override
@@ -28,10 +30,10 @@ public class BasicBinaryContentService implements BinaryContentService {
     BinaryContent binaryContent = new BinaryContent(
         request.getFileName(),
         request.getContentType(),
-        (long) request.getBytes().length,
-        request.getBytes()
+        (long) request.getBytes().length
     );
     BinaryContent saved = binaryContentRepository.save(binaryContent);
+    storage.put(saved.getId(), request.getBytes());
     return binaryContentMapper.toDto(saved);
   }
 

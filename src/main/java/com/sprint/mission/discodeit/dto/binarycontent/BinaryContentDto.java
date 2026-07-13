@@ -12,5 +12,4 @@ public class BinaryContentDto { // record 타입은 실무에서 많이 사용�
   private String fileName;
   private String contentType;
   private Long size;
-  private byte[] bytes; // 제공된 클래스 다이어그램에 맞춰 추가
 }

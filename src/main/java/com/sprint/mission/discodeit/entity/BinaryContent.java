@@ -23,13 +23,9 @@ public class BinaryContent extends BaseEntity {
   @Column(nullable = false)
   private Long size; // 제공된 API 스펙에 맞추어 변경
 
-  @Column(nullable = false)
-  private byte[] bytes; // 실제 파일 데이터
-
-  public BinaryContent(String fileName, String contentType, Long size, byte[] bytes) {
+  public BinaryContent(String fileName, String contentType, Long size) {
     this.fileName = fileName;
     this.contentType = contentType;
     this.size = size;
-    this.bytes = bytes;
   }
 }

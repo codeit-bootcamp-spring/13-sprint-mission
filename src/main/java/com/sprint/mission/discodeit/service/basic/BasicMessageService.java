@@ -14,6 +14,7 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +34,7 @@ public class BasicMessageService implements MessageService {
   private final UserRepository userRepository;
   private final BinaryContentRepository contentRepository;
   private final MessageMapper messageMapper;
+  private final BinaryContentStorage storage;
 
   @Transactional
   @Override
@@ -46,15 +48,17 @@ public class BasicMessageService implements MessageService {
             "Author with id " + messageCreateRequest.getAuthorId() + " not found"));
     // 선택적으로 여러 개의 첨부파일 같이 등록 가능
     List<BinaryContent> attachments = binaryContentCreateRequests.stream()
-        .map(attachmentRequest -> (new BinaryContent(
-            attachmentRequest.getFileName(),
-            attachmentRequest.getContentType(),
-            (long) attachmentRequest.getBytes().length,
-            attachmentRequest.getBytes())
-        )).toList(); // 아이디가 아닌 binaryContent 자체를 반환하도록 수정
-    List<BinaryContent> savedAttachments = contentRepository.saveAll(attachments);
+        .map(attachmentRequest -> {
+          BinaryContent binaryContent = new BinaryContent(
+              attachmentRequest.getFileName(),
+              attachmentRequest.getContentType(),
+              (long) attachmentRequest.getBytes().length);
+          BinaryContent savedBinaryContent = contentRepository.save(binaryContent);
+          storage.put(savedBinaryContent.getId(), attachmentRequest.getBytes());
+          return savedBinaryContent;
+        }).toList();
     Message message = new Message(messageCreateRequest.getContent(),
-        channel, author, savedAttachments);
+        channel, author, attachments);
     Message saved = messageRepository.save(message);
     return messageMapper.toDto(saved);
   }
