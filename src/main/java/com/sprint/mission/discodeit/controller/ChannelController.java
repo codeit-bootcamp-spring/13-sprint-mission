@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.CreateChannelRequest;
 import com.sprint.mission.discodeit.dto.UpdateChannelRequest;
-import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -18,26 +18,26 @@ public class ChannelController {
     private final ChannelService channelService;
 
     @PostMapping
-    public Channel create(
+    public ChannelDto create(
             @RequestBody CreateChannelRequest request
     ) {
         return channelService.create(request);
     }
 
     @GetMapping
-    public List<Channel> findAll() {
+    public List<ChannelDto> findAll() {
         return channelService.findAll();
     }
 
     @GetMapping("/{id}")
-    public Channel find(
+    public ChannelDto find(
             @PathVariable UUID id
     ) {
         return channelService.find(id);
     }
 
     @PutMapping("/{id}")
-    public Channel update(
+    public ChannelDto update(
             @PathVariable UUID id,
             @RequestBody UpdateChannelRequest request
     ) {

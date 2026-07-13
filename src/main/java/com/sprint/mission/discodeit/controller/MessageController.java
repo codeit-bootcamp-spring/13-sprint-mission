@@ -2,14 +2,12 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.CreateMessageRequest;
 import com.sprint.mission.discodeit.dto.UpdateMessageRequest;
-import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.dto.response.MessageDto;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import com.sprint.mission.discodeit.dto.response.MessageDto;
-import com.sprint.mission.discodeit.dto.response.PageResponse;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -20,7 +18,7 @@ public class MessageController {
     private final MessageService messageService;
 
     @PostMapping
-    public Message create(
+    public MessageDto create(
             @RequestBody CreateMessageRequest request
     ) {
         return messageService.create(request);
@@ -38,14 +36,14 @@ public class MessageController {
     }
 
     @GetMapping("/{id}")
-    public Message find(
+    public MessageDto find(
             @PathVariable UUID id
     ) {
         return messageService.find(id);
     }
 
     @PutMapping("/{id}")
-    public Message update(
+    public MessageDto update(
             @PathVariable UUID id,
             @RequestBody UpdateMessageRequest request
     ) {

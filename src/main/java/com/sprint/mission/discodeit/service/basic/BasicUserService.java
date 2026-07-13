@@ -2,7 +2,9 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.CreateUserRequest;
 import com.sprint.mission.discodeit.dto.UpdateUserRequest;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +20,11 @@ import java.util.UUID;
 public class BasicUserService implements UserService {
 
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     @Override
     @Transactional
-    public User create(CreateUserRequest request) {
+    public UserDto create(CreateUserRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException(
                     "이미 사용 중인 사용자 이름입니다: " + request.getUsername()
@@ -41,27 +44,34 @@ public class BasicUserService implements UserService {
                 null
         );
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        return userMapper.toDto(savedUser);
     }
 
     @Override
-    public User find(UUID id) {
-        return userRepository.findById(id)
+    public UserDto find(UUID id) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() ->
                         new IllegalArgumentException(
                                 "User not found: " + id
                         )
                 );
+
+        return userMapper.toDto(user);
     }
 
     @Override
-    public List<User> findAll() {
-        return userRepository.findAll();
+    public List<UserDto> findAll() {
+        return userRepository.findAll()
+                .stream()
+                .map(userMapper::toDto)
+                .toList();
     }
 
     @Override
     @Transactional
-    public User update(
+    public UserDto update(
             UUID id,
             UpdateUserRequest request
     ) {
@@ -95,7 +105,7 @@ public class BasicUserService implements UserService {
                 user.getProfile()
         );
 
-        return user;
+        return userMapper.toDto(user);
     }
 
     @Override

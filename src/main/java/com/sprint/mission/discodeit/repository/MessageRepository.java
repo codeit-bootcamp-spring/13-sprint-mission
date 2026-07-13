@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public interface MessageRepository
@@ -13,5 +14,9 @@ public interface MessageRepository
     Slice<Message> findAllByChannelId(
             UUID channelId,
             Pageable pageable
+    );
+
+    Optional<Message> findTopByChannelIdOrderByCreatedAtDesc(
+            UUID channelId
     );
 }

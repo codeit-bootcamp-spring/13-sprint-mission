@@ -2,8 +2,10 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.CreateChannelRequest;
 import com.sprint.mission.discodeit.dto.UpdateChannelRequest;
+import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
+import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
@@ -19,37 +21,45 @@ import java.util.UUID;
 public class BasicChannelService implements ChannelService {
 
     private final ChannelRepository channelRepository;
+    private final ChannelMapper channelMapper;
 
     @Override
     @Transactional
-    public Channel create(CreateChannelRequest request) {
+    public ChannelDto create(CreateChannelRequest request) {
         Channel channel = new Channel(
                 ChannelType.PUBLIC,
                 request.getName(),
                 request.getDescription()
         );
 
-        return channelRepository.save(channel);
+        Channel savedChannel = channelRepository.save(channel);
+
+        return channelMapper.toDto(savedChannel);
     }
 
     @Override
-    public Channel find(UUID id) {
-        return channelRepository.findById(id)
+    public ChannelDto find(UUID id) {
+        Channel channel = channelRepository.findById(id)
                 .orElseThrow(() ->
                         new IllegalArgumentException(
                                 "Channel not found: " + id
                         )
                 );
+
+        return channelMapper.toDto(channel);
     }
 
     @Override
-    public List<Channel> findAll() {
-        return channelRepository.findAll();
+    public List<ChannelDto> findAll() {
+        return channelRepository.findAll()
+                .stream()
+                .map(channelMapper::toDto)
+                .toList();
     }
 
     @Override
     @Transactional
-    public Channel update(
+    public ChannelDto update(
             UUID id,
             UpdateChannelRequest request
     ) {
@@ -66,7 +76,7 @@ public class BasicChannelService implements ChannelService {
                 request.getDescription()
         );
 
-        return channel;
+        return channelMapper.toDto(channel);
     }
 
     @Override

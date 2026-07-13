@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.CreateUserRequest;
 import com.sprint.mission.discodeit.dto.UpdateUserRequest;
-import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -18,22 +18,26 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    public User create(@RequestBody CreateUserRequest request) {
+    public UserDto create(
+            @RequestBody CreateUserRequest request
+    ) {
         return userService.create(request);
     }
 
     @GetMapping
-    public List<User> findAll() {
+    public List<UserDto> findAll() {
         return userService.findAll();
     }
 
     @GetMapping("/{id}")
-    public User find(@PathVariable UUID id) {
+    public UserDto find(
+            @PathVariable UUID id
+    ) {
         return userService.find(id);
     }
 
     @PutMapping("/{id}")
-    public User update(
+    public UserDto update(
             @PathVariable UUID id,
             @RequestBody UpdateUserRequest request
     ) {
@@ -41,7 +45,9 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable UUID id) {
+    public void delete(
+            @PathVariable UUID id
+    ) {
         userService.delete(id);
     }
 }

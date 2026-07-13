@@ -39,7 +39,7 @@ public class BasicMessageService implements MessageService {
 
     @Override
     @Transactional
-    public Message create(CreateMessageRequest request) {
+    public MessageDto create(CreateMessageRequest request) {
         User author = userRepository.findById(request.getUserId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
@@ -50,7 +50,8 @@ public class BasicMessageService implements MessageService {
         Channel channel = channelRepository.findById(request.getChannelId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "Channel not found: " + request.getChannelId()
+                                "Channel not found: "
+                                        + request.getChannelId()
                         )
                 );
 
@@ -61,17 +62,21 @@ public class BasicMessageService implements MessageService {
                 List.of()
         );
 
-        return messageRepository.save(message);
+        Message savedMessage = messageRepository.save(message);
+
+        return messageMapper.toDto(savedMessage);
     }
 
     @Override
-    public Message find(UUID id) {
-        return messageRepository.findById(id)
+    public MessageDto find(UUID id) {
+        Message message = messageRepository.findById(id)
                 .orElseThrow(() ->
                         new IllegalArgumentException(
                                 "Message not found: " + id
                         )
                 );
+
+        return messageMapper.toDto(message);
     }
 
     @Override
@@ -79,6 +84,12 @@ public class BasicMessageService implements MessageService {
             UUID channelId,
             int page
     ) {
+        if (page < 0) {
+            throw new IllegalArgumentException(
+                    "페이지 번호는 0 이상이어야 합니다."
+            );
+        }
+
         if (!channelRepository.existsById(channelId)) {
             throw new IllegalArgumentException(
                     "Channel not found: " + channelId
@@ -108,7 +119,7 @@ public class BasicMessageService implements MessageService {
 
     @Override
     @Transactional
-    public Message update(
+    public MessageDto update(
             UUID id,
             UpdateMessageRequest request
     ) {
@@ -124,7 +135,7 @@ public class BasicMessageService implements MessageService {
                 message.getAttachments()
         );
 
-        return message;
+        return messageMapper.toDto(message);
     }
 
     @Override
