@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.command.userstatus.UserStatusCreateCommand;
+import com.sprint.mission.discodeit.dto.command.userstatus.UserStatusUpdateCommand;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusDto;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
@@ -30,10 +32,10 @@ public class BasicUserStatusService implements UserStatusService {
 
     //생성
     @Override
-    public UserStatusDto create(UserStatusCreateRequest request) {
-        User user = userRepository.findById(request.userId())
+    public UserStatusDto create(UserStatusCreateCommand command) {
+        User user = userRepository.findById(command.userId())
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자 입니다."));
-        boolean alreadyExists = userStatusRepository.findByUserId(request.userId()).isPresent();
+        boolean alreadyExists = userStatusRepository.findByUserId(command.userId()).isPresent();
 
         if (alreadyExists) {
             throw new IllegalArgumentException("이미 존재하는 UserStatus입니다.");
@@ -65,21 +67,21 @@ public class BasicUserStatusService implements UserStatusService {
 
     //수정(UserStatusId로 조회)
     @Override
-    public UserStatusDto update(UUID id, UserStatusUpdateRequest request) {
+    public UserStatusDto update(UUID id, UserStatusUpdateCommand command) {
         UserStatus userStatus = userStatusRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 UserStatus입니다."));
-        userStatus.updateLastActiveAt(request.newLastActiveAt());
+        userStatus.updateLastActiveAt(command.newLastActiveAt());
         userStatusRepository.save(userStatus);
         return userStatusMapper.toDto(userStatus);
     }
 
     //수정(UserId로 조회)
     @Override
-    public UserStatusDto updateByUserId(UUID userId, UserStatusUpdateRequest request) {
+    public UserStatusDto updateByUserId(UUID userId, UserStatusUpdateCommand command) {
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자 입니다."));
 
-        userStatus.updateLastActiveAt(request.newLastActiveAt());
+        userStatus.updateLastActiveAt(command.newLastActiveAt());
         userStatusRepository.save(userStatus);
         return userStatusMapper.toDto(userStatus);
     }

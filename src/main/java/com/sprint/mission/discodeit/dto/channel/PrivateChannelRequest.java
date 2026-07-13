@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.dto.channel;
 
+import com.sprint.mission.discodeit.dto.command.channel.PrivateChannelCommand;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
@@ -17,6 +18,10 @@ public record PrivateChannelRequest(
         if (participantIds == null || participantIds.size() < 2) {
             throw new IllegalArgumentException("비공개 채널은 최소 2명이 필요합니다.");
         }
+    }
+
+    public PrivateChannelCommand toCommand() {
+        return new PrivateChannelCommand(participantIds);
     }
 
 }

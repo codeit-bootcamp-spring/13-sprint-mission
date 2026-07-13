@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.dto.user;
 
+import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public record UserCreateRequest(
@@ -21,6 +22,10 @@ public record UserCreateRequest(
         if (value == null || value.isBlank()){
             throw new IllegalArgumentException(fieldName + "을 입력해주세요.");
         }
+    }
+
+    public UserCreateCommand toCommand(){
+        return new UserCreateCommand(username, email, password);
     }
 }
 

@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
-import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.command.binarycontent.BinaryContentCreateCommand;
+import com.sprint.mission.discodeit.dto.command.message.MessageCreateCommand;
+import com.sprint.mission.discodeit.dto.command.message.MessageUpdateCommand;
 import com.sprint.mission.discodeit.dto.message.MessageDto;
-import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
@@ -19,7 +19,6 @@ import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -27,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -46,10 +44,10 @@ public class BasicMessageService implements MessageService {
 
     //메시지, 첨부파일 생성
     @Override
-    public MessageDto create(MessageCreateRequest request, List<BinaryContentCreateRequest> attachments) {
-        Channel channel = channelRepository.findById(request.channelId())
+    public MessageDto create(MessageCreateCommand command, List<BinaryContentCreateCommand> attachments) {
+        Channel channel = channelRepository.findById(command.channelId())
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널입니다."));
-        User user = userRepository.findById(request.authorId())
+        User user = userRepository.findById(command.authorId())
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자입니다."));
 
         List<BinaryContent> attachmentIds = new ArrayList<>();
@@ -65,9 +63,9 @@ public class BasicMessageService implements MessageService {
                 attachmentIds.add(binaryContent);
             });
         }
-        Message message = new Message(request.content(), channel, user, attachmentIds);
+        Message message = new Message(command.content(), channel, user, attachmentIds);
         log.info("메시지 생성 완료 - 채널: {}, 작성자: {} 메시지: {}",
-                request.channelId(), request.authorId(), request.content());
+                command.channelId(), command.authorId(), command.content());
         messageRepository.save(message);
         return messageMapper.toDto(message);
     }
@@ -100,10 +98,10 @@ public class BasicMessageService implements MessageService {
 
     //메시지 수정
     @Override
-    public MessageDto updateMessage(UUID messageId, MessageUpdateRequest request) {
+    public MessageDto updateMessage(UUID messageId, MessageUpdateCommand command) {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 메시지 입니다."));
-        message.updateContent(request.content());
+        message.updateContent(command.content());
         messageRepository.save(message);
         log.info("메시지 수정 완료 - 메시지: {}", message.getContent());
         return messageMapper.toDto(message);

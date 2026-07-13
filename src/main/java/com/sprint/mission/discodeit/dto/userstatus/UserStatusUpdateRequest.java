@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.dto.userstatus;
 
+import com.sprint.mission.discodeit.dto.command.userstatus.UserStatusCreateCommand;
+import com.sprint.mission.discodeit.dto.command.userstatus.UserStatusUpdateCommand;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
@@ -18,5 +20,9 @@ public record UserStatusUpdateRequest(
         if (value == null) {
             throw new IllegalArgumentException(fieldName + "을 입력해주세요");
         }
+    }
+
+    public UserStatusUpdateCommand toCommand() {
+        return new UserStatusUpdateCommand(newLastActiveAt);
     }
 }

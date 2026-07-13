@@ -1,6 +1,9 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.channel.*;
+import com.sprint.mission.discodeit.dto.command.channel.ChannelUpdateCommand;
+import com.sprint.mission.discodeit.dto.command.channel.PrivateChannelCommand;
+import com.sprint.mission.discodeit.dto.command.channel.PublicChannelCommand;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -28,11 +31,11 @@ public class BasicChannelService implements ChannelService {
 
     //PUBLIC 채널 생성
     @Override
-    public ChannelDto createPublicChannel(PublicChannelRequest request) {
-        if (channelRepository.existsByName(request.name())){
+    public ChannelDto createPublicChannel(PublicChannelCommand command) {
+        if (channelRepository.existsByName(command.name())){
             throw new IllegalArgumentException("동일한 채널명이 존재 합니다.");
         }
-        Channel channel = new Channel(ChannelType.PUBLIC, request.name(), request.description());
+        Channel channel = new Channel(ChannelType.PUBLIC, command.name(), command.description());
         channelRepository.save(channel);
         log.info("PUBLIC 채널 생성 - 채널명: {}, 채널설명: {}", channel.getName(), channel.getDescription());
         return channelMapper.toDto(channel);
@@ -40,18 +43,18 @@ public class BasicChannelService implements ChannelService {
 
     //PRIVATE 채널 생성
     @Override
-    public ChannelDto createPrivateChannel(PrivateChannelRequest request) {
+    public ChannelDto createPrivateChannel(PrivateChannelCommand command) {
         Channel channel = new Channel(ChannelType.PRIVATE, null, null);
         channelRepository.save(channel);
 
-        request.participantIds().forEach(userId -> {
+        command.participantIds().forEach(userId -> {
             User user = userRepository.findById(userId)
                     .orElseThrow(()-> new NoSuchElementException("존재하지 않는 사용자 입니다."));
             ReadStatus readStatus = new ReadStatus(user ,channel);
             readStatusRepository.save(readStatus);
         });
 
-        log.info("PRIVATE 채널 생성 - 채널 참여자: {}", request.participantIds());
+        log.info("PRIVATE 채널 생성 - 채널 참여자: {}", command.participantIds());
         return channelMapper.toDto(channel);
     }
 
@@ -92,14 +95,14 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ChannelDto updateChannel(UUID ChannelId, ChannelUpdateRequest request) {
+    public ChannelDto updateChannel(UUID ChannelId, ChannelUpdateCommand command) {
         Channel channel = channelRepository.findById(ChannelId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널 입니다."));
         if (channel.getType().equals(ChannelType.PRIVATE)) {
             throw new IllegalArgumentException("비공개 채널은 수정할 수 없습니다.");
         }
-        if (request.name() != null && !request.name().isBlank()) channel.updateChannel(request.name());
-        if (request.description() != null && !request.description().isBlank()) channel.updateChannelDescription(request.description());
+        if (command.name() != null && !command.name().isBlank()) channel.updateChannel(command.name());
+        if (command.description() != null && !command.description().isBlank()) channel.updateChannelDescription(command.description());
 
         log.info("채널 수정 완료- 채널id: {}, 채널명: {} ,채널설명: {}", channel.getId(), channel.getName(), channel.getDescription());
 

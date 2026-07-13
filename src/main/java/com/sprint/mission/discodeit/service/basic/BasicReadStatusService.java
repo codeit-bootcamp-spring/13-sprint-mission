@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.command.readstatus.ReadStatusCreateCommand;
+import com.sprint.mission.discodeit.dto.command.readstatus.ReadStatusUpdateCommand;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusDto;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusUpdateRequest;
@@ -34,13 +36,13 @@ public class BasicReadStatusService implements ReadStatusService {
 
     //생성
     @Override
-    public ReadStatusDto create(ReadStatusCreateRequest request) {
-        User user = userRepository.findById(request.userId())
+    public ReadStatusDto create(ReadStatusCreateCommand command) {
+        User user = userRepository.findById(command.userId())
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자 입니다."));
-        Channel channel = channelRepository.findById(request.channelId())
+        Channel channel = channelRepository.findById(command.channelId())
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널 입니다."));
 
-        Optional<ReadStatus> existing = readStatusRepository.findByUserIdAndChannelId(request.userId(), request.channelId());
+        Optional<ReadStatus> existing = readStatusRepository.findByUserIdAndChannelId(command.userId(), command.channelId());
         if(existing.isPresent()){
             return readStatusMapper.toDto(existing.get());
         }
@@ -70,10 +72,10 @@ public class BasicReadStatusService implements ReadStatusService {
 
     //수정
     @Override
-    public ReadStatusDto update(UUID id, ReadStatusUpdateRequest request) {
+    public ReadStatusDto update(UUID id, ReadStatusUpdateCommand command) {
         ReadStatus readStatus = readStatusRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 ReadStatus입니다."));
-        readStatus.updateLastReadAt(request.newLastReadAt());
+        readStatus.updateLastReadAt(command.newLastReadAt());
 
         readStatusRepository.save(readStatus);
         return readStatusMapper.toDto(readStatus);

@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.dto.auth;
 
+import com.sprint.mission.discodeit.dto.command.auth.LoginCommand;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public record LoginRequest(
@@ -20,4 +21,7 @@ public record LoginRequest(
         }
     }
 
+    public LoginCommand toCommand() {
+        return new LoginCommand(username, password);
+    }
 }

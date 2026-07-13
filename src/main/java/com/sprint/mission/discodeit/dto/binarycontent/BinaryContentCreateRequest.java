@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.dto.binarycontent;
 
+import com.sprint.mission.discodeit.dto.command.binarycontent.BinaryContentCreateCommand;
 import com.sprint.mission.discodeit.entity.ContentType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -27,5 +28,9 @@ public record BinaryContentCreateRequest(
         if (!ContentType.isSupported(contentType)) {
             throw new IllegalArgumentException("지원하지 않는 파일 형식 입니다:" + contentType);
         }
+    }
+
+    public BinaryContentCreateCommand toCommand() {
+        return new BinaryContentCreateCommand(fileName, fileSize, contentType, bytes);
     }
 }

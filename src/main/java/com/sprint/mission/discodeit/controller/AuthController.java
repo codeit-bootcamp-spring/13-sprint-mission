@@ -21,7 +21,7 @@ public class AuthController implements AuthControllerDocs {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-        LoginResponse login = authService.login(request);
+        LoginResponse login = authService.login(request.toCommand());
         return ResponseEntity.status(HttpStatus.OK).body(login);
     }
 

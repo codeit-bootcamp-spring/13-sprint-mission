@@ -20,21 +20,21 @@ public class ChannelController implements ChannelControllerDocs {
     private final ChannelService channelService;
 
     @PostMapping( "/public")
-    public ResponseEntity<ChannelDto> createChannel(@RequestBody PublicChannelRequest publicRequest){
-        ChannelDto publicChannel = channelService.createPublicChannel(publicRequest);
+    public ResponseEntity<ChannelDto> createChannel(@RequestBody PublicChannelRequest request){
+        ChannelDto publicChannel = channelService.createPublicChannel(request.toCommand());
         return ResponseEntity.status(HttpStatus.CREATED).body(publicChannel);
     }
 
     @PostMapping("/private")
-    public ResponseEntity<ChannelDto> createChannel(@RequestBody PrivateChannelRequest privateRequest){
-        ChannelDto privateChannel = channelService.createPrivateChannel(privateRequest);
+    public ResponseEntity<ChannelDto> createChannel(@RequestBody PrivateChannelRequest request){
+        ChannelDto privateChannel = channelService.createPrivateChannel(request.toCommand());
         return ResponseEntity.status(HttpStatus.CREATED).body(privateChannel);
     }
 
     @PatchMapping("/{channelId}")
     public ResponseEntity<ChannelDto> updateChannel(@PathVariable UUID channelId,
                                                          @RequestBody ChannelUpdateRequest request){
-        ChannelDto channelResponse = channelService.updateChannel(channelId, request);
+        ChannelDto channelResponse = channelService.updateChannel(channelId, request.toCommand());
         return ResponseEntity.status(HttpStatus.OK).body(channelResponse);
     }
 

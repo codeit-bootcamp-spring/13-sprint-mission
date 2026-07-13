@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.dto.readstatus;
 
+import com.sprint.mission.discodeit.dto.command.readstatus.ReadStatusCreateCommand;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.UUID;
@@ -20,5 +21,9 @@ public record ReadStatusCreateRequest(
         if (value == null) {
             throw new IllegalArgumentException(fieldName + "가 존재하지 않습니다.");
         }
+    }
+
+    public ReadStatusCreateCommand toCommand() {
+        return new ReadStatusCreateCommand(userId, channelId);
     }
 }

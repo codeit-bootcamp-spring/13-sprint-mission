@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.service;
 
-import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
-import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.command.binarycontent.BinaryContentCreateCommand;
+import com.sprint.mission.discodeit.dto.command.message.MessageCreateCommand;
+import com.sprint.mission.discodeit.dto.command.message.MessageUpdateCommand;
 import com.sprint.mission.discodeit.dto.message.MessageDto;
-import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import org.springframework.data.domain.Pageable;
 
@@ -14,13 +14,13 @@ import java.util.UUID;
 public interface MessageService {
 
     //(C)생성
-    MessageDto create(MessageCreateRequest request, List<BinaryContentCreateRequest> attachments);
+    MessageDto create(MessageCreateCommand command, List<BinaryContentCreateCommand> attachments);
     //(R)조회
     MessageDto findById(UUID messageId);
     //(R)조회 다수[특정 채널 메시지 조회]
     PageResponse<MessageDto> findAllByChannelIdWithCursor(UUID channelId, Instant cursor, Pageable pageable);
     //(U)수정
-    MessageDto updateMessage(UUID messageId, MessageUpdateRequest request);
+    MessageDto updateMessage(UUID messageId, MessageUpdateCommand command);
     //(D)삭제
     void delete(UUID messageId);
 }

@@ -23,13 +23,13 @@ public class ReadStatusController implements ReadStatusControllerDocs {
 
     @PostMapping()
     public ResponseEntity<ReadStatusDto> createReadStatus(@RequestBody ReadStatusCreateRequest request){
-        ReadStatusDto readStatusDto = readStatusService.create(request);
+        ReadStatusDto readStatusDto = readStatusService.create(request.toCommand());
         return ResponseEntity.status(HttpStatus.CREATED).body(readStatusDto);
     }
 
     @PatchMapping( "/{readStatusId}")
     public ResponseEntity<ReadStatusDto> ReadStatusUpdate(@PathVariable UUID readStatusId, @RequestBody ReadStatusUpdateRequest request){
-        ReadStatusDto update = readStatusService.update(readStatusId, request);
+        ReadStatusDto update = readStatusService.update(readStatusId, request.toCommand());
         return ResponseEntity.status(HttpStatus.OK).body(update);
     }
 

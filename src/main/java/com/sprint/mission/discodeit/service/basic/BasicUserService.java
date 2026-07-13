@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
-import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.command.binarycontent.BinaryContentCreateCommand;
+import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
+import com.sprint.mission.discodeit.dto.command.user.UserUpdateCommand;
 import com.sprint.mission.discodeit.dto.user.UserDto;
-import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
@@ -38,16 +38,16 @@ public class BasicUserService implements UserService {
 
 
     @Override
-    public UserDto createUser(UserCreateRequest userCreateRequest,
-                              BinaryContentCreateRequest profileRequest) {
+    public UserDto createUser(UserCreateCommand command,
+                              BinaryContentCreateCommand profileRequest) {
 
         //userName 중복 검사
-        if (userRepository.existsByUsername(userCreateRequest.username())){
+        if (userRepository.existsByUsername(command.username())){
             throw new IllegalArgumentException("이미 사용중인 이름 입니다.");
         }
 
         //email 중복 체크
-        if (userRepository.existsByEmail(userCreateRequest.email())) {
+        if (userRepository.existsByEmail(command.email())) {
             throw new IllegalArgumentException("이미 사용중인 이메일 입니다.");
         }
 
@@ -59,12 +59,12 @@ public class BasicUserService implements UserService {
             binaryContentRepository.save(profile);
             binaryContentStorage.put(profile.getId(), profileRequest.bytes());
         }
-        User user = new User(userCreateRequest.username(), userCreateRequest.email(), userCreateRequest.password(), profile, null);
+        User user = new User(command.username(), command.email(), command.password(), profile, null);
         userRepository.save(user);
 
         UserStatus userStatus = new UserStatus(user);
         userStatusRepository.save(userStatus);
-        log.info("유저 생성 완료 - name: {}, userId: {}", userCreateRequest.username(),  user.getId());
+        log.info("유저 생성 완료 - name: {}, userId: {}", command.username(),  user.getId());
         return  userMapper.toDto(user, userStatus);
 
     }
@@ -101,7 +101,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public UserDto updateUser(UUID userId, UserUpdateRequest userUpdateRequest, BinaryContentCreateRequest profileRequest) {
+    public UserDto updateUser(UUID userId, UserUpdateCommand command, BinaryContentCreateCommand profileRequest) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자입니다."));
 
@@ -117,22 +117,22 @@ public class BasicUserService implements UserService {
             binaryContentStorage.put(profile.getId(), profileRequest.bytes());
             user.updateUserProfileId(profile);
         }
-        if (userUpdateRequest.newUsername() != null) {
-            if (userRepository.existsByUsername(userUpdateRequest.newUsername())){
+        if (command.newUsername() != null) {
+            if (userRepository.existsByUsername(command.newUsername())){
                 throw new IllegalArgumentException("이미 사용중인 이름입니다.");
             }
-            user.updateUserName(userUpdateRequest.newUsername());
+            user.updateUserName(command.newUsername());
         }
 
-        if (userUpdateRequest.newEmail() != null) {
-            if (userRepository.existsByEmail(userUpdateRequest.newEmail())) {
+        if (command.newEmail() != null) {
+            if (userRepository.existsByEmail(command.newEmail())) {
                 throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
             }
-            user.updateUserEmail(userUpdateRequest.newEmail());
+            user.updateUserEmail(command.newEmail());
         }
 
-        if (userUpdateRequest.newPassword() != null)
-            user.updateUserPassword(userUpdateRequest.newPassword());
+        if (command.newPassword() != null)
+            user.updateUserPassword(command.newPassword());
         userRepository.save(user);
 
         UserStatus userStatus = userStatusRepository.findByUserId(userId)

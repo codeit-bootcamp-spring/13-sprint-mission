@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.dto.message;
 
 
+import com.sprint.mission.discodeit.dto.command.message.MessageCreateCommand;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.UUID;
@@ -30,5 +31,9 @@ public record MessageCreateRequest(
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(fieldName + "을 입력해주세요.");
         }
+    }
+
+    public MessageCreateCommand toCommand(){
+        return new MessageCreateCommand(channelId, authorId, content);
     }
 }
