@@ -2,10 +2,11 @@ package com.sprint.mission.discodeit.controller;
 
 
 import com.sprint.mission.discodeit.controller.api.MessageApi;
+import com.sprint.mission.discodeit.dto.data.MessageDto;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.request.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.message.MessageUpdateRequest;
-import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.service.MessageService;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,6 +14,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.validator.internal.constraintvalidators.bv.size.SizeValidatorForArray;
+import org.springframework.boot.web.server.ErrorPageRegistrar;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.PathMatcher;
@@ -29,9 +35,11 @@ public class MessageController implements MessageApi {
 
   private final MessageService messageService; //메서드 관련 비즈니스 로직을 처리하는 서비스 객체
   private final PathMatcher pathMatcher;
+  private final SizeValidatorForArray sizeValidatorForArray;
+  private final ErrorPageRegistrar errorPageRegistrar;
 
   @Override //메시지를 생성하는 요청을 처리하는 메서드
-  public ResponseEntity<Message> create(
+  public ResponseEntity<MessageDto> create(
       @RequestPart("messageCreateRequest") MessageCreateRequest messageCreateRequest,
       //메시지 정보(JSON)를 전달 받음.
       @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
@@ -53,7 +61,7 @@ public class MessageController implements MessageApi {
             })
             .toList()) //Stream 결과를 List로 변환함.
         .orElse(new ArrayList<>()); //첨부파일이 없는 경우 빈 List를 생성함.
-    Message createdMessage = messageService.create(messageCreateRequest,
+    MessageDto createdMessage = messageService.create(messageCreateRequest,
         attachmentRequests); //메시지 정보와 첨부파일 정보를 서비스 계층으로 전달하여 새로운 메시지를 생성함.
     return ResponseEntity
         .status(HttpStatus.CREATED)
@@ -61,10 +69,10 @@ public class MessageController implements MessageApi {
   }
 
   @Override//메시지를 수정하는 요청을 처리하는 메서드
-  public ResponseEntity<Message> update(
+  public ResponseEntity<MessageDto> update(
       @PathVariable UUID messageId, //수정할 메시지의 UUID를 요청 파라미터로 전달받음.
       @RequestBody MessageUpdateRequest request) { //수정할 메시지 정보를 HTTP Body로 전달받음.
-    Message updateMessage = messageService.update(messageId, request); //서비스 계층에서 메시지를 수정함.
+    MessageDto updateMessage = messageService.update(messageId, request); //서비스 계층에서 메시지를 수정함.
     return ResponseEntity
         .status(HttpStatus.OK)
         .body(updateMessage);
@@ -80,9 +88,15 @@ public class MessageController implements MessageApi {
   } //return ResponseEntity.noContent().build(); (간단하게 참고?)
 
   @Override//특정 채널의 모든 메시지를 조회하는 요청을 처리하는 메서드
-  public ResponseEntity<List<Message>> findAllByChannelId(
-      @RequestParam UUID channelId) {
-    List<Message> messages = messageService.findAllByChannelId(channelId);
+  public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(
+      @RequestParam UUID channelId,
+      @PageableDefault(
+          size = 50,
+          page = 0,
+          sort = "createdAt",
+          direction = Direction.DESC
+      ) Pageable pageable) {
+    PageResponse<MessageDto> messages = messageService.findAllByChannelId(channelId);
     return ResponseEntity
         .status(HttpStatus.OK)
         .body(messages);

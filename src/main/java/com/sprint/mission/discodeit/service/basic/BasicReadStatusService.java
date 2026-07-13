@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.data.ReadStatusDto;
 import com.sprint.mission.discodeit.dto.request.readStatus.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.readStatus.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.ReadStatus;
@@ -27,7 +28,7 @@ public class BasicReadStatusService implements ReadStatusService {
   private final ClientHttpRequestFactorySettings clientHttpRequestFactorySettings;
 
   @Override //ReadStatus 생성
-  public ReadStatus create(ReadStatusCreateRequest request) {
+  public ReadStatusDto create(ReadStatusCreateRequest request) {
     UUID userId = request.getUserId();
     UUID channelId = request.getChannelId();
 
@@ -57,12 +58,12 @@ public class BasicReadStatusService implements ReadStatusService {
   }
 
   @Override //유저 기준 전체 조회
-  public List<ReadStatus> findAllByUserId(UUID userId) {
+  public List<ReadStatusDto> findAllByUserId(UUID userId) {
     return readStatusRepository.findAllByUserId(userId).stream().toList();
   }
 
   @Override //업데이트
-  public ReadStatus update(UUID readStatusId, ReadStatusUpdateRequest request) {
+  public ReadStatusDto update(UUID readStatusId, ReadStatusUpdateRequest request) {
     ReadStatus readStatus = readStatusRepository.findById(readStatusId)
         .orElseThrow(() ->
             new NoSuchElementException("readStatus with id " + readStatusId + " does not exist"));

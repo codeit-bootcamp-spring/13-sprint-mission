@@ -18,4 +18,8 @@ public class UserDto {
   private String email; //사용자 이메일
   private BinaryContentDto profile;
   private Boolean online; //사용자 온라인 상태
+
+  /*public static UserDto from(User updatedUser) {
+    return null;
+  }*/
 }

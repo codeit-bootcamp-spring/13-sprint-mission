@@ -1,8 +1,10 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.data.MessageDto;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.request.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.message.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -28,7 +30,7 @@ public class BasicMessageService implements MessageService {
   private final BinaryContentRepository binaryContentRepository;
 
   @Override //메시지 생성
-  public Message create(MessageCreateRequest messageCreateRequest,
+  public MessageDto create(MessageCreateRequest messageCreateRequest,
       List<BinaryContentCreateRequest> binaryContentCreateRequests) {
     UUID channelId = messageCreateRequest.getChannelId();
     UUID authorId = messageCreateRequest.getAuthorId();
@@ -67,12 +69,12 @@ public class BasicMessageService implements MessageService {
   }
 
   @Override //전체 메시지 조회
-  public List<Message> findAllByChannelId(UUID channelId) {
+  public PageResponse<MessageDto> findAllByChannelId(UUID channelId) {
     return messageRepository.findAllByChannelId(channelId).stream().toList();
   }
 
   @Override //메시지 수정
-  public Message update(UUID messageId, MessageUpdateRequest request) {
+  public MessageDto update(UUID messageId, MessageUpdateRequest request) {
     String newContent = request.getNewContent();
     Message message = messageRepository.findById(messageId)
         .orElseThrow(

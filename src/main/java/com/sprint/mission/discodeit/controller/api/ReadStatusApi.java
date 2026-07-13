@@ -1,8 +1,8 @@
 package com.sprint.mission.discodeit.controller.api;
 
+import com.sprint.mission.discodeit.dto.data.ReadStatusDto;
 import com.sprint.mission.discodeit.dto.request.readStatus.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.readStatus.ReadStatusUpdateRequest;
-import com.sprint.mission.discodeit.entity.ReadStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,9 +27,9 @@ public interface ReadStatusApi {
 
   //생성
   @Operation(summary = "Message 읽음 상태 생성")
-  @ApiResponse(responseCode = "201", description = "message 읽음 상태가 성공적으로 생성됨")
+  @ApiResponse(responseCode = "201", description = "Message 읽음 상태가 성공적으로 생성됨")
   @PostMapping("/{readStatusId}")
-  ResponseEntity<ReadStatus> create(
+  ResponseEntity<ReadStatusDto> create(
       @RequestBody ReadStatusCreateRequest request
   );
 
@@ -41,7 +41,7 @@ public interface ReadStatusApi {
           content = @Content(examples = @ExampleObject(value = "ReadStatus with id {readStatusId} not found")))
   })
   @PatchMapping("/{readStatusId}")
-  ResponseEntity<ReadStatus> update(
+  ResponseEntity<ReadStatusDto> update(
       @Parameter(description = "수정할 읽음 상태") @PathVariable UUID readStatusId,
       @RequestBody ReadStatusUpdateRequest request
   );
@@ -50,7 +50,7 @@ public interface ReadStatusApi {
   @Operation(summary = "User의 Message 읽음 상태 목록 조회")
   @ApiResponse(responseCode = "200", description = "Message 읽음 상태 목록 조회 성공")
   @GetMapping
-  ResponseEntity<List<ReadStatus>> findAllByUserId(
+  ResponseEntity<List<ReadStatusDto>> findAllByUserId(
       @Parameter(description = "조회할 User ID") @RequestParam UUID userId
   );
 }

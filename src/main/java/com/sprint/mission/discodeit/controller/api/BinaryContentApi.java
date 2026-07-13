@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.controller.api;
 
+import com.sprint.mission.discodeit.dto.data.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "BinaryContent", description = "첨부 파일 API")
-@RequestMapping("/api/{binaryContents}")
+@RequestMapping("/api/binaryContents")
 public interface BinaryContentApi {
 
   //단건조회
@@ -28,7 +29,7 @@ public interface BinaryContentApi {
           content = @Content(examples = @ExampleObject(value = "BinaryContent with id {binaryContentId} not found")))
   })
   @GetMapping("/{binaryContentId}")
-  ResponseEntity<BinaryContent> find(
+  ResponseEntity<BinaryContentDto> find(
       @Parameter(description = "조회할 첨부 파일 ID") @PathVariable UUID binaryContentId
   );
 
@@ -36,7 +37,7 @@ public interface BinaryContentApi {
   @Operation(summary = "여러 첨부 파일 조회")
   @ApiResponse(responseCode = "200", description = "첨부 파일 목록 조회 성공")
   @GetMapping
-  ResponseEntity<List<BinaryContent>> findAllByIdIn(
+  ResponseEntity<List<BinaryContentDto>> findAllByIdIn(
       @Parameter(description = "조회할 첨부 파일 ID 목록") @RequestParam List<UUID> binaryContentIds
   );
 
@@ -45,7 +46,7 @@ public interface BinaryContentApi {
   @ApiResponse(responseCode = "200", description = "파일 다운로드 성공",
       content = @Content(schema = @Schema(implementation = String.class)))
   @GetMapping({"/{binaryContentId}/download"})
-  ResponseEntity<Resource> filedownload(
+  ResponseEntity<BinaryContent> filedownload(
       @Parameter(description = "다운로드할 파일 ID") @PathVariable UUID binaryContentId
   );
 }

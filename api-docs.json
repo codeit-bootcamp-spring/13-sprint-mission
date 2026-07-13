@@ -193,6 +193,15 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "pageable",
+            "in": "query",
+            "description": "페이징 정보",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
           }
         ],
         "responses": {
@@ -344,11 +353,11 @@
           "required": true
         },
         "responses": {
-          "400": {
-            "description": "비밀번호가 일치하지 않음",
+          "404": {
+            "description": "사용자를 찾을 수 없음",
             "content": {
               "*/*": {
-                "example": "Wrong password"
+                "example": "User with username {username} not found"
               }
             }
           },
@@ -362,11 +371,11 @@
               }
             }
           },
-          "404": {
-            "description": "사용자를 찾을 수 없음",
+          "400": {
+            "description": "비밀번호가 일치하지 않음",
             "content": {
               "*/*": {
-                "example": "User with username {username} not found"
+                "example": "Wrong password"
               }
             }
           }
@@ -455,6 +464,14 @@
               }
             }
           },
+          "404": {
+            "description": "User를 찾을 수 없음",
+            "content": {
+              "*/*": {
+                "example": "User with id {userId} not found"
+              }
+            }
+          },
           "200": {
             "description": "User 정보가 성공적으로 수정됨",
             "content": {
@@ -462,14 +479,6 @@
                 "schema": {
                   "$ref": "#/components/schemas/User"
                 }
-              }
-            }
-          },
-          "404": {
-            "description": "User를 찾을 수 없음",
-            "content": {
-              "*/*": {
-                "example": "User with id {userId} not found"
               }
             }
           }
@@ -640,6 +649,14 @@
           "required": true
         },
         "responses": {
+          "404": {
+            "description": "Message를 찾을 수 없음",
+            "content": {
+              "*/*": {
+                "example": "Message with id {messageId} not found"
+              }
+            }
+          },
           "200": {
             "description": "Message가 성공적으로 수정됨",
             "content": {
@@ -647,14 +664,6 @@
                 "schema": {
                   "$ref": "#/components/schemas/Message"
                 }
-              }
-            }
-          },
-          "404": {
-            "description": "Message를 찾을 수 없음",
-            "content": {
-              "*/*": {
-                "example": "Message with id {messageId} not found"
               }
             }
           }
@@ -681,6 +690,9 @@
           }
         ],
         "responses": {
+          "204": {
+            "description": "Channel이 성공적으로 삭제됨"
+          },
           "404": {
             "description": "Channel을 찾을 수 없음",
             "content": {
@@ -688,9 +700,6 @@
                 "example": "Channel with id {channelId} not found"
               }
             }
-          },
-          "204": {
-            "description": "Channel이 성공적으로 삭제됨"
           }
         }
       },
@@ -723,6 +732,16 @@
           "required": true
         },
         "responses": {
+          "200": {
+            "description": "Channel 정보가 성공적으로 수정됨",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Channel"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Channel을 찾을 수 없음",
             "content": {
@@ -736,16 +755,6 @@
             "content": {
               "*/*": {
                 "example": "Channel with id {channel} not found"
-              }
-            }
-          },
-          "200": {
-            "description": "Channel 정보가 성공적으로 수정됨",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Channel"
-                }
               }
             }
           }
@@ -862,6 +871,39 @@
             "content": {
               "*/*": {
                 "example": "BinaryContent with id {binaryContentId} not found"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/binaryContents/{binaryContentId}/download": {
+      "get": {
+        "tags": [
+          "BinaryContent"
+        ],
+        "summary": "파일 다운로드",
+        "operationId": "filedownload",
+        "parameters": [
+          {
+            "name": "binaryContentId",
+            "in": "path",
+            "description": "다운로드할 파일 ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "파일 다운로드 성공",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           }
@@ -1193,6 +1235,27 @@
           },
           "online": {
             "type": "boolean"
+          }
+        }
+      },
+      "Pageable": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "sort": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },

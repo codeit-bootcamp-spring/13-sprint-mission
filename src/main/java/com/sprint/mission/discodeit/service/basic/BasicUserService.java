@@ -30,7 +30,7 @@ public class BasicUserService implements UserService {
   private final BinaryContentRepository binaryContentRepository; //프로필 이미지 등의 파일 저장소
 
   @Override //사용자 생성
-  public User create(UserCreateRequest userCreateRequest,
+  public UserDto create(UserCreateRequest userCreateRequest,
       Optional<BinaryContentCreateRequest> optionalProfileCreateRequest) {
     //요청 객체에서 사용자명과 이메일 추출
     String username = userCreateRequest.getUsername();
@@ -84,7 +84,7 @@ public class BasicUserService implements UserService {
   }
 
   @Override //사용자 정보 수정
-  public User update(UUID userId, UserUpdateRequest userUpdateRequest,
+  public UserDto update(UUID userId, UserUpdateRequest userUpdateRequest,
       Optional<BinaryContentCreateRequest> optionalProfileCreateRequest) {
     //1.기존 사용자 조회(수정 대상 사용자 조회)
     User user = userRepository.findById(userId) //기존 사용자 조회

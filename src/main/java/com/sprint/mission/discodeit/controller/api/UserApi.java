@@ -1,11 +1,10 @@
 package com.sprint.mission.discodeit.controller.api;
 
 import com.sprint.mission.discodeit.dto.data.UserDto;
+import com.sprint.mission.discodeit.dto.data.UserStatusDto;
 import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,13 +33,13 @@ public interface UserApi {
   //생성
   @Operation(summary = "User 등록")
   @ApiResponses(value = {
-      @ApiResponse(responseCode = "201", description = "Use가 성공적으로 생성됨"),
+      @ApiResponse(responseCode = "201", description = "User가 성공적으로 생성됨"),
       @ApiResponse(responseCode = "400", description = "같은 email 또는 username를 사용하는 User가 이미 존재함",
           content = @Content(examples = @ExampleObject(value = "User with email {email} already exists")))
   })
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
       produces = MediaType.APPLICATION_JSON_VALUE)
-  ResponseEntity<User> create(
+  ResponseEntity<UserDto> create(
       @Parameter(description = "User 생성 정보") @RequestPart("userCreateRequest") UserCreateRequest userCreateRequest,
       @Parameter(description = "User 프로필 이미지") @RequestPart(value = "profile", required = false)
       MultipartFile profile
@@ -65,7 +64,7 @@ public interface UserApi {
       value = "/{userId}",
       consumes = MediaType.MULTIPART_FORM_DATA_VALUE
   )
-  ResponseEntity<User> update(
+  ResponseEntity<UserDto> update(
       @Parameter(description = "수정할 User ID") @PathVariable UUID userId,
       @Parameter(description = "수정할 User 정보") @RequestPart("userUpdateRequest") UserUpdateRequest request,
       @Parameter(description = "수정할 User 프로필 이미지") @RequestPart(value = "profile", required = false)
@@ -85,14 +84,14 @@ public interface UserApi {
   );
 
   //상태 변경
-  @Operation(summary = "사용자 상태 변경")
+  @Operation(summary = "User 온라인 상태 업데이트")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "User온라인 상태가 성공적으로 업데이트됨"),
       @ApiResponse(responseCode = "404", description = "해당 User의 UserStatus를 찾을 수 없음",
           content = @Content(examples = @ExampleObject(value = "UserStatus with userId {userId} not found")))
   })
   @PatchMapping("/{userId}/userStatus")
-  ResponseEntity<UserStatus> updateUserStatusByUserId(
+  ResponseEntity<UserStatusDto> updateUserStatusByUserId(
       @Parameter(description = "상태를 변경할 User ID") @PathVariable UUID userId,
       @RequestBody UserStatusUpdateRequest request
   );

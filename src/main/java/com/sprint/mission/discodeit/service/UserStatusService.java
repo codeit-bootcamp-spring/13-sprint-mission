@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service;
 
+import com.sprint.mission.discodeit.dto.data.UserStatusDto;
 import com.sprint.mission.discodeit.dto.request.user.UserStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.UserStatus;
@@ -18,7 +19,7 @@ public interface UserStatusService {
 
   UserStatus update(UUID userStatusId, UserStatusUpdateRequest request); //userStatus ID를 이용한 상태 수정
 
-  UserStatus updateByUserId(UUID userId, UserStatusUpdateRequest request); //사용자 ID를 이용한 상태 수정
+  UserStatusDto updateByUserId(UUID userId, UserStatusUpdateRequest request); //사용자 ID를 이용한 상태 수정
 
   void delete(UUID userStatusId); //사용자 상태 삭제
 }

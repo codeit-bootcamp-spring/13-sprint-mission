@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.dto.data;
 
+import com.sprint.mission.discodeit.entity.ChannelType;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,7 +18,7 @@ public class ChannelDto {
   private ChannelType type; //채널유형
   private String name; //채널이름
   private String description; //채널설명
-  private Instant participants; //채널 참가자들의 UUID 목록(단수)
+  private List<UserDto> participants; //채널 참가자들의 UUID 목록(단수)
   //private List<UUID> participantsIds; //채널 참가자들의 UUID 목록(복수)
   private Instant lastMessageAt; //마지막 메시지가 작성된 시각
 }
