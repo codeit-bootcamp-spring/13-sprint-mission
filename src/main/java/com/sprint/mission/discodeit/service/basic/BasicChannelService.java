@@ -1,66 +1,99 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.input.PrivateChannelCreateRequest;
-import com.sprint.mission.discodeit.dto.input.PublicChannelCreateRequest;
-import com.sprint.mission.discodeit.dto.input.PublicChannelUpdateRequest;
-import com.sprint.mission.discodeit.dto.output.ChannelDto;
+import com.sprint.mission.discodeit.dto.request.PrivateChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.PublicChannelUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.ChannelDto;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
-import com.sprint.mission.discodeit.repository.ChannelRepository;
-import com.sprint.mission.discodeit.repository.MessageRepository;
-import com.sprint.mission.discodeit.repository.ReadStatusRepository;
+import com.sprint.mission.discodeit.mapper.MapStructMapper;
+import com.sprint.mission.discodeit.mapper.MapperMethod;
+import com.sprint.mission.discodeit.repository.JPAChannelRepository;
+import com.sprint.mission.discodeit.repository.JAPReadStatusRepository;
+import com.sprint.mission.discodeit.repository.JPAMessageRepository;
+import com.sprint.mission.discodeit.repository.JPAUserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-
-import java.util.Comparator;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BasicChannelService implements ChannelService {
-    private final ChannelRepository cr;
-    private final MessageRepository mr;
-    private final ReadStatusRepository rsr;
+    private final JPAChannelRepository channelRepository;
+    private final JAPReadStatusRepository readStatusRepository;
+    private final JPAUserRepository userRepository;
+    private final JPAMessageRepository messageRepository;
+    private final MapperMethod mapperMethod;
+    private final MapStructMapper mapStructMapper;
 
     @Override
-    public Channel createPublicChannel(PublicChannelCreateRequest cpb){
+    @Transactional
+    public ChannelDto createPublicChannel(PublicChannelCreateRequest cpb){
         Channel cnl = new Channel(cpb.name(), cpb.description(), ChannelType.PUBLIC);
-        cr.save(cnl);
-        return cnl;
+        return mapStructMapper.toDto(
+                channelRepository.save(cnl)
+                ,userDtoFromChannel(cnl)
+                ,lastMessageAt(cnl)
+        );
     }
 
     @Override
-    public Channel createPrivateChannel(PrivateChannelCreateRequest cpv){
+    @Transactional
+    public ChannelDto createPrivateChannel(PrivateChannelCreateRequest cpv){
         Channel cnl = new Channel("", "", ChannelType.PRIVATE);
-        cr.save(cnl);
+        channelRepository.save(cnl);
 
         for (UUID pid : cpv.participantIds()){
-            rsr.save(new ReadStatus(pid,cnl.getId(),null));
+            User user = userRepository.findById(pid).stream().findFirst().orElseThrow(
+                    () -> new DiscodeitException(
+                            "User by id - " + pid + " not existed."
+                            ,"Channel"
+                            ,400
+                    )
+            );
+            readStatusRepository.save(new ReadStatus(user,cnl,Instant.now()));
         }
-        return cnl;
+        return mapStructMapper.toDto(cnl,userDtoFromChannel(cnl),lastMessageAt(cnl));
     }
 
     @Override
+    @Transactional
     public List<ChannelDto> findAllByUserID(UUID userID) {
 
-        List<UUID> cnlIDinReadStatus = rsr.find(c -> c.getUserId().equals(userID))
-                .stream().map(ReadStatus::getChannelId).toList();
+        Stream<ChannelDto> pv = readStatusRepository.findWithDetailByUserId(userID)
+                .stream()
+                .map(rs -> mapStructMapper.toDto(
+                        rs.getChannel()
+                        , userDtoFromChannel(rs.getChannel())
+                        , lastMessageAt(rs.getChannel())
+                ));
+        Stream<ChannelDto> pb = readStatusRepository.findWithDetailByChannelType(ChannelType.PUBLIC)
+                .stream()
+                .map(rs -> mapStructMapper.toDto(
+                        rs.getChannel()
+                        , userDtoFromChannel(rs.getChannel())
+                        , lastMessageAt(rs.getChannel())
+                ));
 
-        return cr.findAll().stream()
-                .filter(
-                        c -> c.getType().equals(ChannelType.PUBLIC)
-                                || cnlIDinReadStatus.contains(c.getId())
-                )
-                .map(this::toChannelOutput)
-                .toList();
+        return Stream.concat(pv,pb).toList();
     }
 
     @Override
-    public Channel update(UUID id, PublicChannelUpdateRequest uci) {
-        Channel cnl = cr.findById(id).orElseThrow(
+    @Transactional
+    public ChannelDto update(UUID id, PublicChannelUpdateRequest uci) {
+        Channel cnl = channelRepository.findById(id).orElseThrow(
                 () -> new DiscodeitException(
                         "channel with id " + id + "not found",
                         "Channel",
@@ -80,13 +113,13 @@ public class BasicChannelService implements ChannelService {
         cnl.setName(uci.newName());
         cnl.setDescription(uci.newDescription());
 
-        cr.save(cnl);
-        return cnl;
+        return mapStructMapper.toDto(cnl,userDtoFromChannel(cnl),lastMessageAt(cnl));
     }
 
     @Override
+    @Transactional
     public void deleteChannel(UUID id) {
-        cr.findById(id).orElseThrow(
+        channelRepository.findById(id).orElseThrow(
                 () -> new DiscodeitException(
                         "Channel whith id " + id + "not found",
                         "Channel",
@@ -94,40 +127,33 @@ public class BasicChannelService implements ChannelService {
                 )
         );
 
-        cr.delete(id);
-        mr.find(m -> m.getChannelId().equals(id))
-                .forEach(ms -> mr.delete(ms.getId()));
-        rsr.find(r -> r.getChannelId().equals(id))
-                .forEach(rs -> rsr.delete(rs.getId()));
+        channelRepository.deleteById(id);
+    }
+
+    private List<UserDto> userDtoFromChannel(Channel channel) {
+        return readStatusRepository.findByChannelId(channel.getId())
+                .stream()
+                .map(
+                        rs -> {
+                            User user = rs.getUser();
+                            BinaryContent bc = user.getProfile();
+                            return mapStructMapper.toDto(
+                                    user
+                                    ,mapStructMapper.toDto(bc, mapperMethod.getByteFrom(bc))
+                                    ,user.online()
+                            );
+                        }
+                ).toList();
     }
 
 
 
-
-    private ChannelDto toChannelOutput(Channel chn){
-        List<UUID> userIDs;
-
-        List<Message> msg = mr.findByChannelID(chn.getId())
+    private Instant lastMessageAt(Channel channel) {
+        Pageable pageable = PageRequest.of(0, 1, Sort.by(Sort.Order.desc("createdAt")));
+        return messageRepository.findByChannelIdOrderByCreatedAtDesc(channel.getId(), pageable)
                 .stream()
-                .sorted(Comparator.comparing(BaseEntity::getCreatedAt))
-                .toList();
-
-        if (chn.getType().equals(ChannelType.PRIVATE)) {
-            userIDs = rsr.findByChennalID(chn.getId()).stream()
-                    .map(ReadStatus::getUserId)
-                    .toList();
-        } else {
-            userIDs = List.of();
-        }
-
-
-        return ChannelDto.builder()
-                .id(chn.getId())
-                .type(chn.getType())
-                .name(chn.getName())
-                .description(chn.getDescription())
-                .lastMessageAt(!msg.isEmpty() ? msg.get(0).getUpdatedAt() : chn.getCreatedAt())
-                .participantIds(userIDs)
-                .build();
+                .findFirst()
+                .map(Message::getCreatedAt)
+                .orElse(null);
     }
 }

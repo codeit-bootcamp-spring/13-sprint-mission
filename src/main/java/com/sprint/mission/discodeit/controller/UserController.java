@@ -2,10 +2,9 @@ package com.sprint.mission.discodeit.controller;
 
 
 import com.sprint.mission.discodeit.controller.docs.UserControllerDoc;
-import com.sprint.mission.discodeit.dto.input.*;
-import com.sprint.mission.discodeit.dto.output.UserDto;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.dto.request.*;
+import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import lombok.RequiredArgsConstructor;
@@ -40,12 +39,12 @@ public class UserController implements UserControllerDoc {
             method = RequestMethod.POST,
             consumes = { MediaType.MULTIPART_FORM_DATA_VALUE }
     )
-    public ResponseEntity<User> create(
+    public ResponseEntity<UserDto> create(
             @RequestPart("userCreateRequest") UserCreateRequest uci,
             @RequestPart(value = "profile", required = false) MultipartFile tmb
     ) {
         Optional<BinaryContentCreate> bcc = Optional.ofNullable(tmb).flatMap(this::thumbnailResolver);
-        User res = this.userService.create(uci, bcc);
+        UserDto res = this.userService.create(uci, bcc);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
@@ -63,23 +62,23 @@ public class UserController implements UserControllerDoc {
             method = RequestMethod.PATCH,
             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}
     )
-    public ResponseEntity<User> update(
+    public ResponseEntity<UserDto> update(
             @PathVariable UUID userId,
             @RequestPart("userUpdateRequest") UserUpdateRequest uui,
             @RequestPart (value = "profile", required = false) MultipartFile tmb
     ){
         Optional<BinaryContentCreate> bcc = Optional.ofNullable(tmb).flatMap(this::thumbnailResolver);
-        User res = this.userService.update(userId, uui, bcc);
+        UserDto res = this.userService.update(userId, uui, bcc);
         return ResponseEntity.ok(res);
     }
 
 
     @RequestMapping(value = "/{userId}/userStatus", method = RequestMethod.PATCH)
-    public ResponseEntity<UserStatus> updateUserStatusByUserId(
+    public ResponseEntity<UserStatusDto> updateUserStatusByUserId(
             @PathVariable UUID userId,
             @RequestBody UserStatusUpdateRequest usur
     ){
-        UserStatus res = userStatusService.updateByUserId(userId, usur);
+        UserStatusDto res = userStatusService.updateByUserId(userId, usur);
         return ResponseEntity.ok(res);
     }
 

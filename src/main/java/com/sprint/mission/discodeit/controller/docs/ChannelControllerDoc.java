@@ -1,10 +1,9 @@
 package com.sprint.mission.discodeit.controller.docs;
 
-import com.sprint.mission.discodeit.dto.input.PrivateChannelCreateRequest;
-import com.sprint.mission.discodeit.dto.input.PublicChannelCreateRequest;
-import com.sprint.mission.discodeit.dto.input.PublicChannelUpdateRequest;
-import com.sprint.mission.discodeit.dto.output.ChannelDto;
-import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.dto.request.PrivateChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.PublicChannelUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -66,7 +65,7 @@ public interface ChannelControllerDoc {
             )
     })
     @RequestMapping(value = "/{channelId}",method = RequestMethod.PATCH)
-    ResponseEntity<Channel> update(
+    ResponseEntity<ChannelDto> update(
             @PathVariable UUID channelId,
             @RequestBody PublicChannelUpdateRequest pcur
     );
@@ -77,7 +76,7 @@ public interface ChannelControllerDoc {
             @ApiResponse(responseCode = "201",description = "생성 완료")
     )
     @RequestMapping(value = "/private",method = RequestMethod.POST)
-    ResponseEntity<Channel> createPrivate(
+    ResponseEntity<ChannelDto> createPrivate(
             @RequestBody PrivateChannelCreateRequest cpi
     );
 
@@ -86,7 +85,7 @@ public interface ChannelControllerDoc {
             @ApiResponse(responseCode = "201",description = "생성 완료")
     )
     @RequestMapping(value = "/public",method = RequestMethod.POST)
-    ResponseEntity<Channel> createPublic(
+    ResponseEntity<ChannelDto> createPublic(
             @RequestBody PublicChannelCreateRequest cpi
     );
 

@@ -1,26 +1,25 @@
 package com.sprint.mission.discodeit.entity;
 
+import jakarta.persistence.*;
 import lombok.Getter;
+import org.springframework.data.annotation.CreatedDate;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.time.Instant;
 import java.util.UUID;
 
 @Getter
-public class BaseEntity implements Serializable {
-    @Serial
-    private static final long serialVersionUID = 1L;
-    private final UUID id;
-    private final Instant createdAt;
-    private Instant updatedAt;
+@MappedSuperclass
+public abstract class BaseEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-    public BaseEntity() {
-        this.id = UUID.randomUUID();
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
+
+    protected BaseEntity() {
         this.createdAt = Instant.now();
-        this.updatedAt = Instant.now();
     }
-    public void setUpdatedAt() {
-        this.updatedAt = Instant.now();
-    }
+
 }

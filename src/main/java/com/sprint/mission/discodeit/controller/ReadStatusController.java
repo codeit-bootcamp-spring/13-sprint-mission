@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.controller.docs.ReadStatusControllerDoc;
-import com.sprint.mission.discodeit.dto.input.ReadStatusCreateRequest;
-import com.sprint.mission.discodeit.dto.input.ReadStatusUpdateRequest;
-import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.dto.request.ReadStatusCreateRequest;
+import com.sprint.mission.discodeit.dto.request.ReadStatusUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.ReadStatusDto;
 import com.sprint.mission.discodeit.service.ReadStatusService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,10 +26,10 @@ public class ReadStatusController implements ReadStatusControllerDoc {
             value = "",
             method = RequestMethod.GET
     )
-    public ResponseEntity<List<ReadStatus>> findAllByUserId(
+    public ResponseEntity<List<ReadStatusDto>> findAllByUserId(
             @RequestParam(value = "userId") UUID userId
     ){
-        List<ReadStatus> res = readStatusService.findAllByUserID(userId);
+        List<ReadStatusDto> res = readStatusService.findAllByUserID(userId);
         return ResponseEntity.ok(res);
     }
 
@@ -37,19 +37,19 @@ public class ReadStatusController implements ReadStatusControllerDoc {
             value = "",
             method = RequestMethod.POST
     )
-    public ResponseEntity<ReadStatus> create(
+    public ResponseEntity<ReadStatusDto> create(
             @RequestBody ReadStatusCreateRequest rscr
     ){
-        ReadStatus res = readStatusService.create(rscr);
+        ReadStatusDto res = readStatusService.create(rscr);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
     @RequestMapping(value = "/{readStatusId}", method = RequestMethod.PATCH)
-    public ResponseEntity<ReadStatus> update(
+    public ResponseEntity<ReadStatusDto> update(
             @PathVariable UUID readStatusId,
             @RequestBody ReadStatusUpdateRequest rsur
             ){
-        ReadStatus rs = readStatusService.update(readStatusId,rsur);
+        ReadStatusDto rs = readStatusService.update(readStatusId,rsur);
         return ResponseEntity.ok(rs);
     }
 }

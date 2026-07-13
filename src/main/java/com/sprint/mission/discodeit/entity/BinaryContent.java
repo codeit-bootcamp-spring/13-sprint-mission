@@ -1,20 +1,38 @@
 package com.sprint.mission.discodeit.entity;
 
 
-import lombok.AllArgsConstructor;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 
 @Getter
 @Setter
-@AllArgsConstructor
+@Entity
+@Table(name = "binary_contents")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BinaryContent extends BaseEntity{
-    private final String fileName;
-    private final String contentType;
-    private final Long size;
-    private final byte[] bytes;
+    @Column(nullable = false)
+    private String fileName;
+    @Column(nullable = false,length = 100)
+    private String contentType;
+    @Column(nullable = false)
+    private Long size;
+    @Column(nullable = false)
+    private byte[] bytes;
 
-    @Override
-    public void setUpdatedAt(){}
+    public BinaryContent(
+            String fileName,
+            String contentType,
+            Long size,
+            byte[] bytes
+    ){
+        this.fileName = fileName;
+        this.contentType = contentType;
+        this.size = size;
+        this.bytes = bytes;
+    }
 }
