@@ -4,11 +4,13 @@ import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageDto;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
+import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
@@ -16,6 +18,10 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,6 +41,7 @@ public class BasicMessageService implements MessageService {
   private final BinaryContentRepository contentRepository;
   private final MessageMapper messageMapper;
   private final BinaryContentStorage storage;
+  private final PageResponseMapper pageResponseMapper;
 
   @Transactional
   @Override
@@ -72,11 +79,15 @@ public class BasicMessageService implements MessageService {
   }
 
   @Override
-  public List<MessageDto> findAllByChannelId(UUID channelId) {
-    // 특정 Channel의 Message 목록 조회 조건 추가
-    return messageRepository.findByChannelId(channelId).stream()
-        .map(messageMapper::toDto)
-        .toList();
+  public PageResponse<MessageDto> findAllByChannelId(int page, UUID channelId) {
+    // 전체 개수를 알 필요는 없기 때문에 slice
+    Pageable pageable = PageRequest.of(page, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
+    // 50개씩 최근 메시지 순으로 조회
+    Slice<Message> slicedMessages =
+        channelId != null ? messageRepository.findByChannelId(channelId, pageable)
+            : messageRepository.findAll(pageable);
+    Slice<MessageDto> dtoSlice = slicedMessages.map(messageMapper::toDto);
+    return pageResponseMapper.fromSlice(dtoSlice);
   }
 
   @Transactional

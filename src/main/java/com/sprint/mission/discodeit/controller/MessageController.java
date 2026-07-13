@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageDto;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.service.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -105,14 +106,14 @@ public class MessageController {
       description = "Message 목록 조회 성공",
       content = @Content(
           array = @ArraySchema(
-              schema = @Schema(implementation = MessageDto.class))))
+              schema = @Schema(implementation = PageResponse.class))))
   @RequestMapping(method = RequestMethod.GET)
-  public ResponseEntity<List<MessageDto>> findAllByChannelId(
+  public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(
       @Parameter(name = "channelId", in = ParameterIn.QUERY, description = "조회할 Channel ID", required = true,
           schema = @Schema(type = "string", format = "uuid"))
-      @RequestParam("channelId") UUID channelId) {
+      @RequestParam("channelId") UUID channelId, int page) {
     return ResponseEntity
         .status(HttpStatus.OK)
-        .body(messageService.findAllByChannelId(channelId));
+        .body(messageService.findAllByChannelId(page, channelId));
   }
 }
