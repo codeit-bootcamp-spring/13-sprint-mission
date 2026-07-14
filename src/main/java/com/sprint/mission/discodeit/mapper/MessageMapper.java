@@ -5,20 +5,22 @@ import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.entity.Message;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring", uses = {BinaryContentMapper.class, UserMapper.class})
-public interface MessageMapper {
+public abstract class MessageMapper {
+
+    @Autowired
+    protected UserMapper userMapper;
 
     @Mapping(target = "channelId", source = "channel.id")
     @Mapping(target = "author", expression = "java(mapAuthor(message))")
-    MessageDto toDto(Message message);
+    public abstract MessageDto toDto(Message message);
 
-    default UserDto mapAuthor(Message message) {
+    protected UserDto mapAuthor(Message message) {
         if (message.getAuthor() == null) {
             return null;
         }
-        return Mappers.getMapper(UserMapper.class)
-                .toDto(message.getAuthor(), message.getAuthor().getStatus());
+        return userMapper.toDto(message.getAuthor(), message.getAuthor().getStatus());
     }
 }
