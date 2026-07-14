@@ -1,35 +1,44 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.*;
+import jakarta.persistence.*;
 import lombok.*;
 
-import java.io.*;
 import java.util.*;
 
 @Getter
-public class Message extends BaseEntity implements Serializable {
-    private static final long serialVersionUID = 1L;
-    private String content;
-    private UUID authorId;
-    private UUID channelId;
-    private List<UUID> attachmentIds;
+@Entity
+@Table(name = "messages")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Message extends BaseUpdatableEntity {
 
-    public Message(String content, UUID channelId, UUID authorId, List<UUID> attachmentIds) {
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "channel_id", nullable = false)
+    private Channel channel;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "author_id", nullable = false)
+    private User author;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "message_id")
+    private List<BinaryContent> attachments = new ArrayList<>();
+
+    public Message(String content, Channel channel, User author, List<BinaryContent> attachments) {
         super();
         this.content = content;
-        this.channelId = channelId;
-        this.authorId = authorId;
-        this.attachmentIds = attachmentIds;
+        this.channel = channel;
+        this.author = author;
+        this.attachments = attachments;
     }
 
     public void update(String content) {
-        boolean anyValueUpdated = false;
         if (content != null && content.equals(this.content)) {
             this.content = content;
-            anyValueUpdated = true;
         }
-        if (anyValueUpdated) {
-            setUpdatedAt();
-        }
-    }
 
+    }
 }

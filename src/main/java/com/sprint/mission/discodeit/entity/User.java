@@ -1,44 +1,51 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.*;
+import jakarta.persistence.*;
 import lombok.*;
 
-import java.io.*;
-import java.util.*;
-
 @Getter
-public class User extends BaseEntity implements Serializable {
-    final static long serialVersionUID = 1L;
-    private String userName;
-    private String email;
-    private String password;
-    private UUID profileId;
+@Entity
+@Table(name = "users")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class User extends BaseUpdatableEntity {
 
-    public User(String userName, String email, String password, UUID profileId) {
+    private  String username;
+    private  String email;
+    private  String password;
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "profile_id")
+    private BinaryContent profile;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserStatus userStatus;
+
+    public User(String username, String email, String password) {
         super();
-        this.userName = userName;
+        this.username = username;
         this.email = email;
         this.password = password;
-        this.profileId = profileId;
     }
 
-    public void updateProfileId(UUID profileId) {
-        this.profileId = profileId;
-        setUpdatedAt();
+    public void updateProfile(BinaryContent profile) {
+        this.profile = profile;
     }
 
-    public void updateUserName(String userName) {
-        this.userName = userName;
-        setUpdatedAt();
+    public void updateUserStatus(UserStatus userStatus) {
+        this.userStatus = userStatus;
+        }
+
+    public void updateUserName(String username) {
+        this.username = username;
     }
 
     public void updateEmail(String email) {
         this.email = email;
-        setUpdatedAt();
     }
 
-    public void updatePassWord(String password) {
+    public void updatePassword(String password) {
         this.password = password;
-        setUpdatedAt();
     }
 
 }
