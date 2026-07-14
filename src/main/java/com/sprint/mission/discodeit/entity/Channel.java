@@ -1,43 +1,38 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
 import lombok.Getter;
 
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.UUID;
+@Entity
+@Table(name = "channels")
 @Getter
-public class Channel implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class Channel extends BaseUpdatableEntity {
 
-    private UUID id;
-    private Instant createdAt;
-    private Instant updatedAt;
-    private ChannelType type;
-    private String channelName;
-    private String description;
+  @Enumerated(EnumType.STRING)
+  private ChannelType type;
+  private String name;
+  private String description;
 
-    public Channel(ChannelType type, String chName, String description) {
-        this.id = UUID.randomUUID();
-        this.createdAt = Instant.now();
-        this.updatedAt = this.createdAt;
-        this.type = type;
-        this.channelName = chName;
-        this.description = description;
+  public Channel() {
+  }
+
+  public Channel(ChannelType type, String chName, String description) {
+    this.type = type;
+    this.name = chName;
+    this.description = description;
+  }
+
+  public void update(String chName, String chDescription) {
+
+    if (chName != null && !chName.equals(this.name)) {
+      this.name = chName;
     }
-
-    public void update(String chName, String chDescription) {
-        boolean anyValueUpdated = false;
-
-        if (chName != null && !chName.equals(this.channelName)) {
-            this.channelName = chName;
-            anyValueUpdated = true;
-        }
-        if (chDescription != null && !chDescription.equals(this.description)) {
-            this.description = chDescription;
-            anyValueUpdated = true;
-        }
-        if (anyValueUpdated) {
-            this.updatedAt = Instant.now();
-        }
+    if (chDescription != null && !chDescription.equals(this.description)) {
+      this.description = chDescription;
     }
+  }
 }

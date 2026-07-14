@@ -1,51 +1,63 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.Getter;
 
-import java.io.Serializable;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+import org.hibernate.annotations.BatchSize;
+
+@Entity
+@Table(name = "messages")
 @Getter
-public class Message implements Serializable {
-    private static final long serialVersionUID = 1L;
-
-    private UUID id;
-    private Instant createdAt;
-    private Instant updatedAt;
-    private String content;
-    private UUID authorId;
-    private UUID channelId;
-    private List<UUID> attachmentIds;
+public class Message extends BaseUpdatableEntity {
 
 
+  private String content;
 
-    public Message(String message, UUID authorId,  UUID channelId) {
-        this.id = UUID.randomUUID();//쓴 글에 고유 id
-        this.createdAt = Instant.now(); //글쓴 시간
-        this.updatedAt = this.createdAt;//최초 업데이트 시간
-        this.content = message;//메세지 내용이
-        this.authorId = authorId;//글쓴 사람
-        this.channelId = channelId;//작성한 채널
-        this.attachmentIds = new ArrayList<>();
+  @ManyToOne
+  @JoinColumn(name = "author_id")
+  private User author;
+
+  @ManyToOne
+  @JoinColumn(name = "channel_id")
+  private Channel channel;
+
+  @BatchSize(size = 100)//100개 이하 id 조회는 한번에 묶어서.
+  @ManyToMany
+  @JoinTable(name = "message_attachments",//중간 테이블
+      joinColumns = @JoinColumn(name = "message_id"),  //현제 엔티티의 fk
+      inverseJoinColumns = @JoinColumn(name = "attachment_id")) //반대편 엔티티의 fk
+  //N:M 관계를 테이블 3개를 연결
+  private List<BinaryContent> attachments;
+
+  public Message() {
+  }
+
+  public Message(String message, User author, Channel channel) {
+    this.content = message;//메세지 내용이
+    this.author = author;//글쓴 사람
+    this.channel = channel;//작성한 채널
+    this.attachments = new ArrayList<>();
+  }
+
+  public void updateAttachmentIds(List<BinaryContent> attachments) {
+    this.attachments = attachments;
+  }
+
+  public void updateMessage(String newMessage) {
+
+    if (newMessage != null && !newMessage.equals(this.content)) {
+      this.content = newMessage;
     }
 
-    public void updateAttachmentIds(List<UUID> attachmentIds) {
-        this.attachmentIds = attachmentIds;
-    }
 
-    public void updateMessage(String newMessage) {
-       boolean anyValueUpdated = false;
-       if(newMessage != null && !newMessage.equals(this.content)) {
-           this.content = newMessage;
-           anyValueUpdated = true;
-       }
-       if(anyValueUpdated) {
-           this.updatedAt = Instant.now();
-       }
-
-
-    }
+  }
 
 }

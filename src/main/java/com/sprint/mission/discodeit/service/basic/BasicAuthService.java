@@ -2,41 +2,39 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.AuthService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import java.time.Instant;
 import java.util.NoSuchElementException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BasicAuthService implements AuthService {
 
   private final UserRepository userRepository;
-  private final UserStatusRepository userStatusRepository;
+  private final UserMapper userMapper;
 
   @Override
-  public UserDto login(String username, String password) {
-    User user = userRepository.findAll().stream()
-        .filter(u -> u.getUserName().equals(username) && u.getPassword().equals(password))
-        .findFirst()
-        .orElseThrow(() -> new NoSuchElementException("username 또는 password가 틀렸습니다."));
+  @Transactional
+  public UserDto login(String username, String password) { //validation으로 유효성 검증 완.
+    log.info("로그인 요청 - username: {}", username);
 
-    userStatusRepository.findByUserId(user.getId())
-        .ifPresent(s -> {
-          s.updateLastActiveAt(Instant.now());
-          userStatusRepository.save(s);
-        });
+    User user = userRepository.findByUserName(username)
+        .orElseThrow(() -> new NoSuchElementException("username 틀렸습니다."));
 
-    boolean online = userStatusRepository.findByUserId(user.getId())
-        .map(s -> s.getLastActiveAt().isAfter(Instant.now().minusSeconds(300)))
-        .orElse(false);
+    if (!user.getPassword().equals(password)) {
+      throw new IllegalArgumentException("password가 틀렸습니다.");
+    }
 
-    return new UserDto(user.getId(), user.getCreatedAt(), user.getUpdatedAt(), user.getUserName(),
-        user.getEmail(),
-        user.getProfileId(), online);
+    user.getUserStatus().updateLastActiveAt(Instant.now());
+
+    log.info("로그인 성공 - username: {}", username);
+    return userMapper.toDto(user);
   }
 }
