@@ -15,22 +15,21 @@ public class BinaryContent extends BaseEntity {
     @Column(name = "content_type", nullable = false)
     private String contentType;
 
-    @Lob
-    @Column(name = "bytes", nullable = false, columnDefinition = "LONGBLOB")
-    private byte[] data;
-
     @Column(name = "file_name", nullable = false)
     private String fileName;
 
     @Column(nullable = false)
     private Long size;
 
-    public BinaryContent(String fileName, Long size, String contentType, byte[] data) {
+    @Column(nullable = false)
+    private String fileUrl;
+
+    public BinaryContent(String fileName, Long size, String contentType, String fileUrl) {
 
         this.fileName = fileName;
         this.size = size;
         this.contentType = contentType;
-        this.data = data;
+        this.fileUrl= fileUrl;
 
     }
 
