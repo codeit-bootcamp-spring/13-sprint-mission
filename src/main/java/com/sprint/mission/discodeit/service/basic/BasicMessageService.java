@@ -7,12 +7,14 @@ import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
 import lombok.*;
 import org.springframework.stereotype.*;
+import org.springframework.transaction.annotation.*;
 
 import java.util.*;
 import java.util.stream.*;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BasicMessageService implements MessageService {
 
     private final MessageRepository messageRepository;
@@ -29,6 +31,7 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
+    @Transactional
     public MessageResponse create(MessageRequest.Create request,
                                   List<CreateBinaryContentRequest> createBinaryContentRequests) {
 
@@ -36,41 +39,32 @@ public class BasicMessageService implements MessageService {
             throw new IllegalArgumentException("메시지 생성 요청은 필수입니다.");
         }
 
-        Channel channel = channelRepository.find(request.channelId());
-        if (channel == null) {
-            throw new IllegalArgumentException("존재하지 않는 채널입니다.");
-        }
+        Channel channel = channelRepository.findById(request.channelId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널입니다."));
 
-        User author = userRepository.find(request.authorId());
-        if (author == null) {
-            throw new IllegalArgumentException("존재하지 않는 작성자입니다.");
-        }
+        User author = userRepository.findById(request.authorId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 작성자입니다."));
 
-        List<UUID> attachments = new ArrayList<>();
+        List<BinaryContent> attachments = new ArrayList<>();
         if (createBinaryContentRequests != null && !createBinaryContentRequests.isEmpty()) {
             attachments = createBinaryContentRequests.stream()
-                    .map(binaryRequest -> {
-                        // 객체 생성
-                        BinaryContent binaryContent = new BinaryContent(
-                                binaryRequest.fileName(),
-                                (long) binaryRequest.bytes().length,
-                                binaryRequest.contentType(),
-                                binaryRequest.bytes()
-                        );
-                        binaryContentRepository.create(binaryContent);
-                        return binaryContent.getId();
-                    })
+                    .map(binaryRequest -> new BinaryContent(
+                            binaryRequest.fileName(),
+                            (long) binaryRequest.bytes().length,
+                            binaryRequest.contentType(),
+                            binaryRequest.bytes()
+                    ))
                     .toList();
         }
 
         Message message = new Message(
                 request.content(),
-                request.channelId(),
-                request.authorId(),
+                channel,
+                author,
                 attachments
         );
 
-       messageRepository.create(message);
+       messageRepository.save(message);
 
         return MessageResponse.from(message);
     }
@@ -82,17 +76,18 @@ public class BasicMessageService implements MessageService {
             throw new IllegalArgumentException("채널 ID는 필수입니다.");
         }
 
-        if (channelRepository.find(channelId) == null) {
+        if (channelRepository.existsById(channelId)) {
             throw new IllegalArgumentException("존재하지 않는 채널입니다.");
         }
 
-        return messageRepository.findAllByChannelId(channelId)
+        return messageRepository.findByChannelId(channelId)
                 .stream()
                 .map(MessageResponse::from)
                 .toList();
 
     }
     @Override
+    @Transactional
     public MessageResponse update(UUID id, MessageRequest.Update request) {
       String newContent = request.content();
       Message message = messageRepository.findById(id)
@@ -102,19 +97,14 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
+    @Transactional
     public void delete(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("메세지 ID는 필수입니다.");
         }
-        if (!messageRepository.exists(id)) {
-            throw new IllegalArgumentException("존재하지 않는 메세지 ID입니다.");
-        }
-        List<BinaryContent> attachments =
-                binaryContentRepository.findAllByMessageId(id);
+        Message message = messageRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 메세지 ID입니다."));
 
-        attachments.forEach(
-                attachment -> binaryContentRepository.delete(attachment.getId())
-        );
-        messageRepository.delete(id);
+        messageRepository.delete(message);
     }
 }

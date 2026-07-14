@@ -8,18 +8,21 @@ import com.sprint.mission.discodeit.service.*;
 import lombok.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.stereotype.*;
+import org.springframework.transaction.annotation.*;
 
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BasicBinaryContentService implements BinaryContentService {
 
     private final BinaryContentRepository repository;
 
     @Override
+    @Transactional
     public BinaryContentResponse create(CreateBinaryContentRequest request) {
-        if (request == null) {
+        if (request == null)  {
             throw new IllegalArgumentException("바이너리 콘텐츠 생성 요청은 필수입니다.");
         }
         BinaryContent binaryContent = new BinaryContent(
@@ -29,7 +32,7 @@ public class BasicBinaryContentService implements BinaryContentService {
                 request.bytes()
         );
 
-        repository.create(binaryContent);
+        repository.save(binaryContent);
 
         return BinaryContentResponse.from(binaryContent);
     }
@@ -40,11 +43,8 @@ public class BasicBinaryContentService implements BinaryContentService {
             throw new IllegalArgumentException("파일 아이디를 찾을 수 없습니다.");
         }
 
-        BinaryContent binaryContent = repository.find(id);
-
-        if (binaryContent == null) {
-            throw new IllegalArgumentException("파일을 찾을 수 없습니다.");
-        }
+        BinaryContent binaryContent = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("파일을 찾을 수 없습니다."));
 
         return BinaryContentResponse.from(binaryContent);
     }
@@ -62,18 +62,16 @@ public class BasicBinaryContentService implements BinaryContentService {
     }
 
     @Override
+    @Transactional
     public void delete(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("바이너리 콘텐츠 ID는 필수입니다.");
         }
 
-        BinaryContent binaryContent = repository.find(id);
+        BinaryContent binaryContent = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 바이너리 콘텐츠입니다."));
 
-        if (binaryContent == null) {
-            throw new IllegalArgumentException("존재하지 않는 바이너리 콘텐츠입니다.");
-        }
-
-        repository.delete(id);
+        repository.delete(binaryContent);
     }
 
 }

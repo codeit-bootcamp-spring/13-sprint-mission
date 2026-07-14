@@ -7,12 +7,14 @@ import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
 import lombok.*;
 import org.springframework.stereotype.*;
+import org.springframework.transaction.annotation.*;
 
 import java.time.*;
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BasicChannelService implements ChannelService {
 
     private final ChannelRepository repository;
@@ -21,6 +23,7 @@ public class BasicChannelService implements ChannelService {
     private final MessageRepository messageRepository;
 
     @Override
+    @Transactional
     public ChannelResponse createPublicChannel(ChannelRequest.CreatePublicChannel publicChannel) {
         if (publicChannel == null) {
             throw new IllegalArgumentException("공개 채널 생성 요청은 필수입니다.");
@@ -35,7 +38,7 @@ public class BasicChannelService implements ChannelService {
                 publicChannel.description(),
                 ChannelType.PUBLIC
         );
-        repository.create(channel);
+        repository.save(channel);
 
         return ChannelResponse.from(
                 channel,
@@ -46,6 +49,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
+    @Transactional
     public ChannelResponse createPrivateChannel(ChannelRequest.CreatePrivateChannel privateChannel) {
         if (privateChannel == null) {
             throw new IllegalArgumentException("비공개 채널 생성 요청은 필수입니다.");
@@ -55,20 +59,22 @@ public class BasicChannelService implements ChannelService {
             throw new IllegalArgumentException("비공개 채널 참여자는 필수입니다.");
         }
 
-        Set<UUID> participantIds = new HashSet<>();
+        List<User> participants = new ArrayList<>();
+        Set<UUID> duplicateCheckSet = new HashSet<>();
+
         for (UUID participantId : privateChannel.participantIds()) {
             if (participantId == null) {
                 throw new IllegalArgumentException("참여자 ID는 필수입니다.");
             }
-
-            if(!userRepository.existsById(participantId)) {
-                throw new IllegalArgumentException("존재하지 않는 참여자 ID입니다.");
-            }
-
-            if (!participantIds.add(participantId)) {
+            if (!duplicateCheckSet.add(participantId)) {
                 throw new IllegalArgumentException("중복된 참여자 ID가 있습니다.");
             }
+
+        User user = userRepository.findById(participantId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 참여자 ID입니다."));
+        participants.add(user);
         }
+
 
         Channel channel = new Channel(
                 null,
@@ -76,15 +82,11 @@ public class BasicChannelService implements ChannelService {
                 ChannelType.PRIVATE
         );
 
-        repository.create(channel);
+        repository.save(channel);
 
-        for (UUID participantId : privateChannel.participantIds()) {
-            ReadStatus readStatus = new ReadStatus(
-                    participantId,
-                    channel.getId()
-            );
-
-            readStatusRepository.create(readStatus);
+        for (User user : participants) {
+            ReadStatus readStatus = new ReadStatus(user, channel);
+            readStatusRepository.save(readStatus);
         }
 
         return ChannelResponse.from(
@@ -102,16 +104,13 @@ public class BasicChannelService implements ChannelService {
             throw new IllegalArgumentException("채널 ID는 필수입니다.");
         }
 
-        Channel channel = repository.find(id);
-
-        if (channel == null) {
-            throw new IllegalArgumentException("존재하지 않는 채널 ID입니다.");
-        }
+        Channel channel = repository.findById(id)
+                .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 채널 ID입니다."));
 
         List<UUID> participantIds =
-                readStatusRepository.findByChannelId(id)
+                readStatusRepository.findAllByChannelId(id)
                         .stream()
-                        .map(ReadStatus::getUserId)
+                        .map(readStatus-> readStatus.getUser().getId())
                         .toList();
 
         return ChannelResponse.from(
@@ -122,6 +121,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
+    @Transactional
     public ChannelResponse update(UUID id, ChannelRequest.UpdateChannel request) {
         if (id == null) {
             throw new IllegalArgumentException("채널 ID는 필수입니다.");
@@ -131,24 +131,15 @@ public class BasicChannelService implements ChannelService {
             throw new IllegalArgumentException("채널 수정 요청은 필수입니다.");
         }
 
-        Channel channel = repository.find(id);
+        Channel channel = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널 ID입니다."));
 
-        if (channel == null) {
-            throw new IllegalArgumentException("존재하지 않는 채널 ID입니다.");
-        }
+        channel.update(request.name(), request.description());
 
-        channel.update(
-                request.name(),
-                request.description()
-        );
-
-        repository.update(channel.getId(), channel);
-
-        List<UUID> participantIds =
-                readStatusRepository.findByChannelId(channel.getId())
-                        .stream()
-                        .map(ReadStatus::getUserId)
-                        .toList();
+        List<UUID> participantIds = readStatusRepository.findAllByChannelId(channel.getId())
+                .stream()
+                .map(readStatus -> readStatus.getUser().getId())
+                .toList();
 
         return ChannelResponse.from(
                 channel,
@@ -159,22 +150,19 @@ public class BasicChannelService implements ChannelService {
 
 
     @Override
+    @Transactional
     public void delete(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("채널 ID는 필수입니다.");
         }
-        if (repository.find(id) == null) {
-            throw new IllegalArgumentException("존재하지 않는 채널 ID입니다.");
-        }
 
-        List<ReadStatus> readStatuses =
-                readStatusRepository.findByChannelId(id);
+        Channel channel = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널 ID입니다."));
 
-        readStatuses.forEach(
-                readStatus -> readStatusRepository.delete(readStatus.getId())
-        );
+        List<ReadStatus> readStatuses = readStatusRepository.findAllByChannelId(id);
+        readStatusRepository.deleteAll(readStatuses); // 벌크 연산 형태로 깔끔하게 리팩토링
 
-        repository.delete(id);
+        repository.delete(channel);
     }
 
     @Override
@@ -190,7 +178,7 @@ public class BasicChannelService implements ChannelService {
         List<ReadStatus> readStatuses = readStatusRepository.findAllByUserId(userId);
 
         List<UUID> privateChannelIds = readStatuses.stream()
-                .map(ReadStatus::getChannelId)
+                .map(readStatus -> readStatus.getChannel().getId())
                 .toList();
 
         return repository.findAll()
@@ -200,10 +188,10 @@ public class BasicChannelService implements ChannelService {
                                 || privateChannelIds.contains(channel.getId())
                 )
                 .map(channel -> {
-            List<UUID> participantIds = readStatusRepository.findByChannelId(channel.getId())
-                    .stream()
-                    .map(ReadStatus::getUserId)
-                    .toList();
+                    List<UUID> participantIds = readStatusRepository.findAllByChannelId(channel.getId())
+                            .stream()
+                            .map(readStatus -> readStatus.getUser().getId())
+                            .toList();
 
             return ChannelResponse.from(
                     channel,
@@ -215,7 +203,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     private Instant getLastMessageAt(UUID channelId) {
-        return messageRepository.findAllByChannelId(channelId)
+        return messageRepository.findByChannelId(channelId)
                 .stream()
                 .map(Message::getCreatedAt)
                 .max(Instant::compareTo)
