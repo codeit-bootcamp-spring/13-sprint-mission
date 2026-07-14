@@ -1,20 +1,16 @@
 package com.sprint.mission.discodeit.repository;
 
 import com.sprint.mission.discodeit.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface UserRepository {
+public interface UserRepository extends JpaRepository<User, UUID> {
 
-    User create(User user);
-    Optional<User> findById(UUID id);
-    List<User> findAll();
-    void update(User user);
-    void delete(UUID id);
+    Optional<User> findByUsername(String username);
+
+    boolean existsByUsername(String username);
+
+    boolean existsByEmail(String email);
 }
-/*
-레포지토리 설계 및 구현
-[ ] "저장 로직"과 관련된 기능을 도메인 모델 별 인터페이스로 선언하세요.
- */

@@ -1,47 +1,48 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
-public class Message implements Serializable {
+@Entity
+@Table(name = "messages")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Message extends BaseUpdatableEntity {
 
-    private static final long serialVersionUID = 1L;
+    @Column(columnDefinition = "text", nullable = false)
+    private String content;
 
-    private final UUID id; // [요구사항] id는 생성자에서 초기화 // [요구사항] 내부에서 초기화
-    private String content; // 이름은 밖에서 받아옴
-    private final Instant createdAt; // [요구사항] createdAt은 생성자에서 초기화 // [요구사항] 내부에서 초기화
-    private Instant updatedAt; // 처음 생성 시엔 수정 시간도 생성 시간과 같음
-    private final UUID authorId;
-    private final UUID channelId;
-    private final String updateContent;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "channel_id", nullable = false)
+    private Channel channel;
 
-    public Message(String content) {
-        this.id = UUID.randomUUID();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "author_id", nullable = false)
+    private User author;
+
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinTable(
+            name = "message_attachments",
+            joinColumns = @JoinColumn(name = "message_id"),
+            inverseJoinColumns = @JoinColumn(name = "attachment_id")
+    )
+    private List<BinaryContent> attachments = new ArrayList<>();
+
+    public Message(String content, Channel channel, User author) {
         this.content = content;
-        this.createdAt = Instant.now();
-        this.updatedAt = this.createdAt;
-        this.authorId = null;
-        this.channelId = null;
-        this.updateContent = null;
+        this.channel = channel;
+        this.author = author;
     }
 
-    public void updateContent(Message requestMessage) {
-        this.content = requestMessage.getContent();
-        this.updatedAt = Instant.now();
+    public void updateContent(String newContent) {
+        this.content = newContent;
     }
 
 
 }
-
-/*
-[ ] 등록 -> 메세지 전송
-[ ] 조회(단건, 다건) -> 메세지 검색(특정 메세지 검색/전체 메세지 로딩)
-[ ] 수정 -> 메세지 내용 수정
-[ ] 수정된 데이터 조회 -> 메세지 재검색
-[ ] 삭제 -> 메세지 삭제
-[ ] 조회를 통해 삭제되었는지 확인 -> 메세지 재검색
- */

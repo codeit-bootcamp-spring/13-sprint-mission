@@ -1,22 +1,24 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
+
 @Getter
-public class UserStatus implements Serializable {
+@NoArgsConstructor
+public class UserStatus extends BaseUpdatableEntity {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
-
-    private final UUID id;
-    private final Instant createdAt;
+    private UUID id;
+    private Instant createdAt;
     private Instant updatedAt;
-    private final UUID userId;
+    private UUID userId;
+
+    private User user;
+    private Instant lastActiveAt;
 
     public UserStatus(UUID userId) {
         this.id = UUID.randomUUID();
