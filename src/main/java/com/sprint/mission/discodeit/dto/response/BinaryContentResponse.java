@@ -8,7 +8,7 @@ public record BinaryContentResponse(
         UUID id,
         String contentType,
         String fileName,
-        String bytes
+        String fileUrl
 ) {
 
     public static BinaryContentResponse from(BinaryContent binaryContent) {
@@ -16,7 +16,7 @@ public record BinaryContentResponse(
                 binaryContent.getId(),
                 binaryContent.getContentType(),
                 binaryContent.getFileName(),
-                Base64.getEncoder().encodeToString(binaryContent.getData())
+                binaryContent.getFileUrl()
         );
     }
 }

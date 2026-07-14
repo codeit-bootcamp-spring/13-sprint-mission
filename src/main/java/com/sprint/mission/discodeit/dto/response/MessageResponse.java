@@ -30,8 +30,8 @@ public record MessageResponse(
     public static MessageResponse from(Message message) {
        return new MessageResponse(
                message.getId(),
-               message.getAuthorId(),
-               message.getChannelId(),
+               message.getAuthor().getId(),
+               message.getChannel().getId(),
                message.getContent()
        );
     }
