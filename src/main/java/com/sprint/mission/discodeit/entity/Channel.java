@@ -1,32 +1,38 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @Getter
-public class Channel extends EntityRoot implements Serializable {
+@Entity
+@Table(name = "channels")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Channel extends BaseUpdatableEntity {
 
     //필드
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
     private ChannelType type;
+
+    @Column(length = 100)
     private String name;
+
+    @Column(length = 500)
     private String description;
 
     //ctor
     public Channel(ChannelType type) {
-        super();
-
         this.type = type;
         this.name = "private Channel";
         this.description = "private Channel";
     }
 
     public Channel(ChannelType type, String name, String description) {
-        super();
-
         this.type = type;
         this.name = name;
         this.description = description;
@@ -36,13 +42,6 @@ public class Channel extends EntityRoot implements Serializable {
     public void updateChannel(String name, String description) {
         this.name = name;
         this.description = description;
-
-        updateUpdatedAt();
     }
 
-    //method override
-    @Override
-    public String toString() {
-        return "[Channel: " + name + ", Description: " + description + "]";
-    }
 }

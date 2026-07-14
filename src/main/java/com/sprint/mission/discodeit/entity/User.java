@@ -1,42 +1,55 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.UUID;
 
 @Getter
-public class User extends EntityRoot implements Serializable {
+@Entity
+@Table(name = "users")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class User extends BaseUpdatableEntity {
 
     //필드
+    @Column(nullable = false, unique = true, length = 50)
     private String username;
+
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
+
+    @Column(nullable = false, length = 60)
     private String password;
-    private UUID profileId;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", unique = true)
+    private BinaryContent profile;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserStatus status;
 
     //ctor
-    public User(String username, String email, String password, UUID profileId) {
-        super();
-
+    public User(String username, String email, String password, BinaryContent profile) {
         this.username = username;
         this.email = email;
         this.password = password;
-        this.profileId = profileId;
+        this.profile = profile;
     }
 
     //update Method
-    public void updateUser(String username, String email, String password, UUID profileId) {
+    public void updateUser(String username, String email, String password, BinaryContent profile) {
         this.username = username;
         this.email = email;
         this.password = password;
-        this.profileId = profileId;
-
-        updateUpdatedAt();
+        this.profile = profile;
     }
 
-    //method override
-    @Override
-    public String toString() {
-        return "[User: " + username + ", Email: " + email + "]";
+    public void assignStatus(UserStatus status) {
+        this.status = status;
     }
+
 }

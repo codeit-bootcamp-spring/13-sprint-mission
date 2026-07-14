@@ -2,7 +2,9 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.MessageUpdateResponse;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.service.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,12 +13,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,10 +40,10 @@ public class MessageController {
             method = RequestMethod.POST,
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    public ResponseEntity<Message> createMessage(@Valid @RequestPart("messageCreateRequest") MessageCreateRequest request,
-                                                 @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments) {
+    public ResponseEntity<MessageDto> createMessage(@Valid @RequestPart("messageCreateRequest") MessageCreateRequest request,
+                                                    @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments) {
 
-        Message createdMessage = messageService.createMessage(request, attachments);
+        MessageDto createdMessage = messageService.createMessage(request, attachments);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(createdMessage);
     }
@@ -47,22 +52,28 @@ public class MessageController {
     @Operation(summary = "Channel의 Message 목록 조회")
     @ApiResponse(responseCode = "200", description = "Message 목록 조회 성공")
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<List<Message>> findAllByChannelId(@Parameter(description = "조회할 Channel ID", required = true)
-                                                            @RequestParam UUID channelId) {
-        List<Message> responseList = messageService.findAllByChannelId(channelId);
+    public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(@Parameter(description = "조회할 Channel ID", required = true)
+                                                                       @RequestParam UUID channelId,
 
-        return ResponseEntity.ok().body(responseList);
+                                                                       @Parameter(description = "페이징 커서 정보")
+                                                                       @RequestParam(required = false) Instant cursor,
+
+                                                                       @Parameter(description = "페이징 정보", required = true)
+                                                                       @ParameterObject Pageable pageable) {
+        PageResponse<MessageDto> pageResponse = messageService.findAllByChannelId(channelId, cursor, pageable);
+
+        return ResponseEntity.ok().body(pageResponse);
     }
 
     //메시지 수정
     @Operation(summary = "Message 내용 수정")
     @ApiResponse(responseCode = "200", description = "Message가 성공적으로 수정됨")
     @RequestMapping(value = "/{messageId}", method = RequestMethod.PATCH)
-    public ResponseEntity<Message> updateMessage(@Parameter(description = "수정할 Message ID", required = true)
-                                                 @PathVariable UUID messageId,
-                                                 @Valid @RequestBody MessageUpdateRequest request) {
+    public ResponseEntity<MessageDto> updateMessage(@Parameter(description = "수정할 Message ID", required = true)
+                                                    @PathVariable UUID messageId,
+                                                    @Valid @RequestBody MessageUpdateRequest request) {
 
-        Message response = messageService.updateMessage(messageId, request);
+        MessageDto response = messageService.updateMessage(messageId, request);
 
         return ResponseEntity.ok().body(response);
     }

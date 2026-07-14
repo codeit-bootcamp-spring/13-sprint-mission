@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.request.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.ReadStatusUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.ReadStatusDto;
 import com.sprint.mission.discodeit.dto.response.ReadStatusUpdateResponse;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.service.ReadStatusService;
@@ -31,8 +32,8 @@ public class ReadStatusController {
     @Operation(summary = "Message 읽음 상태 생성")
     @ApiResponse(responseCode = "201", description = "Message 읽음 상태가 성공적으로 생성됨")
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity<ReadStatus> createReadStatus(@Valid @RequestBody ReadStatusCreateRequest request) {
-        ReadStatus createdReadStatus = readStatusService.createReadStatus(request);
+    public ResponseEntity<ReadStatusDto> createReadStatus(@Valid @RequestBody ReadStatusCreateRequest request) {
+        ReadStatusDto createdReadStatus = readStatusService.createReadStatus(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(createdReadStatus);
     }
@@ -41,9 +42,9 @@ public class ReadStatusController {
     @Operation(summary = "User의 Message 읽음 상태 목록 조회")
     @ApiResponse(responseCode = "200", description = "Message 읽음 상태 목록 조회 성공")
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<List<ReadStatus>> findAllByUserId(@Parameter(description = "조회할 User ID", required = true)
+    public ResponseEntity<List<ReadStatusDto>> findAllByUserId(@Parameter(description = "조회할 User ID", required = true)
                                                             @RequestParam UUID userId) {
-        List<ReadStatus> responseList = readStatusService.findAllReadStatusByUserId(userId);
+        List<ReadStatusDto> responseList = readStatusService.findAllReadStatusByUserId(userId);
 
         return ResponseEntity.ok().body(responseList);
     }
@@ -52,10 +53,10 @@ public class ReadStatusController {
     @Operation(summary = "Message 읽음 상태 수정")
     @ApiResponse(responseCode = "200", description = "Message 읽음 상태가 성공적으로 수정됨")
     @RequestMapping(value = "/{readStatusId}", method = RequestMethod.PATCH)
-    public ResponseEntity<ReadStatus> updateReadStatus(@Parameter(description = "수정할 읽음 상태 ID", required = true)
+    public ResponseEntity<ReadStatusDto> updateReadStatus(@Parameter(description = "수정할 읽음 상태 ID", required = true)
                                                                      @PathVariable UUID readStatusId,
                                                                      @Valid @RequestBody ReadStatusUpdateRequest request) {
-        ReadStatus response = readStatusService.updateReadStatus(readStatusId, request);
+        ReadStatusDto response = readStatusService.updateReadStatus(readStatusId, request);
 
         return ResponseEntity.ok().body(response);
     }

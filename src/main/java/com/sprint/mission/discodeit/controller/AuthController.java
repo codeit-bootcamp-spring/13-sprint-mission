@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.request.LoginRequest;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.dto.response.UserStatusUpdateResponse;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.AuthService;
@@ -25,8 +26,8 @@ public class AuthController {
     @Operation(summary = "로그인")
     @ApiResponse(responseCode = "200", description = "로그인 성공")
     @RequestMapping(value = "/login", method = RequestMethod.POST)
-    public ResponseEntity<User> login(@Valid @RequestBody LoginRequest request) {
-        User user = authService.login(request);
+    public ResponseEntity<UserDto> login(@Valid @RequestBody LoginRequest request) {
+        UserDto user = authService.login(request);
 
         return ResponseEntity.ok().body(user);
     }

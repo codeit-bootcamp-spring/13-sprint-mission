@@ -1,14 +1,18 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.exception.FileException;
 import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
+import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.List;
@@ -21,53 +25,62 @@ public class BasicBinaryContentService implements BinaryContentService {
 
     //필드
     private final BinaryContentRepository binaryContentRepository;
+    private final BinaryContentMapper binaryContentMapper;
+    private final BinaryContentStorage binaryContentStorage;
 
     //interface
     @Override
-    public BinaryContent createBinaryContent(BinaryContentCreateRequest request) {
+    @Transactional
+    public BinaryContentDto createBinaryContent(BinaryContentCreateRequest request) {
         BinaryContent binaryContent;
         try {
             //binaryContent 생성
             binaryContent = new BinaryContent(
                     request.file().getOriginalFilename(),
                     (long) request.file().getBytes().length,
-                    request.file().getContentType(),
-                    request.file().getBytes()
+                    request.file().getContentType()
             );
-            binaryContentRepository.createBinaryContent(binaryContent);
+            binaryContent = binaryContentRepository.save(binaryContent);
+            binaryContentStorage.put(binaryContent.getId(), request.file().getBytes());
+
             log.info("BinaryContent가 생성됨.");
 
         } catch (IOException e) {
             throw new FileException(e.getMessage());
         }
 
-        return binaryContent;
+        return binaryContentMapper.toDto(binaryContent);
     }
 
     @Override
-    public BinaryContent findBinaryContentById(UUID binaryContentId) {
+    @Transactional(readOnly = true)
+    public BinaryContentDto findBinaryContentById(UUID binaryContentId) {
         //BinaryContent 검색
-        BinaryContent binaryContentTemp = binaryContentRepository.findBinaryContentById(binaryContentId)
+        BinaryContent binaryContentTemp = binaryContentRepository.findById(binaryContentId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
 
-        return binaryContentTemp;
+        return binaryContentMapper.toDto(binaryContentTemp);
     }
 
     @Override
-    public List<BinaryContent> findAllBinaryContentByIdIn(List<UUID> binaryContentIds) {
+    @Transactional(readOnly = true)
+    public List<BinaryContentDto> findAllBinaryContentByIdIn(List<UUID> binaryContentIds) {
         //BinaryContent들 검색
-        List<BinaryContent> binaryContentList = binaryContentRepository.findAllBinaryContentByIdIn(binaryContentIds);
+        List<BinaryContent> binaryContentList = binaryContentRepository.findAllByIdIn(binaryContentIds);
 
-        return binaryContentList;
+        return binaryContentList.stream()
+                .map(binaryContentMapper::toDto)
+                .toList();
     }
 
     @Override
+    @Transactional
     public void deleteBinaryContent(UUID binaryContentId) {
         //BinaryContent 검색
-        BinaryContent binaryContentTemp = binaryContentRepository.findBinaryContentById(binaryContentId)
+        BinaryContent binaryContentTemp = binaryContentRepository.findById(binaryContentId)
                 .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
 
-        binaryContentRepository.deleteBinaryContent(binaryContentId);
+        binaryContentRepository.deleteById(binaryContentId);
 
         log.info("BinaryContent: {}가 삭제됨.", binaryContentTemp.getId());
     }
