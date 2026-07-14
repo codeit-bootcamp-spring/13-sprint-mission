@@ -19,7 +19,7 @@ public record UserResponse(
                 user.getId(),
                 user.getCreatedAt(),
                 user.getUpdatedAt(),
-                user.getUserName(),
+                user.getUsername(),
                 user.getEmail(),
                 profile == null ? null : profile.getId(),
                 userStatus != null && userStatus.isOnline()
