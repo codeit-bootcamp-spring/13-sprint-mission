@@ -1,32 +1,24 @@
 package com.sprint.mission.discodeit.mapper;
 
 import com.sprint.mission.discodeit.dto.message.MessageDto;
+import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.entity.Message;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.factory.Mappers;
 
-import java.util.Optional;
-import java.util.stream.Collectors;
+@Mapper(componentModel = "spring", uses = {BinaryContentMapper.class, UserMapper.class})
+public interface MessageMapper {
 
-@Component
-@RequiredArgsConstructor
-public class MessageMapper {
+    @Mapping(target = "channelId", source = "channel.id")
+    @Mapping(target = "author", expression = "java(mapAuthor(message))")
+    MessageDto toDto(Message message);
 
-    private final BinaryContentMapper binaryContentMapper;
-    private final UserMapper userMapper;
-
-    public MessageDto toDto(Message message) {
-        return new MessageDto(
-                message.getId(),
-                message.getCreatedAt(),
-                message.getUpdatedAt(),
-                message.getContent(),
-                message.getChannel().getId(),
-                Optional.ofNullable(message.getAuthor())
-                        .map(author -> userMapper.toDto(author, author.getStatus())).orElse(null),
-                message.getAttachments().stream().map(binaryContentMapper::toDto).collect(Collectors.toList())
-
-        );
+    default UserDto mapAuthor(Message message) {
+        if (message.getAuthor() == null) {
+            return null;
+        }
+        return Mappers.getMapper(UserMapper.class)
+                .toDto(message.getAuthor(), message.getAuthor().getStatus());
     }
-
 }
