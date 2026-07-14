@@ -3,28 +3,17 @@ package com.sprint.mission.discodeit.repository;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.*;
 
 import java.util.*;
 
-public interface ReadStatusRepository {
+public interface ReadStatusRepository extends JpaRepository<ReadStatus, UUID> {
 
-    void create(ReadStatus readStatus);
+   List<ReadStatus> findAllByChannelId(UUID channelId);
 
-    ReadStatus find(UUID id);
+   List<ReadStatus> findAllByUserId(UUID userId);
 
-    List<ReadStatus> findAll();
+   Optional<ReadStatus> findByChannelIdAndUserId(UUID userId, UUID channelId);
 
-    void delete(UUID id);
-
-    List<ReadStatus> findByChannelId(UUID channelId);
-
-    List<ReadStatus> findAllByUserId(UUID userId);
-
-    ReadStatus findByUserIdAndChannelId(
-            UUID userId,
-            UUID channelId
-    );
-
-    void update(ReadStatus readStatus);
 }
