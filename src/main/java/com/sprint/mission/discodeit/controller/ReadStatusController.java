@@ -15,13 +15,13 @@ public class ReadStatusController {
 
     private final ReadStatusService readStatusService;
 
-    @RequestMapping(method = RequestMethod.POST)
+    @PostMapping
     public ReadStatusResponse create(
             @RequestBody CreateReadStatusRequest request) {
         return readStatusService.create(request);
     }
 
-    @RequestMapping(value = "/{readStatusId}", method = RequestMethod.PATCH)
+    @PatchMapping(value = "/{readStatusId}")
     public ReadStatusResponse update(
             @PathVariable UUID readStatusId,
             @RequestBody UpdateReadStatusRequest request
@@ -29,7 +29,7 @@ public class ReadStatusController {
         return readStatusService.update(readStatusId, request);
     }
 
-    @RequestMapping(method = RequestMethod.GET)
+    @GetMapping
     public List<ReadStatusResponse> findAllByUserId(
             @RequestParam UUID userId
     ) {

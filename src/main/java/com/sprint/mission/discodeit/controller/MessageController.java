@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.service.*;
 import lombok.*;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.*;
 
@@ -41,22 +42,23 @@ public class MessageController {
         return messageService.create(request, binaryRequests);
     }
 
-    @RequestMapping(value = ("/{messageId}"), method = RequestMethod.PATCH)
+    @PatchMapping(value = ("/{messageId}"))
     public MessageResponse update(@PathVariable UUID messageId,
                                   @RequestBody MessageRequest.Update request) {
         return messageService.update(messageId, request);
     }
 
-    @RequestMapping(value = ("/{messageId}"), method = RequestMethod.DELETE)
+    @DeleteMapping(value = ("/{messageId}"))
     public void delete(@PathVariable UUID messageId) {
         messageService.delete(messageId);
     }
 
-    @RequestMapping(method = RequestMethod.GET)
-    public List<MessageResponse> findAll(
-            @RequestParam UUID channelId
-    ) {
-        return messageService.findAllByChannelId(channelId);
+    @GetMapping
+    public ResponseEntity<PageResponse<MessageResponse>> getMessages(
+            @RequestParam UUID channelId,
+            @RequestParam(defaultValue = "0") int page) {
+        PageResponse<MessageResponse> response = messageService.getMessages(channelId, page);
+        return ResponseEntity.ok(response);
     }
 
 }

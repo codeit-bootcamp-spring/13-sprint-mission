@@ -24,7 +24,7 @@ public class UserController {
     private final UserStatusService userStatusService;
 
    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UserResponse>reate(
+    public ResponseEntity<UserResponse> create(
             @RequestPart("userCreateRequest") UserRequest.CreateUserRequest userCreateRequest,
             @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
     ) {
@@ -46,8 +46,7 @@ public class UserController {
        return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
    }
 
-    @RequestMapping(value = "/{userId}",
-                    method = RequestMethod.PATCH,
+    @PatchMapping(value = "/{userId}",
                     consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public UserResponse update(@PathVariable UUID userId,
                                @RequestParam String username,
@@ -74,20 +73,17 @@ public class UserController {
         return userService.update(userId, updateRequest, profileImageDto);
     }
 
-    @RequestMapping(value = "/{userId}", method = RequestMethod.DELETE)
+    @DeleteMapping(value = "/{userId}")
     public void delete(@PathVariable UUID userId) {
         userService.delete(userId);
     }
 
-    @RequestMapping(value = "/findAll", method = RequestMethod.GET)
+    @GetMapping
     public ResponseEntity<List<UserResponse>> findAll() {
         return ResponseEntity.ok(userService.findAll());
     }
 
-    @RequestMapping(
-            value = "/{userId}/status",
-            method = RequestMethod.PATCH
-    )
+    @PatchMapping(value = "/{userId}/status")
     public UserStatusResponse updateStatus(
             @PathVariable UUID userId
     ) {

@@ -9,6 +9,7 @@ import org.springframework.core.io.*;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.*;
 import java.util.*;
 
 @RequestMapping("/api/binary-contents")
@@ -20,14 +21,16 @@ public class BinaryContentController {
     private final BinaryContentStorage binaryContentStorage;
 
     @GetMapping("/{binaryContentId}")
-    public ResponseEntity<byte[]> find(@PathVariable UUID binaryContentId) {
-        BinaryContentResponse response = binaryContentService.find(binaryContentId);
+    public ResponseEntity<Resource> find(@PathVariable UUID binaryContentId) {
+        BinaryContentResponse response =
+                binaryContentService.find(binaryContentId);
 
-        byte[] imageBytes = Base64.getDecoder().decode(response.bytes());
+        InputStream inputStream = binaryContentStorage.get(binaryContentId);
+        Resource resource = new InputStreamResource(inputStream);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(response.contentType()))
-                .body(imageBytes);
+                .body(resource);
     }
 
     @GetMapping
