@@ -13,33 +13,38 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-// 수정됨: 기존 RESTful 경로(/api/read-statuses)는 유지하고,
-// 프론트엔드가 요청하는 camelCase 경로(/api/readStatuses)도 함께 허용
-@RequestMapping({"/api/read-statuses", "/api/readStatuses"})
+@RequestMapping({"/api/readStatuses", "/api/read-statuses"})
 @RequiredArgsConstructor
 public class ReadStatusController {
 
     private final ReadStatusService readStatusService;
 
-    // ReadStatus 생성
-    // POST /api/read-statuses
-    // POST /api/readStatuses
+    /*
+     * API 명세 v1.2 기준
+     * POST /api/readStatuses
+     *
+     * 기존 호환:
+     * POST /api/read-statuses
+     */
     @PostMapping
     public ResponseEntity<ReadStatusResponse> create(
             @RequestBody ReadStatusCreateRequest request
     ) {
         ReadStatusResponse response = readStatusService.create(request);
 
-        URI location = URI.create("/api/read-statuses/" + response.getId());
+        URI location = URI.create("/api/readStatuses/" + response.getId());
 
         return ResponseEntity
                 .created(location)
                 .body(response);
     }
 
-    // ReadStatus 단건 조회
-    // GET /api/read-statuses/{readStatusId}
-    // GET /api/readStatuses/{readStatusId}
+    /*
+     * 기존 호환용 단건 조회
+     *
+     * API 명세 v1.2에는 목록 조회 중심이지만,
+     * 기존 테스트/Postman 호환을 위해 유지
+     */
     @GetMapping("/{readStatusId}")
     public ResponseEntity<ReadStatusResponse> find(
             @PathVariable UUID readStatusId
@@ -49,22 +54,31 @@ public class ReadStatusController {
         return ResponseEntity.ok(response);
     }
 
-    // 특정 사용자의 모든 ReadStatus 조회
-    // GET /api/read-statuses?userId=...
-    // GET /api/readStatuses?userId=...
+    /*
+     * API 명세 v1.2 기준
+     * GET /api/readStatuses?userId=...
+     *
+     * 기존 호환:
+     * GET /api/read-statuses?userId=...
+     */
     @GetMapping
     public ResponseEntity<List<ReadStatusResponse>> findAllByUserId(
             @RequestParam UUID userId
     ) {
-        List<ReadStatusResponse> responses = readStatusService.findAllByUserId(userId);
+        List<ReadStatusResponse> responses =
+                readStatusService.findAllByUserId(userId);
 
         return ResponseEntity.ok(responses);
     }
 
-    // ReadStatus 수정
-    // PATCH /api/read-statuses
-    // PATCH /api/readStatuses
-    // 기존 Postman/Swagger 테스트용 유지
+    /*
+     * 기존 Postman/Swagger 테스트 호환용
+     *
+     * PATCH /api/readStatuses
+     * PATCH /api/read-statuses
+     *
+     * body에 id가 들어오는 경우 처리
+     */
     @PatchMapping
     public ResponseEntity<ReadStatusResponse> update(
             @RequestBody ReadStatusUpdateRequest request
@@ -74,8 +88,18 @@ public class ReadStatusController {
         return ResponseEntity.ok(response);
     }
 
-    // 수정됨: 프론트가 PATCH /api/readStatuses/{readStatusId} 로 요청하는 경우 처리
-    // Body에 id가 없고 newLastActiveAt만 들어와도 URL의 readStatusId를 사용해서 수정
+    /*
+     * API 명세 v1.2 기준
+     * PATCH /api/readStatuses/{readStatusId}
+     *
+     * body:
+     * {
+     *   "newLastReadAt": "2026-07-10T01:30:55.469015Z"
+     * }
+     *
+     * 기존 호환:
+     * PATCH /api/read-statuses/{readStatusId}
+     */
     @PatchMapping("/{readStatusId}")
     public ResponseEntity<ReadStatusResponse> updateByPathVariable(
             @PathVariable UUID readStatusId,
@@ -91,9 +115,12 @@ public class ReadStatusController {
         return ResponseEntity.ok(response);
     }
 
-    // ReadStatus 삭제
-    // DELETE /api/read-statuses/{readStatusId}
-    // DELETE /api/readStatuses/{readStatusId}
+    /*
+     * 기존 호환용 삭제
+     *
+     * DELETE /api/readStatuses/{readStatusId}
+     * DELETE /api/read-statuses/{readStatusId}
+     */
     @DeleteMapping("/{readStatusId}")
     public ResponseEntity<Void> delete(
             @PathVariable UUID readStatusId

@@ -21,12 +21,18 @@ public class ChannelController {
 
     private final ChannelService channelService;
 
-    // PUBLIC 채널 생성
-    // 수정됨: 프론트에서 type을 보내지 않아도 PUBLIC으로 보정해서 서비스에 전달
+    /*
+     * API 명세 v1.2 기준
+     * POST /api/channels/public
+     */
     @PostMapping("/public")
     public ResponseEntity<ChannelResponse> createPublicChannel(
             @RequestBody ChannelCreateRequest request
     ) {
+        if (request == null) {
+            throw new IllegalArgumentException("공개 채널 생성 요청은 비어 있을 수 없습니다.");
+        }
+
         ChannelCreateRequest fixedRequest = new ChannelCreateRequest(
                 ChannelType.PUBLIC,
                 request.getName(),
@@ -42,11 +48,18 @@ public class ChannelController {
                 .body(response);
     }
 
-    // PRIVATE 채널 생성
+    /*
+     * API 명세 v1.2 기준
+     * POST /api/channels/private
+     */
     @PostMapping("/private")
     public ResponseEntity<ChannelResponse> createPrivateChannel(
             @RequestBody PrivateChannelCreateRequest request
     ) {
+        if (request == null) {
+            throw new IllegalArgumentException("비공개 채널 생성 요청은 비어 있을 수 없습니다.");
+        }
+
         ChannelResponse response = channelService.createPrivateChannel(request);
 
         URI location = URI.create("/api/channels/" + response.getId());
@@ -56,15 +69,23 @@ public class ChannelController {
                 .body(response);
     }
 
-    // 채널 단건 조회
+    /*
+     * 기존 테스트/Postman 호환용 단건 조회
+     * API 명세 v1.2에는 명시되어 있지 않지만 유지해도 괜찮음
+     */
     @GetMapping("/{channelId}")
-    public ResponseEntity<ChannelResponse> find(@PathVariable UUID channelId) {
+    public ResponseEntity<ChannelResponse> find(
+            @PathVariable UUID channelId
+    ) {
         ChannelResponse response = channelService.find(channelId);
 
         return ResponseEntity.ok(response);
     }
 
-    // 특정 사용자가 볼 수 있는 채널 목록 조회
+    /*
+     * API 명세 v1.2 기준
+     * GET /api/channels?userId=...
+     */
     @GetMapping
     public ResponseEntity<List<ChannelResponse>> findAllByUserId(
             @RequestParam UUID userId
@@ -74,26 +95,47 @@ public class ChannelController {
         return ResponseEntity.ok(responses);
     }
 
-    // 채널 수정
+    /*
+     * 기존 호환용
+     *
+     * API 명세 v1.2 공식 수정 경로는 PATCH /api/channels/{channelId} 이지만,
+     * 기존 Postman 테스트에서 PATCH /api/channels 로 보낼 수도 있어서 유지
+     */
     @PatchMapping
     public ResponseEntity<ChannelResponse> update(
             @RequestBody ChannelUpdateRequest request
     ) {
+        if (request == null) {
+            throw new IllegalArgumentException("채널 수정 요청은 비어 있을 수 없습니다.");
+        }
+
         ChannelResponse response = channelService.update(request);
 
         return ResponseEntity.ok(response);
     }
 
-    // 수정됨: 프론트가 PATCH /api/channels/{channelId} 방식으로 보낼 가능성 대비
-    // request body 안에 id가 없더라도 URL의 channelId를 사용해서 수정 가능하게 보정
+    /*
+     * API 명세 v1.2 기준
+     * PATCH /api/channels/{channelId}
+     *
+     * body:
+     * {
+     *   "newName": "새 채널 이름",
+     *   "newDescription": "새 채널 설명"
+     * }
+     */
     @PatchMapping("/{channelId}")
     public ResponseEntity<ChannelResponse> updateByPathVariable(
             @PathVariable UUID channelId,
             @RequestBody ChannelUpdateRequest request
     ) {
+        if (request == null) {
+            throw new IllegalArgumentException("채널 수정 요청은 비어 있을 수 없습니다.");
+        }
+
         ChannelUpdateRequest fixedRequest = new ChannelUpdateRequest(
                 channelId,
-                request.getType(),
+                ChannelType.PUBLIC,
                 request.getName(),
                 request.getDescription()
         );
@@ -103,9 +145,14 @@ public class ChannelController {
         return ResponseEntity.ok(response);
     }
 
-    // 채널 삭제
+    /*
+     * API 명세 v1.2 기준
+     * DELETE /api/channels/{channelId}
+     */
     @DeleteMapping("/{channelId}")
-    public ResponseEntity<Void> delete(@PathVariable UUID channelId) {
+    public ResponseEntity<Void> delete(
+            @PathVariable UUID channelId
+    ) {
         channelService.delete(channelId);
 
         return ResponseEntity

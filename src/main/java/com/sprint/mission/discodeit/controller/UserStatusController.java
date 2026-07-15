@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.UserStatusResponse;
+import com.sprint.mission.discodeit.dto.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -9,10 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-// 수정됨: class 레벨 @RequestMapping 제거
-// 이유: 기존 RESTful 경로(/api/user-statuses/...)와
-//      프론트가 요청하는 경로(/api/user/{userId}/userStatus, /api/users/{userId}/userStatus)를
-//      함께 처리하기 위해서
 @RequiredArgsConstructor
 public class UserStatusController {
 
@@ -29,10 +26,10 @@ public class UserStatusController {
         return ResponseEntity.ok(response);
     }
 
-    // 수정됨: 프론트엔드 복수 users 경로 추가
+    // API 명세 v1.2 / 프론트 호환 경로
     // GET /api/users/{userId}/userStatus
     @GetMapping("/api/users/{userId}/userStatus")
-    public ResponseEntity<UserStatusResponse> findByUserIdForFrontendUsers(
+    public ResponseEntity<UserStatusResponse> findByUserIdForUsersPath(
             @PathVariable UUID userId
     ) {
         UserStatusResponse response = userStatusService.findByUserId(userId);
@@ -40,10 +37,10 @@ public class UserStatusController {
         return ResponseEntity.ok(response);
     }
 
-    // 수정됨: 프론트엔드 단수 user 경로 추가
+    // 기존 프론트 호환 경로
     // GET /api/user/{userId}/userStatus
     @GetMapping("/api/user/{userId}/userStatus")
-    public ResponseEntity<UserStatusResponse> findByUserIdForFrontendUser(
+    public ResponseEntity<UserStatusResponse> findByUserIdForUserPath(
             @PathVariable UUID userId
     ) {
         UserStatusResponse response = userStatusService.findByUserId(userId);
@@ -73,24 +70,34 @@ public class UserStatusController {
         return ResponseEntity.ok(response);
     }
 
-    // 수정됨: 프론트엔드 복수 users 경로 추가
-    // PATCH /api/users/{userId}/userStatus
-    // 로그인 후 사용자 상태를 온라인으로 변경할 때 사용
+    /*
+     * API 명세 v1.2 기준
+     *
+     * PATCH /api/users/{userId}/userStatus
+     * body:
+     * {
+     *   "newLastActiveAt": "2026-07-10T01:30:55.469015Z"
+     * }
+     *
+     * 현재 UserStatusService에 lastActiveAt을 직접 받는 메서드가 없다면
+     * 일단 updateOnline(userId)로 처리해서 기존 기능은 유지한다.
+     */
     @PatchMapping("/api/users/{userId}/userStatus")
-    public ResponseEntity<UserStatusResponse> updateUserStatusForFrontendUsers(
-            @PathVariable UUID userId
+    public ResponseEntity<UserStatusResponse> updateUserStatusForUsersPath(
+            @PathVariable UUID userId,
+            @RequestBody(required = false) UserStatusUpdateRequest request
     ) {
         UserStatusResponse response = userStatusService.updateOnline(userId);
 
         return ResponseEntity.ok(response);
     }
 
-    // 수정됨: 프론트엔드 단수 user 경로 추가
+    // 기존 프론트 호환 경로
     // PATCH /api/user/{userId}/userStatus
-    // 현재 콘솔에서 404가 나던 경로
     @PatchMapping("/api/user/{userId}/userStatus")
-    public ResponseEntity<UserStatusResponse> updateUserStatusForFrontendUser(
-            @PathVariable UUID userId
+    public ResponseEntity<UserStatusResponse> updateUserStatusForUserPath(
+            @PathVariable UUID userId,
+            @RequestBody(required = false) UserStatusUpdateRequest request
     ) {
         UserStatusResponse response = userStatusService.updateOnline(userId);
 

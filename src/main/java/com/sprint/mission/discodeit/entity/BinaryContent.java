@@ -1,63 +1,86 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
 import java.time.Instant;
-import java.util.UUID;
 
 @Getter
-public class BinaryContent implements Serializable {
-
-    // 직렬화 버전 관리용 필드
-    private static final long serialVersionUID = 1L;
-
-    // 공통 필드: 바이너리 콘텐츠를 구분하기 위한 고유 id
-    private UUID id;
-
-    // 공통 필드: 바이너리 콘텐츠가 생성된 시간
-    private Instant createdAt;
-
-    // 추가한 부분:
-    // 공통 응답 DTO 구조를 맞추기 위해 updatedAt 필드 추가
-    // BinaryContent는 수정 기능이 없으므로 기본값은 null
-    private Instant updatedAt;
+@Entity
+@Table(name = "binary_contents")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class BinaryContent extends BaseEntity {
 
     // 파일 이름
+    @Column(name = "file_name", nullable = false, length = 255)
     private String fileName;
 
     // 파일 타입
     // 예: image/png, image/jpeg, application/pdf
+    @Column(name = "content_type", nullable = false, length = 100)
     private String contentType;
 
-    // 실제 바이너리 데이터
-    // 이미지, 파일 등의 실제 내용을 byte 배열로 저장
-    private byte[] bytes;
-
     // 파일 크기
-    // bytes.length 값을 저장
-    private long size;
+    @Column(name = "size", nullable = false)
+    private Long size;
 
-    // 생성자: 파일 이름, 파일 타입, 실제 데이터를 받아 BinaryContent 객체 생성
-    public BinaryContent(String fileName, String contentType, byte[] bytes) {
-        // 잘못된 값으로 객체가 생성되지 않도록 먼저 검증
-        validate(fileName, contentType, bytes);
-
-        this.id = UUID.randomUUID();
-        this.createdAt = Instant.now();
-
-        // 추가한 부분:
-        // 수정 기능이 없으므로 생성 시 updatedAt은 null
-        this.updatedAt = null;
+    /*
+     * 심화 요구사항 기준 생성자
+     *
+     * 실제 byte[]는 DB에 저장하지 않고,
+     * LocalBinaryContentStorage 같은 별도 저장소에 저장한다.
+     */
+    public BinaryContent(String fileName, String contentType, Long size) {
+        validate(fileName, contentType, size);
 
         this.fileName = fileName;
         this.contentType = contentType;
-        this.bytes = bytes;
-        this.size = bytes.length;
+        this.size = size;
     }
 
-    // 입력값 검증 메서드
-    // fileName, contentType, bytes가 비어 있거나 잘못된 값이면 예외 발생
+    /*
+     * 기존 코드 호환용 생성자
+     *
+     * 기존 서비스 코드에서 new BinaryContent(fileName, contentType, bytes)를
+     * 호출하고 있을 수 있으므로 일단 컴파일 호환을 위해 유지한다.
+     *
+     * 단, bytes 자체는 엔티티에 저장하지 않고 size 계산에만 사용한다.
+     */
+    public BinaryContent(String fileName, String contentType, byte[] bytes) {
+        validate(fileName, contentType, bytes);
+
+        this.fileName = fileName;
+        this.contentType = contentType;
+        this.size = (long) bytes.length;
+    }
+
+    /*
+     * BinaryContent는 BaseEntity만 상속하므로 updatedAt을 실제 필드로 가지지 않는다.
+     * 기존 BinaryContentResponse 생성 코드 호환용으로 null을 반환한다.
+     */
+    public Instant getUpdatedAt() {
+        return null;
+    }
+
+    private void validate(String fileName, String contentType, Long size) {
+        if (fileName == null || fileName.isBlank()) {
+            throw new IllegalArgumentException("파일 이름은 비어 있을 수 없습니다.");
+        }
+
+        if (contentType == null || contentType.isBlank()) {
+            throw new IllegalArgumentException("파일 타입은 비어 있을 수 없습니다.");
+        }
+
+        if (size == null || size <= 0) {
+            throw new IllegalArgumentException("파일 크기는 0보다 커야 합니다.");
+        }
+    }
+
     private void validate(String fileName, String contentType, byte[] bytes) {
         if (fileName == null || fileName.isBlank()) {
             throw new IllegalArgumentException("파일 이름은 비어 있을 수 없습니다.");

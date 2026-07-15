@@ -6,18 +6,22 @@ import com.sprint.mission.discodeit.dto.BinaryContentResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class BasicBinaryContentService implements BinaryContentService {
 
     private final BinaryContentRepository binaryContentRepository;
+    private final BinaryContentStorage binaryContentStorage;
 
     @Override
     public BinaryContentResponse create(BinaryContentCreateRequest request) {
@@ -29,16 +33,22 @@ public class BasicBinaryContentService implements BinaryContentService {
 
         BinaryContent binaryContent = new BinaryContent(
                 request.getFileName(),
-                request.getContentType(),
+                safeContentType(request.getContentType()),
+                (long) request.getBytes().length
+        );
+
+        BinaryContent savedBinaryContent = binaryContentRepository.save(binaryContent);
+
+        binaryContentStorage.put(
+                savedBinaryContent.getId(),
                 request.getBytes()
         );
 
-        binaryContentRepository.save(binaryContent);
-
-        return toResponse(binaryContent);
+        return toResponse(savedBinaryContent);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public BinaryContentResponse find(UUID id) {
         BinaryContent binaryContent = findBinaryContentById(id);
 
@@ -46,13 +56,17 @@ public class BasicBinaryContentService implements BinaryContentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public BinaryContentDownloadResponse findForDownload(UUID id) {
         BinaryContent binaryContent = findBinaryContentById(id);
 
-        return toDownloadResponse(binaryContent);
+        byte[] bytes = binaryContentStorage.get(binaryContent.getId());
+
+        return toDownloadResponse(binaryContent, bytes);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BinaryContentResponse> findAllByIdIn(List<UUID> ids) {
         List<BinaryContentResponse> responses = new ArrayList<>();
 
@@ -76,10 +90,11 @@ public class BasicBinaryContentService implements BinaryContentService {
         }
 
         if (!binaryContentRepository.existsById(id)) {
-            throw new IllegalArgumentException("삭제할 바이너리 콘텐츠를 찾을 수 없습니다.");
+            throw new IllegalArgumentException("삭제할 바이너리 콘텐츠를 찾을 수 없습니다. id=" + id);
         }
 
         binaryContentRepository.deleteById(id);
+        binaryContentStorage.delete(id);
     }
 
     private BinaryContent findBinaryContentById(UUID id) {
@@ -87,13 +102,10 @@ public class BasicBinaryContentService implements BinaryContentService {
             throw new IllegalArgumentException("조회할 바이너리 콘텐츠 id는 null일 수 없습니다.");
         }
 
-        BinaryContent binaryContent = binaryContentRepository.findById(id);
-
-        if (binaryContent == null) {
-            throw new IllegalArgumentException("조회할 바이너리 콘텐츠를 찾을 수 없습니다.");
-        }
-
-        return binaryContent;
+        return binaryContentRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "조회할 바이너리 콘텐츠를 찾을 수 없습니다. id=" + id
+                ));
     }
 
     private void validate(BinaryContentCreateRequest request) {
@@ -101,35 +113,40 @@ public class BasicBinaryContentService implements BinaryContentService {
             throw new IllegalArgumentException("파일 이름은 비어 있을 수 없습니다.");
         }
 
-        if (request.getContentType() == null || request.getContentType().isBlank()) {
-            throw new IllegalArgumentException("파일 타입은 비어 있을 수 없습니다.");
-        }
-
         if (request.getBytes() == null || request.getBytes().length == 0) {
             throw new IllegalArgumentException("파일 데이터는 비어 있을 수 없습니다.");
         }
     }
 
-    // 목록/메타데이터 조회용 응답: bytes 제외
     private BinaryContentResponse toResponse(BinaryContent binaryContent) {
         return new BinaryContentResponse(
                 binaryContent.getId(),
                 binaryContent.getCreatedAt(),
                 binaryContent.getUpdatedAt(),
                 binaryContent.getFileName(),
-                binaryContent.getContentType(),
+                safeContentType(binaryContent.getContentType()),
                 binaryContent.getSize()
         );
     }
 
-    // 실제 파일 다운로드용 응답: bytes 포함
-    private BinaryContentDownloadResponse toDownloadResponse(BinaryContent binaryContent) {
+    private BinaryContentDownloadResponse toDownloadResponse(
+            BinaryContent binaryContent,
+            byte[] bytes
+    ) {
         return new BinaryContentDownloadResponse(
                 binaryContent.getId(),
                 binaryContent.getFileName(),
-                binaryContent.getContentType(),
-                binaryContent.getBytes(),
+                safeContentType(binaryContent.getContentType()),
+                bytes,
                 binaryContent.getSize()
         );
+    }
+
+    private String safeContentType(String contentType) {
+        if (contentType == null || contentType.isBlank()) {
+            return "application/octet-stream";
+        }
+
+        return contentType;
     }
 }

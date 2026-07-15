@@ -8,33 +8,75 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 // 채널 수정 요청 DTO
-// 어떤 채널을 어떻게 수정할지에 대한 정보를 담는 클래스
 @Getter
-@NoArgsConstructor // 수정됨: JSON 요청 바인딩을 위해 기본 생성자 추가
+@NoArgsConstructor
 public class ChannelUpdateRequest {
 
     // 수정할 채널의 id
     private UUID id;
 
-    // 수정할 채널 종류
-    // 예: PUBLIC, PRIVATE
+    // 기존 코드 호환용
     private ChannelType type;
 
-    // 수정할 채널 이름
-    // 수정됨: 프론트가 title/channelName으로 보낼 가능성 대비
+    /*
+     * 기존 프론트/기존 코드 호환용 필드
+     * title, channelName으로 들어와도 name에 매핑
+     */
     @JsonAlias({"title", "channelName"})
     private String name;
 
-    // 수정할 채널 설명
-    // 수정됨: 프론트가 desc로 보낼 가능성 대비
+    /*
+     * 기존 프론트/기존 코드 호환용 필드
+     * desc로 들어와도 description에 매핑
+     */
     @JsonAlias({"desc"})
     private String description;
 
-    // 채널 수정 요청 객체를 생성하는 생성자
-    public ChannelUpdateRequest(UUID id, ChannelType type, String name, String description) {
+    /*
+     * API 명세 v1.2 기준 필드
+     */
+    private String newName;
+
+    /*
+     * API 명세 v1.2 기준 필드
+     */
+    private String newDescription;
+
+    public ChannelUpdateRequest(
+            UUID id,
+            ChannelType type,
+            String name,
+            String description
+    ) {
         this.id = id;
         this.type = type;
         this.name = name;
         this.description = description;
+        this.newName = name;
+        this.newDescription = description;
+    }
+
+    /*
+     * 서비스 코드에서는 getName()을 그대로 사용해도 됨.
+     * newName이 있으면 newName 우선 사용.
+     */
+    public String getName() {
+        if (newName != null && !newName.isBlank()) {
+            return newName;
+        }
+
+        return name;
+    }
+
+    /*
+     * 서비스 코드에서는 getDescription()을 그대로 사용해도 됨.
+     * newDescription이 있으면 newDescription 우선 사용.
+     */
+    public String getDescription() {
+        if (newDescription != null && !newDescription.isBlank()) {
+            return newDescription;
+        }
+
+        return description;
     }
 }
