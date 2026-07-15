@@ -9,5 +9,4 @@ class DiscodeitApplicationTests {
 	@Test
 	void contextLoads() {
 	}
-
 }

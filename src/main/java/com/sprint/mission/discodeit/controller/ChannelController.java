@@ -11,16 +11,14 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/channels")
+@RequestMapping("/api/channels")
 @RequiredArgsConstructor
 public class ChannelController {
 
     private final ChannelService channelService;
 
-    @RequestMapping(method = RequestMethod.POST)
-    public Channel create(
-            @RequestBody CreateChannelRequest request
-    ) {
+    @PostMapping
+    public Channel create(@RequestBody CreateChannelRequest request) {
         return channelService.create(
                 new Channel(
                         request.getName(),
@@ -29,17 +27,17 @@ public class ChannelController {
         );
     }
 
-    @RequestMapping(method = RequestMethod.GET)
+    @GetMapping
     public List<Channel> findAll() {
         return channelService.findAll();
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    @GetMapping("/{id}")
     public Channel find(@PathVariable UUID id) {
         return channelService.find(id);
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+    @PatchMapping("/{id}")
     public Channel update(
             @PathVariable UUID id,
             @RequestBody UpdateChannelRequest request
@@ -51,7 +49,7 @@ public class ChannelController {
         );
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    @DeleteMapping("/{id}")
     public void delete(@PathVariable UUID id) {
         channelService.delete(id);
     }
