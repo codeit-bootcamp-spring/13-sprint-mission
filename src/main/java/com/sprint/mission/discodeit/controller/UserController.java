@@ -4,7 +4,7 @@ import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.userstatus.UserStatusResponse;
+import com.sprint.mission.discodeit.dto.userstatus.UserStatusDto;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
@@ -133,7 +133,7 @@ public class UserController {
       @ApiResponse(responseCode = "200", description = "User 온라인 상태가 성공적으로 업데이트됨"),
       @ApiResponse(responseCode = "404", description = "해당 User의 UserStatus를 찾을 수 없음")})
   @RequestMapping(value = "/{userId}/userStatus", method = RequestMethod.PATCH)
-  public ResponseEntity<UserStatusResponse> updateOnlineStatus(
+  public ResponseEntity<UserStatusDto> updateOnlineStatus(
       @Parameter(name = "userId", in = ParameterIn.PATH, description = "상태를 변경할 User ID", required = true,
           schema = @Schema(type = "string", format = "uuid"))
       @PathVariable UUID userId,
