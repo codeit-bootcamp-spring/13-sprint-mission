@@ -1,6 +1,9 @@
 package com.sprint.mission.discodeit.exception;
 
 
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -9,16 +12,20 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
   @ExceptionHandler(BinaryContentNotFoundException.class)
   public ProblemDetail handleBinaryContentNotFoundException(BinaryContentNotFoundException e) {
+    ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
+    pd.setTitle("Resource Not Found");
+    pd.setProperty("timestamp", Instant.now());
+    return pd;
+  }
+
+  @ExceptionHandler(MessageNotFoundException.class)
+  public ProblemDetail handleMessageNotFoundException(MessageNotFoundException e) {
     ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
     pd.setTitle("Resource Not Found");
     pd.setProperty("timestamp", Instant.now());
