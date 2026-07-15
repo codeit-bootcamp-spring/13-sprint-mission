@@ -1,49 +1,41 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.ToString;
 
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.UUID;
 
 @Getter
 @ToString
-public class Channel implements Serializable {
-    private static final long serialVersionUID = 1L;
+@Entity
+@Table(name = "channels")
+public class Channel extends BaseUpdatableEntity{
 
-    private final UUID channelId;
+    @Column(length = 100)
     private String name;
-    private final Instant createdAt;
-    private Instant updatedAt;
-    private ChannelType channelType;
+
+    @Column(nullable = false, length = 10)
+    @Enumerated(EnumType.STRING)
+    private ChannelType type;
+
+    @Column(length = 500)
     private String description;
 
-    //PUBLIC
-    public Channel(String name, String description) {
-        this.channelId = UUID.randomUUID();
-        this.name = name;
-        this.createdAt = Instant.now();
-        this.updatedAt = this.createdAt;
-        this.description = description;
-        this.channelType = ChannelType.PUBLIC;
-    }
+    protected Channel() {}
 
-    //PRIVATE
-    public Channel(ChannelType channelType) {
-        this.channelId = UUID.randomUUID();
-        this.createdAt = Instant.now();
-        this.updatedAt = this.createdAt;
-        this.channelType = channelType;
+    public Channel(ChannelType type, String name, String description){
+        super();
+        this.type = type;
+        this.name = name;
+        this.description = description;
     }
 
     public void updateChannel(String name) {
         this.name = name;
-        this.updatedAt = Instant.now();
     }
 
     public void updateChannelDescription(String description) {
         this.description = description;
-        this.updatedAt = Instant.now();
     }
 }

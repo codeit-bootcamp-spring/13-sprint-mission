@@ -1,49 +1,54 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.ToString;
 
-import java.io.Serializable;
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 
 @Getter
 @ToString
-public class Message implements Serializable {
-    private static final long serialVersionUID = 1L;
+@Entity
+@Table(name = "messages")
+public class Message extends BaseUpdatableEntity{
 
-    private final UUID messageId;
-    private final Instant createdAt;
-    private Instant updatedAt;
+    @Column(columnDefinition = "TEXT")
     private String content;
-    private final UUID channelId;
-    private final UUID authorId;
-    private final List<UUID> attachmentIds;
+
+    @ManyToOne
+    @JoinColumn(name = "channel_id", nullable = false)
+    private Channel channel;
+
+    @ManyToOne
+    @JoinColumn(name = "author_id", nullable = true)
+    private User author;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinTable(
+            name = "message_attachments",
+            joinColumns = @JoinColumn(name = "message_id"),
+            inverseJoinColumns = @JoinColumn(name = "attachment_id")
+    )
+    private List<BinaryContent> attachments = new ArrayList<>();
+
+
+    protected Message() {}
+
 
     // 텍스트 + 첨부파일
-    public Message(String content, UUID channelId, UUID authorId, List<UUID> attachmentIds) {
-        this.messageId = UUID.randomUUID();
-        this.createdAt = Instant.now();
-        this.updatedAt = this.createdAt;
-        this.content = content;
-        this.channelId = channelId;
-        this.authorId = authorId;
-        this.attachmentIds = attachmentIds == null ? List.of() : List.copyOf(attachmentIds);
-    }
-    //텍스트
-    public Message(String content, UUID channelId, UUID authorId) {
-        this(content, channelId, authorId, List.of());
-    }
 
-    //첨부파일
-    public Message(UUID channelId, UUID authorId, List<UUID> attachmentIds) {
-        this(null, channelId, authorId, attachmentIds);
+    public Message(String content, Channel channel, User author, List<BinaryContent> attachments) {
+        super();
+        this.content = content;
+        this.channel = channel;
+        this.author = author;
+        this.attachments = attachments == null ? List.of() : List.copyOf(attachments);
     }
 
     public void updateContent(String content) {
         this.content = content;
-        this.updatedAt = Instant.now();
     }
 }

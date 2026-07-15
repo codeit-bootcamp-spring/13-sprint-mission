@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.dto.message;
 
+import com.sprint.mission.discodeit.dto.command.message.MessageUpdateCommand;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public record MessageUpdateRequest(
@@ -16,5 +17,9 @@ public record MessageUpdateRequest(
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(fieldName + "을 입력해주세요.");
         }
+    }
+
+    public MessageUpdateCommand toCommand(){
+        return new MessageUpdateCommand(content);
     }
 }

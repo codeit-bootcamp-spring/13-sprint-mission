@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.dto.userstatus;
 
+import com.sprint.mission.discodeit.dto.command.userstatus.UserStatusCreateCommand;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.UUID;
@@ -18,6 +19,10 @@ public record UserStatusCreateRequest(
         if (value == null){
             throw new IllegalArgumentException(fieldName + " 가 존재하지 않습니다.");
         }
+    }
+
+    public UserStatusCreateCommand toCommand() {
+        return new UserStatusCreateCommand(userId);
     }
 
 }

@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.dto.user;
 
+import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
+import com.sprint.mission.discodeit.dto.command.user.UserUpdateCommand;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public record UserUpdateRequest(
@@ -21,5 +23,9 @@ public record UserUpdateRequest(
         if (newPassword != null && newPassword.isBlank()) {
             throw new IllegalArgumentException("비밀번호를 입력해주세요.");
         }
+    }
+
+    public UserUpdateCommand toCommand() {
+        return new UserUpdateCommand(newUsername, newEmail, newPassword);
     }
 }

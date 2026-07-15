@@ -1,14 +1,19 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.command.userstatus.UserStatusCreateCommand;
+import com.sprint.mission.discodeit.dto.command.userstatus.UserStatusUpdateCommand;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusCreateRequest;
-import com.sprint.mission.discodeit.dto.userstatus.UserStatusResponse;
+import com.sprint.mission.discodeit.dto.userstatus.UserStatusDto;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
+import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.mapper.UserStatusMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -17,71 +22,68 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class BasicUserStatusService implements UserStatusService {
 
     private final UserStatusRepository userStatusRepository;
     private final UserRepository userRepository;
+    private final UserStatusMapper userStatusMapper;
 
-    private UserStatusResponse toResponse(UserStatus userStatus){
-        return new UserStatusResponse(
-                userStatus.getUserId(),
-                userStatus.getLastAccessedAt(),
-                userStatus.isOnline()
-        );
-    }
 
     //생성
     @Override
-    public UserStatusResponse create(UserStatusCreateRequest request) {
-        userRepository.findById(request.userId())
-                .orElseThrow(()-> new NoSuchElementException("존재하지 않는 사용자 입니다."));
-        boolean alreadyExists = userStatusRepository.findByUserId(request.userId()).isPresent();
+    public UserStatusDto create(UserStatusCreateCommand command) {
+        User user = userRepository.findById(command.userId())
+                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자 입니다."));
+        boolean alreadyExists = userStatusRepository.findByUserId(command.userId()).isPresent();
 
         if (alreadyExists) {
             throw new IllegalArgumentException("이미 존재하는 UserStatus입니다.");
         }
 
-        UserStatus userStatus = new UserStatus(request.userId());
+        UserStatus userStatus = new UserStatus(user);
         userStatusRepository.save(userStatus);
-        return toResponse(userStatus);
+        return userStatusMapper.toDto(userStatus);
     }
 
     //조회
     @Override
-    public UserStatusResponse find(UUID id) {
+    @Transactional(readOnly = true)
+    public UserStatusDto find(UUID id) {
         UserStatus userStatus = userStatusRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 UserStatus입니다."));
-        return toResponse(userStatus);
+        return userStatusMapper.toDto(userStatus);
     }
 
     //전체 조회
     @Override
-    public List<UserStatusResponse> findAll() {
+    @Transactional(readOnly = true)
+    public List<UserStatusDto> findAll() {
         return userStatusRepository.findAll()
                 .stream()
-                .map(this::toResponse)
+                .map(userStatusMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     //수정(UserStatusId로 조회)
     @Override
-    public UserStatusResponse update(UUID id, UserStatusUpdateRequest request) {
+    public UserStatusDto update(UUID id, UserStatusUpdateCommand command) {
         UserStatus userStatus = userStatusRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 UserStatus입니다."));
-        userStatus.updateLastAccessedAt(request.newLastActiveAt());
+        userStatus.updateLastActiveAt(command.newLastActiveAt());
         userStatusRepository.save(userStatus);
-        return toResponse(userStatus);
+        return userStatusMapper.toDto(userStatus);
     }
 
     //수정(UserId로 조회)
     @Override
-    public UserStatusResponse updateByUserId(UUID userId, UserStatusUpdateRequest request) {
+    public UserStatusDto updateByUserId(UUID userId, UserStatusUpdateCommand command) {
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자 입니다."));
 
-        userStatus.updateLastAccessedAt(request.newLastActiveAt());
+        userStatus.updateLastActiveAt(command.newLastActiveAt());
         userStatusRepository.save(userStatus);
-        return toResponse(userStatus);
+        return userStatusMapper.toDto(userStatus);
     }
 
     //삭제

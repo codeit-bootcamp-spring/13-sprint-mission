@@ -1,56 +1,59 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.ToString;
 
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.UUID;
 
 @Getter
 @ToString(exclude = "password")
-public class User implements Serializable {
-    private static final long serialVersionUID = 1L;
+@Entity
+@Table(name = "users")
+public class User extends BaseUpdatableEntity {
 
-    private final UUID userId;
-    private final Instant createdAt;
-    private Instant updatedAt;
-    private String name;
+    @Column(unique = true, nullable = false, length = 50)
+    private String username;
+
+    @Column(unique = true, nullable = false, length = 100)
     private String email;
+
+    @Column(nullable = false, length = 60)
     private String password;
-    private UUID profileId;
 
+    @OneToOne
+    @JoinColumn(name = "profile_id", unique = true, nullable = true)
+    private BinaryContent profile;
 
-    public User (String name, String email, String password,  UUID profileId) {
-        this.userId = UUID.randomUUID();
-        this.createdAt = Instant.now();
-        this.updatedAt = this.createdAt;
-        this.name = name;
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserStatus status;
+
+    protected User() {}
+
+    public User (String username, String email, String password, BinaryContent profile, UserStatus status) {
+        super();
+        this.username = username;
         this.email = email;
         this.password = password;
-        this.profileId = profileId;
+        this.profile =  profile;
+        this.status = status;
     }
 
     //이름 수정
-    public void updateUserName(String name){
-        this.name = name;
-        this.updatedAt = Instant.now();
+    public void updateUserName(String username){
+        this.username = username;
     }
     //이메일 수정
     public void updateUserEmail(String email){
         this.email = email;
-        this.updatedAt = Instant.now();
     }
     //비밀번호 수정
     public void updateUserPassword(String password){
         this.password = password;
-        this.updatedAt = Instant.now();
     }
 
     //프로필 이미지 수정
-    public void updateUserProfileId(UUID profileId){
-        this.profileId = profileId;
-        this.updatedAt = Instant.now();
+    public void updateUserProfileId(BinaryContent profile){
+        this.profile = profile;
     }
 }

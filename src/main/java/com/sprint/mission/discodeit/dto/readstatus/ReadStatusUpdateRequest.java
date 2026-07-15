@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.dto.readstatus;
 
+import com.sprint.mission.discodeit.dto.command.readstatus.ReadStatusCreateCommand;
+import com.sprint.mission.discodeit.dto.command.readstatus.ReadStatusUpdateCommand;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
@@ -17,5 +19,9 @@ public record ReadStatusUpdateRequest(
         if (validate == null) {
             throw new IllegalArgumentException(fieldName + "입력해 주세요.");
         }
+    }
+
+    public ReadStatusUpdateCommand toCommand() {
+        return new ReadStatusUpdateCommand(newLastReadAt);
     }
 }

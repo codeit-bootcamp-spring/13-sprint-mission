@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.controller.docs;
 
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
-import com.sprint.mission.discodeit.dto.user.UserResponse;
+import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.userstatus.UserStatusResponse;
+import com.sprint.mission.discodeit.dto.userstatus.UserStatusDto;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -29,15 +29,15 @@ public interface UserControllerDocs {
             @ApiResponse(responseCode = "201", description = "생성 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청")
     })
-    public ResponseEntity<UserResponse> createUser(@RequestPart UserCreateRequest userCreateRequest,
-                                                   @RequestPart(required = false) MultipartFile profile);
+    public ResponseEntity<UserDto> createUser(@RequestPart UserCreateRequest userCreateRequest,
+                                              @RequestPart(required = false) MultipartFile profile);
 
     @Operation(summary = "User 수정 API")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "404", description = "존재하지 않음")
     })
-    public ResponseEntity<UserResponse> updateUser(@PathVariable UUID userId,
+    public ResponseEntity<UserDto> updateUser(@PathVariable UUID userId,
                                                    @RequestPart UserUpdateRequest userUpdateRequest,
                                                    @RequestPart(required = false) MultipartFile profile);
 
@@ -53,21 +53,21 @@ public interface UserControllerDocs {
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "404", description = "존재하지 않음")
     })
-    public ResponseEntity<UserResponse> findUser (@PathVariable UUID userId);
+    public ResponseEntity<UserDto> findUser (@PathVariable UUID userId);
 
     @Operation(summary = "전체 User 조회 API")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "404", description = "존재하지 않음")
     })
-    public ResponseEntity<List<UserResponse>> findAllUser();
+    public ResponseEntity<List<UserDto>> findAllUser();
 
     @Operation(summary = "User 온라인 상태 업데이트 API")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "404", description = "존재하지 않음")
     })
-    public ResponseEntity<UserStatusResponse> updateUserStatus(@PathVariable UUID userId,
-                                                               @RequestBody UserStatusUpdateRequest request);
+    public ResponseEntity<UserStatusDto> updateUserStatus(@PathVariable UUID userId,
+                                                          @RequestBody UserStatusUpdateRequest request);
 
 }

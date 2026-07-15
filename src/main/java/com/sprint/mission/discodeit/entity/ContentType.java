@@ -2,6 +2,8 @@ package com.sprint.mission.discodeit.entity;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import java.util.Arrays;
+
 public enum ContentType {
 
     //이미지
@@ -24,6 +26,11 @@ public enum ContentType {
     @JsonValue
     public String getValue() {
         return value;
+    }
+
+    public static boolean isSupported(String value){
+        return Arrays.stream(values())
+                .anyMatch(contentType -> contentType.value.equals(value));
     }
 
 }

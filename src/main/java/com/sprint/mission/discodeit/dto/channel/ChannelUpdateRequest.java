@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.dto.channel;
 
+import com.sprint.mission.discodeit.dto.command.channel.ChannelUpdateCommand;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public record ChannelUpdateRequest(
@@ -19,5 +20,9 @@ public record ChannelUpdateRequest(
         if (value != null && value.isBlank()) {
             throw new IllegalArgumentException(fieldName + "을 입력해주세요.");
         }
+    }
+
+    public ChannelUpdateCommand toCommand() {
+        return new ChannelUpdateCommand(name, description);
     }
 }
