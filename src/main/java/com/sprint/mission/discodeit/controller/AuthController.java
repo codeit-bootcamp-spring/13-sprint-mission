@@ -4,10 +4,9 @@ import com.sprint.mission.discodeit.dto.request.LoginRequest;
 import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.service.AuthService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -17,9 +16,11 @@ public class AuthController {
     private final AuthService authService;
 
     // 사용자 로그인
-    @RequestMapping(method = RequestMethod.POST)
-    public UserResponse login(@RequestBody LoginRequest request) {
-        return authService.login(request);
+    @PostMapping("/login")
+    public ResponseEntity<UserResponse> login(@RequestBody LoginRequest request) {
+        UserResponse response = authService.login(request);
+
+        return ResponseEntity.ok(response);
     }
 
 }

@@ -3,13 +3,10 @@ package com.sprint.mission.discodeit.dto.request;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
 @Getter
 @NoArgsConstructor
-public class CreateReadStatusRequest {
+public class MessageUpdateRequest {
 
-    private UUID userId;
-    private UUID channelId;
+    private String content;
 
 }

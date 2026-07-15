@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.service;
 
-import com.sprint.mission.discodeit.dto.request.CreateReadStatusRequest;
-import com.sprint.mission.discodeit.dto.request.UpdateReadStatusRequest;
+import com.sprint.mission.discodeit.dto.request.ReadStatusCreateRequest;
+import com.sprint.mission.discodeit.dto.request.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ReadStatusResponse;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -18,7 +18,7 @@ public class ReadStatusService {
 
     private final ReadStatusRepository readStatusRepository;
 
-    public ReadStatusResponse create(CreateReadStatusRequest request) {
+    public ReadStatusResponse create(ReadStatusCreateRequest request) {
         if (readStatusRepository.findByUserIdAndChannelId(
                 request.getUserId(),
                 request.getChannelId()).isPresent()) {
@@ -51,7 +51,7 @@ public class ReadStatusService {
                 .toList();
     }
 
-    public ReadStatusResponse update(UUID id, UpdateReadStatusRequest request) {
+    public ReadStatusResponse update(UUID id, ReadStatusUpdateRequest request) {
         ReadStatus status = readStatusRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("읽음 상태를 찾을 수 없습니다."));
 

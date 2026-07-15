@@ -3,12 +3,10 @@ package com.sprint.mission.discodeit.dto.request;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
+import java.time.Instant;
 
 @Getter
 @NoArgsConstructor
-public class UpdateUserStatusRequest {
-
-    private UUID userId;
-
+public class UserStatusUpdateRequest {
+    private Instant newLastActiveAt;
 }

@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class CreateProfileImageRequest {
+public class ProfileImageCreateRequest {
 
         private String filename;
         private String contentType;

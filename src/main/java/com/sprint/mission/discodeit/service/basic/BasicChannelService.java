@@ -1,8 +1,8 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.request.CreatePrivateChannelRequest;
-import com.sprint.mission.discodeit.dto.request.CreatePublicChannelRequest;
-import com.sprint.mission.discodeit.dto.request.UpdateChannelRequest;
+import com.sprint.mission.discodeit.dto.request.PrivateChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelResponse;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
@@ -32,7 +32,7 @@ public class BasicChannelService implements ChannelService {
 
 
     @Override
-    public ChannelResponse createPublicChannel(CreatePublicChannelRequest request) {
+    public ChannelResponse createPublicChannel(PublicChannelCreateRequest request) {
         Channel channel = new Channel(
                 request.getName(),
                 PUBLIC,
@@ -48,7 +48,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ChannelResponse createPrivateChannel(CreatePrivateChannelRequest request) {
+    public ChannelResponse createPrivateChannel(PrivateChannelCreateRequest request) {
         Channel channel = new Channel(
                 null,
                 Channel.ChannelType.PRIVATE,
@@ -143,7 +143,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ChannelResponse update(UUID id, UpdateChannelRequest request) {
+    public ChannelResponse update(UUID id, ChannelUpdateRequest request) {
         Channel channel = channelRepository.findById(id)
                 .orElseThrow(() ->
                         new IllegalArgumentException("채널을 찾을 수 없습니다."));;

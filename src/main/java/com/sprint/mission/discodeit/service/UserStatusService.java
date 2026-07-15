@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.service;
 
-import com.sprint.mission.discodeit.dto.request.CreateUserStatusRequest;
-import com.sprint.mission.discodeit.dto.request.UpdateUserStatusRequest;
+import com.sprint.mission.discodeit.dto.request.UserStatusCreateRequest;
+import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserStatusResponse;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
@@ -20,7 +20,7 @@ public class UserStatusService {
     private final UserStatusRepository userStatusRepository;
     private final UserRepository userRepository;
 
-    public UserStatusResponse create(CreateUserStatusRequest request) {
+    public UserStatusResponse create(UserStatusCreateRequest request) {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
 
@@ -49,12 +49,16 @@ public class UserStatusService {
                 .toList();
     }
 
-    public UserStatusResponse updateByUserId(UpdateUserStatusRequest request) {
-        UserStatus status = userStatusRepository.findByUserId(request.getUserId())
-                        .orElseThrow(() ->
-                                new IllegalArgumentException("유저 상태를 찾을 수 없습니다."));
+    public UserStatusResponse updateLastSeen(
+            UUID userId,
+            UserStatusUpdateRequest request) {
+
+        UserStatus status = userStatusRepository.findByUserId(userId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("유저 상태를 찾을 수 없습니다."));
 
         status.updateLastSeen();
+
         userStatusRepository.save(status);
 
         return UserStatusResponse.from(status);
