@@ -2,11 +2,10 @@ package com.sprint.mission.discodeit.dto.binarycontent;
 
 import java.util.UUID;
 
-public record BinaryContentResponse(
+public record BinaryContentDto(
         UUID id,
         String fileName,
-        String contentType,
-        byte[] bytes
+        Long size,
+        String contentType
 ) {
-
 }

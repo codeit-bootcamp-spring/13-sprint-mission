@@ -3,9 +3,8 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
-import com.sprint.mission.discodeit.dto.user.UserResponse;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.userstatus.UserStatusResponse;
+import com.sprint.mission.discodeit.dto.userstatus.UserStatusDto;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
@@ -28,7 +27,7 @@ public class UserController {
     private final UserStatusService userStatusService;
 
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity<UserResponse> createUser(
+    public ResponseEntity<UserDto> createUser(
             @RequestPart("userCreateRequest") UserCreateRequest request,
             @RequestPart(value = "profile", required = false) MultipartFile profile
     ) throws IOException {
@@ -45,7 +44,7 @@ public class UserController {
     }
 
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<UserResponse> findById(
+    public ResponseEntity<UserDto> findById(
             @PathVariable UUID id
     ) {
         return ResponseEntity.ok(userService.findById(id));
@@ -53,11 +52,11 @@ public class UserController {
 
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<List<UserDto>> findAll() {
-        return ResponseEntity.ok(userService.findAllDto().stream().toList());
+        return ResponseEntity.ok(userService.findAll().stream().toList());
     }
 
     @RequestMapping(value = "/{userId}", method = RequestMethod.PATCH)
-    public ResponseEntity<UserResponse> update(
+    public ResponseEntity<UserDto> update(
             @PathVariable UUID userId,
             @RequestPart("userUpdateRequest") UserUpdateRequest request,
             @RequestPart(value = "profile", required = false) MultipartFile profile
@@ -81,7 +80,7 @@ public class UserController {
     }
 
     @RequestMapping(value = "/{userId}/userStatus", method = RequestMethod.PATCH)
-    public ResponseEntity<UserStatusResponse> updateStatus(
+    public ResponseEntity<UserStatusDto> updateStatus(
             @PathVariable UUID userId,
             @RequestBody UserStatusUpdateRequest request
     ) {
@@ -89,7 +88,7 @@ public class UserController {
     }
 
     @RequestMapping(value = "/status", method = RequestMethod.GET)
-    public ResponseEntity<UserStatusResponse> findStatusByUserId(
+    public ResponseEntity<UserStatusDto> findStatusByUserId(
             @RequestParam UUID userId
     ) {
         return ResponseEntity.ok(userStatusService.findByUserId(userId));
