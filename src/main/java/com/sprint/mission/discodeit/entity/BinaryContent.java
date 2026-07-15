@@ -1,69 +1,42 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.*;
+import jakarta.persistence.*;
 import lombok.*;
 
-import java.io.*;
 import java.time.*;
 import java.util.*;
 @Getter
-public class BinaryContent implements Serializable {
+@Entity
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "binary_contents")
+public class BinaryContent extends BaseEntity {
 
-    private final UUID id;
-    private final UUID userId;
-    private final UUID messageId;
-    private final String contentType;
-    private final byte[] data;
-    private final String fileName;
-    private final Instant createdAt;
+    @Column(name = "content_type", nullable = false)
+    private String contentType;
 
-    public BinaryContent(UUID userId, UUID messageId,
-                         String contentType, byte[] data,
-                         String fileName) {
+    @Column(name = "file_name", nullable = false)
+    private String fileName;
 
-        this.id = UUID.randomUUID();
-        validateOwner(userId, messageId);
-        validateFileName(fileName);
-        validateContentType(contentType);
+    @Column(nullable = false)
+    private Long size;
 
-        this.userId = userId;
-        this.messageId = messageId;
-        this.contentType = contentType;
-        this.data = copyData(data);
+    @Column(nullable = false)
+    private String fileUrl;
+
+    public BinaryContent(String fileName, Long size, String contentType, String fileUrl) {
+
         this.fileName = fileName;
-        this.createdAt = Instant.now();
+        this.size = size;
+        this.contentType = contentType;
+        this.fileUrl= fileUrl;
+
     }
 
-    private void validateOwner(UUID userId, UUID messageId) {
-        if (userId == null && messageId == null) {
-            throw new IllegalArgumentException("userId 또는 messageId 중 하나는 필요합니다.");
-        }
-    }
-
-    private void validateFileName(String fileName) {
-        if (fileName == null || fileName.isBlank()) {
-            throw new IllegalArgumentException("파일 이름을 적어주세요.");
-        }
-    }
-
-    private void validateContentType(String contentType) {
-        if (contentType == null || contentType.isBlank()) {
-            throw new IllegalArgumentException("파일 타입을 적어주세요.");
-        }
-    }
-
-    private void valiDate(byte[] data) {
-        if (data == null || data.length == 0 ) {
-            throw new IllegalArgumentException("파일의 내용이 없습니다. 확인해주세요");
-        }
-    }
-
-    private byte[] copyData(byte[] data) {
-        valiDate(data);
-        return Arrays.copyOf(data, data.length);
-    }
-
-    public byte[] getData() {
-        return Arrays.copyOf(data, data.length);
+    public BinaryContent(String fileName, Long size, String contentType) {
+        this.fileName = fileName;
+        this.size = size;
+        this.contentType = contentType;
     }
 
 

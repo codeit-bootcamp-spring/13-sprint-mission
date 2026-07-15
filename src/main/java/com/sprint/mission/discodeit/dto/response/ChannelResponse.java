@@ -28,27 +28,4 @@ public record ChannelResponse(
                 userIds
         );
     }
-
-    @Override
-    public String toString() {
-        return """
-            채널 정보
-            ====================
-            ID          : %s
-            Name        : %s
-            Description : %s
-            Type        : %s
-            LastMessage : %s
-            Users       : %s
-            ====================
-            """
-                .formatted(
-                        id,
-                        name,
-                        description,
-                        type,
-                        lastMessageAt,
-                        userIds
-                );
-    }
 }

@@ -10,6 +10,7 @@ public record MessageResponse(
         UUID channelId,
         String content,
         List<AttachmentResponse> attachments
+
 ) {
 
     public record AttachmentResponse(
@@ -27,34 +28,16 @@ public record MessageResponse(
     }
 
 
-    public static MessageResponse from(Message message,List<BinaryContent> attachments) {
+    public static MessageResponse from(Message message) {
        return new MessageResponse(
                message.getId(),
-               message.getAuthorId(),
-               message.getChannelId(),
+               message.getAuthor().getId(),
+               message.getChannel().getId(),
                message.getContent(),
-               attachments.stream().map(AttachmentResponse::from).toList()
+               message.getAttachments() != null ?
+                       message.getAttachments().stream().map(AttachmentResponse::from).toList() :
+                       Collections.emptyList()
        );
     }
 
-    @Override
-    public String toString() {
-        return """
-            메세지 정보
-            ====================
-            ID          : %s
-            Channel ID  : %s
-            Author ID   : %s
-            Content     : %s
-            Attachments : %s
-            ====================
-            """
-                .formatted(
-                        id,
-                        channelId,
-                        authorId,
-                        content,
-                        attachments == null ? "[]" : attachments
-                );
-    }
 }

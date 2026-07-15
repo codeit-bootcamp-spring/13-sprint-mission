@@ -1,63 +1,44 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.*;
+import jakarta.persistence.*;
 import lombok.*;
 
-import java.io.*;
 import java.util.*;
 
 @Getter
-public class Message extends BaseEntity implements Serializable {
+@Entity
+@Table(name = "messages")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Message extends BaseUpdatableEntity {
 
-    private String content; // 메세지 내용
-    private UUID authorId; // 메세지를 작성한 유저
-    private UUID channelId; // 어느 채널의 메세지
+    @Column(columnDefinition = "TEXT")
+    private String content;
 
-    public Message(String content, UUID channelId, UUID authorId) {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "channel_id", nullable = false)
+    private Channel channel;
 
-        validateContent(content);
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "author_id", nullable = false)
+    private User author;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "message_id")
+    private List<BinaryContent> attachments = new ArrayList<>();
+
+    public Message(String content, Channel channel, User author, List<BinaryContent> attachments) {
+        super();
         this.content = content;
-
-        validateChannelId(channelId);
-        this.channelId = channelId;
-
-        validateAuthorId(authorId);
-        this.authorId = authorId;
+        this.channel = channel;
+        this.author = author;
+        this.attachments = attachments;
     }
 
-    private void validateChannelId(UUID channelId) {
-        if (channelId == null) {
-            throw new IllegalArgumentException("채널 ID 작성은 필수입니다.");
-        }
-    }
-
-    private void validateAuthorId(UUID authorId) {
-        if (authorId == null) {
-            throw new IllegalArgumentException("작성자 ID는 필수입니다.");
-        }
-    }
-
-    private void validateContent(String content) {
-        if (content == null || content.isBlank()) {
-            throw new IllegalArgumentException("메세지의 내용이 없습니다.");
-        }
-    }
-
-    public void updateContent(String content) {
-        validateContent(content);
-
-        if (content.equals(this.content)) {
-            return;
+    public void update(String content) {
+        if (content != null && content.equals(this.content)) {
+            this.content = content;
         }
 
-        this.content = content;
-        setUpdatedAt();
-    }
-
-    @Override
-    public String toString() {
-        return "Message: " +
-                "보낸 채널 이름 = " + channelId +
-                ", 보낸 사람 = " + authorId +
-                ", 내용 = '" + content + '\'';
     }
 }

@@ -5,33 +5,36 @@ import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
+import com.sprint.mission.discodeit.storage.*;
 import lombok.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.stereotype.*;
+import org.springframework.transaction.annotation.*;
 
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BasicBinaryContentService implements BinaryContentService {
 
     private final BinaryContentRepository repository;
+    private final BinaryContentStorage binaryContentStorage;
 
     @Override
+    @Transactional
     public BinaryContentResponse create(CreateBinaryContentRequest request) {
-        if (request == null) {
+        if (request == null)  {
             throw new IllegalArgumentException("바이너리 콘텐츠 생성 요청은 필수입니다.");
         }
         BinaryContent binaryContent = new BinaryContent(
-                request.userId(),
-                request.messageId(),
-                request.contentType(),
-                request.data(),
-                request.fileName()
+                request.fileName(),
+                (long)request.bytes().length,
+                request.contentType()
         );
 
-        repository.create(binaryContent);
-
+        repository.save(binaryContent);
+        binaryContentStorage.put(binaryContent.getId(), request.bytes());
         return BinaryContentResponse.from(binaryContent);
     }
 
@@ -41,11 +44,8 @@ public class BasicBinaryContentService implements BinaryContentService {
             throw new IllegalArgumentException("파일 아이디를 찾을 수 없습니다.");
         }
 
-        BinaryContent binaryContent = repository.find(id);
-
-        if (binaryContent == null) {
-            throw new IllegalArgumentException("파일을 찾을 수 없습니다.");
-        }
+        BinaryContent binaryContent = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("파일을 찾을 수 없습니다."));
 
         return BinaryContentResponse.from(binaryContent);
     }
@@ -63,31 +63,16 @@ public class BasicBinaryContentService implements BinaryContentService {
     }
 
     @Override
+    @Transactional
     public void delete(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("바이너리 콘텐츠 ID는 필수입니다.");
         }
 
-        BinaryContent binaryContent = repository.find(id);
+        BinaryContent binaryContent = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 바이너리 콘텐츠입니다."));
 
-        if (binaryContent == null) {
-            throw new IllegalArgumentException("존재하지 않는 바이너리 콘텐츠입니다.");
-        }
-
-        repository.delete(id);
+        repository.delete(binaryContent);
     }
 
-    @Override
-    public BinaryContent findEntity(UUID binaryContentId) {
-        if (binaryContentId == null) {
-            throw new IllegalArgumentException("파일 ID는 필수입니다.");
-        }
-
-        if (!repository.exists(binaryContentId)) {
-            throw new IllegalArgumentException("존재하지 않는 파일 ID입니다.");
-        }
-
-        return repository.find(binaryContentId);
-
-    }
 }

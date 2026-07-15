@@ -5,7 +5,8 @@ import java.util.*;
 
 public record CreateReadStatusRequest(
         UUID userId,
-        UUID channelId) {
-
+        UUID channelId,
+        Instant lastReadAt
+) {
 }
 

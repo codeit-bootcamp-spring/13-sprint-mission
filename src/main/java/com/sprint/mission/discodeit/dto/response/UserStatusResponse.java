@@ -10,7 +10,7 @@ public record UserStatusResponse(
 ) {
     public static UserStatusResponse from(UserStatus userStatus) {
         return new UserStatusResponse(
-                userStatus.getUserId(),
+                userStatus.getUser().getId(),
                 userStatus.isOnline()
         );
     }

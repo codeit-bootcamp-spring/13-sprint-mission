@@ -1,79 +1,51 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.*;
+import jakarta.persistence.*;
 import lombok.*;
 
-import java.io.*;
-import java.util.*;
-
 @Getter
-public class User extends BaseEntity implements Serializable {
+@Entity
+@Table(name = "users")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class User extends BaseUpdatableEntity {
 
-    private String userName;
-    private String email;
-    private String password;
-    private UUID profileId;
+    private  String username;
+    private  String email;
+    private  String password;
 
-    public User(String userName, String email, String passWord) {
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "profile_id")
+    private BinaryContent profile;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserStatus userStatus;
+
+    public User(String username, String email, String password) {
         super();
-        validateUserName(userName);
-        validateEmail(email);
-        validatePassWord(passWord);
-    }
-
-    public void updateProfileId(UUID profileId) {
-        this.profileId = profileId;
-        setUpdatedAt();
-    }
-
-
-    private void validateUserName(String userName) {
-        if (userName == null || userName.isBlank()) {
-            throw new IllegalArgumentException("이름은 필수입니다.");
-        }
-        this.userName = userName;
-    }
-
-    public void updateUserName(String userName) {
-        validateUserName(userName);
-
-        this.userName = userName;
-        setUpdatedAt();
-    }
-
-    private void validateEmail(String email) {
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("이메일 입력은 필수입니다.");
-        }
+        this.username = username;
         this.email = email;
+        this.password = password;
+    }
+
+    public void updateProfile(BinaryContent profile) {
+        this.profile = profile;
+    }
+
+    public void updateUserStatus(UserStatus userStatus) {
+        this.userStatus = userStatus;
+        }
+
+    public void updateUserName(String username) {
+        this.username = username;
     }
 
     public void updateEmail(String email) {
-        validateEmail(email);
-
         this.email = email;
-        setUpdatedAt();
     }
 
-    private void validatePassWord(String passWord) {
-        if (passWord == null || passWord.isBlank()) {
-            throw new IllegalArgumentException("비밀번호 입력 필수입니다.");
-        }
-        this.password = passWord;
-    }
-
-    public void updatePassWord(String passWord) {
-        validatePassWord(passWord);
-
-        this.password = passWord;
-        setUpdatedAt();
-    }
-
-    @Override
-    public String toString() {
-        return "등록 정보: " +
-                "이름 = '" + userName + '\'' +
-                ", email = '" + email + '\'' +
-                ", passWord = '" + password + '\'';
+    public void updatePassword(String password) {
+        this.password = password;
     }
 
 }

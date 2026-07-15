@@ -14,9 +14,9 @@ public record ReadStatusResponse(
     public static ReadStatusResponse from(ReadStatus readStatus) {
         return new ReadStatusResponse(
                 readStatus.getId(),
-                readStatus.getUserId(),
-                readStatus.getChannelId(),
-                readStatus.getLastReadTime()
+                readStatus.getUser().getId(),
+                readStatus.getChannel().getId(),
+                readStatus.getLastReadAt()
         );
     }
 }

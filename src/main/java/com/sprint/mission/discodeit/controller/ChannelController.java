@@ -15,34 +15,34 @@ public class ChannelController {
 
     private final ChannelService channelService;
 
-    @RequestMapping(value = "/public", method = RequestMethod.POST)
+    @PostMapping("/public")
     public ChannelResponse publicCreate(
             @RequestBody ChannelRequest.CreatePublicChannel request
     ) {
         return channelService.createPublicChannel(request);
     }
 
-    @RequestMapping(value = "/private", method = RequestMethod.POST)
+    @PostMapping("/private")
     public ChannelResponse privateCreate(
             @RequestBody ChannelRequest.CreatePrivateChannel request
     ) {
         return channelService.createPrivateChannel(request);
     }
 
-    @RequestMapping(value = "/{channelId}", method = RequestMethod.PATCH)
+    @PatchMapping("/{channelId}")
     public ChannelResponse update(@PathVariable UUID channelId,
                                   @RequestBody ChannelRequest.UpdateChannel request){
         return channelService.update(channelId, request);
     }
 
-    @RequestMapping(value = "/{channelId}", method = RequestMethod.DELETE)
+   @DeleteMapping("/{channelId}")
     public void delete(@PathVariable UUID channelId) {
         channelService.delete(channelId);
     }
 
-    @RequestMapping (method = RequestMethod.GET)
+    @GetMapping("/user/{userId}")
     public List<ChannelResponse> findAllByUserId(
-            @RequestParam UUID userId
+            @PathVariable UUID userId
     ) {
         return channelService.findAllByUserId(userId);
     }

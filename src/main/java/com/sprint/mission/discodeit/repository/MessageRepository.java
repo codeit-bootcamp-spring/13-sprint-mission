@@ -1,21 +1,16 @@
 package com.sprint.mission.discodeit.repository;
 
 import com.sprint.mission.discodeit.entity.*;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.repository.*;
 
 import java.util.*;
 
-public interface MessageRepository {
+public interface MessageRepository extends JpaRepository<Message, UUID> {
 
-    void create(Message message);
+    List<Message> findByChannelId(UUID channelId);
 
-    Message find(UUID id);
-
-    List<Message> findAllByChannelId(UUID channelId);
-
-    void update(UUID id, Message message);
-
-    void delete(UUID id);
-
-    boolean exists(UUID id);
+    Slice<Message> findByChannelId(UUID channelId, Pageable pageable);
+;
 
 }

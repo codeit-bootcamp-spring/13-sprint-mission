@@ -1,35 +1,22 @@
 package com.sprint.mission.discodeit.dto.request;
 
-import org.springframework.web.multipart.*;
-
-import java.time.*;
 import java.util.*;
 
-public record MessageRequest(
-        UUID authorId,
-        UUID channelId,
-        String content,
-        List<MultipartFile> attachments
-) {
+public class MessageRequest {
 
-    public record AttachmentRequest(
-            String fileName,
-            String contentType,
-            byte[] data
-    ) {
+    private MessageRequest() {
+        throw new IllegalStateException("Utility class");
     }
 
-    public record CreateMessageRequest(
+    public record Create(
             UUID authorId,
             UUID channelId,
-            String content,
-            List<AttachmentRequest> attachments
+            String content
     ) {
     }
 
-    public record UpdateMessageRequest(
-            String content,
-            List<MultipartFile> attachments
+    public record Update(
+            String content
     ) {
     }
 }
