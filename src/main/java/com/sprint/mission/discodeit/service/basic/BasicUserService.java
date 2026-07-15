@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.storage.*;
 import lombok.*;
 import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
@@ -19,6 +20,7 @@ public class BasicUserService implements UserService {
     private final UserRepository repository;
     private final UserStatusRepository userStatusRepository;
     private final BinaryContentRepository binaryContentRepository;
+    private final BinaryContentStorage binaryContentStorage;
 
     @Override
     @Transactional
@@ -59,10 +61,10 @@ public class BasicUserService implements UserService {
             profile = new BinaryContent(
                     profileImage.fileName(),
                     (long)profileImage.bytes().length,
-                    profileImage.contentType(),
-                    profileImage.bytes()
+                    profileImage.contentType()
             );
             binaryContentRepository.save(profile);
+            binaryContentStorage.put(profile.getId(), profileImage.bytes());
             user.updateProfile(profile);
         }
         repository.save(user);
@@ -132,10 +134,10 @@ public class BasicUserService implements UserService {
             profile = new BinaryContent(
                     profileImage.fileName(),
                     (long)profileImage.bytes().length,
-                    profileImage.contentType(),
-                    profileImage.bytes()
+                    profileImage.contentType()
             );
             binaryContentRepository.save(profile);
+            binaryContentStorage.put(profile.getId(), profileImage.bytes());
             user.updateProfile(profile);
         } else  {
             profile = user.getProfile();

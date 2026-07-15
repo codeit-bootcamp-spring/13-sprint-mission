@@ -33,5 +33,11 @@ public class BinaryContent extends BaseEntity {
 
     }
 
+    public BinaryContent(String fileName, Long size, String contentType) {
+        this.fileName = fileName;
+        this.size = size;
+        this.contentType = contentType;
+    }
+
 
 }

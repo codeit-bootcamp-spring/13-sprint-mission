@@ -26,11 +26,16 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public String handleException(Exception e, Model model) {
-        log.error("서버 오류", e);
-        model.addAttribute("message", "서버에 문제가 발생했습니다. 잠시 후에 다시 시도해주세요.");
-        return e.getMessage();
+    public ResponseEntity<ProblemDetail> handleException(Exception e) {
+        log.error("처리되지 않은 예외가 발생했습니다.", e);
 
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                e.getMessage() != null ? e.getMessage() : "서버 내부 오류가 발생했습니다."
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(problemDetail);
     }
 }

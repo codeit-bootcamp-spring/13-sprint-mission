@@ -18,4 +18,6 @@ public interface MessageService {
     MessageResponse update(UUID messageId, MessageRequest.Update request);
 
     void delete(UUID messageId);
+
+    PageResponse<MessageResponse> getMessages(UUID channelId, int page);
 }

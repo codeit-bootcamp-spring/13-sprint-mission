@@ -8,7 +8,8 @@ public record MessageResponse(
         UUID id,
         UUID authorId,
         UUID channelId,
-        String content
+        String content,
+        List<AttachmentResponse> attachments
 
 ) {
 
@@ -32,7 +33,10 @@ public record MessageResponse(
                message.getId(),
                message.getAuthor().getId(),
                message.getChannel().getId(),
-               message.getContent()
+               message.getContent(),
+               message.getAttachments() != null ?
+                       message.getAttachments().stream().map(AttachmentResponse::from).toList() :
+                       Collections.emptyList()
        );
     }
 

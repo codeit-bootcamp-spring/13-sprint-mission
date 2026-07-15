@@ -3,9 +3,11 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.mapper.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
 import lombok.*;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
 
@@ -52,7 +54,7 @@ public class BasicMessageService implements MessageService {
                             binaryRequest.fileName(),
                             (long) binaryRequest.bytes().length,
                             binaryRequest.contentType(),
-                            binaryRequest.bytes()
+                            binaryRequest.fileName()
                     ))
                     .toList();
         }
@@ -106,5 +108,17 @@ public class BasicMessageService implements MessageService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 메세지 ID입니다."));
 
         messageRepository.delete(message);
+    }
+
+    @Override
+    public PageResponse<MessageResponse> getMessages(UUID channelId, int page) {
+        Pageable pageable = PageRequest.of(page, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Slice<Message> messageSlice = messageRepository.findByChannelId(channelId, pageable);
+
+        Slice<MessageResponse> responseSlice = messageSlice.map(MessageResponse::from);
+
+        return PageResponseMapper.fromSlice(responseSlice);
+
     }
 }
