@@ -22,7 +22,7 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     @Transactional
-    public UserStatusResponse create(CreateUserStatusRequest request) {
+    public UserStatusDto create(CreateUserStatusRequest request) {
         UUID userId = request.userId();
 
         User user = userRepository.findById(userId)
@@ -37,11 +37,11 @@ public class BasicUserStatusService implements UserStatusService {
         UserStatus userStatus = new UserStatus(user);
         userStatusRepository.save(userStatus);
 
-        return UserStatusResponse.from(userStatus);
+        return UserStatusDto.from(userStatus);
     }
 
     @Override
-    public UserStatusResponse find(UUID id) {
+    public UserStatusDto find(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("유저아이디가 없습니다.");
         }
@@ -49,13 +49,13 @@ public class BasicUserStatusService implements UserStatusService {
         UserStatus userStatus = userStatusRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 유저의 상태 정보가 없습니다."));
 
-        return UserStatusResponse.from(userStatus);
+        return UserStatusDto.from(userStatus);
     }
 
     @Override
-    public List<UserStatusResponse> findAll() {
+    public List<UserStatusDto> findAll() {
         return userStatusRepository.findAll().stream()
-                .map(UserStatusResponse::from)
+                .map(UserStatusDto::from)
                 .toList();
     }
 
@@ -74,7 +74,7 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     @Transactional
-    public UserStatusResponse update(UUID id, UpdateUserStatusRequest request) {
+    public UserStatusDto update(UUID id, UpdateUserStatusRequest request) {
         if(id == null) {
             throw new IllegalArgumentException("아이디는 필수입니다.");
         }
@@ -88,12 +88,12 @@ public class BasicUserStatusService implements UserStatusService {
 
         userStatus.updateLastOnlineAt(request.lastOnlineTime());
 
-        return UserStatusResponse.from(userStatus);
+        return UserStatusDto.from(userStatus);
     }
 
     @Override
     @Transactional
-    public UserStatusResponse updateByUserId(UUID userId) {
+    public UserStatusDto updateByUserId(UUID userId) {
         if (userId == null) {
             throw new IllegalArgumentException("유저 아이디는 필수입니다.");
         }
@@ -103,7 +103,7 @@ public class BasicUserStatusService implements UserStatusService {
 
         userStatus.updateLastOnlineAt(Instant.now());
 
-        return UserStatusResponse.from(userStatus);
+        return UserStatusDto.from(userStatus);
     }
 }
 

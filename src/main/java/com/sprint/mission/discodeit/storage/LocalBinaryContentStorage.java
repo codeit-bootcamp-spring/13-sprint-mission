@@ -53,7 +53,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
     }
 
     @Override
-    public ResponseEntity<Resource> download(BinaryContentResponse response) {
+    public ResponseEntity<Resource> download(@org.jetbrains.annotations.UnknownNullability BinaryContentDto response) {
         InputStream inputStream = get(response.id());
         Resource resource = new InputStreamResource(inputStream);
 

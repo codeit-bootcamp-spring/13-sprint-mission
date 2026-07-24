@@ -16,27 +16,7 @@ public record UserRequest(
         MultipartFile profileImage
         ) {
 
-    public record CreateUserRequest(
-            String username,
-            String email,
-            String password
-    ) {
-    }
 
-    public record ProfileImageRequest(
-            String fileName,
-            String contentType,
-            byte[] data
-    ) {
-    }
-
-    public record UpdateUserRequest(
-            String username,
-            String email,
-            String password,
-            MultipartFile profileImage
-    ) {
-    }
 
 }
 

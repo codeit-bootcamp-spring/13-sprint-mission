@@ -24,7 +24,7 @@ public class BasicUserService implements UserService {
 
     @Override
     @Transactional
-    public UserResponse create(UserRequest.CreateUserRequest request, CreateBinaryContentRequest profileImage) {
+    public UserDto create(UserRequest.CreateUserRequest request, CreateBinaryContentRequest profileImage) {
         if (request == null) {
             throw new IllegalArgumentException("유저 생성 요청은 필수입니다.");
         }
@@ -71,12 +71,12 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = new UserStatus(user);
         userStatusRepository.save(userStatus);
 
-        return UserResponse.from(user, userStatus, profile);
+        return UserDto.from(user, userStatus, profile);
     }
 
 
     @Override
-    public UserResponse find(UUID id) {
+    public UserDto find(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("유저 ID를 찾을 수가 없습니다.");
         }
@@ -86,24 +86,24 @@ public class BasicUserService implements UserService {
 
         UserStatus userStatus = userStatusRepository.findByUserId(id).orElse(null);
         BinaryContent profile = user.getProfile();
-        return UserResponse.from(user, userStatus, profile);
+        return UserDto.from(user, userStatus, profile);
 
     }
 
     @Override
-    public List<UserResponse> findAll() {
+    public List<UserDto> findAll() {
         return repository.findAll().stream()
                 .map (user -> {
                 UserStatus userStatus = userStatusRepository.findByUserId(user.getId()).orElse(null);
                 BinaryContent profile = user.getProfile();
-                return UserResponse.from(user, userStatus, profile);
+                return UserDto.from(user, userStatus, profile);
         }).toList();
     }
 
     @Override
     @Transactional
-    public UserResponse update(UUID id, UserRequest.UpdateUserRequest request,
-                               CreateBinaryContentRequest profileImage) {
+    public UserDto update(UUID id, UserRequest.UpdateUserRequest request,
+                          CreateBinaryContentRequest profileImage) {
         if (id == null) {
             throw new IllegalArgumentException("유저 ID는 필수입니다.");
         }
@@ -145,7 +145,7 @@ public class BasicUserService implements UserService {
 
         UserStatus userStatus = userStatusRepository.findByUserId(id).orElse(null);
 
-        return UserResponse.from(user, userStatus, profile);
+        return UserDto.from(user, userStatus, profile);
     }
 
     @Override

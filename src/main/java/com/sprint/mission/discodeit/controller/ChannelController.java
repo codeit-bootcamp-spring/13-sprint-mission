@@ -3,7 +3,9 @@ package com.sprint.mission.discodeit.controller;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.service.*;
+import jakarta.validation.*;
 import lombok.*;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -16,35 +18,40 @@ public class ChannelController {
     private final ChannelService channelService;
 
     @PostMapping("/public")
-    public ChannelResponse publicCreate(
-            @RequestBody ChannelRequest.CreatePublicChannel request
+    public ResponseEntity<ChannelDto> publicCreate(
+            @Valid @RequestBody CreatePublicChannelRequest request
     ) {
-        return channelService.createPublicChannel(request);
+        ChannelDto channel = channelService.createPublicChannel(request.toCommand());
+        return ResponseEntity.status(HttpStatus.CREATED).body(channel);
     }
 
     @PostMapping("/private")
-    public ChannelResponse privateCreate(
-            @RequestBody ChannelRequest.CreatePrivateChannel request
+    public ResponseEntity<ChannelDto> privateCreate(
+            @Valid @RequestBody CreatePublicChannelRequest request
     ) {
-        return channelService.createPrivateChannel(request);
+        ChannelDto channel = channelService.createPrivateChannel(request.toCommand());
+        return ResponseEntity.status(HttpStatus.CREATED).body(channel);
     }
 
     @PatchMapping("/{channelId}")
-    public ChannelResponse update(@PathVariable UUID channelId,
-                                  @RequestBody ChannelRequest.UpdateChannel request){
-        return channelService.update(channelId, request);
+    public ResponseEntity<ChannelDto> update(@PathVariable UUID channelId,
+                           @Valid @RequestBody CreatePublicChannelRequest request){
+        ChannelDto channel = channelService.update(channelId, request.toCommand());
+        return ResponseEntity.ok(channel);
     }
 
    @DeleteMapping("/{channelId}")
-    public void delete(@PathVariable UUID channelId) {
+    public ResponseEntity<Void> delete(@PathVariable UUID channelId) {
         channelService.delete(channelId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/user/{userId}")
-    public List<ChannelResponse> findAllByUserId(
+    public ResponseEntity<List<ChannelDto>>findAllByUserId(
             @PathVariable UUID userId
     ) {
-        return channelService.findAllByUserId(userId);
+        List<ChannelDto> channel = channelService.findAllByUserId(userId);
+        return ResponseEntity.ok(channel);
     }
 }
 

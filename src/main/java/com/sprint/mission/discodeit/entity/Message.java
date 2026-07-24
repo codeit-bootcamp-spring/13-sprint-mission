@@ -24,7 +24,11 @@ public class Message extends BaseUpdatableEntity {
     private User author;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "message_id")
+    @JoinTable(
+            name = "message_attachments",
+            joinColumns = @JoinColumn(name = "message_id"),
+            inverseJoinColumns = @JoinColumn(name = "attachment_id")
+    )
     private List<BinaryContent> attachments = new ArrayList<>();
 
     public Message(String content, Channel channel, User author, List<BinaryContent> attachments) {
@@ -33,12 +37,5 @@ public class Message extends BaseUpdatableEntity {
         this.channel = channel;
         this.author = author;
         this.attachments = attachments;
-    }
-
-    public void update(String content) {
-        if (content != null && content.equals(this.content)) {
-            this.content = content;
-        }
-
     }
 }

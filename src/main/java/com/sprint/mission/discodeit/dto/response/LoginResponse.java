@@ -6,6 +6,5 @@ public record LoginResponse(
         UUID Id,
         String username,
         String email
-
 ) {
 }

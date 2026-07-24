@@ -10,12 +10,16 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseUpdatableEntity {
 
+    @Column(unique = true, nullable = false)
     private  String username;
+    @Column(unique = true, nullable = false)
     private  String email;
+
+    @Column(nullable = false)
     private  String password;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "profile_id")
+    @JoinColumn(name = "profile_id", unique = true, nullable = true)
     private BinaryContent profile;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

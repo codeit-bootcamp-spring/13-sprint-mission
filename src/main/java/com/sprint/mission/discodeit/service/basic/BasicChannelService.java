@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.request.*;
+import com.sprint.mission.discodeit.dto.command.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
@@ -24,7 +24,7 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     @Transactional
-    public ChannelResponse createPublicChannel(ChannelRequest.CreatePublicChannel publicChannel) {
+    public ChannelDto createPublicChannel(CreatePublicChannelCommand publicChannel) {
         if (publicChannel == null) {
             throw new IllegalArgumentException("공개 채널 생성 요청은 필수입니다.");
         }
@@ -40,7 +40,7 @@ public class BasicChannelService implements ChannelService {
         );
         repository.save(channel);
 
-        return ChannelResponse.from(
+        return ChannelDto.from(
                 channel,
                 null,
                 List.of()
@@ -50,7 +50,7 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     @Transactional
-    public ChannelResponse createPrivateChannel(ChannelRequest.CreatePrivateChannel privateChannel) {
+    public ChannelDto createPrivateChannel(CreatePublicChannelCommand privateChannel) {
         if (privateChannel == null) {
             throw new IllegalArgumentException("비공개 채널 생성 요청은 필수입니다.");
         }
@@ -89,7 +89,7 @@ public class BasicChannelService implements ChannelService {
             readStatusRepository.save(readStatus);
         }
 
-        return ChannelResponse.from(
+        return ChannelDto.from(
                 channel,
                 getLastMessageAt(channel.getId()),
                 privateChannel.participantIds()
@@ -99,7 +99,7 @@ public class BasicChannelService implements ChannelService {
 
 
     @Override
-    public ChannelResponse find(UUID id) {
+    public ChannelDto find(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("채널 ID는 필수입니다.");
         }
@@ -113,7 +113,7 @@ public class BasicChannelService implements ChannelService {
                         .map(readStatus-> readStatus.getUser().getId())
                         .toList();
 
-        return ChannelResponse.from(
+        return ChannelDto.from(
                 channel,
                 getLastMessageAt(channel.getId()),
                 participantIds
@@ -122,7 +122,7 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     @Transactional
-    public ChannelResponse update(UUID id, ChannelRequest.UpdateChannel request) {
+    public ChannelDto update(UUID id, CreatePublicChannelCommand request) {
         if (id == null) {
             throw new IllegalArgumentException("채널 ID는 필수입니다.");
         }
@@ -141,7 +141,7 @@ public class BasicChannelService implements ChannelService {
                 .map(readStatus -> readStatus.getUser().getId())
                 .toList();
 
-        return ChannelResponse.from(
+        return ChannelDto.from(
                 channel,
                 getLastMessageAt(channel.getId()),
                 participantIds
@@ -166,7 +166,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public List<ChannelResponse> findAllByUserId(UUID userId) {
+    public List<ChannelDto> findAllByUserId(UUID userId) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 아이디는 필수입니다.");
         }
@@ -193,7 +193,7 @@ public class BasicChannelService implements ChannelService {
                             .map(readStatus -> readStatus.getUser().getId())
                             .toList();
 
-            return ChannelResponse.from(
+            return ChannelDto.from(
                     channel,
                     getLastMessageAt(channel.getId()),
                     participantIds

@@ -23,7 +23,7 @@ public class BasicReadStatusService implements ReadStatusService {
 
     @Override
     @Transactional
-    public ReadStatusResponse create(CreateReadStatusRequest request) {
+    public ReadStatusDto create(CreateReadStatusRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("읽음 상태 생성 요청 정보가 없습니다.");
         }
@@ -45,11 +45,11 @@ public class BasicReadStatusService implements ReadStatusService {
 
         readStatusRepository.save(readStatus);
 
-        return ReadStatusResponse.from(readStatus);
+        return ReadStatusDto.from(readStatus);
     }
 
     @Override
-    public List<ReadStatusResponse> findAllByUserId(UUID userId) {
+    public List<ReadStatusDto> findAllByUserId(UUID userId) {
         if (userId == null) {
             throw new IllegalArgumentException("유저 아이디는 필수입니다.");
         }
@@ -57,19 +57,19 @@ public class BasicReadStatusService implements ReadStatusService {
         List<ReadStatus> readStatuses =
                 readStatusRepository.findAllByUserId(userId);
         return readStatuses.stream()
-                .map(ReadStatusResponse::from)
+                .map(ReadStatusDto::from)
                 .toList();
     }
 
     @Override
-    public ReadStatusResponse find(UUID id) {
+    public ReadStatusDto find(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("존재하지 않는 유저입니다.");
         }
 
         ReadStatus readStatus = readStatusRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 읽음 상태 정보가 없습니다."));
-        return ReadStatusResponse.from(readStatus);
+        return ReadStatusDto.from(readStatus);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    public ReadStatusResponse update(UUID id, UpdateReadStatusRequest request) {
+    public ReadStatusDto update(UUID id, UpdateReadStatusRequest request) {
         if (id == null) {
             throw new IllegalArgumentException("읽음 상태 아이디는 필수입니다.");
         }
@@ -97,6 +97,6 @@ public class BasicReadStatusService implements ReadStatusService {
                 .orElseThrow(() -> new IllegalArgumentException("수정할 읽음 상태 정보가 없습니다."));
 
         readStatus.update(request.lastReadTime());
-        return ReadStatusResponse.from(readStatus);
+        return ReadStatusDto.from(readStatus);
     }
 }

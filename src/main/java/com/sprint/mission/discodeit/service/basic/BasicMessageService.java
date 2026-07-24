@@ -12,7 +12,6 @@ import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
 
 import java.util.*;
-import java.util.stream.*;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +33,7 @@ public class BasicMessageService implements MessageService {
 
     @Override
     @Transactional
-    public MessageResponse create(MessageRequest.Create request,
+    public MessageResponse create(CreateMessageRequest.Create request,
                                   List<CreateBinaryContentRequest> createBinaryContentRequests) {
 
         if (request == null) {
@@ -90,7 +89,7 @@ public class BasicMessageService implements MessageService {
     }
     @Override
     @Transactional
-    public MessageResponse update(UUID id, MessageRequest.Update request) {
+    public MessageResponse update(UUID id, CreateMessageRequest.Update request) {
       String newContent = request.content();
       Message message = messageRepository.findById(id)
               .orElseThrow(()-> new NoSuchElementException("메세지 아이디를 찾을 수 없습니다."));

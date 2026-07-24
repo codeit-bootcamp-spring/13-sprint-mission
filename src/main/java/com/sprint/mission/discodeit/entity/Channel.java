@@ -12,7 +12,7 @@ import lombok.*;
 public class Channel extends BaseUpdatableEntity {
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "channel_type", nullable = false)
+    @Column(nullable = false)
     private ChannelType type;
     private String description;
     private String name;
@@ -25,14 +25,4 @@ public class Channel extends BaseUpdatableEntity {
         this.description = description;
     }
 
-
-    public void update(String newName, String newDescription) {
-        if (newName != null && newName.equals(this.name)) {
-            this.name = newName;
-        }
-
-        if (newDescription != null && newDescription.equals(this.description)) {
-            this.description = newDescription;
-        }
-    }
 }

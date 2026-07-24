@@ -7,7 +7,6 @@ import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
 import com.sprint.mission.discodeit.storage.*;
 import lombok.*;
-import org.springframework.beans.factory.annotation.*;
 import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
 
@@ -23,7 +22,7 @@ public class BasicBinaryContentService implements BinaryContentService {
 
     @Override
     @Transactional
-    public BinaryContentResponse create(CreateBinaryContentRequest request) {
+    public BinaryContentDTO create(CreateBinaryContentRequest request) {
         if (request == null)  {
             throw new IllegalArgumentException("바이너리 콘텐츠 생성 요청은 필수입니다.");
         }
@@ -35,11 +34,11 @@ public class BasicBinaryContentService implements BinaryContentService {
 
         repository.save(binaryContent);
         binaryContentStorage.put(binaryContent.getId(), request.bytes());
-        return BinaryContentResponse.from(binaryContent);
+        return BinaryContentDTO.from(binaryContent);
     }
 
     @Override
-    public BinaryContentResponse find(UUID id) {
+    public BinaryContentDto find(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("파일 아이디를 찾을 수 없습니다.");
         }
@@ -47,17 +46,17 @@ public class BasicBinaryContentService implements BinaryContentService {
         BinaryContent binaryContent = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("파일을 찾을 수 없습니다."));
 
-        return BinaryContentResponse.from(binaryContent);
+        return BinaryContentDTO.from(binaryContent);
     }
 
     @Override
-    public List<BinaryContentResponse> findAllByIdIn(List<UUID> ids) {
+    public List<BinaryContentDto> findAllByIdIn(List<UUID> ids) {
         if (ids == null) {
             throw new IllegalArgumentException("바이너리 콘텐츠 ID 목록은 필수입니다.");
         }
         return  repository.findAllByIdIn(ids)
                 .stream()
-                .map(BinaryContentResponse::from)
+                .map(BinaryContentDTO::from)
                 .toList();
 
     }
