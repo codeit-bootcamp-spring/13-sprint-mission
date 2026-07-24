@@ -1,0 +1,41 @@
+package com.sprint.mission.discodeit.controller;
+
+import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.MessageResponse;
+import com.sprint.mission.discodeit.service.MessageService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/messages")
+@RequiredArgsConstructor
+public class MessageController {
+
+    private final MessageService messageService;
+
+    @PostMapping
+    public ResponseEntity<MessageResponse> create(@RequestBody MessageCreateRequest request) {
+        return ResponseEntity.ok(messageService.create(request));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<MessageResponse>> findAllByChannelId(@RequestParam UUID channelId) {
+        return ResponseEntity.ok(messageService.findAllByChannelId(channelId));
+    }
+
+    @PatchMapping(value = "/{messageId}")
+    public ResponseEntity<MessageResponse> update(@PathVariable UUID messageId, @RequestBody MessageUpdateRequest request) {
+        return ResponseEntity.ok(messageService.update(request));
+    }
+
+    @DeleteMapping(value = "/{messageId}")
+    public ResponseEntity<Void> delete(@PathVariable UUID messageId) {
+        messageService.delete(messageId);
+        return ResponseEntity.noContent().build();
+    }
+}
