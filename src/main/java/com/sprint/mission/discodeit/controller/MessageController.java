@@ -56,7 +56,7 @@ public class MessageController {
     @GetMapping
     public ResponseEntity<PageResponse<MessageResponse>> getMessages(
             @RequestParam UUID channelId,
-            @RequestParam(defaultValue = "0") int page) {
+            @RequestParam(defaultValue = "50") int page) {
         PageResponse<MessageResponse> response = messageService.getMessages(channelId, page);
         return ResponseEntity.ok(response);
     }
