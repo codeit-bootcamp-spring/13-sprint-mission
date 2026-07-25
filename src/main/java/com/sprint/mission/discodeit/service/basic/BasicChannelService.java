@@ -5,10 +5,8 @@ import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.PublicChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.dto.response.ChannelFindResponse;
-import com.sprint.mission.discodeit.dto.response.ChannelUpdateResponse;
 import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
-import com.sprint.mission.discodeit.exception.WrongTypeException;
+import com.sprint.mission.discodeit.exception.ResourceNotFoundException;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.ChannelService;
@@ -49,7 +47,7 @@ public class BasicChannelService implements ChannelService {
         for (UUID userId : request.participantIds()) {
             // 유저 검색
             User userTemp = userRepository.findById(userId)
-                    .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+                    .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
             ReadStatus readStatus = new ReadStatus(userTemp, channel);
             readStatus = readStatusRepository.save(readStatus);
@@ -72,17 +70,17 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     @Transactional(readOnly = true)
-    public ChannelDto findChannel(UUID channelId) {
+    public ChannelDto getChannel(UUID channelId) {
         //채널 검색
         Channel channelTemp = channelRepository.findById(channelId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
 
         return channelMapper.toDto(channelTemp);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ChannelDto> findAllByUserId(UUID userId) {
+    public List<ChannelDto> getChannelsByUserId(UUID userId) {
         //반환할 리스트
         List<Channel> channelFindList = new ArrayList<>();
 
@@ -93,7 +91,7 @@ public class BasicChannelService implements ChannelService {
         for (ReadStatus readStatus : readStatuses) {
             //채널 검색
             Channel channelTemp = channelRepository.findById(readStatus.getChannel().getId())
-                    .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
+                    .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
 
             if (channelTemp.getType() == ChannelType.PUBLIC)
                 continue;
@@ -115,7 +113,7 @@ public class BasicChannelService implements ChannelService {
     public ChannelDto updateChannel(UUID channelId, PublicChannelUpdateRequest request) {
         //채널 검색
         Channel channelTemp = channelRepository.findById(channelId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
 
         //채널 업데이트
         channelTemp.updateChannel(request.newName(), request.newDescription());
@@ -130,7 +128,7 @@ public class BasicChannelService implements ChannelService {
     public void deleteChannel(UUID channelId) {
         //채널 검색
         Channel channelTemp = channelRepository.findById(channelId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
 
         //채널 내 메시지 삭제
         List<Message> messageList = messageRepository.findAllByChannelId(channelId);
@@ -174,7 +172,7 @@ public class BasicChannelService implements ChannelService {
     // 들어온 userId 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateUserExists(UUID userId) {
         if (!userRepository.existsById(userId)) {
-            throw new ObjectNotFoundException("유저: " + userId + "이 존재하지 않습니다.");
+            throw new ResourceNotFoundException("유저: " + userId + "이 존재하지 않습니다.");
         }
     }
 }

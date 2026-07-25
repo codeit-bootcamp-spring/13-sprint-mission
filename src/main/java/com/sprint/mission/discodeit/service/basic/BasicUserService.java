@@ -6,7 +6,7 @@ import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.DuplicateResourceException;
 import com.sprint.mission.discodeit.exception.FileException;
-import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
+import com.sprint.mission.discodeit.exception.ResourceNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.UserService;
@@ -66,21 +66,21 @@ public class BasicUserService implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserDto findUser(UUID userId) {
+    public UserDto getUser(UUID userId) {
         //유저 검색
         User userTemp = userRepository.findById(userId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         //유저 상태 검색
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
 
         return userMapper.toDto(userTemp);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserDto> findAllUsers() {
+    public List<UserDto> getUsers() {
         //유저들 검색
         List<User> users = userRepository.findAll();
 
@@ -94,7 +94,7 @@ public class BasicUserService implements UserService {
     public UserDto updateUser(UUID userId, UserUpdateRequest request, MultipartFile file) {
         //유저 검색
         User userTemp = userRepository.findById(userId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         //중복된 이름, 이메일로 수정 요청을 한 경우 검증
         if (!userTemp.getUsername().equals(request.newUsername())) {
@@ -131,7 +131,7 @@ public class BasicUserService implements UserService {
     public void deleteUser(UUID userId) {
         //유저 검색
         User userTemp = userRepository.findById(userId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         //유저 상태 검색 및 삭제
         //UserStatus는 cascade로 함께 삭제되므로 별도 삭제하지 않음
@@ -175,7 +175,7 @@ public class BasicUserService implements UserService {
     //유저 상태 검색 및 삭제
     private void deleteUserStatus(UUID userId) {
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
         userStatusRepository.deleteById(userStatus.getId());
     }
 

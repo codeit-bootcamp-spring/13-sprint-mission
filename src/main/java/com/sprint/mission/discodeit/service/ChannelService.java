@@ -15,8 +15,8 @@ public interface ChannelService {
 
     ChannelDto createPrivateChannel(PrivateChannelCreateRequest request);
     ChannelDto createPublicChannel(PublicChannelCreateRequest request);
-    ChannelDto findChannel(UUID channelId);
-    List<ChannelDto> findAllByUserId(UUID userId);
+    ChannelDto getChannel(UUID channelId);
+    List<ChannelDto> getChannelsByUserId(UUID userId);
     ChannelDto updateChannel(UUID channelId, PublicChannelUpdateRequest publicChannelUpdateRequest);
     void deleteChannel(UUID channelId);
 

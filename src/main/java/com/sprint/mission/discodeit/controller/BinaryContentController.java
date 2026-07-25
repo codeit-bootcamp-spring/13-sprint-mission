@@ -31,7 +31,7 @@ public class BinaryContentController {
     @RequestMapping(value = "/{binaryContentId}", method = RequestMethod.GET)
     public ResponseEntity<BinaryContentDto> findBinaryContent(@Parameter(description = "조회할 첨부 파일 ID", required = true)
                                                               @PathVariable UUID binaryContentId) {
-        BinaryContentDto binaryContent = binaryContentService.findBinaryContentById(binaryContentId);
+        BinaryContentDto binaryContent = binaryContentService.getBinaryContent(binaryContentId);
 
         return ResponseEntity.ok().body(binaryContent);
     }
@@ -42,7 +42,7 @@ public class BinaryContentController {
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<List<BinaryContentDto>> findBinaryContents(@Parameter(description = "조회할 첨부 파일 ID 목록", required = true)
                                                                      @RequestParam List<UUID> binaryContentIds) {
-        List<BinaryContentDto> binaryContentList = binaryContentService.findAllBinaryContentByIdIn(binaryContentIds);
+        List<BinaryContentDto> binaryContentList = binaryContentService.getBinaryContentsByIdIn(binaryContentIds);
 
         return ResponseEntity.ok().body(binaryContentList);
     }
@@ -54,7 +54,7 @@ public class BinaryContentController {
     public ResponseEntity<Resource> downloadBinaryContent(@Parameter(description = "다운로드할 파일 ID", required = true)
                                                           @PathVariable UUID binaryContentId) {
 
-        return binaryContentStorage.download(binaryContentService.findBinaryContentById(binaryContentId));
+        return binaryContentStorage.download(binaryContentService.getBinaryContent(binaryContentId));
     }
 
 

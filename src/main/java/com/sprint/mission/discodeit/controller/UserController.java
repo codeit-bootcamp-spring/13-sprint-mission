@@ -53,7 +53,7 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "User 목록 조회 성공")
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<List<UserDto>> findAll() {
-        List<UserDto> responseList = userService.findAllUsers();
+        List<UserDto> responseList = userService.getUsers();
 
         return ResponseEntity.ok().body(responseList);
     }

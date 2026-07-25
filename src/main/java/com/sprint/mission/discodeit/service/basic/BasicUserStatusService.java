@@ -3,11 +3,10 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.UserStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserStatusDto;
-import com.sprint.mission.discodeit.dto.response.UserStatusUpdateResponse;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.DuplicateResourceException;
-import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
+import com.sprint.mission.discodeit.exception.ResourceNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserStatusMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
@@ -36,7 +35,7 @@ public class BasicUserStatusService implements UserStatusService {
     public UserStatusDto createUserStatus(UserStatusCreateRequest request) {
         //유저 검색
         User userTemp = userRepository.findById(request.userId())
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
 
         //UserStatus 존재 검증
         validateUserStatusExists(request.userId());
@@ -51,17 +50,17 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserStatusDto findUserStatusById(UUID userStatusId) {
+    public UserStatusDto getUserStatus(UUID userStatusId) {
         //UserStatus 검색
         UserStatus userStatusTemp = userStatusRepository.findById(userStatusId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
 
         return userStatusMapper.toDto(userStatusTemp);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserStatusDto> findAllUserStatus() {
+    public List<UserStatusDto> getUserStatuses() {
         return userStatusRepository.findAll().stream()
                 .map(userStatusMapper::toDto)
                 .toList();
@@ -72,7 +71,7 @@ public class BasicUserStatusService implements UserStatusService {
     public UserStatusDto updateUserStatusByUserId(UUID userId, UserStatusUpdateRequest request) {
         //UserStatus 검색
         UserStatus userStatusTemp = userStatusRepository.findByUserId(userId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
 
         //UserStatus 업데이트
         userStatusTemp.updateLastActiveAt();
@@ -87,7 +86,7 @@ public class BasicUserStatusService implements UserStatusService {
     public void deleteUserStatus(UUID userStatusId) {
         //UserStatus 검색
         UserStatus userStatusTemp = userStatusRepository.findById(userStatusId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 UserStatus는 데이터파일에 존재하지 않습니다."));
 
         userStatusRepository.deleteById(userStatusId);
 
@@ -98,7 +97,7 @@ public class BasicUserStatusService implements UserStatusService {
     // 들어온 userId 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateUserExists(UUID userId) {
         if (!userRepository.existsById(userId)) {
-            throw new ObjectNotFoundException("유저: " + userId + "이 존재하지 않습니다.");
+            throw new ResourceNotFoundException("유저: " + userId + "이 존재하지 않습니다.");
         }
     }
     // 생성하려는 UserStatus가 레포지터리에 이미 존재하는지 검증하는 메서드

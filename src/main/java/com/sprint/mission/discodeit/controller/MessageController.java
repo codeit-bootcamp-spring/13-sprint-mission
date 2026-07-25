@@ -60,7 +60,7 @@ public class MessageController {
 
                                                                        @Parameter(description = "페이징 정보", required = true)
                                                                        @ParameterObject Pageable pageable) {
-        PageResponse<MessageDto> pageResponse = messageService.findAllByChannelId(channelId, cursor, pageable);
+        PageResponse<MessageDto> pageResponse = messageService.getMessagesByChannelId(channelId, cursor, pageable);
 
         return ResponseEntity.ok().body(pageResponse);
     }

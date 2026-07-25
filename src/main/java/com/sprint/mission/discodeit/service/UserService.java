@@ -16,8 +16,8 @@ import java.util.UUID;
 public interface UserService {
 
     UserDto createUser(UserCreateRequest request, MultipartFile file);
-    UserDto findUser(UUID userId);
-    List<UserDto> findAllUsers();
+    UserDto getUser(UUID userId);
+    List<UserDto> getUsers();
     UserDto updateUser(UUID userId, UserUpdateRequest request, MultipartFile file);
     void deleteUser(UUID userId);
 

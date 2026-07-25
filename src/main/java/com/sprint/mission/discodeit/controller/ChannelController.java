@@ -54,7 +54,7 @@ public class ChannelController {
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<List<ChannelDto>> findChannelsByUser(@Parameter(description = "조회할 User ID", required = true)
                                                                         @RequestParam UUID userId) {
-        List<ChannelDto> responseList = channelService.findAllByUserId(userId);
+        List<ChannelDto> responseList = channelService.getChannelsByUserId(userId);
 
         return ResponseEntity.ok().body(responseList);
     }

@@ -25,9 +25,9 @@ public class GlobalExceptionHandler {
         return pd;
     }
 
-    //ObjectNotFoundException 예외 발생했을 때 처리
-    @ExceptionHandler(ObjectNotFoundException.class)
-    public ProblemDetail handleObjectNotFoundException(ObjectNotFoundException e) {
+    //ResourceNotFoundException 예외 발생했을 때 처리
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ProblemDetail handleObjectNotFoundException(ResourceNotFoundException e) {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
         pd.setTitle("데이터 검색 실패 예외 발생");
         pd.setProperty("timestamp", Instant.now());

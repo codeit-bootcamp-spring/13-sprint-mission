@@ -11,13 +11,5 @@ import java.util.UUID;
 
 public interface ChannelRepository extends JpaRepository<Channel, UUID> {
 
-//    boolean existsChannelById(UUID channelId);
-//    void createChannel(Channel channel);
-//    Optional<Channel> findChannelById(UUID channelId);
-//    List<Channel> findAllChannelsByChannelType(ChannelType channelType);
-//    void save();
-//    void deleteChannel(UUID channelId);
-
     List<Channel> findAllByType(ChannelType type);
-
 }

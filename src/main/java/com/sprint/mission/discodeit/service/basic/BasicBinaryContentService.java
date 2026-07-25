@@ -4,7 +4,7 @@ import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.exception.FileException;
-import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
+import com.sprint.mission.discodeit.exception.ResourceNotFoundException;
 import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
@@ -54,17 +54,17 @@ public class BasicBinaryContentService implements BinaryContentService {
 
     @Override
     @Transactional(readOnly = true)
-    public BinaryContentDto findBinaryContentById(UUID binaryContentId) {
+    public BinaryContentDto getBinaryContent(UUID binaryContentId) {
         //BinaryContent 검색
         BinaryContent binaryContentTemp = binaryContentRepository.findById(binaryContentId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
 
         return binaryContentMapper.toDto(binaryContentTemp);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<BinaryContentDto> findAllBinaryContentByIdIn(List<UUID> binaryContentIds) {
+    public List<BinaryContentDto> getBinaryContentsByIdIn(List<UUID> binaryContentIds) {
         //BinaryContent들 검색
         List<BinaryContent> binaryContentList = binaryContentRepository.findAllByIdIn(binaryContentIds);
 
@@ -78,7 +78,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     public void deleteBinaryContent(UUID binaryContentId) {
         //BinaryContent 검색
         BinaryContent binaryContentTemp = binaryContentRepository.findById(binaryContentId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
 
         binaryContentRepository.deleteById(binaryContentId);
 

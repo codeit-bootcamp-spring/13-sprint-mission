@@ -9,7 +9,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.FileException;
-import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
+import com.sprint.mission.discodeit.exception.ResourceNotFoundException;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -52,10 +52,10 @@ public class BasicMessageService implements MessageService {
     public MessageDto createMessage(MessageCreateRequest request, List<MultipartFile> files) {
         //유저 검색
         User userTemp = userRepository.findById(request.authorId())
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
         //채널 검색
         Channel channelTemp = channelRepository.findById(request.channelId())
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
 
         List<BinaryContent> binaryContentList = new ArrayList<>();
         //첨부파일 존재 시
@@ -90,7 +90,7 @@ public class BasicMessageService implements MessageService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Instant cursor, Pageable pageable) {
+    public PageResponse<MessageDto> getMessagesByChannelId(UUID channelId, Instant cursor, Pageable pageable) {
         Slice<MessageDto> messageDtoSlice = ((cursor == null)
                 ? messageRepository.findAllByChannelId(channelId, pageable)
                 : messageRepository.findAllByChannelId(channelId, cursor, pageable))
@@ -104,7 +104,7 @@ public class BasicMessageService implements MessageService {
     public MessageDto updateMessage(UUID messageId, MessageUpdateRequest request) {
         //메시지 검색
         Message messageTemp = messageRepository.findById(messageId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 메시지는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 메시지는 데이터파일에 존재하지 않습니다."));
 
         log.info("메시지: {}가 수정됨.\n->{}", messageTemp.getContent(), request.newContent());
 
@@ -121,7 +121,7 @@ public class BasicMessageService implements MessageService {
     public void deleteMessage(UUID messageId) {
         //메시지 검색
         Message messageTemp = messageRepository.findById(messageId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 메시지는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 메시지는 데이터파일에 존재하지 않습니다."));
 
         //첨부파일 삭제
         for (BinaryContent attachment : messageTemp.getAttachments()) {
@@ -138,13 +138,13 @@ public class BasicMessageService implements MessageService {
     // 들어온 userId 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateUserExists(UUID userId) {
         if (!userRepository.existsById(userId)) {
-            throw new ObjectNotFoundException("유저: " + userId + "이 존재하지 않습니다.");
+            throw new ResourceNotFoundException("유저: " + userId + "이 존재하지 않습니다.");
         }
     }
     // 들어온 channelId필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateChannelExists(UUID channelId) {
         if (!channelRepository.existsById(channelId)) {
-            throw new ObjectNotFoundException("채널: " + channelId + "이 존재하지 않습니다.");
+            throw new ResourceNotFoundException("채널: " + channelId + "이 존재하지 않습니다.");
         }
     }
 }
