@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.storage;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.exception.FileException;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.InputStreamResource;
@@ -16,6 +17,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.UUID;
 
+@Slf4j
 @Component
 @ConditionalOnProperty(
         value = "discodeit.storage.type",
@@ -35,6 +37,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage{
         try {
             Files.createDirectories(root);
         } catch (IOException e) {
+            log.error("폴더 생성에 실패했습니다.");
             throw new FileException("폴더 생성에 실패했습니다.");
         }
     }
@@ -47,6 +50,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage{
         try {
             Files.write(path, bytes);
         } catch (IOException e) {
+            log.error("파일 저장에 실패했습니다.");
             throw new FileException("파일 저장에 실패했습니다.");
         }
 
@@ -64,14 +68,19 @@ public class LocalBinaryContentStorage implements BinaryContentStorage{
 
             return Files.newInputStream(path);
         } catch (IOException e) {
+            log.error("파일 읽기에 실패했습니다.");
             throw new FileException("파일 읽기 실패");
         }
     }
 
     @Override
     public ResponseEntity<Resource> download(BinaryContentDto binaryContentDto) {
+        log.debug("파일 다운로드 시작");
+
         InputStream inputStream = get(binaryContentDto.id());
         Resource resource = new InputStreamResource(inputStream);
+
+        log.info("파일 다운로드 완료");
 
         return ResponseEntity.ok().body(resource);
     }

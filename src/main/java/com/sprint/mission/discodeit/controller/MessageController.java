@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/messages")
@@ -42,6 +44,7 @@ public class MessageController {
     )
     public ResponseEntity<MessageDto> createMessage(@Valid @RequestPart("messageCreateRequest") MessageCreateRequest request,
                                                     @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments) {
+        log.debug("메시지 생성 API 요청");
 
         MessageDto createdMessage = messageService.createMessage(request, attachments);
 
@@ -72,6 +75,7 @@ public class MessageController {
     public ResponseEntity<MessageDto> updateMessage(@Parameter(description = "수정할 Message ID", required = true)
                                                     @PathVariable UUID messageId,
                                                     @Valid @RequestBody MessageUpdateRequest request) {
+        log.debug("메시지 수정 API 요청");
 
         MessageDto response = messageService.updateMessage(messageId, request);
 
@@ -84,6 +88,8 @@ public class MessageController {
     @RequestMapping(value = "/{messageId}", method = RequestMethod.DELETE)
     public ResponseEntity<Void> deleteMessage(@Parameter(description = "삭제할 Message ID", required = true)
                                               @PathVariable UUID messageId) {
+        log.debug("메시지 삭제 API 요청");
+
         messageService.deleteMessage(messageId);
 
         return ResponseEntity.noContent().build();

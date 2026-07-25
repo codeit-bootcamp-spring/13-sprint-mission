@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/users")
@@ -42,6 +44,7 @@ public class UserController {
     )
     public ResponseEntity<UserDto> createUser(@Valid @RequestPart("userCreateRequest") UserCreateRequest request,
                                            @RequestPart(value = "profile", required = false) MultipartFile profile) {
+        log.debug("유저 생성 API 요청");
 
         UserDto createdUser = userService.createUser(request, profile);
 
@@ -70,6 +73,7 @@ public class UserController {
                                            @PathVariable UUID userId,
                                            @Valid @RequestPart("userUpdateRequest") UserUpdateRequest request,
                                            @RequestPart(value = "profile", required = false) MultipartFile profile) {
+        log.debug("유저 수정 API 요청");
 
         UserDto response = userService.updateUser(userId, request, profile);
 
@@ -94,6 +98,8 @@ public class UserController {
     @RequestMapping(value = "/{userId}", method = RequestMethod.DELETE)
     public ResponseEntity<Void> deleteUser(@Parameter(description = "삭제할 User ID", required = true)
                                            @PathVariable UUID userId) {
+        log.debug("유저 삭제 API 요청");
+
         userService.deleteUser(userId);
 
         return ResponseEntity.noContent().build();

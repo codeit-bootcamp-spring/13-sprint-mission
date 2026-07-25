@@ -37,4 +37,5 @@ discodeit:
 
 logging:
   level:
-    com.sprintlog: debug
+    com.sprintlog: info
+

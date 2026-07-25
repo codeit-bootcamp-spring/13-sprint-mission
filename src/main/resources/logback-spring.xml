@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SprintLog 로깅 설정 (Logback).
+
+  역할 분담(실무 표준):
+    · application-<profile>.yml 의 logging.level.*  = "무엇을 어느 레벨로 남길까"(레벨 정책)
+    · 이 logback-spring.xml                          = "어디에 어떤 모양으로 남길까"(출력 대상·패턴·파일 롤링)
+-->
+<configuration>
+
+    <!-- Spring Boot 기본 색상·패턴 변환 규칙(CONSOLE_LOG_PATTERN, FILE_LOG_PATTERN 등)을 불러온다. -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- 로그 파일 위치 — 환경변수 LOG_PATH 로 덮어쓸 수 있다({프로젝트 루트}/.logs경로). -->
+    <property name="LOG_PATH" value=".logs"/>
+    <property name="LOG_FILE" value="${LOG_PATH}/sprintlog.log"/>
+    <property name="LOG_PATTERN"
+              value="%d{yy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+
+    <!-- 콘솔 출력: 사람이 읽기 좋게(색상 포함 — Spring Boot 기본 패턴). -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>
+                ${LOG_PATH}/sprintlog.%d{yyyy-MM-dd}.log
+            </fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+</configuration>

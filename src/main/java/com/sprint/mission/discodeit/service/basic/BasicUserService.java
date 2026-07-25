@@ -39,6 +39,8 @@ public class BasicUserService implements UserService {
     @Override
     @Transactional
     public UserDto createUser(UserCreateRequest request, MultipartFile file) {
+        log.debug("유저 생성 시작");
+
         //중복된 이름, 이메일로 생성 요청을 한 경우 검증
         validateNameExists(request.username());
         validateEmailExists(request.email());
@@ -46,8 +48,11 @@ public class BasicUserService implements UserService {
         BinaryContent binaryContent = null;
         //프로필 사진 파일 존재 시
         if (file != null && !file.isEmpty()) {
+            log.debug("프로필 파일 업로드 처리 시작");
             //binaryContent 생성
             binaryContent = createBinaryContent(file);
+
+            log.info("프로필 파일 업로드 완료");
         }
 
         //유저 생성
@@ -60,6 +65,8 @@ public class BasicUserService implements UserService {
 
         user.assignStatus(userStatus);
         user = userRepository.save(user);
+
+        log.info("유저 생성 완료");
 
         return userMapper.toDto(user);
     }
@@ -92,9 +99,14 @@ public class BasicUserService implements UserService {
     @Override
     @Transactional
     public UserDto updateUser(UUID userId, UserUpdateRequest request, MultipartFile file) {
+        log.debug("유저 수정 시작");
+
         //유저 검색
         User userTemp = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> {
+                    log.warn("유저 수정 실패: 해당 유저는 데이터파일에 존재하지 않습니다.");
+                    return new ResourceNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다.");
+                });
 
         //중복된 이름, 이메일로 수정 요청을 한 경우 검증
         if (!userTemp.getUsername().equals(request.newUsername())) {
@@ -107,12 +119,15 @@ public class BasicUserService implements UserService {
         BinaryContent binaryContent = userTemp.getProfile();
         //프로필 사진 파일 존재 시
         if (file != null && !file.isEmpty()) {
+            log.debug("프로필 파일 업로드 처리 시작");
             //기존 프로필 이미지 삭제
             if (binaryContent != null) {
                 binaryContentRepository.deleteById(binaryContent.getId());
             }
             //binaryContent 생성
             binaryContent = createBinaryContent(file);
+
+            log.info("프로필 파일 업로드 완료");
         }
 
         log.info("유저: {}가 수정됨.", userTemp.getUsername());
@@ -123,15 +138,22 @@ public class BasicUserService implements UserService {
         //dirty checking
         //userTemp = userRepository.save(userTemp);
 
+        log.info("유저 수정 완료");
+
         return userMapper.toDto(userTemp);
     }
 
     @Override
     @Transactional
     public void deleteUser(UUID userId) {
+        log.debug("유저 삭제 시작");
+
         //유저 검색
         User userTemp = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> {
+                    log.warn("유저 삭제 실패: 해당 유저는 데이터파일에 존재하지 않습니다.");
+                    return new ResourceNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다.");
+                });
 
         //유저 상태 검색 및 삭제
         //UserStatus는 cascade로 함께 삭제되므로 별도 삭제하지 않음
@@ -150,6 +172,8 @@ public class BasicUserService implements UserService {
         userRepository.deleteById(userId);
 
         log.info("유저: {}가 삭제됨.", userTemp.getUsername());
+
+        log.info("유저 삭제 완료");
     }
 
     //binaryContent 생성
@@ -166,6 +190,7 @@ public class BasicUserService implements UserService {
             binaryContentStorage.put(binaryContent.getId(), file.getBytes());
 
         } catch (IOException e) {
+            log.error("프로필 파일 업로드 실패");
             throw new FileException(e.getMessage());
         }
 
@@ -210,6 +235,7 @@ public class BasicUserService implements UserService {
     // 들어온 이름 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateNameExists(String name) {
         if (userRepository.existsByUsername(name)) {
+            log.warn("이름: {}은 이미 사용중입니다.", name);
             throw new DuplicateResourceException("이름: " + name + "은 이미 사용중입니다.");
         }
     }
@@ -217,6 +243,7 @@ public class BasicUserService implements UserService {
     // 들어온 이메일 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateEmailExists(String email) {
         if (userRepository.existsByEmail(email)) {
+            log.warn("이메일: {}은 이미 사용중입니다.", email);
             throw new DuplicateResourceException("이메일: " + email + "은 이미 사용중입니다.");
         }
     }

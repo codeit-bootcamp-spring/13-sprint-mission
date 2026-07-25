@@ -32,6 +32,8 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     @Transactional
     public BinaryContentDto createBinaryContent(BinaryContentCreateRequest request) {
+        log.debug("파일 업로드 시작");
+
         BinaryContent binaryContent;
         try {
             //binaryContent 생성
@@ -46,8 +48,11 @@ public class BasicBinaryContentService implements BinaryContentService {
             log.info("BinaryContent가 생성됨.");
 
         } catch (IOException e) {
+            log.error("첨부 파일 업로드 실패");
             throw new FileException(e.getMessage());
         }
+
+        log.info("파일 업로드 완료");
 
         return binaryContentMapper.toDto(binaryContent);
     }

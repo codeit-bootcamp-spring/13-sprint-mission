@@ -38,6 +38,8 @@ public class BasicChannelService implements ChannelService {
     @Override
     @Transactional
     public ChannelDto createPrivateChannel(PrivateChannelCreateRequest request) {
+        log.debug("Private 채널 생성 시작");
+
         //채널 생성
         Channel channel = new Channel(ChannelType.PRIVATE);
         channel = channelRepository.save(channel);
@@ -54,16 +56,22 @@ public class BasicChannelService implements ChannelService {
             log.info("ReadStatus가 생성됨.");
         }
 
+        log.info("Private 채널 생성 완료");
+
         return channelMapper.toDto(channel);
     }
 
     @Override
     @Transactional
     public ChannelDto createPublicChannel(PublicChannelCreateRequest request) {
+        log.debug("Public 채널 생성 시작");
+
         //채널 생성
         Channel channel = new Channel(ChannelType.PUBLIC, request.name(), request.description());
         channel = channelRepository.save(channel);
         log.info("채널: {}가 생성됨.", channel.getName());
+
+        log.info("Public 채널 생성 완료");
 
         return channelMapper.toDto(channel);
     }
@@ -111,14 +119,21 @@ public class BasicChannelService implements ChannelService {
     @Override
     @Transactional
     public ChannelDto updateChannel(UUID channelId, PublicChannelUpdateRequest request) {
+        log.debug("채널 수정 시작");
+
         //채널 검색
         Channel channelTemp = channelRepository.findById(channelId)
-                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> {
+                    log.warn("채널 수정 실패: 해당 채널은 데이터파일에 존재하지 않습니다.");
+                    return new ResourceNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다.");
+                });
 
         //채널 업데이트
         channelTemp.updateChannel(request.newName(), request.newDescription());
         //dirty checking
         //channelTemp = channelRepository.save(channelTemp);
+
+        log.info("채널 수정 완료");
 
         return channelMapper.toDto(channelTemp);
     }
@@ -126,9 +141,14 @@ public class BasicChannelService implements ChannelService {
     @Override
     @Transactional
     public void deleteChannel(UUID channelId) {
+        log.debug("채널 삭제 시작");
+
         //채널 검색
         Channel channelTemp = channelRepository.findById(channelId)
-                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> {
+                    log.warn("채널 삭제 실패: 해당 채널은 데이터파일에 존재하지 않습니다.");
+                    return new ResourceNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다.");
+                });
 
         //채널 내 메시지 삭제
         List<Message> messageList = messageRepository.findAllByChannelId(channelId);
@@ -146,6 +166,8 @@ public class BasicChannelService implements ChannelService {
         channelRepository.deleteById(channelTemp.getId());
 
         log.info("채널: {}가 삭제됨.", channelTemp.getName());
+
+        log.info("채널 삭제 완료");
     }
 
 
@@ -172,6 +194,7 @@ public class BasicChannelService implements ChannelService {
     // 들어온 userId 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateUserExists(UUID userId) {
         if (!userRepository.existsById(userId)) {
+            log.warn("유저: {}이 존재하지 않습니다.", userId);
             throw new ResourceNotFoundException("유저: " + userId + "이 존재하지 않습니다.");
         }
     }
