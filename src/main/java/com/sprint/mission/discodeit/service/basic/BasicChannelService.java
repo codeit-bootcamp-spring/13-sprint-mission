@@ -6,7 +6,9 @@ import com.sprint.mission.discodeit.dto.request.PublicChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.dto.response.ChannelFindResponse;
 import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.exception.ResourceNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.PrivateChannelUpdateException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.ChannelService;
@@ -49,7 +51,7 @@ public class BasicChannelService implements ChannelService {
         for (UUID userId : request.participantIds()) {
             // 유저 검색
             User userTemp = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+                    .orElseThrow(() -> new UserNotFoundException(userId));
 
             ReadStatus readStatus = new ReadStatus(userTemp, channel);
             readStatus = readStatusRepository.save(readStatus);
@@ -81,7 +83,7 @@ public class BasicChannelService implements ChannelService {
     public ChannelDto getChannel(UUID channelId) {
         //채널 검색
         Channel channelTemp = channelRepository.findById(channelId)
-                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new ChannelNotFoundException(channelId));
 
         return channelMapper.toDto(channelTemp);
     }
@@ -89,6 +91,9 @@ public class BasicChannelService implements ChannelService {
     @Override
     @Transactional(readOnly = true)
     public List<ChannelDto> getChannelsByUserId(UUID userId) {
+        //유저 검증
+        validateUserExists(userId);
+
         //반환할 리스트
         List<Channel> channelFindList = new ArrayList<>();
 
@@ -99,7 +104,7 @@ public class BasicChannelService implements ChannelService {
         for (ReadStatus readStatus : readStatuses) {
             //채널 검색
             Channel channelTemp = channelRepository.findById(readStatus.getChannel().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다."));
+                    .orElseThrow(() -> new ChannelNotFoundException(readStatus.getChannel().getId()));
 
             if (channelTemp.getType() == ChannelType.PUBLIC)
                 continue;
@@ -125,13 +130,16 @@ public class BasicChannelService implements ChannelService {
         Channel channelTemp = channelRepository.findById(channelId)
                 .orElseThrow(() -> {
                     log.warn("채널 수정 실패: 해당 채널은 데이터파일에 존재하지 않습니다.");
-                    return new ResourceNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다.");
+                    return new ChannelNotFoundException(channelId);
                 });
+
+        if (channelTemp.getType() != ChannelType.PUBLIC) {
+            log.warn("수정하려는 채널: {}이 Public 채널이 아닙니다.", channelTemp.getName());
+            throw new PrivateChannelUpdateException(channelId);
+        }
 
         //채널 업데이트
         channelTemp.updateChannel(request.newName(), request.newDescription());
-        //dirty checking
-        //channelTemp = channelRepository.save(channelTemp);
 
         log.info("채널 수정 완료");
 
@@ -147,7 +155,7 @@ public class BasicChannelService implements ChannelService {
         Channel channelTemp = channelRepository.findById(channelId)
                 .orElseThrow(() -> {
                     log.warn("채널 삭제 실패: 해당 채널은 데이터파일에 존재하지 않습니다.");
-                    return new ResourceNotFoundException("에러: 해당 채널은 데이터파일에 존재하지 않습니다.");
+                    return new ChannelNotFoundException(channelId);
                 });
 
         //채널 내 메시지 삭제
@@ -195,7 +203,7 @@ public class BasicChannelService implements ChannelService {
     private void validateUserExists(UUID userId) {
         if (!userRepository.existsById(userId)) {
             log.warn("유저: {}이 존재하지 않습니다.", userId);
-            throw new ResourceNotFoundException("유저: " + userId + "이 존재하지 않습니다.");
+            throw new UserNotFoundException(userId);
         }
     }
 }

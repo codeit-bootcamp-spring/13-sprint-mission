@@ -3,8 +3,8 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
-import com.sprint.mission.discodeit.exception.FileException;
-import com.sprint.mission.discodeit.exception.ResourceNotFoundException;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
+import com.sprint.mission.discodeit.exception.file.FileStorageException;
 import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
@@ -49,7 +49,7 @@ public class BasicBinaryContentService implements BinaryContentService {
 
         } catch (IOException e) {
             log.error("첨부 파일 업로드 실패");
-            throw new FileException(e.getMessage());
+            throw new FileStorageException(request.file().getOriginalFilename());
         }
 
         log.info("파일 업로드 완료");
@@ -62,7 +62,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     public BinaryContentDto getBinaryContent(UUID binaryContentId) {
         //BinaryContent 검색
         BinaryContent binaryContentTemp = binaryContentRepository.findById(binaryContentId)
-                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new BinaryContentNotFoundException(binaryContentId));
 
         return binaryContentMapper.toDto(binaryContentTemp);
     }
@@ -83,7 +83,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     public void deleteBinaryContent(UUID binaryContentId) {
         //BinaryContent 검색
         BinaryContent binaryContentTemp = binaryContentRepository.findById(binaryContentId)
-                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new BinaryContentNotFoundException(binaryContentId));
 
         binaryContentRepository.deleteById(binaryContentId);
 

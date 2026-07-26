@@ -4,7 +4,8 @@ import com.sprint.mission.discodeit.dto.request.LoginRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
-import com.sprint.mission.discodeit.exception.ResourceNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import com.sprint.mission.discodeit.exception.userstatus.UserStatusNotFoundByUserIdException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
@@ -30,15 +31,13 @@ public class BasicAuthService implements AuthService {
     public UserDto login(LoginRequest request) {
         //유저 검색
         User userTemp = userRepository.findByUsernameAndPassword(request.username(), request.password())
-                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new UserNotFoundException(request.username(), request.password()));
 
         //유저 상태 검색 및 마지막 접속 시간 업데이트
         UserStatus userStatus = userStatusRepository.findByUserId(userTemp.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
+                .orElseThrow(() -> new UserStatusNotFoundByUserIdException(userTemp.getId()));
 
         userStatus.updateLastActiveAt();
-        //dirty checking
-        //userStatus = userStatusRepository.save(userStatus);
 
         log.info("유저: {} 로그인 승인.", request.username());
 

@@ -4,9 +4,10 @@ import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.exception.DuplicateResourceException;
-import com.sprint.mission.discodeit.exception.FileException;
-import com.sprint.mission.discodeit.exception.ResourceNotFoundException;
+import com.sprint.mission.discodeit.exception.file.FileStorageException;
+import com.sprint.mission.discodeit.exception.user.UserEmailAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.user.UserNameAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.UserService;
@@ -76,11 +77,7 @@ public class BasicUserService implements UserService {
     public UserDto getUser(UUID userId) {
         //유저 검색
         User userTemp = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
-
-        //유저 상태 검색
-        UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         return userMapper.toDto(userTemp);
     }
@@ -105,7 +102,7 @@ public class BasicUserService implements UserService {
         User userTemp = userRepository.findById(userId)
                 .orElseThrow(() -> {
                     log.warn("유저 수정 실패: 해당 유저는 데이터파일에 존재하지 않습니다.");
-                    return new ResourceNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다.");
+                    return new UserNotFoundException(userId);
                 });
 
         //중복된 이름, 이메일로 수정 요청을 한 경우 검증
@@ -152,7 +149,7 @@ public class BasicUserService implements UserService {
         User userTemp = userRepository.findById(userId)
                 .orElseThrow(() -> {
                     log.warn("유저 삭제 실패: 해당 유저는 데이터파일에 존재하지 않습니다.");
-                    return new ResourceNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다.");
+                    return new UserNotFoundException(userId);
                 });
 
         //유저 상태 검색 및 삭제
@@ -191,18 +188,12 @@ public class BasicUserService implements UserService {
 
         } catch (IOException e) {
             log.error("프로필 파일 업로드 실패");
-            throw new FileException(e.getMessage());
+            throw new FileStorageException(file.getOriginalFilename());
         }
 
         return binaryContent;
     }
 
-    //유저 상태 검색 및 삭제
-    private void deleteUserStatus(UUID userId) {
-        UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
-        userStatusRepository.deleteById(userStatus.getId());
-    }
 
     //유저가 가입한 채널에 대한 ReadStatus 검색 및 삭제
     private void deleteReadStatus(UUID userId) {
@@ -236,7 +227,7 @@ public class BasicUserService implements UserService {
     private void validateNameExists(String name) {
         if (userRepository.existsByUsername(name)) {
             log.warn("이름: {}은 이미 사용중입니다.", name);
-            throw new DuplicateResourceException("이름: " + name + "은 이미 사용중입니다.");
+            throw new UserNameAlreadyExistsException(name);
         }
     }
 
@@ -244,7 +235,7 @@ public class BasicUserService implements UserService {
     private void validateEmailExists(String email) {
         if (userRepository.existsByEmail(email)) {
             log.warn("이메일: {}은 이미 사용중입니다.", email);
-            throw new DuplicateResourceException("이메일: " + email + "은 이미 사용중입니다.");
+            throw new UserEmailAlreadyExistsException(email);
         }
     }
 }
