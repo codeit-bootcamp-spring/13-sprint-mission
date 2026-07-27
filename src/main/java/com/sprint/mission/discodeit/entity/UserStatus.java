@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -20,11 +21,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserStatus extends BaseUpdatableEntity {
 
+  @JsonBackReference // Jackson 통한 직렬화 시 순환 참조 방지
   @JoinColumn(name = "user_id", nullable = false, unique = true)
-  @OneToOne(fetch = FetchType.LAZY)
+  @OneToOne(fetch = FetchType.LAZY, optional = false) // UserStatus에서 User 관계는 반드시 존재해야 한다
   private User user;
 
-  @Column(nullable = false)
+  @Column(columnDefinition = "timestamp with time zone", nullable = false)
   private Instant lastActiveAt;
 
   // 사용자 별 마지막으로 확인된 접속 시간을 표현하는 도메인 모델
@@ -33,8 +35,13 @@ public class UserStatus extends BaseUpdatableEntity {
   // 마지막 접속 시간이 현재 시간으로부터 5분 이내이면 현재 접속 중인 유저로 간주
 
   public UserStatus(User user, Instant lastActiveAt) {
-    this.user = user;
+    setUser(user); // user <-> userStatus 양방향 참조관계
     this.lastActiveAt = lastActiveAt;
+  }
+
+  protected void setUser(User user) { // User <- status -> UserStatus
+    this.user = user;
+    user.setStatus(this);
   }
 
   public void update(Instant lastActiveAt) {
@@ -54,5 +61,4 @@ public class UserStatus extends BaseUpdatableEntity {
     // 값이 5분 이내라면 온라인 유저로 간주
     return lastActiveAt.isAfter(instantFiveMinutesAgo);
   }
-
 }

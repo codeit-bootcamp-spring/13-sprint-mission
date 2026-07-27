@@ -9,13 +9,14 @@ import java.util.UUID;
 @Getter
 @Builder
 public class UserStatusResponse {
-    private UUID userId;
-    private Instant lastActiveAt;
 
-    public static UserStatusResponse from(UserStatus userStatus) {
-        return UserStatusResponse.builder()
-                .userId(userStatus.getUserId())
-                .lastActiveAt(userStatus.getLastActiveAt())
-                .build();
-    }
+  private UUID userId;
+  private Instant lastActiveAt;
+
+  public static UserStatusResponse from(UserStatus userStatus) {
+    return UserStatusResponse.builder()
+        .userId(userStatus.getUser().getId())
+        .lastActiveAt(userStatus.getLastActiveAt())
+        .build();
+  }
 }

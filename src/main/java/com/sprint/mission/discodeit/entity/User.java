@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -11,6 +12,7 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Entity
@@ -18,8 +20,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseUpdatableEntity {
 
-  @JoinColumn(name = "profile_id", unique = true)
-  @OneToOne(fetch = FetchType.LAZY) // User 저장할 때 프로필도 함께 저장한다
+  @JoinColumn(name = "profile_id", columnDefinition = "uuid")
+  @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+  // User 저장할 때 프로필도 함께 저장한다
   private BinaryContent profile;
 
   @Column(nullable = false, unique = true, length = 50)
@@ -31,7 +34,11 @@ public class User extends BaseUpdatableEntity {
   @Column(nullable = false, length = 60)
   private String password; // 비밀번호 추가
 
-  @OneToOne(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+  @JsonManagedReference // Jackson 통해 직렬화하는 경우 순환 참조 발생할 수 있기 때문에 이를 방지하기 위해 추가
+  @Setter(AccessLevel.PROTECTED)
+  // 양방향 참조 관계 -> UserStatus 생성자에 User에도 참조 관계 정의, 도메인 내부에서만 사용 가능하도록 PROTECTED
+  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  // UserStatus는 User에 완전히 종속적 - ON DELETE CASCADE
   private UserStatus status; // UserStatus 참조
 
   public User(String username, String email, String password, BinaryContent profile) {

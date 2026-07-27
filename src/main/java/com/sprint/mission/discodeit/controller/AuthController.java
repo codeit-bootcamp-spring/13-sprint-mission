@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.auth.LoginRequest;
+import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,7 +34,7 @@ public class AuthController {
       @ApiResponse(responseCode = "400", description = "비밀번호가 일치하지 않음")
   })
   @RequestMapping(value = "/login", method = RequestMethod.POST) // 비밀번호 같은 민감한 정보는 숨겨서 전달한다
-  public ResponseEntity<User> login(@Valid @RequestBody LoginRequest request) {
+  public ResponseEntity<UserDto> login(@Valid @RequestBody LoginRequest request) {
     return ResponseEntity
         .status(HttpStatus.OK)
         .body(authService.login(request));
