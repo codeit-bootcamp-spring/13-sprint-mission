@@ -9,7 +9,7 @@ public interface ChannelService {
 
     ChannelDto createPublicChannel(CreatePublicChannelCommand command);
 
-    ChannelDto createPrivateChannel(CreatePublicChannelCommand command);
+    ChannelDto createPrivateChannel(CreatePrivateChannelCommand command);
 
     ChannelDto find(UUID id);
 

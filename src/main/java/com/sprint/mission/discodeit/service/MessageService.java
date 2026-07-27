@@ -20,5 +20,5 @@ public interface MessageService {
 
     void delete(UUID messageId);
 
-    PageResponse<MessageDto> getMessages(UUID channelId, LocalDateTime cursor);
+    PageResponse<MessageDto> getMessages(UUID channelId, int page);
 }
