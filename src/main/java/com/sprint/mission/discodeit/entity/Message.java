@@ -38,4 +38,10 @@ public class Message extends BaseUpdatableEntity {
         this.author = author;
         this.attachments = attachments;
     }
+
+    public void update(String content) {
+        if (content != null && !content.isBlank()) {
+            this.content = content;
+        }
+    }
 }
