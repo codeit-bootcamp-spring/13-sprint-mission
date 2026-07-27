@@ -26,9 +26,11 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -179,8 +181,14 @@ public class BasicMessageService implements MessageService {
         pageable.getPageSize()
     );
 
+    Pageable fixedPageable = PageRequest.of(
+        pageable.getPageNumber(),
+        pageable.getPageSize(),
+        Sort.by(Sort.Direction.DESC, "createdAt")
+    );
+
     Slice<Message> slice =
-        messageRepository.findByChannel_Id(channelId, pageable);
+        messageRepository.findByChannel_Id(channelId, fixedPageable);
 
     List<MessageDto> messageDtos = slice.getContent().stream()
         .map(messageMapper::toDto)
@@ -250,8 +258,8 @@ public class BasicMessageService implements MessageService {
       for (BinaryContent content : attachments) {
         UUID attachmentId = content.getId();
 
-        binaryContentRepository.deleteById(attachmentId);
         binaryContentStorage.delete(attachmentId);
+        binaryContentRepository.deleteById(attachmentId);
       }
     }
 

@@ -205,8 +205,8 @@ public class BasicUserService implements UserService {
 
       UUID profileId = user.getProfile().getId();
 
-      binaryContentRepository.deleteById(profileId);
       binaryContentStorage.delete(profileId);
+      binaryContentRepository.deleteById(profileId);
     }
 
     userRepository.delete(user);

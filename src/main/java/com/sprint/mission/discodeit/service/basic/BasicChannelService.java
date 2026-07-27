@@ -22,8 +22,11 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
@@ -58,18 +61,31 @@ public class BasicChannelService implements ChannelService {
 
     log.info("공개 채널 생성 완료: channelId={}", channel.getId());
 
-    return channelMapper.toDto(channel);
+    return channelMapper.toDto(
+        channel,
+        List.of(),
+        null
+    );
   }
 
   @Override
-  public ChannelDto createPrivateChannel(PrivateChannelCreateRequest request) {
+  public ChannelDto createPrivateChannel(
+      PrivateChannelCreateRequest request
+  ) {
     log.debug(
         "비공개 채널 생성 시작: participantCount={}",
         request.participantIds().size()
     );
 
-    Channel channel = new Channel(null, null, Channel.ChannelType.PRIVATE);
+    Channel channel = new Channel(
+        null,
+        null,
+        ChannelType.PRIVATE
+    );
+
     channelRepository.save(channel);
+
+    List<User> participants = new ArrayList<>();
 
     for (UUID userId : request.participantIds()) {
       User user = userRepository.findById(userId)
@@ -80,6 +96,8 @@ public class BasicChannelService implements ChannelService {
             );
             return new UserNotFoundException(userId);
           });
+
+      participants.add(user);
 
       ReadStatus readStatus = new ReadStatus(
           user,
@@ -93,10 +111,14 @@ public class BasicChannelService implements ChannelService {
     log.info(
         "비공개 채널 생성 완료: channelId={}, participantCount={}",
         channel.getId(),
-        request.participantIds().size()
+        participants.size()
     );
 
-    return channelMapper.toDto(channel);
+    return channelMapper.toDto(
+        channel,
+        participants,
+        null
+    );
   }
 
 
@@ -105,26 +127,60 @@ public class BasicChannelService implements ChannelService {
   public List<ChannelDto> findAllByUserId(UUID userId) {
     log.debug("사용자별 채널 목록 조회 시작: userId={}", userId);
 
-    List<UUID> joinedChannelIds =
-        readStatusRepository.findByUser_Id(userId).stream()
-            .map(readStatus -> readStatus.getChannel().getId())
-            .toList();
+    List<Channel> channels =
+        channelRepository.findVisibleChannelsByUserId(
+            userId,
+            ChannelType.PUBLIC
+        );
 
-    List<ChannelDto> channels = channelRepository.findAll().stream()
-        .filter(channel ->
-            channel.getType() == ChannelType.PUBLIC
-                || joinedChannelIds.contains(channel.getId())
-        )
-        .map(channelMapper::toDto)
+    if (channels.isEmpty()) {
+      log.debug(
+          "사용자별 채널 목록 조회 완료: userId={}, count=0",
+          userId
+      );
+
+      return List.of();
+    }
+
+    List<UUID> channelIds = channels.stream()
+        .map(Channel::getId)
+        .toList();
+
+    Map<UUID, List<User>> participantsByChannelId =
+        readStatusRepository.findByChannel_IdIn(channelIds).stream()
+            .collect(Collectors.groupingBy(
+                readStatus -> readStatus.getChannel().getId(),
+                Collectors.mapping(
+                    ReadStatus::getUser,
+                    Collectors.toList()
+                )
+            ));
+
+    Map<UUID, Instant> lastMessageAtByChannelId =
+        messageRepository.findLastMessageAtByChannelIds(channelIds).stream()
+            .collect(Collectors.toMap(
+                row -> (UUID) row[0],
+                row -> (Instant) row[1]
+            ));
+
+    List<ChannelDto> responses = channels.stream()
+        .map(channel -> channelMapper.toDto(
+            channel,
+            participantsByChannelId.getOrDefault(
+                channel.getId(),
+                List.of()
+            ),
+            lastMessageAtByChannelId.get(channel.getId())
+        ))
         .toList();
 
     log.debug(
         "사용자별 채널 목록 조회 완료: userId={}, count={}",
         userId,
-        channels.size()
+        responses.size()
     );
 
-    return channels;
+    return responses;
   }
 
   @Transactional(readOnly = true)
@@ -140,7 +196,7 @@ public class BasicChannelService implements ChannelService {
 
     log.debug("채널 단건 조회 완료: channelId={}", id);
 
-    return channelMapper.toDto(channel);
+    return toDto(channel);
   }
 
   @Override
@@ -162,7 +218,7 @@ public class BasicChannelService implements ChannelService {
 
     log.info("채널 수정 완료: channelId={}", id);
 
-    return channelMapper.toDto(channel);
+    return toDto(channel);
   }
 
   @Override
@@ -188,8 +244,8 @@ public class BasicChannelService implements ChannelService {
         for (BinaryContent attachment : message.getAttachments()) {
           UUID attachmentId = attachment.getId();
 
-          binaryContentRepository.deleteById(attachmentId);
           binaryContentStorage.delete(attachmentId);
+          binaryContentRepository.deleteById(attachmentId);
         }
       }
 
@@ -200,5 +256,24 @@ public class BasicChannelService implements ChannelService {
     channelRepository.delete(channel);
 
     log.info("채널 삭제 완료: channelId={}", id);
+  }
+
+  private ChannelDto toDto(Channel channel) {
+    List<User> participants =
+        readStatusRepository.findByChannel_Id(channel.getId()).stream()
+            .map(ReadStatus::getUser)
+            .toList();
+
+    Instant lastMessageAt =
+        messageRepository
+            .findTopByChannel_IdOrderByCreatedAtDesc(channel.getId())
+            .map(Message::getCreatedAt)
+            .orElse(null);
+
+    return channelMapper.toDto(
+        channel,
+        participants,
+        lastMessageAt
+    );
   }
 }
