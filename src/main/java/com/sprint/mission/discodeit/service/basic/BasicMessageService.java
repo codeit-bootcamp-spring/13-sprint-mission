@@ -8,10 +8,12 @@ import com.sprint.mission.discodeit.mapper.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
 import lombok.*;
+import org.springframework.core.io.*;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
 
+import java.time.*;
 import java.util.*;
 
 @Service
@@ -79,25 +81,9 @@ public class BasicMessageService implements MessageService {
         return messageMapper.toDto(savedMessage);
     }
 
-
-    @Override
-    public List<MessageDto> findAllByChannelId(UUID channelId) {
-        if (channelId == null) {
-            throw new IllegalArgumentException("채널 ID는 필수입니다.");
-        }
-
-        if (channelRepository.existsById(channelId)) {
-            throw new IllegalArgumentException("존재하지 않는 채널입니다.");
-        }
-
-        List<Message> messages = messageRepository.findByChannelId(channelId);
-        return messageMapper.toDtoList(messages);
-
-    }
-
     @Override
     @Transactional
-    public MessageDto update(UUID id, UpdateMessageCommand command) { // UpdateMessageCommand 타입으로 수정
+    public MessageDto update(UUID id, UpdateMessageCommand command) {
         if (id == null) {
             throw new IllegalArgumentException("메시지 ID는 필수입니다.");
         }
@@ -124,16 +110,46 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public PageResponse<MessageDto> getMessages(UUID channelId, int page) {
+    public PageResponse<MessageDto> getMessages(UUID channelId, Instant cursor, Pageable pageable) {
         if (channelId == null) {
             throw new IllegalArgumentException("채널 ID는 필수입니다."); }
 
-            Pageable pageable = PageRequest.of(page, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
-            Slice<Message> messageSlice = messageRepository.findByChannelId(channelId, pageable);
+        if (pageable == null) {
+            throw new IllegalArgumentException("페이징 정보는 필수입니다.");
+        }
+        Slice<Message> messageSlice;
 
-            Slice<MessageDto> responseSlice = messageSlice.map(messageMapper::toDto);
+        if (cursor == null) {
+            messageSlice = messageRepository.findByChannelId(
+                    channelId,
+                    pageable
+            );
+        } else {
+            messageSlice = messageRepository
+                    .findByChannelIdAndCreatedAtLessThan(
+                            channelId,
+                            cursor,
+                            pageable
+                    );
+        }
 
-            return PageResponseMapper.fromSlice(responseSlice);
+        Slice<MessageDto> responseSlice =
+                messageSlice.map(messageMapper::toDto);
+
+        Instant nextCursor = null;
+
+        if (responseSlice.hasNext() && !responseSlice.isEmpty()) {
+            List<MessageDto> content = responseSlice.getContent();
+
+            nextCursor = content
+                    .get(content.size() - 1)
+                    .createdAt();
+        }
+
+        return PageResponseMapper.fromSlice(
+                responseSlice,
+                nextCursor
+        );
 
         }
     }

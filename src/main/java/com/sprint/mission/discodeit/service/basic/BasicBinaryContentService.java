@@ -73,7 +73,6 @@ private final BinaryContentRepository repository;
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 바이너리 콘텐츠입니다."));
 
         repository.delete(binaryContent);
-        binaryContentStorage.delete(id);
     }
 
 }

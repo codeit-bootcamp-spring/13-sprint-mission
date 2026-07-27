@@ -5,14 +5,17 @@ import jakarta.annotation.*;
 import lombok.extern.slf4j.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.boot.autoconfigure.condition.*;
-import org.springframework.core.io.*;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.stereotype.*;
 
 import java.io.*;
+import java.nio.charset.*;
 import java.nio.file.*;
 import java.util.*;
+
+import static org.springframework.http.MediaType.parseMediaType;
 
 @Slf4j
 @Component
@@ -37,6 +40,17 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
 
     @Override
     public UUID put(UUID binaryContentId, byte[] bytes) {
+        if (binaryContentId == null) {
+            throw new IllegalArgumentException(
+                    "바이너리 콘텐츠 ID는 필수입니다."
+            );
+        }
+
+        if (bytes == null) {
+            throw new IllegalArgumentException(
+                    "저장할 바이너리 데이터는 필수입니다."
+            );
+        }
         Path path = resolvePath(binaryContentId);
         try {
             Files.write(path, bytes);
@@ -46,12 +60,47 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
         }
     }
 
+    @Override
+    public ResponseEntity<Resource> download(BinaryContentDto binaryContentDto) {
+        if (binaryContentDto == null) {
+            throw new IllegalArgumentException(
+                    "다운로드할 바이너리 콘텐츠 정보는 필수입니다."
+            );
+        }
+
+        InputStream inputStream = get(binaryContentDto.id());
+        InputStreamResource resource = new InputStreamResource(inputStream);
+
+        MediaType mediaType = parseMediaType(binaryContentDto.contentType());
+
+        ContentDisposition contentDisposition = ContentDisposition.attachment()
+                .filename(
+                        binaryContentDto.fileName(),
+                        StandardCharsets.UTF_8
+                )
+                .build();
+
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .contentLength(binaryContentDto.size())
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        contentDisposition.toString()
+                )
+                .body(resource);
+    }
+
     private Path resolvePath(UUID binaryContentId) {
         return root.resolve(binaryContentId.toString());
     }
 
     @Override
     public InputStream get(UUID binaryContentId) {
+        if (binaryContentId == null) {
+            throw new IllegalArgumentException(
+                    "바이너리 콘텐츠 ID는 필수입니다."
+            );
+        }
         Path path = resolvePath(binaryContentId);
         try{
             return Files.newInputStream(path);
@@ -59,25 +108,5 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
             throw new UncheckedIOException("파일 읽기 실패", e);
         }
     }
-
-    @Override
-    public Resource getAsResource(BinaryContentDto dto) {
-        Path path = resolvePath(dto.id());
-        if (!Files.exists(path)) {
-            throw new IllegalArgumentException("존재하지 않는 파일입니다: " + dto.id());
-        }
-        return new FileSystemResource(path);
-    }
-
-    @Override
-    public void delete(UUID binaryContentId) {
-        Path path = resolvePath(binaryContentId);
-        try {
-            Files.deleteIfExists(path);
-        } catch (IOException e) {
-            throw new UncheckedIOException("파일 삭제 실패: " + binaryContentId, e);
-        }
-    }
-
 
 }

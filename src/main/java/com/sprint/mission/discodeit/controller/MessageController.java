@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.util.FileUtils;
 import jakarta.validation.*;
 import lombok.*;
 import org.apache.tomcat.util.http.fileupload.*;
+import org.springframework.data.domain.*;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.*;
@@ -55,9 +56,10 @@ public class MessageController {
     @GetMapping
     public ResponseEntity<PageResponse<MessageDto>> getMessages(
             @RequestParam UUID channelId,
-            @RequestParam(required = false) int page) {
+            @RequestParam(required = false) Instant cursor,
+            Pageable pageable) {
         PageResponse<MessageDto> response =
-                messageService.getMessages(channelId, page);
+                messageService.getMessages(channelId, cursor, pageable);
         return ResponseEntity.ok(response);
     }
 

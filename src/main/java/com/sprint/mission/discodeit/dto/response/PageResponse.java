@@ -10,8 +10,8 @@ public record PageResponse<T>(
         @Schema(description = "조회된 데이터 목록")
         List<T> content,
 
-        @Schema(description = "페이지 번호")
-        int number,
+        @Schema(description = "다음 커서")
+        Object nextCursor,
 
         @Schema(description = "페이지당 데이터 개수")
         int size,
@@ -24,14 +24,14 @@ public record PageResponse<T>(
 ) {
     public static <T> PageResponse<T> of(
             List<T> content,
-            int number,
+            Object nextCursor,
             int size,
             Long totalElements,
             boolean hasNext
     ) {
         return new PageResponse<>(
                 content,
-                number,
+                nextCursor,
                 size,
                 totalElements,
                 hasNext

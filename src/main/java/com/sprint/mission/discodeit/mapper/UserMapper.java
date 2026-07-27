@@ -14,7 +14,7 @@ public interface UserMapper {
     @Mapping(target = "id", source = "user.id")
     @Mapping(target = "username", source = "user.username")
     @Mapping(target = "email", source = "user.email")
-    @Mapping(target = "profileImage", source = "user.profileImage") // BinaryContentMapper가 자동 적용됨
+    @Mapping(target = "profile", source = "user.profile")// BinaryContentMapper가 자동 적용됨
     @Mapping(target = "online", expression = "java(userStatus != null && userStatus.isOnline())")
     UserDto toDto(User user, UserStatus userStatus);
 

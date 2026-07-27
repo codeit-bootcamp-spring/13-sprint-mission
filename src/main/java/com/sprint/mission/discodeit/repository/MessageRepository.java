@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.entity.*;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.*;
 
+import java.time.*;
 import java.util.*;
 
 public interface MessageRepository extends JpaRepository<Message, UUID> {
@@ -12,7 +13,10 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
 
     Slice<Message> findByChannelId(UUID channelId, Pageable pageable);
 
-    Slice<Message> findAllByChannel_Id(UUID channelId, Pageable pageable);
-;
+    Slice<Message> findByChannelIdAndCreatedAtLessThan(
+            UUID channelId,
+            Instant cursor,
+            Pageable pageable
+    );
 
 }
