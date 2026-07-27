@@ -3,6 +3,8 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.command.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.exception.channel.*;
+import com.sprint.mission.discodeit.exception.user.*;
 import com.sprint.mission.discodeit.mapper.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
@@ -11,8 +13,8 @@ import lombok.extern.slf4j.*;
 import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
 
-import java.time.*;
 import java.util.*;
+import java.util.stream.*;
 
 @Slf4j
 @Service
@@ -35,7 +37,7 @@ public class BasicChannelService implements ChannelService {
             throw new IllegalArgumentException("채널이름이 공백일 수는 없습니다.");
         }
 
-        log.info("공개 채널 생성 요청, name = {}, description = {}", publicChannel.name(), publicChannel.description());
+        log.info("공개 채널 생성 요청, name={}", publicChannel.name());
 
         Channel channel = new Channel(
                 publicChannel.name(),
@@ -74,9 +76,9 @@ public class BasicChannelService implements ChannelService {
                 throw new IllegalArgumentException("중복된 참여자 ID가 있습니다.");
             }
 
-        User user = userRepository.findById(participantId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 참여자 ID입니다."));
-        participants.add(user);
+             User user = userRepository.findById(participantId)
+                     .orElseThrow(() -> new UserNotFoundException(participantId));
+             participants.add(user);
         }
 
 
@@ -111,7 +113,7 @@ public class BasicChannelService implements ChannelService {
         }
 
         Channel channel = repository.findById(id)
-                .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 채널 ID입니다."));
+                .orElseThrow(()-> new ChannelNotFoundException(id));
 
         return channelMapper.toDto(channel);
     }
@@ -127,13 +129,17 @@ public class BasicChannelService implements ChannelService {
             throw new IllegalArgumentException("채널 수정 요청은 필수입니다.");
         }
 
+        if (request.name() == null || request.name().isBlank()) {
+            throw new IllegalArgumentException("채널 이름은 필수입니다.");
+        }
+
         log.info("채널 수정 요청. id={}", id);
 
         Channel channel = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널 ID입니다."));
+                .orElseThrow(() -> new ChannelNotFoundException(id));
 
         if (channel.getType() != ChannelType.PUBLIC) {
-            throw new IllegalArgumentException("공개 채널만 수정할 수 있습니다.");
+            throw new PrivateChannelUpdateException(id);
         }
 
         channel.update(request.name(), request.description());
@@ -152,7 +158,7 @@ public class BasicChannelService implements ChannelService {
         log.info("채널 삭제 요청. id={}", id);
 
         Channel channel = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널 ID입니다."));
+                .orElseThrow(() -> new ChannelNotFoundException(id));
 
         List<ReadStatus> readStatuses = readStatusRepository.findAllByChannelId(id);
         readStatusRepository.deleteAll(readStatuses);
@@ -168,14 +174,14 @@ public class BasicChannelService implements ChannelService {
         }
 
         if (!userRepository.existsById(userId)) {
-            throw new IllegalArgumentException("존재하지 않는 사용자입니다.");
+            throw new UserNotFoundException(userId);
         }
 
         List<ReadStatus> readStatuses = readStatusRepository.findAllByUserId(userId);
 
-        List<UUID> privateChannelIds = readStatuses.stream()
+        Set<UUID> privateChannelIds = readStatuses.stream()
                 .map(readStatus -> readStatus.getChannel().getId())
-                .toList();
+                .collect(Collectors.toSet());
 
         return repository.findAll()
                 .stream()

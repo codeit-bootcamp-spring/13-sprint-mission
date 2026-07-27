@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.command.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.exception.binarycontent.*;
 import com.sprint.mission.discodeit.mapper.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
@@ -59,10 +60,8 @@ private final BinaryContentRepository repository;
     @Override
     public BinaryContentDto find(UUID id) {
         if (id == null) {
-            throw new IllegalArgumentException("파일 아이디를 찾을 수 없습니다.");
+            throw new BinaryContentNotFoundException(id);
         }
-
-        log.info("파일 삭제 요청. id={}", id);
 
         BinaryContent binaryContent = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("파일을 찾을 수 없습니다."));
@@ -88,7 +87,7 @@ private final BinaryContentRepository repository;
         }
 
         BinaryContent binaryContent = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 바이너리 콘텐츠입니다."));
+                .orElseThrow(() -> new BinaryContentNotFoundException(id));
 
         repository.delete(binaryContent);
         log.info("파일 삭제 완료. id={}", id);

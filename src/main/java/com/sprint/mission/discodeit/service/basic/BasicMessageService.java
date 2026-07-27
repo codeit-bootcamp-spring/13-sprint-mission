@@ -4,6 +4,10 @@ import com.sprint.mission.discodeit.dto.command.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.exception.binarycontent.*;
+import com.sprint.mission.discodeit.exception.channel.*;
+import com.sprint.mission.discodeit.exception.message.*;
+import com.sprint.mission.discodeit.exception.user.*;
 import com.sprint.mission.discodeit.mapper.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
@@ -33,7 +37,7 @@ public class BasicMessageService implements MessageService {
     @Override
     public MessageDto find(UUID id) {
         Message message = messageRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("메세지 아이디를 찾을 수 없습니다"));
+                .orElseThrow(() -> new MessageNotFoundException(id));
 
         return messageMapper.toDto(message);
     }
@@ -47,6 +51,14 @@ public class BasicMessageService implements MessageService {
             throw new IllegalArgumentException("메시지 생성 요청은 필수입니다.");
         }
 
+        if (command.channelId() == null) {
+            throw new IllegalArgumentException("채널 ID는 필수입니다.");
+        }
+
+        if (command.authorId() == null) {
+            throw new IllegalArgumentException("작성자 ID는 필수입니다.");
+        }
+
         log.info(
                 "메시지 생성 요청. channelId={}, authorId={}",
                 command.channelId(),
@@ -54,10 +66,10 @@ public class BasicMessageService implements MessageService {
         );
 
         Channel channel = channelRepository.findById(command.channelId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널입니다."));
+                .orElseThrow(() -> new ChannelNotFoundException(command.channelId()));
 
         User author = userRepository.findById(command.authorId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 작성자입니다."));
+                .orElseThrow(() -> new UserNotFoundException(command.authorId()));
 
         List<CreateBinaryContentCommand> commands =
                 attachmentCommands == null
@@ -69,9 +81,7 @@ public class BasicMessageService implements MessageService {
                 .map(attachmentId ->
                         binaryContentRepository.findById(attachmentId)
                                 .orElseThrow(() ->
-                                        new IllegalStateException(
-                                                "저장된 첨부파일을 찾을 수 없습니다."
-                                        )
+                                        new BinaryContentNotFoundException(attachmentId)
                                 )
                 )
                 .toList();
@@ -97,10 +107,14 @@ public class BasicMessageService implements MessageService {
             throw new IllegalArgumentException("메시지 ID는 필수입니다.");
         }
 
-        Message message = messageRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("메시지 아이디를 찾을 수 없습니다."));
+        if (command == null) {
+            throw new IllegalArgumentException("메시지 수정 요청은 필수입니다.");
+        }
 
         log.info("메시지 수정 요청. id={}", id);
+
+        Message message = messageRepository.findById(id)
+                .orElseThrow(() -> new MessageNotFoundException(id));
 
         message.update(command.content());
 
@@ -117,7 +131,7 @@ public class BasicMessageService implements MessageService {
         }
         log.info("메시지 삭제 요청. id={}", id);
         Message message = messageRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 메세지 ID입니다."));
+                .orElseThrow(() -> new MessageNotFoundException(id));
 
         messageRepository.delete(message);
         log.info("메시지 삭제 완료. id={}", id);

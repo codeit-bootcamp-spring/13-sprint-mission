@@ -4,6 +4,8 @@ import com.sprint.mission.discodeit.dto.command.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.exception.channel.*;
+import com.sprint.mission.discodeit.exception.user.*;
 import com.sprint.mission.discodeit.mapper.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
@@ -30,12 +32,19 @@ public class BasicReadStatusService implements ReadStatusService {
         if (command == null) {
             throw new IllegalArgumentException("읽음 상태 생성 요청 정보가 없습니다.");
         }
+        if (command.userId() == null) {
+            throw new IllegalArgumentException("사용자 ID는 필수입니다.");
+        }
+
+        if (command.channelId() == null) {
+            throw new IllegalArgumentException("채널 ID는 필수입니다.");
+        }
 
         User user = userRepository.findById(command.userId())
-                .orElseThrow(() -> new IllegalArgumentException("유저의 아이디가 없습니다."));
+                .orElseThrow(() -> new UserNotFoundException(command.userId()));
 
         Channel channel = channelRepository.findById(command.channelId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널입니다."));
+                .orElseThrow(() -> new ChannelNotFoundException(command.channelId()));
 
         Optional<ReadStatus> existingReadStatus =
                 readStatusRepository.findByChannelIdAndUserId(
@@ -65,7 +74,7 @@ public class BasicReadStatusService implements ReadStatusService {
     @Override
     public List<ReadStatusDto> findAllByUserId(UUID userId) {
         if (userId == null) {
-            throw new IllegalArgumentException("유저 아이디는 필수입니다.");
+            throw new UserNotFoundException(userId);
         }
 
         List<ReadStatus> readStatuses =
@@ -76,7 +85,7 @@ public class BasicReadStatusService implements ReadStatusService {
     @Override
     public ReadStatusDto find(UUID id) {
         if (id == null) {
-            throw new IllegalArgumentException("존재하지 않는 유저입니다.");
+            throw new UserNotFoundException(id);
         }
 
         ReadStatus readStatus = readStatusRepository.findById(id)
@@ -85,6 +94,7 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
+    @Transactional
     public void delete(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("아이디는 필수입니다.");
@@ -96,6 +106,7 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
+    @Transactional
     public ReadStatusDto update(UUID id, UpdateReadStatusCommand command) {
         if (id == null) {
             throw new IllegalArgumentException("읽음 상태 아이디는 필수입니다.");

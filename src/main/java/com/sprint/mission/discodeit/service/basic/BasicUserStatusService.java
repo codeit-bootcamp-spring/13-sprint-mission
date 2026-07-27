@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.command.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.exception.user.*;
 import com.sprint.mission.discodeit.mapper.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
@@ -26,14 +27,26 @@ public class BasicUserStatusService implements UserStatusService {
     @Override
     @Transactional
     public UserStatusDto create(CreateUserStatusCommand command) {
+        if (command == null) {
+            throw new IllegalArgumentException("사용자 상태 생성 요청은 필수입니다.");
+        }
+
+        if (command.userId() == null) {
+            throw new IllegalArgumentException("사용자 ID는 필수입니다.");
+        }
+
+        if (command.lastActiveAt() == null) {
+            throw new IllegalArgumentException("마지막 활동 시간은 필수입니다.");
+        }
+
         UUID userId = command.userId();
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("유저가 존재하지 않습니다."));
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         Optional<UserStatus> existingUserStatus = userStatusRepository.findByUserId(userId);
         if (existingUserStatus.isPresent()) {
-            throw new IllegalArgumentException("이미 존재하는 유저입니다.");
+            throw new IllegalArgumentException("해당 사용자의 상태 정보가 이미 존재합니다.");
         }
 
         UserStatus userStatus = new UserStatus(user);
@@ -46,7 +59,7 @@ public class BasicUserStatusService implements UserStatusService {
     @Override
     public UserStatusDto findByUserId(UUID userId)  {
         if (userId == null) {
-            throw new IllegalArgumentException("유저아이디가 없습니다.");
+            throw new IllegalArgumentException("사용자 상태 ID는 필수입니다.");
         }
 
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
@@ -59,11 +72,11 @@ public class BasicUserStatusService implements UserStatusService {
     @Transactional
     public void delete(UUID id) {
         if (id == null) {
-            throw new IllegalArgumentException("삭제할 아이디가 없습니다.");
+            throw new IllegalArgumentException("사용자 상태 ID는 필수입니다.");
         }
 
         UserStatus userStatus = userStatusRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("삭제할 유저의 상태 정보가 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("삭제할 사용자 상태 정보가 없습니다."));
 
         userStatusRepository.delete(userStatus);
     }
@@ -72,15 +85,21 @@ public class BasicUserStatusService implements UserStatusService {
     @Transactional
     public UserStatusDto update(UUID id, UpdateUserStatusCommand command) {
         if(id == null) {
-            throw new IllegalArgumentException("아이디는 필수입니다.");
+            throw new IllegalArgumentException("사용자 상태 ID는 필수입니다.");
         }
 
         if (command == null) {
-            throw new IllegalArgumentException("업데이트할 유저가 없습니다.");
+            throw new IllegalArgumentException("사용자 상태 수정 요청은 필수입니다.");
+        }
+
+        if (command.lastOnlineTime() == null) {
+            throw new IllegalArgumentException(
+                    "마지막 접속 시간은 필수입니다."
+            );
         }
 
         UserStatus userStatus = userStatusRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("업데이트 유저의 정보가 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("수정할 사용자 상태 정보가 없습니다."));
 
         userStatus.updateLastActivityAt(command.lastOnlineTime());
 
@@ -92,13 +111,25 @@ public class BasicUserStatusService implements UserStatusService {
     @Transactional
     public UserStatusDto updateByUserId(UUID userId, UpdateUserStatusCommand command) {
         if (userId == null) {
-            throw new IllegalArgumentException("유저 아이디는 필수입니다.");
+            throw new IllegalArgumentException("사용자 ID는 필수입니다.");
+        }
+
+        if (command == null) {
+            throw new IllegalArgumentException("사용자 상태 수정 요청은 필수입니다.");
+        }
+
+        if (command.lastOnlineTime() == null) {
+            throw new IllegalArgumentException("마지막 접속 시간은 필수입니다.");
         }
 
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("업데이트할 유저 정보가 없습니다."));
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "수정할 사용자 상태 정보가 없습니다."
+                        )
+                );
 
-        userStatus.updateLastActivityAt(Instant.now());
+        userStatus.updateLastActivityAt(command.lastOnlineTime());
 
         return userStatusMapper.toDto(userStatus);
     }

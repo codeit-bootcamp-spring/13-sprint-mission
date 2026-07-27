@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.command.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.exception.user.*;
 import com.sprint.mission.discodeit.mapper.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
@@ -22,7 +23,7 @@ public class BasicAuthService implements AuthService {
     @Transactional(readOnly = true)
     public LoginResponse login(LoginCommand command) {
         User user = userRepository.findByEmail(command.email())
-                .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(()-> new UserNotFoundException(command.email()));
 
         if (!user.getPassword().equals(command.password())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");

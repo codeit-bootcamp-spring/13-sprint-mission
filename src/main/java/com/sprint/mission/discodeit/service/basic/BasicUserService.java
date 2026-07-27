@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.command.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.exception.user.*;
 import com.sprint.mission.discodeit.mapper.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
@@ -32,8 +33,6 @@ public class BasicUserService implements UserService {
     @Transactional
     public UserDto create(CreateUserCommand command, CreateBinaryContentCommand profileImage) {
 
-        log.info("사용자 생성 요청");
-
         if (command == null) {
             throw new IllegalArgumentException("유저 생성 요청은 필수입니다.");
         }
@@ -43,7 +42,7 @@ public class BasicUserService implements UserService {
         }
 
         if (repository.existsByUsername(command.username())) {
-            throw new IllegalArgumentException("이미 사용 중인 유저이름입니다.");
+            throw new UserAlreadyExistsException("username");
         }
 
         if(command.email() == null || command.email().isBlank()) {
@@ -51,12 +50,14 @@ public class BasicUserService implements UserService {
         }
 
         if(repository.existsByEmail(command.email())) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+            throw new UserAlreadyExistsException("email");
         }
 
         if(command.password() == null || command.password().isBlank()) {
             throw new IllegalArgumentException("비밀번호는 공백이면 안됩니다.");
         }
+
+        log.info("사용자 생성 요청");
 
         User user = new User(
                 command.username(),
@@ -80,8 +81,8 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = new UserStatus(user);
         userStatusRepository.save(userStatus);
 
-        log.info("사용자 생성 완료. id={}, username={}",
-                user.getId(), user.getUsername());
+        log.info("사용자 생성 완료. id={}",
+                user.getId());
         return userMapper.toDto(user);
     }
 
@@ -89,11 +90,11 @@ public class BasicUserService implements UserService {
     @Override
     public UserDto findByUserId(UUID id) {
         if (id == null) {
-            throw new IllegalArgumentException("유저 ID를 찾을 수가 없습니다.");
+            throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }
 
         User user = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 ID입니다."));
+                .orElseThrow(() -> new UserNotFoundException(id));
 
         return userMapper.toDto(user);
 
@@ -118,19 +119,31 @@ public class BasicUserService implements UserService {
             throw new IllegalArgumentException("유저 수정 요청은 필수입니다.");
         }
 
+        if (command.username() == null || command.username().isBlank()) {
+            throw new IllegalArgumentException("사용자 이름은 필수입니다.");
+        }
+
+        if (command.email() == null || command.email().isBlank()) {
+            throw new IllegalArgumentException("이메일은 필수입니다.");
+        }
+
+        if (command.password() == null || command.password().isBlank()) {
+            throw new IllegalArgumentException("비밀번호는 필수입니다.");
+        }
+
         log.info("사용자 수정 요청. id ={}", id);
 
         User user = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 ID입니다."));
+                .orElseThrow(() -> new UserNotFoundException(id));
 
         Optional<User> emailOwner = repository.findByEmail(command.email());
         if (emailOwner.isPresent() && !emailOwner.get().getId().equals(id)) {
-            throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
+            throw new UserAlreadyExistsException("email");
         }
 
         Optional<User> usernameOwner = repository.findByUsername(command.username());
         if (usernameOwner.isPresent() && !usernameOwner.get().getId().equals(id)) {
-            throw new IllegalArgumentException("이미 사용중인 유저 이름입니다.");
+            throw new UserAlreadyExistsException("username");
         }
 
         user.updateUserName(command.username());
@@ -138,10 +151,22 @@ public class BasicUserService implements UserService {
         user.updatePassword(command.password());
 
         if (profileImage != null) {
-            BinaryContentDto profileResponse = binaryContentService.create(profileImage);
-            BinaryContent profile = binaryContentRepository.findById(profileResponse.id())
-                    .orElseThrow(() -> new IllegalStateException("저장된 프로필 이미지를 찾을 수 없습니다."));
-            user.updateProfile(profile);
+            BinaryContent oldProfile = user.getProfile();
+
+            BinaryContentDto profileResponse =
+                    binaryContentService.create(profileImage);
+
+            BinaryContent newProfile =
+                    binaryContentRepository.findById(profileResponse.id())
+                            .orElseThrow(() ->
+                                    new IllegalStateException(
+                                            "저장된 프로필 이미지를 찾을 수 없습니다."
+                                    )
+                            );
+            user.updateProfile(newProfile);
+            if (oldProfile != null) {
+                binaryContentRepository.delete(oldProfile);
+            }
         }
         log.info("사용자 수정 완료. id={}", user.getId());
 
@@ -159,7 +184,7 @@ public class BasicUserService implements UserService {
         log.info("사용자 삭제 요청. id={}", id);
 
         User user = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 ID입니다."));
+                .orElseThrow(() -> new UserNotFoundException(id));
 
         userStatusRepository.findByUserId(id).ifPresent(userStatusRepository::delete);
 
