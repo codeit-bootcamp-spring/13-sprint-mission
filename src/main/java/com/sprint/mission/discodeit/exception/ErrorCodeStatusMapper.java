@@ -26,6 +26,7 @@ public class ErrorCodeStatusMapper {
 
       case BINARY_CONTENT_UPLOAD_FAILED,
            BINARY_CONTENT_DOWNLOAD_FAILED,
+           BINARY_CONTENT_DELETE_FAILED,
            INTERNAL_SERVER_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
     };
   }

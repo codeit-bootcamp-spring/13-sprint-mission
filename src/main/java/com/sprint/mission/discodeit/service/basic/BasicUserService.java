@@ -154,7 +154,10 @@ public class BasicUserService implements UserService {
       if (currentProfile != null) {
         log.debug("기존 프로필 정보 삭제: binaryContentId={}", currentProfile.getId());
 
-        binaryContentRepository.deleteById(currentProfile.getId());
+        UUID currentProfileId = currentProfile.getId();
+
+        binaryContentRepository.deleteById(currentProfileId);
+        binaryContentStorage.delete(currentProfileId);
       }
 
       byte[] bytes;
@@ -200,7 +203,10 @@ public class BasicUserService implements UserService {
       log.debug("사용자 프로필 정보 삭제: userId={}, binaryContentId={}",
           userId, user.getProfile().getId());
 
-      binaryContentRepository.deleteById(user.getProfile().getId());
+      UUID profileId = user.getProfile().getId();
+
+      binaryContentRepository.deleteById(profileId);
+      binaryContentStorage.delete(profileId);
     }
 
     userRepository.delete(user);

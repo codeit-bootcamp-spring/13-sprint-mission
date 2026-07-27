@@ -248,7 +248,10 @@ public class BasicMessageService implements MessageService {
       );
 
       for (BinaryContent content : attachments) {
-        binaryContentRepository.deleteById(content.getId());
+        UUID attachmentId = content.getId();
+
+        binaryContentRepository.deleteById(attachmentId);
+        binaryContentStorage.delete(attachmentId);
       }
     }
 

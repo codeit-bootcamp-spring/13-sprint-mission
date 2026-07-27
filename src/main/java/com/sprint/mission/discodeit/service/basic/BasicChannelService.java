@@ -20,6 +20,7 @@ import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -42,6 +43,7 @@ public class BasicChannelService implements ChannelService {
   private final UserRepository userRepository;
   private final ChannelMapper channelMapper;
   private final BinaryContentRepository binaryContentRepository;
+  private final BinaryContentStorage binaryContentStorage;
 
   @Override
   public ChannelDto createPublicChannel(PublicChannelCreateRequest request) {
@@ -184,7 +186,10 @@ public class BasicChannelService implements ChannelService {
     for (Message message : messages) {
       if (message.getAttachments() != null) {
         for (BinaryContent attachment : message.getAttachments()) {
-          binaryContentRepository.deleteById(attachment.getId());
+          UUID attachmentId = attachment.getId();
+
+          binaryContentRepository.deleteById(attachmentId);
+          binaryContentStorage.delete(attachmentId);
         }
       }
 
