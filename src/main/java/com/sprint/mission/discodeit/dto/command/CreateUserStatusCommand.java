@@ -7,10 +7,10 @@ import java.util.*;
 
 public record CreateUserStatusCommand(
         UUID userId,
-        Instant lastOnlineAt
+        Instant lastActiveAt
 ) {
 
     public static CreateUserStatusCommand from(CreateUserStatusRequest request) {
-        return new CreateUserStatusCommand(request.userId(), request.lastOnlineAt());
+        return new CreateUserStatusCommand(request.userId(), request.lastActiveAt());
     }
 }

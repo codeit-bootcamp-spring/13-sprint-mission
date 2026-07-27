@@ -11,16 +11,16 @@ public record CreateUserStatusRequest(
         UUID userId,
 
         @PastOrPresent (message = "마지막 접속 시간이 미래 시점일 수 없습니다.")
-        Instant lastOnlineAt
+        Instant lastActiveAt
 ) {
     public CreateUserStatusRequest{
-        if (lastOnlineAt == null) {
-            lastOnlineAt = Instant.now();
+        if (lastActiveAt == null) {
+            lastActiveAt = Instant.now();
         }
     }
 
     public CreateUserStatusCommand toCommnad(){
-        return new CreateUserStatusCommand(userId, lastOnlineAt);
+        return new CreateUserStatusCommand(userId, lastActiveAt);
     }
 
 }
