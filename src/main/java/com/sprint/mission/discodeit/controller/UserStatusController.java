@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.controller;
 import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.service.UserStatusService;
+import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +26,7 @@ public class UserStatusController {
   @PatchMapping("/{userId}/userStatus")
   public ResponseEntity<UserStatusDto> updateStatus(
       @PathVariable("userId") UUID userId,
-      @RequestBody UserStatusUpdateRequest request
+      @RequestBody @Valid UserStatusUpdateRequest request
   ) {
     UserStatusDto response = userStatusService.updateByUserId(userId, request);
 

@@ -13,7 +13,8 @@ public class ErrorCodeStatusMapper {
            CHANNEL_NOT_FOUND,
            MESSAGE_NOT_FOUND,
            READ_STATUS_NOT_FOUND,
-           BINARY_CONTENT_NOT_FOUND -> HttpStatus.NOT_FOUND;
+           BINARY_CONTENT_NOT_FOUND,
+           ENDPOINT_NOT_FOUND -> HttpStatus.NOT_FOUND;
 
       case DUPLICATE_USER,
            READ_STATUS_ALREADY_EXISTS -> HttpStatus.CONFLICT;

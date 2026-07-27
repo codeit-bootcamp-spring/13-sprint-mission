@@ -24,6 +24,7 @@ public enum ErrorCode {
   BINARY_CONTENT_UPLOAD_FAILED("파일 업로드 중 오류가 발생했습니다."),
   BINARY_CONTENT_DOWNLOAD_FAILED("파일 다운로드 중 오류가 발생했습니다."),
 
+  ENDPOINT_NOT_FOUND("요청한 API를 찾을 수 없습니다."),
   INVALID_REQUEST("잘못된 요청입니다."),
   INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다.");
 

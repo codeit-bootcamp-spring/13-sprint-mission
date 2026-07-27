@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.service.UserService;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +32,7 @@ public class UserController {
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<UserDto> create(
-      @RequestPart("userCreateRequest") UserCreateRequest request,
+      @RequestPart("userCreateRequest") @Valid UserCreateRequest request,
       @RequestPart(value = "profile", required = false) MultipartFile profile
   ) {
 
@@ -43,7 +44,7 @@ public class UserController {
   @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<UserDto> update(
       @PathVariable("userId") UUID id,
-      @RequestPart(value = "userUpdateRequest") UserUpdateRequest request,
+      @RequestPart(value = "userUpdateRequest") @Valid UserUpdateRequest request,
       @RequestPart(value = "profile", required = false) MultipartFile profile
   ) {
     UserDto response = userService.update(id, request, profile);

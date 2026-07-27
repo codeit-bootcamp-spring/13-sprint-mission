@@ -12,6 +12,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 @Slf4j
@@ -85,11 +86,31 @@ public class GlobalExceptionHandler {
         .body(response);
   }
 
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ResponseEntity<ErrorResponse> handleNoResourceFound(
+      NoResourceFoundException e
+  ) {
+    HttpStatus status = HttpStatus.NOT_FOUND;
+
+    ErrorResponse response = new ErrorResponse(
+        Instant.now(),
+        ErrorCode.ENDPOINT_NOT_FOUND.name(),
+        ErrorCode.ENDPOINT_NOT_FOUND.getMessage(),
+        Map.of(),
+        status.value(),
+        e.getClass().getSimpleName()
+    );
+
+    return ResponseEntity
+        .status(status)
+        .body(response);
+  }
+
   // 예상하지 못한 서버 오류 처리
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleException(Exception e) {
     log.error("예상하지 못한 서버 오류 발생", e);
-    
+
     ErrorResponse response = new ErrorResponse(
         Instant.now(),
         ErrorCode.INTERNAL_SERVER_ERROR.name(),
@@ -103,6 +124,4 @@ public class GlobalExceptionHandler {
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
         .body(response);
   }
-
-
 }
