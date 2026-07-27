@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,9 +16,9 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
-@Transactional(readOnly = true) // 클래스 레벨에 트랜잭션 설정해 모든 메서드가 readOnly 트랜잭션을 가지도록 한다
 public class BasicBinaryContentService implements BinaryContentService {
 
   private final BinaryContentRepository binaryContentRepository;
@@ -34,16 +35,19 @@ public class BasicBinaryContentService implements BinaryContentService {
     );
     BinaryContent saved = binaryContentRepository.save(binaryContent);
     storage.put(saved.getId(), request.getBytes());
+    log.info("첨부 파일 생성 id={}, fileName={}", saved.getId(), request.getFileName());
     return binaryContentMapper.toDto(saved);
   }
 
+  @Transactional(readOnly = true)
   @Override
   public BinaryContentDto find(UUID binaryContentId) {
-    BinaryContent binaryContent = binaryContentRepository.findById(binaryContentId)
+    log.debug("첨부 파일 조회 binaryContentId={}", binaryContentId);
+    return binaryContentRepository.findById(binaryContentId)
+        .map(binaryContent -> binaryContentMapper.toDto(binaryContent))
         .orElseThrow(
             () -> new NoSuchElementException(
                 "BinaryContent with id " + binaryContentId + " not found"));
-    return binaryContentMapper.toDto(binaryContent);
   }
 
   @Override
@@ -60,8 +64,10 @@ public class BasicBinaryContentService implements BinaryContentService {
   @Override
   public void delete(UUID contentId) {
     if (!binaryContentRepository.existsById(contentId)) {
+      log.warn("존재하지 않는 파일 아이디 {}", contentId);
       throw new NoSuchElementException("BinaryContent with id " + contentId + " not found");
     }
+    log.info("첨부 파일 삭제 contentId={}", contentId);
     binaryContentRepository.deleteById(contentId);
   }
 }

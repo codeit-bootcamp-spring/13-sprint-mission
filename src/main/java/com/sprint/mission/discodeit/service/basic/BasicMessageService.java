@@ -18,6 +18,7 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -29,6 +30,7 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service // Basic*Service 구현체를 Service 인터페이스의 Bean으로 등록
 @Transactional(readOnly = true)
@@ -67,27 +69,30 @@ public class BasicMessageService implements MessageService {
     Message message = new Message(messageCreateRequest.getContent(),
         channel, author, attachments);
     Message saved = messageRepository.save(message);
+    log.info("메시지 생성 channelId={}, authorId={}, contentCount={}",
+        messageCreateRequest.getChannelId(), messageCreateRequest.getAuthorId(),
+        binaryContentCreateRequests.size());
     return messageMapper.toDto(saved);
   }
 
+  @Transactional(readOnly = true)
   @Override
   public MessageDto find(UUID messageId) {
-    Message foundMessage = messageRepository.findById(messageId)
+    log.debug("메시지 조회 messageId={}", messageId);
+    return messageRepository.findById(messageId)
+        .map(message -> messageMapper.toDto(message))
         .orElseThrow(
             () -> new NoSuchElementException("Message with id " + messageId + " not found"));
-    return messageMapper.toDto(foundMessage);
   }
 
+  @Transactional(readOnly = true)
   @Override
-  public PageResponse<MessageDto> findAllByChannelId(int page, UUID channelId) {
+  public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Pageable pageable) {
     // 전체 개수를 알 필요는 없기 때문에 slice
-    Pageable pageable = PageRequest.of(page, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
-    // 50개씩 최근 메시지 순으로 조회
-    Slice<Message> slicedMessages =
-        channelId != null ? messageRepository.findByChannelId(channelId, pageable)
-            : messageRepository.findAll(pageable);
-    Slice<MessageDto> dtoSlice = slicedMessages.map(messageMapper::toDto);
-    return pageResponseMapper.fromSlice(dtoSlice);
+    Slice<MessageDto> slicedMessages = messageRepository.findAllByChannelId(channelId, pageable)
+        .map(message -> messageMapper.toDto(message));
+    log.debug("채널 목록 조회 channelId={}", channelId);
+    return pageResponseMapper.fromSlice(slicedMessages);
   }
 
   @Transactional
@@ -97,16 +102,19 @@ public class BasicMessageService implements MessageService {
         .orElseThrow(
             () -> new NoSuchElementException("Message with id " + messageId + " not found"));
     message.update(request.getNewContent());
+    log.info("메시지 수정 messageId={}", messageId);
     return messageMapper.toDto(message);
   }
 
   @Transactional
   @Override
   public void delete(UUID messageId) {
-    Message message = messageRepository.findById(messageId)
-        .orElseThrow(
-            () -> new NoSuchElementException("Message with id " + messageId + " not found"));
+    if (!messageRepository.existsById(messageId)) {
+      log.warn("존재하지 않는 메시지 아이디 {}", messageId);
+      throw new NoSuchElementException("Message with id " + messageId + " not found");
+    }
     // 관련된 도메인 BinaryContent는 CascadeType.REMOVE와 고아객체로 설정했기 때문에 같이 삭제된다
-    messageRepository.delete(message);
+    messageRepository.deleteById(messageId);
+    log.info("메시지 삭제 messageId={}", messageId);
   }
 }

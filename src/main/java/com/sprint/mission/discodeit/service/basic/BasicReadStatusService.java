@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
-@Transactional(readOnly = true)
 public class BasicReadStatusService implements ReadStatusService {
 
   // 의존성 주입
@@ -47,20 +46,22 @@ public class BasicReadStatusService implements ReadStatusService {
           "ReadStatus with userId " + request.getUserId() + " and channelId "
               + request.getChannelId() + " already exists");
     }
-    Instant lastReadAt = request.getLastReadAt();
-    ReadStatus saved = readStatusRepository.save(new ReadStatus(user, channel, lastReadAt));
+    ReadStatus saved = readStatusRepository.save(
+        new ReadStatus(user, channel, request.getLastReadAt()));
 
     return readStatusMapper.toDto(saved);
   }
 
+  @Transactional(readOnly = true)
   @Override
   public ReadStatusDto find(UUID readStatusId) { // id로 조회
-    ReadStatus readStatus = readStatusRepository.findById(readStatusId)
+    return readStatusRepository.findById(readStatusId)
+        .map(status -> readStatusMapper.toDto(status))
         .orElseThrow(
             () -> new NoSuchElementException("ReadStatus with id " + readStatusId + " not found"));
-    return readStatusMapper.toDto(readStatus);
   }
 
+  @Transactional(readOnly = true)
   @Override
   public List<ReadStatusDto> findAllByUserId(UUID userId) { // userId를 조건으로 조회
     return readStatusRepository.findByUserId(userId).stream()

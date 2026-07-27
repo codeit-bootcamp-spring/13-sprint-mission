@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
-@Transactional(readOnly = true)
 public class BasicUserStatusService implements UserStatusService {
 
   private final UserStatusRepository userStatusRepository;
@@ -45,14 +44,16 @@ public class BasicUserStatusService implements UserStatusService {
     return userStatusMapper.toDto(saved);
   }
 
+  @Transactional(readOnly = true)
   @Override
   public UserStatusDto find(UUID userStatusId) { // id로 조회
-    UserStatus userStatus = userStatusRepository.findById(userStatusId)
+    return userStatusRepository.findById(userStatusId)
+        .map(status -> userStatusMapper.toDto(status))
         .orElseThrow(
             () -> new NoSuchElementException("UserStatus with id " + userStatusId + " not found"));
-    return userStatusMapper.toDto(userStatus);
   }
 
+  @Transactional(readOnly = true)
   @Override
   public List<UserStatusDto> findAll() { // 모든 객체 조회
     return userStatusRepository.findAll().stream()
@@ -74,11 +75,10 @@ public class BasicUserStatusService implements UserStatusService {
   @Override
   public UserStatusDto updateByUserId(UUID userId,
       UserStatusUpdateRequest request) { // userId로 특정 User의 객체를 업데이트
-    Instant newLastActiveAt = request.getNewLastActiveAt();
     UserStatus userStatus = userStatusRepository.findByUserId(userId)
         .orElseThrow(
             () -> new NoSuchElementException("UserStatus with userId " + userId + " not found"));
-    userStatus.update(newLastActiveAt);
+    userStatus.update(request.getNewLastActiveAt());
     return userStatusMapper.toDto(userStatus);
   }
 

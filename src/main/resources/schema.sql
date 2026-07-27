@@ -4,8 +4,7 @@ CREATE TABLE binary_contents
     created_at   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),--H2 데이터베이스와 호환을 고려해 변경
     file_name    VARCHAR(255)             NOT NULL,
     size         BIGINT                   NOT NULL,
-    content_type VARCHAR(100)             NOT NULL,
-    bytes        BYTEA                    NOT NULL
+    content_type VARCHAR(100)             NOT NULL
 );
 
 CREATE TABLE channels
@@ -81,9 +80,3 @@ CREATE TABLE message_attachments
     FOREIGN KEY (attachment_id) REFERENCES binary_contents (id)
         ON DELETE CASCADE
 );
-
-
-
-
-
-

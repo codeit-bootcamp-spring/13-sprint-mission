@@ -15,6 +15,7 @@ import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -23,6 +24,7 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @RequiredArgsConstructor // 의존성 주입
 @Service // Basic*Service 구현체를 Service 인터페이스의 Bean으로 등록
 @Transactional(readOnly = true)
@@ -42,9 +44,11 @@ public class BasicUserService implements UserService {
     String username = userCreateRequest.getUsername();
     String email = userCreateRequest.getEmail();
     if (userRepository.existsByEmail(email)) { // API 스펙에 맞춰 추가
+      log.warn("이미 사용 중인 사용자 이메일 {}", email);
       throw new IllegalArgumentException("User with email " + email + " already exists");
     }
     if (userRepository.existsByUsername(username)) {
+      log.warn("이미 사용 중인 사용자 이름 {}", username);
       throw new IllegalArgumentException("User with username " + username + " already exists");
     }
     // 프로필 이미지 있으면 등록
@@ -60,22 +64,26 @@ public class BasicUserService implements UserService {
         })
         .orElse(null);
     // 프로필 이미지 없으면 이는 비워두고 등록
-    User user = new User(userCreateRequest.getUsername(), userCreateRequest.getEmail(),
+    User user = new User(username, email, // 중복된 호출 변수 사용
         userCreateRequest.getPassword(), savedProfile);
-    User savedUser = userRepository.save(user);
     // UserStatus를 같이 생성
-    UserStatus userStatus = new UserStatus(savedUser, Instant.now());
-    statusRepository.save(userStatus);
+    UserStatus userStatus = new UserStatus(user, Instant.now());
+    User savedUser = userRepository.save(user);
+    // 영속성 전이-> user만 저장해도 되는 것
+    log.info("사용자 등록 userName={}, userEmail={}, savedProfile={}", username, email, savedProfile);
     return userMapper.toDto(savedUser);
   }
 
+  @Transactional(readOnly = true)
   @Override
   public UserDto find(UUID userId) {
-    User user = userRepository.findById(userId)
+    log.debug("사용자 조회 userId={}", userId);
+    return userRepository.findById(userId)
+        .map(user -> userMapper.toDto(user))
         .orElseThrow(() -> new NoSuchElementException("User with id " + userId + " not found"));
-    return userMapper.toDto(user);
   }
 
+  @Transactional(readOnly = true)
   @Override
   public List<UserDto> findAll() {
     return userRepository.findAll().stream()
@@ -92,16 +100,16 @@ public class BasicUserService implements UserService {
     String newEmail = userUpdateRequest.getNewEmail();
     if (userRepository.existsByEmail(newEmail) && !user.getEmail()
         .equals(newEmail)) { // API 스펙에 맞춰 추가
+      log.warn("이미 사용 중인 사용자 이메일 {}", newEmail);
       throw new IllegalArgumentException("User with email " + newEmail + " already exists");
     }
     if (userRepository.existsByUsername(newUsername)) {
+      log.warn("이미 존재하는 사용자 이름 {}", newUsername);
       throw new IllegalArgumentException("User with username " + newUsername + " already exists");
     }
     // 프로필 이미지 선택적으로 대체
     BinaryContent profile = optionalProfileCreateRequest
         .map(profileRequest -> {
-          Optional.ofNullable(user.getProfile()).ifPresent(contentRepository::delete);
-
           BinaryContent binaryContent = new BinaryContent(
               profileRequest.getFileName(),
               profileRequest.getContentType(),
@@ -112,20 +120,21 @@ public class BasicUserService implements UserService {
         })
         .orElse(null);
     // 기존 프로필 삭제
-    String newPassword = userUpdateRequest.getNewPassword();
-    user.update(newUsername, newEmail, newPassword, profile); // profileId 추가
+    user.update(newUsername, newEmail, userUpdateRequest.getNewPassword(), profile); // profileId 추가
+    log.info("사용자 정보 수정 userId={}, newUserName={}, newEmail, fileName={}", userId,
+        newUsername, newEmail, profile.getFileName());
     return userMapper.toDto(user);
   }
 
   @Transactional
   @Override
   public void delete(UUID userId) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new NoSuchElementException("User with id " + userId + " not found"));
-    // 관련된 도메인도 같이 삭제
-    if (user.getProfile() != null) {
-      contentRepository.delete(user.getProfile());
+    if (userRepository.existsById(userId)) {
+      log.warn("존재하지 않는 사용자 아이디 {}", userId);
+      throw new NoSuchElementException("User with id " + userId + " not found");
     }
+    // user가 삭제되면 영속성 전이된 프로필 또한 삭제
     userRepository.deleteById(userId);
+    log.info("사용자 삭제 userId={}", userId);
   }
 }

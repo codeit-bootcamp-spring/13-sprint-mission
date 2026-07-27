@@ -20,6 +20,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +33,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/messages")
@@ -60,6 +65,7 @@ public class MessageController {
                 return new BinaryContentCreateRequest(file.getOriginalFilename(),
                     file.getContentType(), file.getBytes());
               } catch (IOException e) {
+                log.error("첨부 파일 등록 실패", e);
                 throw new IllegalArgumentException(e);
               }
             }).toList()).orElse(new ArrayList<>());
@@ -111,9 +117,10 @@ public class MessageController {
   public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(
       @Parameter(name = "channelId", in = ParameterIn.QUERY, description = "조회할 Channel ID", required = true,
           schema = @Schema(type = "string", format = "uuid"))
-      @RequestParam("channelId") UUID channelId, int page) {
+      @RequestParam("channelId") UUID channelId,
+      @PageableDefault(size = 50, page = 0, sort = "createdAt", direction = Direction.DESC) Pageable pageable) {
     return ResponseEntity
         .status(HttpStatus.OK)
-        .body(messageService.findAllByChannelId(page, channelId));
+        .body(messageService.findAllByChannelId(channelId, pageable));
   }
 }
