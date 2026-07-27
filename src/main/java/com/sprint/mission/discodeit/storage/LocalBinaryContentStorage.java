@@ -29,13 +29,21 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
     public void init() {
         try {
             Files.createDirectories(root);
+            log.info("로컬 바이너리 스토리지 초기화 완료: {}", root.toAbsolutePath());
         } catch (IOException e) {
             throw new UncheckedIOException("루트 디렉토리 초기화 실패했습니다.", e);
         }
     }
+
     @Override
     public UUID put(UUID binaryContentId, byte[] bytes) {
-        return null;
+        Path path = resolvePath(binaryContentId);
+        try {
+            Files.write(path, bytes);
+            return binaryContentId;
+        } catch (IOException e) {
+            throw new UncheckedIOException("파일 저장 실패: " + binaryContentId, e);
+        }
     }
 
     private Path resolvePath(UUID binaryContentId) {
@@ -53,14 +61,22 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
     }
 
     @Override
-    public ResponseEntity<Resource> download(@org.jetbrains.annotations.UnknownNullability BinaryContentDto response) {
-        InputStream inputStream = get(response.id());
-        Resource resource = new InputStreamResource(inputStream);
+    public Resource getAsResource(BinaryContentDto dto) {
+        Path path = resolvePath(dto.id());
+        if (!Files.exists(path)) {
+            throw new IllegalArgumentException("존재하지 않는 파일입니다: " + dto.id());
+        }
+        return new FileSystemResource(path);
+    }
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + response.fileName() + "\"")
-                .contentType(MediaType.parseMediaType(response.contentType()))
-                .body(resource);
+    @Override
+    public void delete(UUID binaryContentId) {
+        Path path = resolvePath(binaryContentId);
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            throw new UncheckedIOException("파일 삭제 실패: " + binaryContentId, e);
+        }
     }
 
 

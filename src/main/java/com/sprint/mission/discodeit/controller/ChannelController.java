@@ -27,7 +27,7 @@ public class ChannelController {
 
     @PostMapping("/private")
     public ResponseEntity<ChannelDto> privateCreate(
-            @Valid @RequestBody CreatePublicChannelRequest request
+            @Valid @RequestBody CreatePrivateChannelRequest request
     ) {
         ChannelDto channel = channelService.createPrivateChannel(request.toCommand());
         return ResponseEntity.status(HttpStatus.CREATED).body(channel);
