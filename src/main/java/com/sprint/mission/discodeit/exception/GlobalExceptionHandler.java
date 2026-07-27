@@ -1,41 +1,94 @@
 package com.sprint.mission.discodeit.exception;
 
+import com.sprint.mission.discodeit.exception.binarycontent.*;
+import com.sprint.mission.discodeit.exception.channel.*;
+import com.sprint.mission.discodeit.exception.message.*;
+import com.sprint.mission.discodeit.exception.user.*;
 import lombok.extern.slf4j.*;
 import org.springframework.http.*;
-import org.springframework.ui.*;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.*;
+import java.util.*;
 
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(PostNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public String handleNotFound(PostNotFoundException e, Model model){
-        log.warn("자원 없음: {}", e.getMessage());
-        model.addAttribute("message", e.getMessage());
-        return "error/404";
+    @ExceptionHandler({UserNotFoundException.class,ChannelNotFoundException.class,
+            MessageNotFoundException.class, BinaryContentNotFoundException.class})
+    public ResponseEntity<ErrorResponse> handleNotFoundException(DiscodeitException exception) {
+
+        HttpStatus status = HttpStatus.NOT_FOUND;
+
+        log.warn("리소스를 찾을 수 없습니다. code={}, detail={}", exception.getErrorCode(), exception.getDetails());
+
+        return ResponseEntity.status(status).body(ErrorResponse.from(exception, status.value()));
     }
 
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+     public ResponseEntity<ErrorResponse> handleConflictException(DiscodeitException exception) {
+        HttpStatus status = HttpStatus.CONFLICT;
+
+        log.warn("리소스 충돌이 발생했습니다. code={}, detail={}", exception.getErrorCode(), exception.getDetails());
+
+        return ResponseEntity.status(status).body(ErrorResponse.from(exception, status.value()));
+    }
+
+    @ExceptionHandler(PrivateChannelUpdateException.class)
+        public ResponseEntity<ErrorResponse> handleBadRequest(DiscodeitException exception) {
+            HttpStatus status = HttpStatus.BAD_REQUEST;
+
+            log.warn("잘못된 요청입니다. code={}, detail={}", exception.getErrorCode(), exception.getDetails());
+
+            return ResponseEntity
+                    .status(status)
+                    .body(ErrorResponse.from(exception, status.value()));
+        }
+
     @ExceptionHandler(IllegalArgumentException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String handleBadRequest(IllegalArgumentException e, Model model) {
-        log.warn("잘못된 요청: {}", e.getMessage());
-        model.addAttribute("message", e.getMessage());
-        return "error/400";
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException exception) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        ErrorResponse response = new ErrorResponse(
+                Instant.now(),
+                ErrorCode.INVALID_REQUEST.name(),
+                exception.getMessage(),
+                Map.of(),
+                exception.getClass().getSimpleName(),
+                status.value()
+        );
+
+        log.warn("잘못된 요청입니다. message={}", exception.getMessage());
+
+        return ResponseEntity
+                .status(status)
+                .body(response);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ProblemDetail> handleException(Exception e) {
-        log.error("처리되지 않은 예외가 발생했습니다.", e);
+    public ResponseEntity<ErrorResponse> handleException(Exception exception) {
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                e.getMessage() != null ? e.getMessage() : "서버 내부 오류가 발생했습니다."
+        ErrorResponse response = new ErrorResponse(
+                Instant.now(),
+                ErrorCode.INTERNAL_SERVER_ERROR.name(),
+                ErrorCode.INTERNAL_SERVER_ERROR.getMessage(),
+                Map.of(),
+                exception.getClass().getSimpleName(),
+                status.value()
         );
 
+        log.error("처리되지 않은 예외가 발생했습니다.", exception);
+
         return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(problemDetail);
+                .status(status)
+                .body(response);
     }
+
+
+
+
+
 }
