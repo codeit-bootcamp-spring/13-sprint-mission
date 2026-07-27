@@ -9,11 +9,13 @@ import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
 import com.sprint.mission.discodeit.storage.*;
 import lombok.*;
+import lombok.extern.slf4j.*;
 import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
 
 import java.util.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -29,6 +31,9 @@ public class BasicUserService implements UserService {
     @Override
     @Transactional
     public UserDto create(CreateUserCommand command, CreateBinaryContentCommand profileImage) {
+
+        log.info("사용자 생성 요청");
+
         if (command == null) {
             throw new IllegalArgumentException("유저 생성 요청은 필수입니다.");
         }
@@ -59,10 +64,8 @@ public class BasicUserService implements UserService {
                 command.password()
         );
 
-        BinaryContent profile = user.getProfile();
-
         if (profileImage != null) {
-            profile = new BinaryContent(
+            BinaryContent profile = new BinaryContent(
                     profileImage.fileName(),
                     (long)profileImage.bytes().length,
                     profileImage.contentType()
@@ -70,11 +73,15 @@ public class BasicUserService implements UserService {
             binaryContentRepository.save(profile);
             binaryContentStorage.put(profile.getId(), profileImage.bytes());
             user.updateProfile(profile);
+
+            log.debug("사용자 프로필 이미지 저장 완료. profileId={}", profile.getId());
         }
         repository.save(user);
         UserStatus userStatus = new UserStatus(user);
         userStatusRepository.save(userStatus);
 
+        log.info("사용자 생성 완료. id={}, username={}",
+                user.getId(), user.getUsername());
         return userMapper.toDto(user);
     }
 
@@ -102,6 +109,7 @@ public class BasicUserService implements UserService {
     @Transactional
     public UserDto update(UUID id, UpdateUserCommand command,
                           CreateBinaryContentCommand profileImage) {
+
         if (id == null) {
             throw new IllegalArgumentException("유저 ID는 필수입니다.");
         }
@@ -109,6 +117,8 @@ public class BasicUserService implements UserService {
         if (command == null) {
             throw new IllegalArgumentException("유저 수정 요청은 필수입니다.");
         }
+
+        log.info("사용자 수정 요청. id ={}", id);
 
         User user = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 ID입니다."));
@@ -133,6 +143,7 @@ public class BasicUserService implements UserService {
                     .orElseThrow(() -> new IllegalStateException("저장된 프로필 이미지를 찾을 수 없습니다."));
             user.updateProfile(profile);
         }
+        log.info("사용자 수정 완료. id={}", user.getId());
 
         return userMapper.toDto(user);
     }
@@ -140,11 +151,12 @@ public class BasicUserService implements UserService {
     @Override
     @Transactional
     public void delete(UUID id) {
-        System.out.println("delete user id = " + id);
 
         if (id == null) {
             throw new IllegalArgumentException("유저 ID는 필수입니다.");
         }
+
+        log.info("사용자 삭제 요청. id={}", id);
 
         User user = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 ID입니다."));
@@ -158,5 +170,6 @@ public class BasicUserService implements UserService {
             binaryContentRepository.delete(profile);
         }
         repository.delete(user);
+        log.info("사용자 삭제 완료. id={}", id);
     }
 }

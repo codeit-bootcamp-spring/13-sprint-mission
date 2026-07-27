@@ -49,7 +49,7 @@ public class BasicUserStatusService implements UserStatusService {
             throw new IllegalArgumentException("유저아이디가 없습니다.");
         }
 
-        UserStatus userStatus = userStatusRepository.findById(userId)
+        UserStatus userStatus = userStatusRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 유저의 상태 정보가 없습니다."));
 
         return userStatusMapper.toDto(userStatus);
