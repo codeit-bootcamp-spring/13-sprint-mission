@@ -26,11 +26,11 @@ public class UserController {
 
    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserDto> create(
-           @Valid @RequestPart CreateUserRequest request,
-            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
+           @Valid @RequestPart("userCreateRequest") CreateUserRequest request,
+            @RequestPart(value = "profile", required = false) MultipartFile profile
     ) {
        CreateBinaryContentCommand profileImageCommand =
-               FileUtils.toCommand(profileImage)
+               FileUtils.toCommand(profile)
                        .orElse(null);
 
        UserDto userResponse = userService.create(

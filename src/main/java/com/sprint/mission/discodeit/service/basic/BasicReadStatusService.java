@@ -38,17 +38,28 @@ public class BasicReadStatusService implements ReadStatusService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널입니다."));
 
         Optional<ReadStatus> existingReadStatus =
-                readStatusRepository.findByChannelIdAndUserId(command.userId(), command.channelId());
+                readStatusRepository.findByChannelIdAndUserId(
+                        command.channelId(),
+                        command.userId()
+                );
 
         if (existingReadStatus.isPresent()) {
-            throw new IllegalArgumentException("이미 해당 유저의 읽음 상태가 존재합니다.");
+            ReadStatus readStatus = existingReadStatus.get();
+            readStatus.update(command.lastReadAt());
+
+            return readStatusMapper.toDto(readStatus);
         }
 
-        ReadStatus readStatus = new ReadStatus(user, channel);
+        ReadStatus readStatus = new ReadStatus(
+                user,
+                channel,
+                command.lastReadAt()
+        );
 
-        readStatusRepository.save(readStatus);
+        ReadStatus savedReadStatus =
+                readStatusRepository.save(readStatus);
 
-        return readStatusMapper.toDto(readStatus);
+        return readStatusMapper.toDto(savedReadStatus);
     }
 
     @Override

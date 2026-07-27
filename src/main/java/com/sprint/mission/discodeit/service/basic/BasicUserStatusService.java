@@ -44,20 +44,15 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
     @Override
-    public UserStatusDto find(UUID id) {
-        if (id == null) {
+    public UserStatusDto findByUserId(UUID userId)  {
+        if (userId == null) {
             throw new IllegalArgumentException("유저아이디가 없습니다.");
         }
 
-        UserStatus userStatus = userStatusRepository.findById(id)
+        UserStatus userStatus = userStatusRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 유저의 상태 정보가 없습니다."));
 
         return userStatusMapper.toDto(userStatus);
-    }
-
-    @Override
-    public List<UserStatusDto> findAll() {
-        return userStatusMapper.toDtoList(userStatusRepository.findAll());
     }
 
     @Override

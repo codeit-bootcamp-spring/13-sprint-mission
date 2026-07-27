@@ -25,7 +25,7 @@ public class MessageController {
     private final MessageService messageService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<MessageDto> create(@Valid @RequestPart CreateMessageRequest request,
+    public ResponseEntity<MessageDto> create(@Valid @RequestPart("messageCreateRequest") CreateMessageRequest request,
                                   @RequestPart(required = false) List<MultipartFile> files) {
 
         List<CreateBinaryContentCommand> file =

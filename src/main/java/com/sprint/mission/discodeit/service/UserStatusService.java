@@ -10,14 +10,11 @@ public interface UserStatusService {
 
     UserStatusDto create(CreateUserStatusCommand command);
 
-    UserStatusDto find(UUID id);
-
-    List<UserStatusDto> findAll();
+    UserStatusDto findByUserId(UUID userId);
 
     void delete(UUID id);
 
     UserStatusDto update(UUID id, UpdateUserStatusCommand command);
 
     UserStatusDto updateByUserId(UUID userId, UpdateUserStatusCommand command);
-
 }
