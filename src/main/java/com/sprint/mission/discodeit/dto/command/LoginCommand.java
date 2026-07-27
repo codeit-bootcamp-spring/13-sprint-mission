@@ -8,7 +8,7 @@ public record LoginCommand(
         String email,
         String password
 ) {
-    public LoginCommand from(LoginRequest request) {
+    public static LoginCommand from(LoginRequest request) {
             return new LoginCommand(request.email(), request.password());
     }
 }

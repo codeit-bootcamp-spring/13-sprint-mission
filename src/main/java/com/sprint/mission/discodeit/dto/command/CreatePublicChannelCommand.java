@@ -7,7 +7,7 @@ public record CreatePublicChannelCommand(
         String description
 ) {
 
-    public CreatePublicChannelCommand from(CreatePublicChannelRequest request) {
+    public static CreatePublicChannelCommand from(CreatePublicChannelRequest request) {
         return new CreatePublicChannelCommand(request.name(), request.description());
     }
 }

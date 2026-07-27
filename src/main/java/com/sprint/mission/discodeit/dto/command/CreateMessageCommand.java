@@ -10,7 +10,7 @@ public record CreateMessageCommand(
         String content
 ) {
 
-    public CreateMessageCommand from(CreateMessageRequest request) {
+    public static CreateMessageCommand from(CreateMessageRequest request) {
         return new CreateMessageCommand(
                 request.authorId(),
                 request.channelId(),

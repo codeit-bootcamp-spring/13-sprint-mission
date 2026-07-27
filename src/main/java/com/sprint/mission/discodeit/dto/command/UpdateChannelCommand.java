@@ -10,7 +10,7 @@ public record UpdateChannelCommand(
         String description
 ) {
 
-    public UpdateChannelCommand from (UpdateChannelRequset request) {
+    public static UpdateChannelCommand from (UpdateChannelRequset request) {
         return new UpdateChannelCommand(request.channelId(), request.name(), request.description());
     }
 }

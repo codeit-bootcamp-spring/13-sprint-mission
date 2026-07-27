@@ -8,7 +8,7 @@ import java.time.*;
 public record UpdateUserStatusCommand(
         Instant lastOnlineTime
 ) {
-    public UpdateUserStatusCommand from(UpdateUserStatusRequest request) {
+    public static UpdateUserStatusCommand from(UpdateUserStatusRequest request) {
         return new UpdateUserStatusCommand(request.lastOnlineTime());
     }
 }

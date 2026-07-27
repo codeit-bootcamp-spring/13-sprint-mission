@@ -6,7 +6,7 @@ import jakarta.validation.constraints.*;
 public record UpdateMessageCommand(
         String content
 ) {
-        public UpdateMessageCommand from(UpdateMessageRequest request) {
+        public static UpdateMessageCommand from(UpdateMessageRequest request) {
                 return new UpdateMessageCommand(request.content());
         }
 }

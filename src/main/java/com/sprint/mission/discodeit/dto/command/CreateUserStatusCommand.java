@@ -10,7 +10,7 @@ public record CreateUserStatusCommand(
         Instant lastOnlineAt
 ) {
 
-    public CreateUserStatusCommand from(CreateUserStatusRequest request) {
+    public static CreateUserStatusCommand from(CreateUserStatusRequest request) {
         return new CreateUserStatusCommand(request.userId(), request.lastOnlineAt());
     }
 }

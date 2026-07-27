@@ -8,7 +8,7 @@ public record CreateBinaryContentCommand(
         String contentType,
         byte[] bytes
 ) {
-        public CreateBinaryContentCommand from(
+        public static CreateBinaryContentCommand from(
                 CreateBinaryContentRequest request
         ) {
                 return new CreateBinaryContentCommand(

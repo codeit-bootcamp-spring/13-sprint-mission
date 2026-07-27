@@ -7,7 +7,7 @@ public record CreateUserCommand(
         String email,
         String password
 ) {
-    public CreateUserCommand from(CreateUserRequest request) {
+    public static CreateUserCommand from(CreateUserRequest request) {
         return new CreateUserCommand(request.username(), request.email(), request.password());
     }
 }

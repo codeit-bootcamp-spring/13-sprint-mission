@@ -8,7 +8,7 @@ public record CreatePrivateChannelCommand(
         List<UUID> participantIds
 ) {
 
-    public CreatePrivateChannelCommand from(CreatePrivateChannelRequest request) {
+    public static CreatePrivateChannelCommand from(CreatePrivateChannelRequest request) {
         return new CreatePrivateChannelCommand(request.participantIds());
     }
 }

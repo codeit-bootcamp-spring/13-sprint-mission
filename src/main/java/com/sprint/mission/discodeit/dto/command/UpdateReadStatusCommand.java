@@ -11,7 +11,7 @@ public record UpdateReadStatusCommand(
         Instant lastReadTime
 ) {
 
-    public UpdateReadStatusCommand from(UpdateReadStatusRequest request) {
+    public static UpdateReadStatusCommand from(UpdateReadStatusRequest request) {
         return new UpdateReadStatusCommand(request.lastReadTime());
     }
 }

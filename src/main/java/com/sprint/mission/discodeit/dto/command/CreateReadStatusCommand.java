@@ -11,7 +11,7 @@ public record CreateReadStatusCommand(
         Instant lastReadAt
 ) {
 
-    public CreateReadStatusCommand from(CreateReadStatusRequest request) {
+    public static CreateReadStatusCommand from(CreateReadStatusRequest request) {
         return new CreateReadStatusCommand(request.userId(), request.channelId(), request.lastReadAt());
     }
 }

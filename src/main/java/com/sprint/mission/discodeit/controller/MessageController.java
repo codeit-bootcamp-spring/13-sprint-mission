@@ -55,9 +55,9 @@ public class MessageController {
     @GetMapping
     public ResponseEntity<PageResponse<MessageDto>> getMessages(
             @RequestParam UUID channelId,
-            @RequestParam(required = false) LocalDateTime cursor) {
+            @RequestParam(required = false) int page) {
         PageResponse<MessageDto> response =
-                messageService.getMessages(channelId, cursor);
+                messageService.getMessages(channelId, page);
         return ResponseEntity.ok(response);
     }
 

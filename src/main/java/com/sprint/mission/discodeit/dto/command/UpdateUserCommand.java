@@ -10,7 +10,7 @@ public record UpdateUserCommand(
         MultipartFile profileImage
 ) {
 
-    public UpdateUserCommand from(UpdateUserRequest request) {
+    public static UpdateUserCommand from(UpdateUserRequest request) {
         return new UpdateUserCommand(request.username(), request.email(), request.password(), request.profileImage());
     }
 }
