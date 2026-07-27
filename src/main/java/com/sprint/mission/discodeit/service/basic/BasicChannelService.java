@@ -5,6 +5,10 @@ import com.sprint.mission.discodeit.dto.command.channel.ChannelUpdateCommand;
 import com.sprint.mission.discodeit.dto.command.channel.PrivateChannelCommand;
 import com.sprint.mission.discodeit.dto.command.channel.PublicChannelCommand;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.exception.channel.ChannelAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.PrivateChannelUpdateException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -34,7 +38,7 @@ public class BasicChannelService implements ChannelService {
     public ChannelDto createPublicChannel(PublicChannelCommand command) {
         if (channelRepository.existsByName(command.name())){
             log.warn("채널 생성 실패 - 중복된 채널명 : {}", command.name());
-            throw new IllegalArgumentException("동일한 채널명이 존재 합니다.");
+            throw ChannelAlreadyExistsException.withName(command.name());
         }
         Channel channel = new Channel(ChannelType.PUBLIC, command.name(), command.description());
         channelRepository.save(channel);
@@ -50,7 +54,7 @@ public class BasicChannelService implements ChannelService {
 
         command.participantIds().forEach(userId -> {
             User user = userRepository.findById(userId)
-                    .orElseThrow(()-> new NoSuchElementException("존재하지 않는 사용자 입니다."));
+                    .orElseThrow(()-> UserNotFoundException.withId(userId));
             ReadStatus readStatus = new ReadStatus(user ,channel);
             readStatusRepository.save(readStatus);
         });
@@ -63,7 +67,7 @@ public class BasicChannelService implements ChannelService {
     @Override
     public ChannelDto findByChannelId(UUID channelId) {
         Channel channel = channelRepository.findById(channelId)
-                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널입니다."));
+                .orElseThrow(() -> ChannelNotFoundException.withId(channelId));
         log.debug("채널 조회 - 채널명: {}",channel.getName());
 
         return channelMapper.toDto(channel);
@@ -98,10 +102,10 @@ public class BasicChannelService implements ChannelService {
     @Override
     public ChannelDto updateChannel(UUID ChannelId, ChannelUpdateCommand command) {
         Channel channel = channelRepository.findById(ChannelId)
-                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널 입니다."));
+                .orElseThrow(() -> ChannelNotFoundException.withId(ChannelId));
         if (channel.getType().equals(ChannelType.PRIVATE)) {
             log.warn("채널 수정 실패 - 채널 타입: {}",channel.getType());
-            throw new IllegalArgumentException("비공개 채널은 수정할 수 없습니다.");
+            throw PrivateChannelUpdateException.withId(ChannelId);
         }
         if (command.name() != null && !command.name().isBlank()) channel.updateChannel(command.name());
         if (command.description() != null && !command.description().isBlank()) channel.updateChannelDescription(command.description());
@@ -116,7 +120,7 @@ public class BasicChannelService implements ChannelService {
     @Override
     public void deleteChannel(UUID ChannelId) {
         Channel channel = channelRepository.findById(ChannelId)
-                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널입니다."));
+                .orElseThrow(() -> ChannelNotFoundException.withId(ChannelId));
 
         channelRepository.deleteById(channel.getId());
         log.info("채널 삭제 완료 - 채널id: {}, 채널명: {}", channel.getId(), channel.getName());

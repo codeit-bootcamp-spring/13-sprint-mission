@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.storage;
 
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentDto;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
+import com.sprint.mission.discodeit.exception.storage.StorageException;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,8 +37,9 @@ public class LocalBinaryContentStorage implements BinaryContentStorage{
     public void init(){
         try {
             Files.createDirectories(root);
-        }catch (Exception e){
-            throw new RuntimeException("폴더 생성 실패", e);
+        }catch (IOException e){
+            log.error("스토리지 초기화 실패 - path: {}", root, e);
+            throw StorageException.initFailed(root.toString());
         }
     }
 
@@ -49,7 +52,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage{
         try {
             Files.write(path, bytes);
         } catch (IOException e){
-            throw new RuntimeException("파일 저장에 실패했습니다.");
+            throw StorageException.putFailed(id);
         }
         return id;
     }
@@ -59,14 +62,15 @@ public class LocalBinaryContentStorage implements BinaryContentStorage{
     public InputStream get(UUID id) {
         Path path = resolvePath(id);
 
+        if (!Files.exists(path)) {
+            log.warn("파일 조회 실패 - 존재하지 않는 파일 id: {}", id);
+            throw BinaryContentNotFoundException.withId(id);
+        }
+
         try {
-            if (!Files.exists(path)) {
-                log.warn("파일 조회 실패 - 존재하지 않는 파일 id: {}", id);
-                throw new RuntimeException("파일이 존재하지 않습니다.");
-            }
             return Files.newInputStream(path);
         }catch (IOException e){
-            throw new RuntimeException("파일 불러오기 실패");
+            throw StorageException.getFailed(id);
         }
     }
 

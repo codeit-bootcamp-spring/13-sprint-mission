@@ -13,6 +13,16 @@ import java.util.NoSuchElementException;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(DiscodeitException.class)
+    public ResponseEntity<ErrorResponse> handleDiscodeitException(DiscodeitException e) {
+        log.warn("예외 발생 - code: {}, message: {}, details: {}",
+                e.getErrorCode().name(), e.getMessage(), e.getDetails());
+        return ResponseEntity
+                .status(e.getErrorCode().getStatus())
+                .body(ErrorResponse.of(e));
+    }
+
+
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<String> handleException(NoSuchElementException e) {
         log.error(e.getMessage());

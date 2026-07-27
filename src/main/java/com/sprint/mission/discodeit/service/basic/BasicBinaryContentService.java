@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.command.binarycontent.BinaryContentCreateCommand;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
 import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
@@ -13,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -47,7 +47,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Transactional(readOnly = true)
     public BinaryContentDto find(UUID id) {
         BinaryContent findByContent = binaryContentRepository
-                .findById(id).orElseThrow(() -> new NoSuchElementException("존재하지 않는 content 입니다."));
+                .findById(id).orElseThrow(() -> BinaryContentNotFoundException.withId(id));
         return binaryContentMapper.toDto(findByContent);
     }
 
@@ -57,14 +57,14 @@ public class BasicBinaryContentService implements BinaryContentService {
         return ids.stream()
                 .map(id ->
                         binaryContentMapper.toDto(binaryContentRepository.findById(id)
-                                .orElseThrow(()-> new NoSuchElementException("존재하지 않는 content 입니다."))))
+                                .orElseThrow(()-> BinaryContentNotFoundException.withId(id))))
                 .collect(Collectors.toList());
     }
 
     @Override
     public void delete(UUID id) {
         binaryContentRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 content 입니다."));
+                .orElseThrow(() -> BinaryContentNotFoundException.withId(id));
         binaryContentRepository.deleteById(id);
         log.info("파일 삭제 완료 - 파일Id: {}", id);
     }
@@ -73,7 +73,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Transactional(readOnly = true)
     public BinaryContent findEntity(UUID id) {
         return binaryContentRepository.findById(id)
-                .orElseThrow(()-> new NoSuchElementException("존재하지 않는 content 입니다."));
+                .orElseThrow(()-> BinaryContentNotFoundException.withId(id));
     }
 }
 
