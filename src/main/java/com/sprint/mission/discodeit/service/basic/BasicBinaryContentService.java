@@ -1,8 +1,10 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.command.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.mapper.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
 import com.sprint.mission.discodeit.storage.*;
@@ -16,25 +18,26 @@ import java.util.*;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class BasicBinaryContentService implements BinaryContentService {
-
-    private final BinaryContentRepository repository;
+private final BinaryContentRepository repository;
     private final BinaryContentStorage binaryContentStorage;
+    private final BinaryContentMapper binaryContentMapper;
 
     @Override
     @Transactional
-    public BinaryContentDTO create(CreateBinaryContentRequest request) {
-        if (request == null)  {
+    public BinaryContentDto create(CreateBinaryContentCommand command) {
+        if (command == null)  {
             throw new IllegalArgumentException("바이너리 콘텐츠 생성 요청은 필수입니다.");
         }
         BinaryContent binaryContent = new BinaryContent(
-                request.fileName(),
-                (long)request.bytes().length,
-                request.contentType()
+                command.fileName(),
+                (long)command.bytes().length,
+                command.contentType()
         );
 
         repository.save(binaryContent);
-        binaryContentStorage.put(binaryContent.getId(), request.bytes());
-        return BinaryContentDTO.from(binaryContent);
+        binaryContentStorage.put(binaryContent.getId(), command.bytes());
+
+        return binaryContentMapper.toDto(binaryContent);
     }
 
     @Override
@@ -46,7 +49,7 @@ public class BasicBinaryContentService implements BinaryContentService {
         BinaryContent binaryContent = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("파일을 찾을 수 없습니다."));
 
-        return BinaryContentDTO.from(binaryContent);
+        return binaryContentMapper.toDto(binaryContent);
     }
 
     @Override
@@ -54,11 +57,9 @@ public class BasicBinaryContentService implements BinaryContentService {
         if (ids == null) {
             throw new IllegalArgumentException("바이너리 콘텐츠 ID 목록은 필수입니다.");
         }
-        return  repository.findAllByIdIn(ids)
-                .stream()
-                .map(BinaryContentDTO::from)
-                .toList();
 
+        List<BinaryContent> binaryContents = repository.findAllByIdIn(ids);
+        return binaryContentMapper.toDtoList(binaryContents);
     }
 
     @Override
@@ -72,6 +73,7 @@ public class BasicBinaryContentService implements BinaryContentService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 바이너리 콘텐츠입니다."));
 
         repository.delete(binaryContent);
+        binaryContentStorage.delete(id);
     }
 
 }

@@ -1,8 +1,10 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.command.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.mapper.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
 import lombok.*;
@@ -19,11 +21,12 @@ public class BasicUserStatusService implements UserStatusService {
 
     private final UserStatusRepository userStatusRepository;
     private final UserRepository userRepository;
+    private final UserStatusMapper userStatusMapper;
 
     @Override
     @Transactional
-    public UserStatusDto create(CreateUserStatusRequest request) {
-        UUID userId = request.userId();
+    public UserStatusDto create(CreateUserStatusCommand command) {
+        UUID userId = command.userId();
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유저가 존재하지 않습니다."));
@@ -33,11 +36,11 @@ public class BasicUserStatusService implements UserStatusService {
             throw new IllegalArgumentException("이미 존재하는 유저입니다.");
         }
 
-        Instant lastOnlineAt = request.lastOnlineAt();
         UserStatus userStatus = new UserStatus(user);
+        userStatus.updateLastActivityAt(command.lastActiveAt());
         userStatusRepository.save(userStatus);
 
-        return UserStatusDto.from(userStatus);
+        return userStatusMapper.toDto(userStatus);
     }
 
     @Override
@@ -49,14 +52,12 @@ public class BasicUserStatusService implements UserStatusService {
         UserStatus userStatus = userStatusRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 유저의 상태 정보가 없습니다."));
 
-        return UserStatusDto.from(userStatus);
+        return userStatusMapper.toDto(userStatus);
     }
 
     @Override
     public List<UserStatusDto> findAll() {
-        return userStatusRepository.findAll().stream()
-                .map(UserStatusDto::from)
-                .toList();
+        return userStatusMapper.toDtoList(userStatusRepository.findAll());
     }
 
     @Override
@@ -74,26 +75,27 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     @Transactional
-    public UserStatusDto update(UUID id, UpdateUserStatusRequest request) {
+    public UserStatusDto update(UUID id, UpdateUserStatusCommand command) {
         if(id == null) {
             throw new IllegalArgumentException("아이디는 필수입니다.");
         }
 
-        if (request == null) {
+        if (command == null) {
             throw new IllegalArgumentException("업데이트할 유저가 없습니다.");
         }
 
         UserStatus userStatus = userStatusRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("업데이트 유저의 정보가 없습니다."));
 
-        userStatus.updateLastOnlineAt(request.lastOnlineTime());
+        userStatus.updateLastActivityAt(command.lastOnlineTime());
 
-        return UserStatusDto.from(userStatus);
+        return userStatusMapper.toDto(userStatus);
+
     }
 
     @Override
     @Transactional
-    public UserStatusDto updateByUserId(UUID userId) {
+    public UserStatusDto updateByUserId(UUID userId, UpdateUserStatusCommand command) {
         if (userId == null) {
             throw new IllegalArgumentException("유저 아이디는 필수입니다.");
         }
@@ -101,9 +103,9 @@ public class BasicUserStatusService implements UserStatusService {
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("업데이트할 유저 정보가 없습니다."));
 
-        userStatus.updateLastOnlineAt(Instant.now());
+        userStatus.updateLastActivityAt(Instant.now());
 
-        return UserStatusDto.from(userStatus);
+        return userStatusMapper.toDto(userStatus);
     }
 }
 

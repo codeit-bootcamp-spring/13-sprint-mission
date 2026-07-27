@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.command.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.mapper.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
 import lombok.*;
@@ -15,9 +16,10 @@ import org.springframework.transaction.annotation.*;
 public class BasicAuthService implements AuthService {
 
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public LoginResponse login(LoginCommand command) {
         User user = userRepository.findByEmail(command.email())
                 .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 사용자입니다."));
@@ -26,10 +28,6 @@ public class BasicAuthService implements AuthService {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        return new LoginResponse(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail()
-        );
+        return userMapper.toLoginResponse(user);
     }
 }

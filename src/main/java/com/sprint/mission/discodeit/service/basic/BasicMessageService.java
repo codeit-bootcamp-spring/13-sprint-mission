@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.command.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
@@ -20,59 +21,67 @@ public class BasicMessageService implements MessageService {
 
     private final MessageRepository messageRepository;
     private final ChannelRepository channelRepository;
-    private final BinaryContentRepository binaryContentRepository;
     private final UserRepository userRepository;
+    private final MessageMapper messageMapper;
+    private final BinaryContentRepository binaryContentRepository;
+    private final BinaryContentService binaryContentService;
 
     @Override
-    public MessageResponse find(UUID id) {
-       Message message = messageRepository.findById(id)
-               .orElseThrow(()-> new NoSuchElementException("메세지 아이디를 찾을 수 없습니다"));
+    public MessageDto find(UUID id) {
+        Message message = messageRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("메세지 아이디를 찾을 수 없습니다"));
 
-       return MessageResponse.from(message);
+        return messageMapper.toDto(message);
     }
 
     @Override
     @Transactional
-    public MessageResponse create(CreateMessageRequest.Create request,
-                                  List<CreateBinaryContentRequest> createBinaryContentRequests) {
+    public MessageDto create(CreateMessageCommand command,
+                             List<CreateBinaryContentCommand> attachmentCommands) {
 
-        if (request == null) {
+        if (command == null) {
             throw new IllegalArgumentException("메시지 생성 요청은 필수입니다.");
         }
 
-        Channel channel = channelRepository.findById(request.channelId())
+        Channel channel = channelRepository.findById(command.channelId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널입니다."));
 
-        User author = userRepository.findById(request.authorId())
+        User author = userRepository.findById(command.authorId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 작성자입니다."));
 
-        List<BinaryContent> attachments = new ArrayList<>();
-        if (createBinaryContentRequests != null && !createBinaryContentRequests.isEmpty()) {
-            attachments = createBinaryContentRequests.stream()
-                    .map(binaryRequest -> new BinaryContent(
-                            binaryRequest.fileName(),
-                            (long) binaryRequest.bytes().length,
-                            binaryRequest.contentType(),
-                            binaryRequest.fileName()
-                    ))
-                    .toList();
-        }
+        List<CreateBinaryContentCommand> commands =
+                attachmentCommands == null
+                        ? List.of()
+                        : attachmentCommands;
+        List<BinaryContent> attachments = commands.stream()
+                .map(binaryContentService::create)
+                .map(BinaryContentDto::id)
+                .map(attachmentId ->
+                        binaryContentRepository.findById(attachmentId)
+                                .orElseThrow(() ->
+                                        new IllegalStateException(
+                                                "저장된 첨부파일을 찾을 수 없습니다."
+                                        )
+                                )
+                )
+                .toList();
 
         Message message = new Message(
-                request.content(),
+                command.content(),
                 channel,
                 author,
                 attachments
         );
 
-       messageRepository.save(message);
+        Message savedMessage =
+                messageRepository.save(message);
 
-        return MessageResponse.from(message);
+        return messageMapper.toDto(savedMessage);
     }
 
 
     @Override
-    public List<MessageResponse> findAllByChannelId(UUID channelId) {
+    public List<MessageDto> findAllByChannelId(UUID channelId) {
         if (channelId == null) {
             throw new IllegalArgumentException("채널 ID는 필수입니다.");
         }
@@ -81,21 +90,26 @@ public class BasicMessageService implements MessageService {
             throw new IllegalArgumentException("존재하지 않는 채널입니다.");
         }
 
-        return messageRepository.findByChannelId(channelId)
-                .stream()
-                .map(MessageResponse::from)
-                .toList();
+        List<Message> messages = messageRepository.findByChannelId(channelId);
+        return messageMapper.toDtoList(messages);
 
     }
+
     @Override
     @Transactional
-    public MessageResponse update(UUID id, CreateMessageRequest.Update request) {
-      String newContent = request.content();
-      Message message = messageRepository.findById(id)
-              .orElseThrow(()-> new NoSuchElementException("메세지 아이디를 찾을 수 없습니다."));
-      message.update(newContent);
-      return MessageResponse.from(message);
+    public MessageDto update(UUID id, UpdateMessageCommand command) { // UpdateMessageCommand 타입으로 수정
+        if (id == null) {
+            throw new IllegalArgumentException("메시지 ID는 필수입니다.");
+        }
+
+        Message message = messageRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("메시지 아이디를 찾을 수 없습니다."));
+
+        message.update(command.content());
+
+        return messageMapper.toDto(message);
     }
+
 
     @Override
     @Transactional
@@ -110,14 +124,17 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public PageResponse<MessageResponse> getMessages(UUID channelId, int page) {
-        Pageable pageable = PageRequest.of(page, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
+    public PageResponse<MessageDto> getMessages(UUID channelId, int page) {
+        if (channelId == null) {
+            throw new IllegalArgumentException("채널 ID는 필수입니다."); }
 
-        Slice<Message> messageSlice = messageRepository.findByChannelId(channelId, pageable);
+            Pageable pageable = PageRequest.of(page, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
+            Slice<Message> messageSlice = messageRepository.findByChannelId(channelId, pageable);
 
-        Slice<MessageResponse> responseSlice = messageSlice.map(MessageResponse::from);
+            Slice<MessageDto> responseSlice = messageSlice.map(messageMapper::toDto);
 
-        return PageResponseMapper.fromSlice(responseSlice);
+            return PageResponseMapper.fromSlice(responseSlice);
 
+        }
     }
-}
+

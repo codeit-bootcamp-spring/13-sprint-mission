@@ -1,8 +1,10 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.command.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.mapper.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
 import lombok.*;
@@ -20,22 +22,23 @@ public class BasicReadStatusService implements ReadStatusService {
     private final ReadStatusRepository readStatusRepository;
     private final ChannelRepository channelRepository;
     private final UserRepository userRepository;
+    private final ReadStatusMapper readStatusMapper;
 
     @Override
     @Transactional
-    public ReadStatusDto create(CreateReadStatusRequest request) {
-        if (request == null) {
+    public ReadStatusDto create(CreateReadStatusCommand command) {
+        if (command == null) {
             throw new IllegalArgumentException("읽음 상태 생성 요청 정보가 없습니다.");
         }
 
-        User user = userRepository.findById(request.userId())
+        User user = userRepository.findById(command.userId())
                 .orElseThrow(() -> new IllegalArgumentException("유저의 아이디가 없습니다."));
 
-        Channel channel = channelRepository.findById(request.channelId())
+        Channel channel = channelRepository.findById(command.channelId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널입니다."));
 
         Optional<ReadStatus> existingReadStatus =
-                readStatusRepository.findByChannelIdAndUserId(request.userId(), request.channelId());
+                readStatusRepository.findByChannelIdAndUserId(command.userId(), command.channelId());
 
         if (existingReadStatus.isPresent()) {
             throw new IllegalArgumentException("이미 해당 유저의 읽음 상태가 존재합니다.");
@@ -45,7 +48,7 @@ public class BasicReadStatusService implements ReadStatusService {
 
         readStatusRepository.save(readStatus);
 
-        return ReadStatusDto.from(readStatus);
+        return readStatusMapper.toDto(readStatus);
     }
 
     @Override
@@ -56,9 +59,7 @@ public class BasicReadStatusService implements ReadStatusService {
 
         List<ReadStatus> readStatuses =
                 readStatusRepository.findAllByUserId(userId);
-        return readStatuses.stream()
-                .map(ReadStatusDto::from)
-                .toList();
+        return readStatusMapper.toDtoList(readStatuses);
     }
 
     @Override
@@ -69,7 +70,7 @@ public class BasicReadStatusService implements ReadStatusService {
 
         ReadStatus readStatus = readStatusRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 읽음 상태 정보가 없습니다."));
-        return ReadStatusDto.from(readStatus);
+        return readStatusMapper.toDto(readStatus);
     }
 
     @Override
@@ -84,19 +85,19 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    public ReadStatusDto update(UUID id, UpdateReadStatusRequest request) {
+    public ReadStatusDto update(UUID id, UpdateReadStatusCommand command) {
         if (id == null) {
             throw new IllegalArgumentException("읽음 상태 아이디는 필수입니다.");
         }
 
-        if (request == null) {
+        if (command == null) {
             throw new IllegalArgumentException("읽음 상태 수정 요청 정보가 없습니다.");
         }
 
         ReadStatus readStatus = readStatusRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("수정할 읽음 상태 정보가 없습니다."));
 
-        readStatus.update(request.lastReadTime());
-        return ReadStatusDto.from(readStatus);
+        readStatus.update(command.lastReadTime());
+        return readStatusMapper.toDto(readStatus);
     }
 }

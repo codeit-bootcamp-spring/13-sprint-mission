@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.command.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.mapper.*;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.*;
 import lombok.*;
@@ -20,7 +21,7 @@ public class BasicChannelService implements ChannelService {
     private final ChannelRepository repository;
     private final ReadStatusRepository readStatusRepository;
     private final UserRepository userRepository;
-    private final MessageRepository messageRepository;
+    private final ChannelMapper channelMapper;
 
     @Override
     @Transactional
@@ -28,7 +29,6 @@ public class BasicChannelService implements ChannelService {
         if (publicChannel == null) {
             throw new IllegalArgumentException("공개 채널 생성 요청은 필수입니다.");
         }
-
         if (publicChannel.name() == null || publicChannel.name().isBlank()) {
             throw new IllegalArgumentException("채널이름이 공백일 수는 없습니다.");
         }
@@ -40,25 +40,18 @@ public class BasicChannelService implements ChannelService {
         );
         repository.save(channel);
 
-        return ChannelDto.from(
-                channel,
-                null,
-                List.of()
-        );
-
+        return channelMapper.toDto(channel);
     }
 
     @Override
     @Transactional
-    public ChannelDto createPrivateChannel(CreatePublicChannelCommand privateChannel) {
+    public ChannelDto createPrivateChannel(CreatePrivateChannelCommand privateChannel) {
         if (privateChannel == null) {
             throw new IllegalArgumentException("비공개 채널 생성 요청은 필수입니다.");
         }
-
         if (privateChannel.participantIds() == null || privateChannel.participantIds().isEmpty()) {
             throw new IllegalArgumentException("비공개 채널 참여자는 필수입니다.");
         }
-
         List<User> participants = new ArrayList<>();
         Set<UUID> duplicateCheckSet = new HashSet<>();
 
@@ -89,11 +82,7 @@ public class BasicChannelService implements ChannelService {
             readStatusRepository.save(readStatus);
         }
 
-        return ChannelDto.from(
-                channel,
-                getLastMessageAt(channel.getId()),
-                privateChannel.participantIds()
-        );
+        return channelMapper.toDto(channel);
     }
 
 
@@ -107,17 +96,7 @@ public class BasicChannelService implements ChannelService {
         Channel channel = repository.findById(id)
                 .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 채널 ID입니다."));
 
-        List<UUID> participantIds =
-                readStatusRepository.findAllByChannelId(id)
-                        .stream()
-                        .map(readStatus-> readStatus.getUser().getId())
-                        .toList();
-
-        return ChannelDto.from(
-                channel,
-                getLastMessageAt(channel.getId()),
-                participantIds
-        );
+        return channelMapper.toDto(channel);
     }
 
     @Override
@@ -135,17 +114,7 @@ public class BasicChannelService implements ChannelService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널 ID입니다."));
 
         channel.update(request.name(), request.description());
-
-        List<UUID> participantIds = readStatusRepository.findAllByChannelId(channel.getId())
-                .stream()
-                .map(readStatus -> readStatus.getUser().getId())
-                .toList();
-
-        return ChannelDto.from(
-                channel,
-                getLastMessageAt(channel.getId()),
-                participantIds
-        );
+        return channelMapper.toDto(channel);
     }
 
 
@@ -160,7 +129,7 @@ public class BasicChannelService implements ChannelService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널 ID입니다."));
 
         List<ReadStatus> readStatuses = readStatusRepository.findAllByChannelId(id);
-        readStatusRepository.deleteAll(readStatuses); // 벌크 연산 형태로 깔끔하게 리팩토링
+        readStatusRepository.deleteAll(readStatuses);
 
         repository.delete(channel);
     }
@@ -187,26 +156,8 @@ public class BasicChannelService implements ChannelService {
                         channel.getType() == ChannelType.PUBLIC
                                 || privateChannelIds.contains(channel.getId())
                 )
-                .map(channel -> {
-                    List<UUID> participantIds = readStatusRepository.findAllByChannelId(channel.getId())
-                            .stream()
-                            .map(readStatus -> readStatus.getUser().getId())
-                            .toList();
-
-            return ChannelDto.from(
-                    channel,
-                    getLastMessageAt(channel.getId()),
-                    participantIds
-            );
-        })
+                .map(channelMapper::toDto)
                 .toList();
     }
 
-    private Instant getLastMessageAt(UUID channelId) {
-        return messageRepository.findByChannelId(channelId)
-                .stream()
-                .map(Message::getCreatedAt)
-                .max(Instant::compareTo)
-                .orElse(null);
-    }
 }
