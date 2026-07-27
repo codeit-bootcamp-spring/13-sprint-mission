@@ -6,6 +6,9 @@ import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.exception.ExceptionCode;
+import com.sprint.mission.discodeit.exception.UserException;
+import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.mapper.MapperMethod;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -47,21 +50,13 @@ public class BasicAuthService implements AuthService {
     private User getUserOrExceptionByName(String name){
         return userRepository.findByUsername(name).stream().findFirst()
                 .orElseThrow(
-                        () -> new DiscodeitException(
-                                "User with username " + name + " not found",
-                                "Auth",
-                                404
-                        )
+                        () -> new UserNotFoundException("User not found with name: {} " , name)
                 );
     }
 
     private void checkPassword (User user, String password){
         if(!user.getPassword().equals(password)){
-            throw new DiscodeitException(
-                    "Wrong password",
-                    "Auth",
-                    400
-            );
+            throw new UserException(ExceptionCode.REQUEST_VALUE_ERROR,"Wrong password");
         }
     }
 }

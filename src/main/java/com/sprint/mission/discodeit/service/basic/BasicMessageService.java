@@ -11,7 +11,9 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.exception.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.MessageNotFoundException;
+import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -49,21 +51,13 @@ public class BasicMessageService implements MessageService {
 
     private User getUserOrException(UUID id){
         return userRepository.findById(id).orElseThrow(
-                () -> new DiscodeitException(
-                        "no user by id " + id,
-                        "Message",
-                        404
-                )
+                () -> new UserNotFoundException("User with id - {} not found",id)
         );
     }
 
     private Channel getChannelOrException(UUID id){
         return channelRepository.findById(id).orElseThrow(
-                () -> new DiscodeitException(
-                        "no channel by id " + id,
-                        "Message",
-                        404
-                )
+                () -> new ChannelNotFoundException("Channel with id - {} not found",id)
         );
     }
 
@@ -146,7 +140,7 @@ public class BasicMessageService implements MessageService {
     private Message getMessageOrException(UUID id){
         return messageRepository.findById(id)
                 .orElseThrow(
-                        () -> new DiscodeitException("no message by id" + id,"Message",404)
+                        () -> new MessageNotFoundException("Message with id - {} not found",id)
                 );
     }
 

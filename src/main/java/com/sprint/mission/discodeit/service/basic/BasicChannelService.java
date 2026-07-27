@@ -6,7 +6,9 @@ import com.sprint.mission.discodeit.dto.request.PublicChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.exception.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.ChannelTypeException;
+import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.mapper.MapperMethod;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -121,32 +123,20 @@ public class BasicChannelService implements ChannelService {
 
     private User getUserOrException(UUID id){
         return userRepository.findById(id).stream().findFirst().orElseThrow(
-                () -> new DiscodeitException(
-                        "User by id - " + id + " not existed."
-                        ,"Channel"
-                        ,400
-                )
+                () -> new UserNotFoundException("User with id - {} not found",id)
         );
     }
 
 
     private void channelTypeCheck(Channel cnl){
         if (cnl.getType().equals(ChannelType.PRIVATE)) {
-            throw new DiscodeitException(
-                    "Private channel can not be update",
-                    "Channel",
-                    400
-            );
+            throw new ChannelTypeException("Channel with id - {} was private",cnl.getId());
         }
     }
 
     private Channel getChannelOrException(UUID id){
         return channelRepository.findById(id).orElseThrow(
-                () -> new DiscodeitException(
-                        "channel with id " + id + "not found",
-                        "Channel",
-                        404
-                )
+                () -> new ChannelNotFoundException("Channel with id - {} not found",id)
         );
     }
 

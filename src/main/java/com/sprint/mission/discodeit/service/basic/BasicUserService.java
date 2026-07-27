@@ -9,6 +9,8 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.exception.UserDuplicatedException;
+import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.mapper.MapperMethod;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -77,10 +79,10 @@ public class BasicUserService implements UserService {
         UserStatus ust = new UserStatus(user, Instant.now());
         user.setStatus(ust);
 
-        log.debug("user created" + user.toString());
+        log.debug("user created - {}", user.toString());
 
         userRepository.save(user);
-        log.info("user created - id: " + user.getId() + ", username: " + cui.username());
+        log.info("user created - id: {}, username: {}", user.getId(), cui.username());
         return mapStructMapper.toDto(user,toBinaryDto(user),user.online());
     }
 
@@ -112,7 +114,7 @@ public class BasicUserService implements UserService {
             user.setProfile(bc);
         }
 
-        log.info("user with id - " + id + " updated");
+        log.info("user with id - {} updated", id);
 
         return mapStructMapper.toDto(
                 user
@@ -131,43 +133,28 @@ public class BasicUserService implements UserService {
         userRepository.delete(user);
         us.ifPresent(userStatusRepository::delete);
 
-        log.info("user with id - " + id + " deleted");
+        log.info("user with id - {} deleted", id);
 
     }
 
     private User getUserOrException(UUID id){
         return userRepository.findById(id).orElseThrow(
-                () -> {
-                    log.warn("User with id" + id + " not found");
-                    return new DiscodeitException(
-                            "User with id" + id + " not found",
-                            "User",
-                            404);
-                }
+                () -> new UserNotFoundException("User with id - {} not found", id)
         );
+
     }
 
     private void nameCheck(String username){
         Optional<User> sameNameChecker = userRepository.findByUsername(username).stream().findFirst();
         if(sameNameChecker.isPresent()){
-            log.warn("user name - " + username + " already exists");
-            throw new DiscodeitException(
-                "user with name " + username + " already used",
-                "User",
-                400
-            );
+            throw new UserDuplicatedException("User with name - {} already exists", username);
         }
     }
 
     private void emailCheck(String email){
         Optional<User> sameEmailChecker = userRepository.findByEmail(email).stream().findFirst();
         if(sameEmailChecker.isPresent()){
-            log.warn("user email - " + email + " already exists");
-            throw new DiscodeitException(
-                "user with email " + email + " already used",
-                "User",
-                400
-            );
+            throw new UserDuplicatedException("User with email - {} already exists", email);
         }
     }
 

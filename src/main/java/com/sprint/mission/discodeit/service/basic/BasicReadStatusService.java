@@ -8,7 +8,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.exception.*;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -36,29 +36,17 @@ public class BasicReadStatusService implements ReadStatusService {
 
         // not found exception
         Channel channel = channelRepository.findById(rscr.channelId()).stream().findFirst().orElseThrow(
-                () -> new DiscodeitException(
-                        "Channel with id " + rscr.channelId() + " not found",
-                        "ReadStatus",
-                        404
-                )
+                () -> new ChannelNotFoundException("Channel with id - {} was not found", rscr.channelId())
         );
         User user = userRepository.findById(rscr.userId()).stream().findFirst().orElseThrow(
-                () -> new DiscodeitException(
-                        "User with id " + rscr.userId() + " not found",
-                        "ReadStatus",
-                        404
-                )
+                () -> new UserNotFoundException("User with Id - {} was not founded", rscr.userId())
         );
 
 
         // already exist exception
         if (
                 !readStatusRepository.findByUserId(rscr.userId()).isEmpty() | !readStatusRepository.findByChannelId(rscr.channelId()).isEmpty()
-        ) throw new DiscodeitException(
-                "ReadStatus whith userId " + rscr.userId() + "and channelId " + rscr.channelId() + " already existed",
-                "UserStatus",
-                400
-        );
+        ) throw new ReadStatusDuplicatedException("Read Status with user - {}, channel - {} was already existed", rscr.userId(), rscr.channelId());
 
 
 
@@ -84,10 +72,7 @@ public class BasicReadStatusService implements ReadStatusService {
     @Transactional
     public ReadStatusDto update(UUID id, ReadStatusUpdateRequest rsur){
         ReadStatus readStatus = readStatusRepository.findById(id).stream().findFirst().orElseThrow(
-                () -> new DiscodeitException(
-                        "ReadStatus with id " + id + "not found",
-                        "ReadStatus",
-                        404)
+                () -> new ReadStatusNotFoundException("ReadStatus with id - {} was not found", id)
         );
         readStatus.setLastReadAt(rsur.newLastReadAt());
         return mapStructMapper.toDto(readStatus);
