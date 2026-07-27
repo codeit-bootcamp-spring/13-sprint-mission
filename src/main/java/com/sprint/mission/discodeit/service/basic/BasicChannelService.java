@@ -10,9 +10,9 @@ import com.sprint.mission.discodeit.entity.Channel.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.ChannelNotFoundException;
-import com.sprint.mission.discodeit.exception.PrivateChannelUnmodifiableException;
-import com.sprint.mission.discodeit.exception.UserNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.PrivateChannelUnmodifiableException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -100,7 +100,7 @@ public class BasicChannelService implements ChannelService {
         .orElseThrow(() -> new ChannelNotFoundException(id));
 
     if (channel.getType() == Channel.ChannelType.PRIVATE) {
-      throw new PrivateChannelUnmodifiableException();
+      throw new PrivateChannelUnmodifiableException(channel.getId());
     }
     channel.update(request.newName(), request.newDescription());
 
