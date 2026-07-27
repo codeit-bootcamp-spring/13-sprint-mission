@@ -22,10 +22,13 @@ public class AuthController {
   private final AuthService authService;
 
   @PostMapping(value = "/login", consumes = "application/json")
-  public ResponseEntity<UserDto> login(@RequestBody @Valid LoginRequest request) {
+  public ResponseEntity<UserDto> login(
+      @RequestBody @Valid LoginRequest request
+  ) {
+    log.debug("로그인 요청");
+
     UserDto response = authService.login(request);
 
-    return ResponseEntity.ok().body(response);
+    return ResponseEntity.ok(response);
   }
-
 }

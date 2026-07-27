@@ -28,14 +28,23 @@ public class UserStatusController {
       @PathVariable("userId") UUID userId,
       @RequestBody @Valid UserStatusUpdateRequest request
   ) {
-    UserStatusDto response = userStatusService.updateByUserId(userId, request);
+    log.debug("사용자 상태 수정 요청: userId={}", userId);
+
+    UserStatusDto response =
+        userStatusService.updateByUserId(userId, request);
 
     return ResponseEntity.ok(response);
   }
 
   @GetMapping("/{userId}/userStatus")
-  public ResponseEntity<UserStatusDto> findByUserId(@PathVariable("userId") UUID userId) {
-    UserStatusDto response = userStatusService.findByUserId(userId);
+  public ResponseEntity<UserStatusDto> findByUserId(
+      @PathVariable("userId") UUID userId
+  ) {
+    log.debug("사용자 상태 조회 요청: userId={}", userId);
+
+    UserStatusDto response =
+        userStatusService.findByUserId(userId);
+
     return ResponseEntity.ok(response);
   }
 }

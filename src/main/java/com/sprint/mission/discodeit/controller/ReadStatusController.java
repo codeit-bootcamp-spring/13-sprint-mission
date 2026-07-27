@@ -31,38 +31,64 @@ public class ReadStatusController {
   private final ReadStatusService readStatusService;
 
   @PostMapping
-  public ResponseEntity<ReadStatusDto> create(@RequestBody @Valid ReadStatusCreateRequest request) {
+  public ResponseEntity<ReadStatusDto> create(
+      @RequestBody @Valid ReadStatusCreateRequest request
+  ) {
+    log.debug(
+        "읽음 상태 생성 요청: userId={}, channelId={}",
+        request.userId(),
+        request.channelId()
+    );
+
     ReadStatusDto response = readStatusService.create(request);
 
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
   @PatchMapping("/{readStatusId}")
-  public ResponseEntity<ReadStatusDto> updateLastReadAt(@PathVariable("readStatusId") UUID id,
-      @RequestBody @Valid ReadStatusUpdateRequest request) {
-    ReadStatusDto response = readStatusService.updateLastReadAt(id, request);
+  public ResponseEntity<ReadStatusDto> updateLastReadAt(
+      @PathVariable("readStatusId") UUID id,
+      @RequestBody @Valid ReadStatusUpdateRequest request
+  ) {
+    log.debug("읽음 상태 수정 요청: readStatusId={}", id);
+
+    ReadStatusDto response =
+        readStatusService.updateLastReadAt(id, request);
 
     return ResponseEntity.ok(response);
   }
 
   @GetMapping
-  public ResponseEntity<List<ReadStatusDto>> findAllByUserId(@RequestParam UUID userId) {
-    List<ReadStatusDto> allByUserId = readStatusService.findAllByUserId(userId);
+  public ResponseEntity<List<ReadStatusDto>> findAllByUserId(
+      @RequestParam("userId") UUID userId
+  ) {
+    log.debug("사용자별 읽음 상태 조회 요청: userId={}", userId);
 
-    return ResponseEntity.ok(allByUserId);
+    List<ReadStatusDto> response =
+        readStatusService.findAllByUserId(userId);
+
+    return ResponseEntity.ok(response);
   }
 
   @GetMapping("/{readStatusId}")
-  public ResponseEntity<ReadStatusDto> findById(@PathVariable("readStatusId") UUID id) {
+  public ResponseEntity<ReadStatusDto> findById(
+      @PathVariable("readStatusId") UUID id
+  ) {
+    log.debug("읽음 상태 단건 조회 요청: readStatusId={}", id);
+
     ReadStatusDto response = readStatusService.findById(id);
+
     return ResponseEntity.ok(response);
   }
 
   @DeleteMapping("/{readStatusId}")
-  public ResponseEntity<Void> delete(@PathVariable("readStatusId") UUID id) {
+  public ResponseEntity<Void> delete(
+      @PathVariable("readStatusId") UUID id
+  ) {
+    log.debug("읽음 상태 삭제 요청: readStatusId={}", id);
+
     readStatusService.delete(id);
+
     return ResponseEntity.noContent().build();
   }
-
-
 }
