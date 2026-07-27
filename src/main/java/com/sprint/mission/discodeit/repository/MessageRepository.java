@@ -13,7 +13,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-public interface JPAMessageRepository extends JpaRepository<Message, UUID> {
+public interface MessageRepository extends JpaRepository<Message, UUID> {
     @Query(value = "SELECT * FROM messages WHERE channel_id = ? ORDER BY created_at DESC",nativeQuery = true)
     List<Message> findByChannelId(@Param("channelId") UUID channelId);
 

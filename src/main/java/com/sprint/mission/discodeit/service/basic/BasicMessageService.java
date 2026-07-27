@@ -14,10 +14,10 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
-import com.sprint.mission.discodeit.repository.JPABinaryContentRepository;
-import com.sprint.mission.discodeit.repository.JPAChannelRepository;
-import com.sprint.mission.discodeit.repository.JPAMessageRepository;
-import com.sprint.mission.discodeit.repository.JPAUserRepository;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
+import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import jakarta.transaction.Transactional;
@@ -39,32 +39,43 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class BasicMessageService implements MessageService {
-    private final JPAMessageRepository JPAMessageRepository;
-    private final JPAUserRepository JPAUserRepository;
-    private final JPAChannelRepository JPAChannelRepository;
-    private final JPABinaryContentRepository binaryContentRepository;
+    private final MessageRepository messageRepository;
+    private final UserRepository userRepository;
+    private final ChannelRepository channelRepository;
+    private final BinaryContentRepository binaryContentRepository;
     private final BinaryContentStorage binaryContentStorage;
     private final PageResponseMapper pageResponseMapper;
     private final MapStructMapper mapStructMapper;
+
+    private User getUserOrException(UUID id){
+        return userRepository.findById(id).orElseThrow(
+                () -> new DiscodeitException(
+                        "no user by id " + id,
+                        "Message",
+                        404
+                )
+        );
+    }
+
+    private Channel getChannelOrException(UUID id){
+        return channelRepository.findById(id).orElseThrow(
+                () -> new DiscodeitException(
+                        "no channel by id " + id,
+                        "Message",
+                        404
+                )
+        );
+    }
+
 
     @Override
     @Transactional
     public MessageDto createMessage(MessageCreateRequest cmi, Optional<List<BinaryContentCreate>> olbcc){
 
-        User user = JPAUserRepository.findById(cmi.authorId()).orElseThrow(
-                () -> new DiscodeitException(
-                        "no user by id " + cmi.authorId(),
-                        "Message",
-                        404
-                )
-        );
-        Channel channel = JPAChannelRepository.findById(cmi.channelId()).orElseThrow(
-                () -> new DiscodeitException(
-                        "no channel by id " + cmi.channelId(),
-                        "Message",
-                        404
-                )
-        );
+        User user = getUserOrException(cmi.authorId());
+        Channel channel = getChannelOrException(cmi.channelId());
+
+        log.debug("Message Create - author: {}, channel: {}", user.getId(), channel.getId());
 
         List<BinaryContent> atts = olbcc.map(
                 lbcc -> lbcc.stream().map(
@@ -93,15 +104,17 @@ public class BasicMessageService implements MessageService {
                 atts
         );
 
-        JPAMessageRepository.save(res);
+        messageRepository.save(res);
+
+        log.info("Message Created - {}", res.getId());
+
         return mapStructMapper.toDto(res,userDto(res),attrDto(res));
     }
 
     @Override
     @Transactional
     public PageResponse<MessageDto> findallByChannelId(UUID cannelID, Pageable pageable){
-
-        return pageResponseMapper.fromSlice(JPAMessageRepository.findByChannelIdForMessageDto(cannelID,pageable)
+        return pageResponseMapper.fromSlice(messageRepository.findByChannelIdForMessageDto(cannelID,pageable)
                 .map(m -> mapStructMapper.toDto(m,userDto(m),attrDto(m))));
     }
 
@@ -109,7 +122,7 @@ public class BasicMessageService implements MessageService {
     @Override
     public PageResponse<MessageDto> findallByChannelIdWithCursor(UUID cannelID, Pageable pageable, Instant cursor){
         if (cursor == null) cursor = Instant.now();
-        Slice<Message> res = JPAMessageRepository.findByChannelWithCursor(cannelID,pageable,cursor);
+        Slice<Message> res = messageRepository.findByChannelWithCursor(cannelID,pageable,cursor);
         List<Message> content = res.getContent();
         Instant newCursor = content.isEmpty() ? null : content.get(content.size()-1).getCreatedAt();
         return pageResponseMapper.fromSliceWithCursor(
@@ -119,30 +132,37 @@ public class BasicMessageService implements MessageService {
     @Override
     @Transactional
     public MessageDto updateMessageData(UUID id, MessageUpdateRequest umi){
-        Message msg = JPAMessageRepository.findById(id)
-                .orElseThrow(
-                        () -> new DiscodeitException("no message by id" + id,"Message",404)
-                );
+        Message msg = getMessageOrException(id);
 
         msg.setContent(umi.newContent());
         msg.setUpdatedAt(Instant.now());
-        JPAMessageRepository.save(msg);
+        messageRepository.save(msg);
+
+        log.info("Message Updated - {}", msg.getId());
+
         return mapStructMapper.toDto(msg,userDto(msg),attrDto(msg));
+    }
+
+    private Message getMessageOrException(UUID id){
+        return messageRepository.findById(id)
+                .orElseThrow(
+                        () -> new DiscodeitException("no message by id" + id,"Message",404)
+                );
     }
 
     @Override
     @Transactional
     public void deleteMessage(UUID id){
-        Message msg = JPAMessageRepository.findById(id).orElseThrow(
-                () -> new DiscodeitException("no message by id" + id,"Message",404)
-        );
+        Message msg = getMessageOrException(id);
 
         // delete attribute
         if (!msg.getAttachment().isEmpty()){
             binaryContentRepository.deleteAll(msg.getAttachment());
         }
 
-        JPAMessageRepository.delete(msg);
+        messageRepository.delete(msg);
+
+        log.info("Message Deleted - {}", msg.getId());
     }
 
     private List<BinaryContentDto> attrDto(Message msg){
@@ -164,7 +184,7 @@ public class BasicMessageService implements MessageService {
         try (InputStream in = binaryContentStorage.get(bc.getId())){
             return in.readAllBytes();
         } catch (IOException e) {
-            log.error("read data errpr" + bc.getId().toString(), e);
+            log.error("read data error - {}",bc.getId().toString(), e);
             return null;
         }
     }

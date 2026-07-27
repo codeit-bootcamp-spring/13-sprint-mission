@@ -99,6 +99,8 @@ public class UserController implements UserControllerDoc {
                     content
             );
 
+            log.info("file uploaded: {}", filename);
+
             return Optional.of(bc);
         } catch (IOException e){
             throw new RuntimeException(e);

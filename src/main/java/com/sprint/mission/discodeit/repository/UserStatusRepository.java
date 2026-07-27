@@ -8,6 +8,6 @@ import java.util.UUID;
 
 
 
-public interface JPAUserStatusRepository extends JpaRepository<UserStatus, UUID> {
+public interface UserStatusRepository extends JpaRepository<UserStatus, UUID> {
     List<UserStatus> findByUserId(UUID userID);
 }

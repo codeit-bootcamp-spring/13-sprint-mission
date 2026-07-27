@@ -50,4 +50,14 @@ public class User extends BaseUpdatableEntity {
         return this.status.online();
     }
 
+    @Override
+    public String toString() {
+        return "User{" +
+                "username='" + username + '\'' +
+                ", email='" + email + '\'' +
+                ", password='" + password + '\'' +
+                ", profile=" + profile +
+                ", status=" + status +
+                '}';
+    }
 }
