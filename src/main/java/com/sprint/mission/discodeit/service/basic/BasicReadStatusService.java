@@ -6,9 +6,9 @@ import com.sprint.mission.discodeit.dto.response.ReadStatusDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.ReadStatusAlreadyExistsException;
-import com.sprint.mission.discodeit.exception.ReadStatusNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.readstatus.ReadStatusAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.readstatus.ReadStatusNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ReadStatusMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -68,9 +68,9 @@ public class BasicReadStatusService implements ReadStatusService {
   }
 
   @Override
-  public ReadStatusDto updateLastReadAt(UUID id, ReadStatusUpdateRequest request) {
-    ReadStatus readStatus = readStatusRepository.findById(id)
-        .orElseThrow(() -> new ReadStatusNotFoundException(id));
+  public ReadStatusDto updateLastReadAt(UUID readStatusId, ReadStatusUpdateRequest request) {
+    ReadStatus readStatus = readStatusRepository.findById(readStatusId)
+        .orElseThrow(() -> new ReadStatusNotFoundException(readStatusId));
 
     readStatus.updateLastReadAt(request.newLastReadAt());
 
@@ -78,18 +78,18 @@ public class BasicReadStatusService implements ReadStatusService {
   }
 
   @Override
-  public void delete(UUID id) {
-    ReadStatus readStatus = readStatusRepository.findById(id)
-        .orElseThrow(() -> new ReadStatusNotFoundException(id));
+  public void delete(UUID readStatusId) {
+    ReadStatus readStatus = readStatusRepository.findById(readStatusId)
+        .orElseThrow(() -> new ReadStatusNotFoundException(readStatusId));
 
     readStatusRepository.delete(readStatus);
   }
 
   @Transactional(readOnly = true)
   @Override
-  public ReadStatusDto findById(UUID id) {
-    ReadStatus readStatus = readStatusRepository.findById(id)
-        .orElseThrow(() -> new ReadStatusNotFoundException(id));
+  public ReadStatusDto findById(UUID readStatusId) {
+    ReadStatus readStatus = readStatusRepository.findById(readStatusId)
+        .orElseThrow(() -> new ReadStatusNotFoundException(readStatusId));
 
     return readStatusMapper.toDto(readStatus);
   }
