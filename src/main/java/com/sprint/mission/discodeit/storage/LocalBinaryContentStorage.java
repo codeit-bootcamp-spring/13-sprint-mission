@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.storage;
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentDownloadException;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentUploadException;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,7 +51,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
     try {
       Files.write(path, bytes);
     } catch (IOException e) {
-      throw new RuntimeException("파일 저장 실패: " + id, e);
+      throw new BinaryContentUploadException(id, e);
     }
     return id;
   }
@@ -61,7 +63,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
     try {
       return Files.newInputStream(path);
     } catch (IOException e) {
-      throw new RuntimeException("파일 조회 실패: " + id, e);
+      throw new BinaryContentDownloadException(id, e);
     }
   }
 

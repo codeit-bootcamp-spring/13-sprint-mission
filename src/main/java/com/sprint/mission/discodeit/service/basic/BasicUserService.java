@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentUploadException;
 import com.sprint.mission.discodeit.exception.user.DuplicateUserException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
@@ -53,7 +54,7 @@ public class BasicUserService implements UserService {
       try {
         bytes = profile.getBytes();
       } catch (IOException e) {
-        throw new RuntimeException("파일 읽기 실패", e);
+        throw new BinaryContentUploadException(profile.getOriginalFilename(), e);
       }
 
       BinaryContent content = new BinaryContent(
@@ -128,7 +129,7 @@ public class BasicUserService implements UserService {
       try {
         bytes = profile.getBytes();
       } catch (IOException e) {
-        throw new RuntimeException("파일 처리 실패", e);
+        throw new BinaryContentUploadException(profile.getOriginalFilename(), e);
       }
 
       BinaryContent newProfile = new BinaryContent(

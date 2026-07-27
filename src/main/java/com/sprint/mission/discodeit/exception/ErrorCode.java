@@ -21,6 +21,8 @@ public enum ErrorCode {
   READ_STATUS_ALREADY_EXISTS("이미 읽음 상태가 존재합니다."),
 
   BINARY_CONTENT_NOT_FOUND("바이너리 콘텐츠를 찾을 수 없습니다."),
+  BINARY_CONTENT_UPLOAD_FAILED("파일 업로드 중 오류가 발생했습니다."),
+  BINARY_CONTENT_DOWNLOAD_FAILED("파일 다운로드 중 오류가 발생했습니다."),
   FILE_READ_FAILED("파일을 읽는 중 오류가 발생했습니다."),
 
   INVALID_REQUEST("잘못된 요청입니다."),

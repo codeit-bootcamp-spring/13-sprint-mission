@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentUploadException;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -66,7 +67,7 @@ public class BasicMessageService implements MessageService {
         try {
           bytes = file.getBytes();
         } catch (IOException e) {
-          throw new RuntimeException("파일 읽기 실패", e);
+          throw new BinaryContentUploadException(file.getOriginalFilename(), e);
         }
 
         BinaryContent content = new BinaryContent(

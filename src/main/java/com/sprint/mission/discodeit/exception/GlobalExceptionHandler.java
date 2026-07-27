@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.exception;
 
 
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.PrivateChannelUnmodifiableException;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
