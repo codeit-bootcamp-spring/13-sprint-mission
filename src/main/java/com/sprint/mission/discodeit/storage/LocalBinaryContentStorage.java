@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.storage;
 
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentDto;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.InputStreamResource;
@@ -20,6 +21,7 @@ import java.util.UUID;
 
 @Component
 @ConditionalOnProperty(name = "discodeit.storage.type", havingValue = "local")
+@Slf4j
 public class LocalBinaryContentStorage implements BinaryContentStorage{
 
     private final Path root;
@@ -59,6 +61,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage{
 
         try {
             if (!Files.exists(path)) {
+                log.warn("파일 조회 실패 - 존재하지 않는 파일 id: {}", id);
                 throw new RuntimeException("파일이 존재하지 않습니다.");
             }
             return Files.newInputStream(path);
@@ -69,6 +72,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage{
 
     @Override
     public ResponseEntity<Resource> download(BinaryContentDto binaryContentDto) {
+        log.info("파일 다운로드 - Id: {}, fileName: {}", binaryContentDto.id(), binaryContentDto.fileName());
         InputStream inputStream = get(binaryContentDto.id());
         Resource resource = new InputStreamResource(inputStream);
 

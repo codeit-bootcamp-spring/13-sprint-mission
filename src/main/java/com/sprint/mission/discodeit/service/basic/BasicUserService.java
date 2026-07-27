@@ -43,11 +43,13 @@ public class BasicUserService implements UserService {
 
         //userName 중복 검사
         if (userRepository.existsByUsername(command.username())){
+            log.warn("사용자 생성 실패 - 중복된 username: {}", command.username());
             throw new IllegalArgumentException("이미 사용중인 이름 입니다.");
         }
 
         //email 중복 체크
         if (userRepository.existsByEmail(command.email())) {
+            log.warn("사용자 생성 실패 - 중복된 email: {}", command.email());
             throw new IllegalArgumentException("이미 사용중인 이메일 입니다.");
         }
 
@@ -78,7 +80,7 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
                 .orElse(null);
 
-        log.info("유저 조회 - name: {}", user.getUsername());
+        log.debug("유저 조회 - name: {}", user.getUsername());
 
         return userMapper.toDto(user, userStatus);
     }
@@ -90,7 +92,7 @@ public class BasicUserService implements UserService {
         if (users.isEmpty()) {
             return  new ArrayList<>();
         }
-        log.info("전체 유저 조회 완료 - 총 {}명", users.size());
+        log.debug("전체 유저 조회 완료 - 총 {}명", users.size());
         return  users.stream()
                 .map(user -> {
                     UserStatus userStatus = userStatusRepository.findByUserId(user.getId())
@@ -119,6 +121,7 @@ public class BasicUserService implements UserService {
         }
         if (command.newUsername() != null) {
             if (userRepository.existsByUsername(command.newUsername())){
+                log.warn("이름 변경 실패 - 중복된 username: {}", command.newUsername());
                 throw new IllegalArgumentException("이미 사용중인 이름입니다.");
             }
             user.updateUserName(command.newUsername());
@@ -126,6 +129,7 @@ public class BasicUserService implements UserService {
 
         if (command.newEmail() != null) {
             if (userRepository.existsByEmail(command.newEmail())) {
+                log.warn("이메일 변경 실패 - 중복된 email: {}", command.newEmail());
                 throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
             }
             user.updateUserEmail(command.newEmail());

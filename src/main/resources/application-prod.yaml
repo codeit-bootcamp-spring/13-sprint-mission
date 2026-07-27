@@ -15,4 +15,4 @@ discodeit:
 
 logging:
   level:
-    com.sprint.mission.discodeit: info
+    root: info

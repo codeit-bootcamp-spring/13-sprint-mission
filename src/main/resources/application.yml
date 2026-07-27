@@ -19,3 +19,6 @@ discodeit:
     type: local
     local:
       root-path: .discodeit/data
+logging:
+  level:
+    root: info

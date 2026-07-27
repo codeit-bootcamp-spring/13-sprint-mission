@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class BasicBinaryContentService implements BinaryContentService {
 
     private final BinaryContentRepository binaryContentRepository;
@@ -36,6 +38,8 @@ public class BasicBinaryContentService implements BinaryContentService {
         );
         binaryContentRepository.save(binaryContent);
         binaryContentStorage.put(binaryContent.getId(), command.bytes());
+        log.info("파일 저장 완료 - Id: {}, fileName: {}, contentType: {}",
+                binaryContent.getId(), binaryContent.getFileName(), binaryContent.getContentType());
         return binaryContentMapper.toDto(binaryContent);
     }
 
@@ -62,6 +66,7 @@ public class BasicBinaryContentService implements BinaryContentService {
         binaryContentRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 content 입니다."));
         binaryContentRepository.deleteById(id);
+        log.info("파일 삭제 완료 - 파일Id: {}", id);
     }
 
     @Override

@@ -20,4 +20,4 @@ discodeit:
 
 logging:
   level:
-    com.sprint.mission.discodeit:
+    root: debug

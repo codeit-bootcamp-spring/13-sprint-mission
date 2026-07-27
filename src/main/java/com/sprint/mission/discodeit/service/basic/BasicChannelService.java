@@ -33,6 +33,7 @@ public class BasicChannelService implements ChannelService {
     @Override
     public ChannelDto createPublicChannel(PublicChannelCommand command) {
         if (channelRepository.existsByName(command.name())){
+            log.warn("채널 생성 실패 - 중복된 채널명 : {}", command.name());
             throw new IllegalArgumentException("동일한 채널명이 존재 합니다.");
         }
         Channel channel = new Channel(ChannelType.PUBLIC, command.name(), command.description());
@@ -63,7 +64,7 @@ public class BasicChannelService implements ChannelService {
     public ChannelDto findByChannelId(UUID channelId) {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널입니다."));
-        log.info("채널 조회 - 채널명: {}",channel.getName());
+        log.debug("채널 조회 - 채널명: {}",channel.getName());
 
         return channelMapper.toDto(channel);
     }
@@ -86,7 +87,7 @@ public class BasicChannelService implements ChannelService {
         allChannels.addAll(publicChannels);
         allChannels.addAll(privateChannels);
 
-        log.info("전체 채널 조회 완료: {}", allChannels.size());
+        log.debug("전체 채널 조회 완료: {}", allChannels.size());
 
         return allChannels.stream()
                 .map(channelMapper::toDto)
@@ -99,14 +100,16 @@ public class BasicChannelService implements ChannelService {
         Channel channel = channelRepository.findById(ChannelId)
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널 입니다."));
         if (channel.getType().equals(ChannelType.PRIVATE)) {
+            log.warn("채널 수정 실패 - 채널 타입: {}",channel.getType());
             throw new IllegalArgumentException("비공개 채널은 수정할 수 없습니다.");
         }
         if (command.name() != null && !command.name().isBlank()) channel.updateChannel(command.name());
         if (command.description() != null && !command.description().isBlank()) channel.updateChannelDescription(command.description());
 
-        log.info("채널 수정 완료- 채널id: {}, 채널명: {} ,채널설명: {}", channel.getId(), channel.getName(), channel.getDescription());
 
         channelRepository.save(channel);
+
+        log.info("채널 수정 완료- 채널id: {}, 채널명: {} ,채널설명: {}", channel.getId(), channel.getName(), channel.getDescription());
         return channelMapper.toDto(channel);
     }
 
