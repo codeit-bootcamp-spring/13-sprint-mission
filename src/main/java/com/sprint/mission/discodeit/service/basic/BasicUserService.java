@@ -216,10 +216,10 @@ public class BasicUserService implements UserService {
 
     //유저의 현재 프로필 이미지가 존재한다면 삭제하기
     private void deleteProfileImage(User user) {
-        UUID binaryContentId = user.getProfile().getId();
+        BinaryContent binaryContent = user.getProfile();
 
-        if (binaryContentId != null) {
-            binaryContentRepository.deleteById(binaryContentId);
+        if (binaryContent != null && binaryContent.getId() != null) {
+            binaryContentRepository.deleteById(binaryContent.getId());
         }
     }
 
