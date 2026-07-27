@@ -38,11 +38,11 @@ public class BasicUserService implements UserService {
   public UserDto create(UserCreateRequest request, MultipartFile profile) {
 
     if (userRepository.findByUsername(request.username()).isPresent()) {
-      throw new DuplicateUserException("이미 존재하는 유저 이름입니다.");
+      throw new DuplicateUserException("username", request.username());
     }
 
     if (userRepository.findByEmail(request.email()).isPresent()) {
-      throw new DuplicateUserException("이미 존재하는 이메일입니다.");
+      throw new DuplicateUserException("email", request.email());
     }
 
     BinaryContent profileContent = null;
@@ -108,13 +108,13 @@ public class BasicUserService implements UserService {
     if (request.newUsername() != null
         && !request.newUsername().equals(user.getUsername())
         && userRepository.findByUsername(request.newUsername()).isPresent()) {
-      throw new DuplicateUserException("이미 존재하는 유저 이름입니다.");
+      throw new DuplicateUserException("username", request.newUsername());
     }
 
     if (request.newEmail() != null
         && !request.newEmail().equals(user.getEmail())
         && userRepository.findByEmail(request.newEmail()).isPresent()) {
-      throw new DuplicateUserException("이미 존재하는 이메일입니다.");
+      throw new DuplicateUserException("email", request.newEmail());
     }
 
     BinaryContent currentProfile = user.getProfile();

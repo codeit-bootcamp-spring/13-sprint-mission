@@ -1,8 +1,10 @@
 package com.sprint.mission.discodeit.exception;
 
-public class DuplicateUserException extends RuntimeException {
+import java.util.Map;
 
-  public DuplicateUserException(String message) {
-    super(message);
+public class DuplicateUserException extends UserException {
+
+  public DuplicateUserException(String field, String value) {
+    super(ErrorCode.DUPLICATE_USER, Map.of("field", field, "value", value));
   }
 }
