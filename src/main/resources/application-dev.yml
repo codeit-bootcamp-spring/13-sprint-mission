@@ -11,5 +11,7 @@ spring:
 
 logging:
   level:
+    root: INFO
+    com.sprint.mission.discodeit: DEBUG
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace

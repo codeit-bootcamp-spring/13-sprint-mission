@@ -11,5 +11,7 @@ spring:
 
 logging:
   level:
+    root: info
+    com.sprint.mission.discodeit: INFO
     org.hibernate.SQL: info
     org.hibernate.orm.jdbc.bind: info
