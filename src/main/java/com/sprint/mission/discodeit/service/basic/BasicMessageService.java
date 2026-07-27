@@ -8,8 +8,8 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.MessageNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
@@ -23,7 +23,6 @@ import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -94,9 +93,9 @@ public class BasicMessageService implements MessageService {
 
   @Transactional(readOnly = true)
   @Override
-  public MessageDto findById(UUID id) {
-    Message message = messageRepository.findById(id)
-        .orElseThrow(() -> new MessageNotFoundException(id));
+  public MessageDto findById(UUID messageId) {
+    Message message = messageRepository.findById(messageId)
+        .orElseThrow(() -> new MessageNotFoundException(messageId));
 
     return messageMapper.toDto(message);
   }
@@ -120,10 +119,10 @@ public class BasicMessageService implements MessageService {
   }
 
   @Override
-  public MessageDto update(UUID id, MessageUpdateRequest request) {
+  public MessageDto update(UUID messageId, MessageUpdateRequest request) {
 
-    Message message = messageRepository.findById(id)
-        .orElseThrow(() -> new NoSuchElementException("메세지를 찾을 수 없습니다."));
+    Message message = messageRepository.findById(messageId)
+        .orElseThrow(() -> new MessageNotFoundException(messageId));
 
     message.updateContent(request.newContent());
 
@@ -135,7 +134,8 @@ public class BasicMessageService implements MessageService {
   public void delete(UUID messageId) {
 
     Message message = messageRepository.findById(messageId)
-        .orElseThrow(() -> new NoSuchElementException("메세지를 찾을 수 없습니다."));
+        .orElseThrow(() -> new MessageNotFoundException(messageId) {
+        });
 
     List<BinaryContent> attachments = message.getAttachments();
 
