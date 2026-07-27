@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SprintLog 로깅 설정 (Logback).
+
+  역할 분담(실무 표준):
+    · application-<profile>.yml 의 logging.level.*  = "무엇을 어느 레벨로 남길까"(레벨 정책)
+    · 이 logback-spring.xml                          = "어디에 어떤 모양으로 남길까"(출력 대상·패턴·파일 롤링)
+-->
+<configuration>
+
+    <!-- Spring Boot 기본 색상·패턴 변환 규칙(CONSOLE_LOG_PATTERN, FILE_LOG_PATTERN 등)을 불러온다. -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- 로그 파일 위치 — 환경변수 LOG_PATH 로 덮어쓸 수 있다(운영 서버마다 경로가 다르므로). -->
+    <property name="LOG_PATH" value="${LOG_PATH:-logs}"/>
+    <property name="LOG_FILE" value="${LOG_PATH}/sprintlog.log"/>
+
+    <!-- 콘솔 출력: 사람이 읽기 좋게(색상 포함 — Spring Boot 기본 패턴). -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!--            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern> -->
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ── 개발(dev): 콘솔만. 색상·상세 로그로 빠르게 확인 ── -->
+    <springProfile name="dev">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- ── 운영(prod): 롤링 파일(+콘솔). 파일로 남겨 나중에 분석·감사 ── -->
+    <springProfile name="prod">
+        <!-- 롤링 파일: 날짜별 + 크기(10MB) 초과 시 새 파일로. 오래된 로그는 압축(.gz)해 최대 30일·총 1GB 보관 -->
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_FILE}</file>
+            <encoder>
+                <pattern>${FILE_LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+            <!-- 로그가 무한정 커져서 서버 디스크가 터지는 것을 방지하는 롤링 정책 -->
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <!-- 날짜가 바뀌거나 용량이 가득차면 sprintlog.2026-07-20.0.log.gz 같은 형태로 자동 압축되어 저장됩니다. -->
+                <fileNamePattern>${LOG_PATH}/sprintlog.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+                <maxFileSize>10MB</maxFileSize>     <!-- 한 파일이 10MB 넘으면 분할 -->
+                <maxHistory>30</maxHistory>          <!-- 최근 30일치만 보관 -->
+                <totalSizeCap>1GB</totalSizeCap>     <!-- 전체 로그 용량 상한(디스크 보호) -->
+            </rollingPolicy>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="FILE"/>
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- ── 테스트(test): 콘솔만, 조용하게(WARN). 테스트 출력이 로그로 지저분해지지 않게 ── -->
+    <springProfile name="test">
+        <root level="WARN">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+</configuration>

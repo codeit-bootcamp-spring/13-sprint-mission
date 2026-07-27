@@ -25,7 +25,5 @@ public class DiscodeitInit implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        log.info(dci.getFilePath().toString());
-        log.info(dci.getRepoType());
     }
 }
