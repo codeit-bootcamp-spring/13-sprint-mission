@@ -17,7 +17,6 @@ import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -87,7 +86,7 @@ public class BasicUserService implements UserService {
   @Override
   public UserDto findById(UUID userId) {
     User user = userRepository.findById(userId)
-        .orElseThrow(() -> new NoSuchElementException("유저를 찾을 수 없습니다."));
+        .orElseThrow(() -> new UserNotFoundException(userId));
 
     return userMapper.toDto(user);
   }
