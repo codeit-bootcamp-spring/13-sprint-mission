@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.*;
 import jakarta.validation.constraints.*;
 
 import java.time.*;
-@Schema(description = "유저 접속 상태 정보")
+@Schema(description = "메시지 읽음 상태 수정 정보")
 public record UpdateReadStatusRequest  (
 
         @PastOrPresent(message = "마지막 접속 시간이 미래 시점일 수 없습니다.")

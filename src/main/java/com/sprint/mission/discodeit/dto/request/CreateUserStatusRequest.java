@@ -7,10 +7,10 @@ import java.time.*;
 import java.util.*;
 
 public record CreateUserStatusRequest(
-        @NotNull(message = "유저 ID는 필수입니다.")
+        @NotNull(message = "사용자 ID는 필수입니다.")
         UUID userId,
 
-        @PastOrPresent (message = "마지막 접속 시간이 미래 시점일 수 없습니다.")
+        @PastOrPresent (message = "마지막 접속 시간은 미래 시점일 수 없습니다.")
         Instant lastActiveAt
 ) {
     public CreateUserStatusRequest{
@@ -19,7 +19,7 @@ public record CreateUserStatusRequest(
         }
     }
 
-    public CreateUserStatusCommand toCommnad(){
+    public CreateUserStatusCommand toCommand(){
         return new CreateUserStatusCommand(userId, lastActiveAt);
     }
 

@@ -5,8 +5,8 @@ import jakarta.validation.constraints.*;
 
 public record UpdateMessageRequest(
 
-        @NotBlank(message = "메세지 내용은 필수입니다.")
-        @Size(max = 2000, message = "메세지의 내용은  2,000자 이하여야 합니다.")
+        @NotBlank(message = "메시지 내용은 필수입니다.")
+        @Size(max = 2000, message = "메시지의 내용은  2,000자 이하여야 합니다.")
         String content
 ) {
     public UpdateMessageCommand toCommand() {

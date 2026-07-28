@@ -13,7 +13,7 @@ public record CreateReadStatusRequest(
         @NotNull(message = "채널 ID는 필수입니다.")
         UUID channelId,
 
-        @PastOrPresent(message = "읽은 시간이 현재시간보다 빠를 수 없습니다.")
+        @PastOrPresent(message = "읽은 시간은 현재 시간 이후일 수 없습니다.")
         Instant lastReadAt
 ) {
 
