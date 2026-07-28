@@ -8,5 +8,6 @@ public record ReadStatusResponse(
         UUID channelId,
         UUID userId,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        Instant lastReadAt
 ) {}

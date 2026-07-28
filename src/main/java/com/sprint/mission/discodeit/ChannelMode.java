@@ -27,12 +27,12 @@ public class ChannelMode {
 
         // 방금 등록된 채널 ID 찾아보기
         System.out.println("\n=== 방금 생성한 채널 조회 ===");
-        Optional<ChannelResponse> foundChannel = channelService.findById(inputChannel.channelIds());
+        Optional<ChannelResponse> foundChannel = channelService.findById(inputChannel.id());
         if (foundChannel.isPresent()) {
             ChannelResponse response = foundChannel.get();
             System.out.println("방금 생성한 채널을 찾았습니다.");
             System.out.println("제목: " + response.name());
-            System.out.println("ID: " + response.channelIds());
+            System.out.println("ID: " + response.id());
         }
 
         // ID로 조회 (단건 조회)
@@ -55,7 +55,7 @@ public class ChannelMode {
         System.out.println("\n=== 전체 채널 목록 조회 ===");
         List<ChannelResponse> channels = channelService.findAll(currentUserId);
         for (ChannelResponse channel : channels) {
-            System.out.println("ID: " + channel.channelIds() + " | 제목: " + channel.name());
+            System.out.println("ID: " + channel.id() + " | 제목: " + channel.name());
         }
 
         // 기존에 있던 채널 정보 수정 (제목 수정)

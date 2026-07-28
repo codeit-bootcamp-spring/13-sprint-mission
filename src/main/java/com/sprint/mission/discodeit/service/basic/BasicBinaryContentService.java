@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.BinaryContentRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,20 +20,14 @@ import java.util.stream.Collectors;
 public class BasicBinaryContentService implements BinaryContentService {
 
     private final BinaryContentRepository binaryContentRepository;
+    private final BinaryContentMapper binaryContentMapper;
 
     @Override
     public BinaryContentResponse create(BinaryContentRequest dto) {
 
-        BinaryContent binaryContent = new BinaryContent(dto.userId(), dto.messageId(), dto.fileName());
-        binaryContentRepository.save(binaryContent);
-
-        return new BinaryContentResponse(
-                binaryContent.getId(),
-                binaryContent.getCreatedAt(),
-                binaryContent.getUserId(),
-                binaryContent.getMessageId(),
-                binaryContent.getFileName()
-        );
+        BinaryContent binaryContent = new BinaryContent(dto.fileName(), dto.size(), dto.contentType(), dto.bytes());
+        BinaryContent savedBinaryContent = binaryContentRepository.save(binaryContent);
+        return binaryContentMapper.toDto(savedBinaryContent);
     }
 
     @Override
@@ -41,13 +35,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     public Optional<BinaryContentResponse> find(UUID id) {
 
         return binaryContentRepository.findById(id)
-                .map(bc -> new BinaryContentResponse(
-                        bc.getId(),
-                        bc.getCreatedAt(),
-                        bc.getUserId(),
-                        bc.getMessageId(),
-                        bc.getFileName()
-                ));
+                .map(binaryContentMapper::toDto);
     }
 
     @Override
@@ -55,14 +43,8 @@ public class BasicBinaryContentService implements BinaryContentService {
     public List<BinaryContentResponse> findAllByIdIn(List<UUID> ids) {
 
         return binaryContentRepository.findAllById(ids).stream()
-                .map(bc -> new BinaryContentResponse(
-                        bc.getId(),
-                        bc.getCreatedAt(),
-                        bc.getUserId(),
-                        bc.getMessageId(),
-                        bc.getFileName()
-                ))
-                .collect(Collectors.toList());
+                .map(binaryContentMapper::toDto)
+                .toList();
     }
 
     @Override

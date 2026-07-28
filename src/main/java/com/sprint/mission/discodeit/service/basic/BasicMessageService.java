@@ -3,9 +3,12 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.MessageResponse;
+import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.mapper.MessageMapper;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -14,11 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +29,8 @@ public class BasicMessageService implements MessageService {
     private final MessageRepository messageRepository;
     private final ChannelRepository channelRepository;
     private final UserRepository userRepository;
+    private final BinaryContentRepository binaryContentRepository;
+    private final MessageMapper messageMapper;
 
     @Override
     public MessageResponse create(MessageCreateRequest dto) {
@@ -35,32 +38,23 @@ public class BasicMessageService implements MessageService {
                 .orElseThrow(() -> new IllegalArgumentException("채널을 찾을 수 없습니다."));
         User author = userRepository.findById(dto.senderId())
                 .orElseThrow(() -> new IllegalArgumentException("작성자를 찾을 수 없습니다."));
+
         Message message = new Message(dto.content(), channel, author);
-        messageRepository.save(message);
-        return new MessageResponse(
-                message.getId(),
-                message.getChannel().getId(),
-                message.getAuthor().getId(),
-                message.getContent(),
-                Collections.emptyList(),
-                message.getCreatedAt(),
-                message.getUpdatedAt()
-        );
+
+        if (dto.binaryContentIds() != null && !dto.binaryContentIds().isEmpty()) {
+            List<BinaryContent> attachments = binaryContentRepository.findAllById(dto.binaryContentIds());
+            message.getAttachments().addAll(attachments);
+        }
+
+        Message savedMessage = messageRepository.save(message);
+        return messageMapper.toDto(savedMessage);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<MessageResponse> findById(UUID id) {
         return messageRepository.findById(id)
-                .map(m -> new MessageResponse(
-                        m.getId(),
-                        m.getChannel().getId(),
-                        m.getAuthor().getId(),
-                        m.getContent(),
-                        Collections.emptyList(),
-                        m.getCreatedAt(),
-                        m.getUpdatedAt()
-                ));
+                .map(messageMapper::toDto);
     }
 
     @Override
@@ -73,16 +67,8 @@ public class BasicMessageService implements MessageService {
     @Transactional(readOnly = true)
     public List<MessageResponse> findAllByChannelId(UUID channelId) {
         return messageRepository.findAllByChannelId(channelId).stream()
-                .map(m -> new MessageResponse(
-                        m.getId(),
-                        m.getChannel().getId(),
-                        m.getAuthor().getId(),
-                        m.getContent(),
-                        Collections.emptyList(),
-                        m.getCreatedAt(),
-                        m.getUpdatedAt()
-                ))
-                .collect(Collectors.toList());
+                .map(messageMapper::toDto)
+                .toList();
     }
 
     @Override
@@ -92,15 +78,7 @@ public class BasicMessageService implements MessageService {
 
         message.updateContent(dto.content());
 
-        return new MessageResponse(
-                message.getId(),
-                message.getChannel().getId(),
-                message.getAuthor().getId(),
-                message.getContent(),
-                Collections.emptyList(),
-                message.getCreatedAt(),
-                message.getUpdatedAt()
-        );
+        return messageMapper.toDto(message);
     }
 
     @Override
