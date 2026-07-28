@@ -2,6 +2,12 @@ spring:
   application:
     name: discodeit
 
+  boot:
+    admin:
+      client:
+        instance:
+          name: discodeit
+
   datasource:
     url: jdbc:postgresql://localhost:5432/discodeit
     username: discodeit_user
