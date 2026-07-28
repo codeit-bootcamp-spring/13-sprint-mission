@@ -119,18 +119,6 @@ public class BasicUserService implements UserService {
             throw new IllegalArgumentException("유저 수정 요청은 필수입니다.");
         }
 
-        if (command.username() == null || command.username().isBlank()) {
-            throw new IllegalArgumentException("사용자 이름은 필수입니다.");
-        }
-
-        if (command.email() == null || command.email().isBlank()) {
-            throw new IllegalArgumentException("이메일은 필수입니다.");
-        }
-
-        if (command.password() == null || command.password().isBlank()) {
-            throw new IllegalArgumentException("비밀번호는 필수입니다.");
-        }
-
         log.info("사용자 수정 요청. id ={}", id);
 
         User user = repository.findById(id)
