@@ -14,6 +14,7 @@ import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -39,6 +41,7 @@ public class BasicUserService implements UserService {
     @Override
     @Transactional
     public UserDto create(UserCreateRequest createRequest) {
+        log.info("Creating user: username={}, email={}", createRequest.username(), createRequest.email());
 
         validateUniqueUser(
                 createRequest.username(),
@@ -98,6 +101,7 @@ public class BasicUserService implements UserService {
     @Override
     @Transactional
     public UserDto update ( UUID userId, UserUpdateRequest updateRequest) {
+        log.info("Updating user: userId={}", userId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 유저입니다."));
@@ -132,6 +136,8 @@ public class BasicUserService implements UserService {
     @Override
     @Transactional
     public void delete(UUID id) {
+        log.info("Deleting user: userId={}", id);
+
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 유저입니다."));
 
@@ -148,10 +154,12 @@ public class BasicUserService implements UserService {
 
     private void validateUniqueUser(String username, String email) {
         if (userRepository.findByName(username).isPresent()) {
+            log.warn("Duplicate username detected: username={}", username);
             throw new IllegalArgumentException("이미 사용 중인 이름입니다.");
         }
 
         if (userRepository.findByEmail(email).isPresent()) {
+            log.warn("Duplicate email detected: email={}", email);
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
     }

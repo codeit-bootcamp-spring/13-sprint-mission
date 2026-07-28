@@ -12,6 +12,7 @@ import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -35,6 +37,7 @@ public class BasicChannelService implements ChannelService {
     @Override
     @Transactional
     public ChannelDto createPublic(PublicChannelCreateRequest request) {
+        log.info("Creating public channel: name={}", request.name());
 
         Channel channel = new Channel(
                 request.name(),
@@ -51,6 +54,7 @@ public class BasicChannelService implements ChannelService {
     @Override
     @Transactional
     public ChannelDto createPrivate(PrivateChannelCreateRequest request) {
+        log.info("Creating private channel: participantCount={}", request.participantIds().size());
         List<User> participants = new ArrayList<>();
 
         for (UUID participantId : request.participantIds()) {
@@ -110,10 +114,12 @@ public class BasicChannelService implements ChannelService {
     @Override
     @Transactional
     public ChannelDto update(UUID channelId, ChannelUpdateRequest request) {
+        log.info("Updating channel: channelId={}", channelId);
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널입니다."));
 
         if (channel.getType() == ChannelType.PRIVATE) {
+            log.warn("Rejected private channel update: channelId={}", channelId);
             throw new IllegalArgumentException("PRIVATE 채널은 수정할 수 없습니다.");
         }
 
@@ -126,6 +132,7 @@ public class BasicChannelService implements ChannelService {
     @Override
     @Transactional
     public void delete(UUID id) {
+        log.info("Deleting channel: channelId={}", id);
         Channel channel = channelRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널입니다."));
 

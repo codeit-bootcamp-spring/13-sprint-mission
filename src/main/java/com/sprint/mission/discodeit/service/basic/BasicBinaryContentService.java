@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collection;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -34,6 +36,8 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     @Transactional
     public BinaryContent createEntity(BinaryContentCreateRequest request) {
+        log.info("Creating binary content: fileName={}, contentType={}, size={}",
+                request.fileName(), request.contentType(), request.bytes().length);
         BinaryContent binaryContent = new BinaryContent(
                 request.fileName(),
                 request.contentType(),
@@ -64,6 +68,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     @Transactional
     public void delete(UUID id) {
+        log.info("Deleting binary content: binaryContentId={}", id);
         if (!binaryContentRepository.existsById(id)) {
             throw new IllegalArgumentException("존재하지 않는 파일입니다.");
         }
@@ -80,6 +85,7 @@ public class BasicBinaryContentService implements BinaryContentService {
 
     @Override
     public ResponseEntity<?> download(UUID id) {
+        log.info("Downloading binary content: binaryContentId={}", id);
         BinaryContentDto binaryContentDto = findById(id);
 
         return binaryContentStorage.download(binaryContentDto);

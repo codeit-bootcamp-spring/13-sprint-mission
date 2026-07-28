@@ -18,6 +18,7 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -43,6 +45,7 @@ public class BasicMessageService implements MessageService {
     @Override
     @Transactional
     public MessageDto create(MessageCreateRequest request) {
+        log.info("Creating message: channelId={}, userId={}", request.channelId(), request.userId());
         Channel channel = channelRepository.findById(request.channelId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널의 메시지입니다."));
 
@@ -51,6 +54,7 @@ public class BasicMessageService implements MessageService {
 
         if ((request.content() == null || request.content().isBlank())
                 && (request.attachments() == null || request.attachments().isEmpty())) {
+            log.warn("Rejected empty message creation: channelId={}, userId={}", request.channelId(), request.userId());
             throw new IllegalArgumentException("메시지 내용 또는 첨부파일이 필요합니다.");
         }
 
@@ -99,6 +103,7 @@ public class BasicMessageService implements MessageService {
     @Override
     @Transactional
     public MessageDto update(UUID messageId, MessageUpdateRequest request) {
+        log.info("Updating message: messageId={}", messageId);
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 메세지 입니다."));
 
@@ -110,6 +115,7 @@ public class BasicMessageService implements MessageService {
     @Override
     @Transactional
     public void delete(UUID id) {
+        log.info("Deleting message: messageId={}", id);
         Message message = messageRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 메세지 입니다."));
 

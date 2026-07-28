@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/messages")
@@ -33,6 +35,7 @@ public class MessageController {
             @RequestPart("messageCreateRequest") MessageCreateRequest request,
             @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
     ) throws IOException {
+        log.info("Received message create request: channelId={}, userId={}", request.channelId(), request.userId());
         List<BinaryContentCreateRequest> attachmentRequests = new ArrayList<>();
 
         if (attachments != null) {
@@ -76,6 +79,7 @@ public class MessageController {
             @PathVariable UUID messageId,
             @RequestBody MessageUpdateRequest request
     ) {
+        log.info("Received message update request: messageId={}", messageId);
         return ResponseEntity.ok(messageService.update(messageId, request));
     }
 
@@ -83,6 +87,7 @@ public class MessageController {
     public ResponseEntity<Void> delete(
             @PathVariable UUID messageId
     ) {
+        log.info("Received message delete request: messageId={}", messageId);
         messageService.delete(messageId);
         return ResponseEntity.noContent().build();
     }

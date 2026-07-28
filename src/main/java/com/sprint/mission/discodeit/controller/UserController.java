@@ -9,6 +9,7 @@ import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/users")
@@ -31,6 +33,7 @@ public class UserController {
             @RequestPart("userCreateRequest") UserCreateRequest request,
             @RequestPart(value = "profile", required = false) MultipartFile profile
     ) throws IOException {
+        log.info("Received user create request: username={}, email={}", request.username(), request.email());
         UserCreateRequest serviceRequest = new UserCreateRequest(
                 request.username(),
                 request.email(),
@@ -61,6 +64,7 @@ public class UserController {
             @RequestPart("userUpdateRequest") UserUpdateRequest request,
             @RequestPart(value = "profile", required = false) MultipartFile profile
     ) throws IOException {
+        log.info("Received user update request: userId={}", userId);
         UserUpdateRequest serviceRequest = new UserUpdateRequest(
                 request.username(),
                 request.email(),
@@ -75,6 +79,8 @@ public class UserController {
 
     @RequestMapping (value = "/{id}", method = RequestMethod.DELETE)
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
+
+        log.info("Received user delete request: userId={}", id);
         userService.delete(id);
         return ResponseEntity.noContent().build();
     }
