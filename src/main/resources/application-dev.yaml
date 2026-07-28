@@ -13,4 +13,4 @@ server:
 
 logging:
   level:
-    com.sprintlog: debug
+    com.sprint.mission.discodeit: debug

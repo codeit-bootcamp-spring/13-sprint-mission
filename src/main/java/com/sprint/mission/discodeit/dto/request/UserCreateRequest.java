@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.dto.request;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 public record UserCreateRequest(
@@ -8,6 +9,7 @@ public record UserCreateRequest(
         String username,
 
         @NotBlank(message = "email은 비워둘 수 없습니다.")
+        @Email
         String email,
 
         @NotBlank(message = "password는 비워둘 수 없습니다.")

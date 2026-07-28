@@ -12,7 +12,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import java.util.List;
 import java.util.UUID;
 
-@EnableJpaAuditing
 @SpringBootApplication
 public class DiscodeitApplication {
 

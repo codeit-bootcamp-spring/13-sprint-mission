@@ -43,7 +43,7 @@ discodeit:
 
 logging:
   level:
-    com.sprintlog: info
+    com.sprint.mission.discodeit: info
 
 
 management:
