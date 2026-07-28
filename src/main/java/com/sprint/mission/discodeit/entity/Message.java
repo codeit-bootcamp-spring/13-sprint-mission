@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.entity;
 
 import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import com.sprint.mission.discodeit.exception.NoChangesException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -38,7 +39,7 @@ public class Message extends BaseUpdatableEntity {
       joinColumns = @JoinColumn(name = "message_id"),
       inverseJoinColumns = @JoinColumn(name = "attachment_id"))
   @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-  // CascadeType.ALL 삭제 또한 전이, 자식 생명주기 부모에 완전히 종속 
+  // CascadeType.ALL 삭제 또한 전이, 자식 생명주기 부모에 완전히 종속
   private List<BinaryContent> attachments = new ArrayList<>(); // 클래스 다이어그램에 따라 클래스 참조관계 수정
 
   public Message(String content, Channel channel, User author, List<BinaryContent> attachments) {
@@ -56,7 +57,7 @@ public class Message extends BaseUpdatableEntity {
       anyValueUpdated = true;
     }
     if (!anyValueUpdated) {
-      throw new IllegalArgumentException("변경사항이 없습니다!");
+      throw new NoChangesException();
     }
   }
 }

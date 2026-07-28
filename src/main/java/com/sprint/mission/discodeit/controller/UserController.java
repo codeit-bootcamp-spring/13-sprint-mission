@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusDto;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentUploadException;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -63,7 +64,7 @@ public class UserController {
 
           } catch (IOException e) {
             log.error("사용자 프로필 등록 실패", e);
-            throw new IllegalArgumentException(e);
+            throw new BinaryContentUploadException();
           }
         });
     return ResponseEntity
@@ -94,7 +95,7 @@ public class UserController {
                 file.getContentType(), file.getBytes());
           } catch (IOException e) {
             log.error("사용자 프로필 수정 실패", e);
-            throw new RuntimeException(e);
+            throw new BinaryContentUploadException();
           }
         });
     return ResponseEntity

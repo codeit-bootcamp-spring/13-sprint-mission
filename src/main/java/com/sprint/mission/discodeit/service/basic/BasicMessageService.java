@@ -9,6 +9,9 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.message.AuthorNotFoundException;
+import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -19,14 +22,11 @@ import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,11 +50,9 @@ public class BasicMessageService implements MessageService {
   public MessageDto create(MessageCreateRequest messageCreateRequest,
       List<BinaryContentCreateRequest> binaryContentCreateRequests) {
     Channel channel = channelRepository.findById(messageCreateRequest.getChannelId())
-        .orElseThrow(() -> new NoSuchElementException(
-            "Channel with id " + messageCreateRequest.getChannelId() + " not found"));
+        .orElseThrow(() -> new ChannelNotFoundException(messageCreateRequest.getChannelId()));
     User author = userRepository.findById(messageCreateRequest.getAuthorId())
-        .orElseThrow(() -> new NoSuchElementException(
-            "Author with id " + messageCreateRequest.getAuthorId() + " not found"));
+        .orElseThrow(() -> new AuthorNotFoundException(messageCreateRequest.getAuthorId()));
     // 선택적으로 여러 개의 첨부파일 같이 등록 가능
     List<BinaryContent> attachments = binaryContentCreateRequests.stream()
         .map(attachmentRequest -> {
@@ -82,7 +80,7 @@ public class BasicMessageService implements MessageService {
     return messageRepository.findById(messageId)
         .map(message -> messageMapper.toDto(message))
         .orElseThrow(
-            () -> new NoSuchElementException("Message with id " + messageId + " not found"));
+            () -> new MessageNotFoundException(messageId));
   }
 
   @Transactional(readOnly = true)
@@ -100,7 +98,7 @@ public class BasicMessageService implements MessageService {
   public MessageDto update(UUID messageId, MessageUpdateRequest request) {
     Message message = messageRepository.findById(messageId)
         .orElseThrow(
-            () -> new NoSuchElementException("Message with id " + messageId + " not found"));
+            () -> new MessageNotFoundException(messageId));
     message.update(request.getNewContent());
     log.info("메시지 수정 messageId={}", messageId);
     return messageMapper.toDto(message);
@@ -111,7 +109,7 @@ public class BasicMessageService implements MessageService {
   public void delete(UUID messageId) {
     if (!messageRepository.existsById(messageId)) {
       log.warn("존재하지 않는 메시지 아이디 {}", messageId);
-      throw new NoSuchElementException("Message with id " + messageId + " not found");
+      throw new MessageNotFoundException(messageId);
     }
     // 관련된 도메인 BinaryContent는 CascadeType.REMOVE와 고아객체로 설정했기 때문에 같이 삭제된다
     messageRepository.deleteById(messageId);

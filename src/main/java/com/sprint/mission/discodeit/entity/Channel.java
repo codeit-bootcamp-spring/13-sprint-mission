@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.entity;
 
 import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import com.sprint.mission.discodeit.exception.NoChangesException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -45,7 +46,7 @@ public class Channel extends BaseUpdatableEntity {
       anyValueUpdated = true;
     }
     if (!anyValueUpdated) {
-      throw new IllegalArgumentException("변경사항이 없습니다!");
+      throw new NoChangesException();
     }
   }
 }

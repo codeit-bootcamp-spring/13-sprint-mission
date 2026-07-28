@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.message.MessageDto;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentUploadException;
 import com.sprint.mission.discodeit.service.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -66,7 +67,7 @@ public class MessageController {
                     file.getContentType(), file.getBytes());
               } catch (IOException e) {
                 log.error("첨부 파일 등록 실패", e);
-                throw new IllegalArgumentException(e);
+                throw new BinaryContentUploadException();
               }
             }).toList()).orElse(new ArrayList<>());
     return ResponseEntity

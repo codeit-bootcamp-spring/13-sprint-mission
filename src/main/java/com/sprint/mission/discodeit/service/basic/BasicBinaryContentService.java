@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
 import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
@@ -12,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,8 +46,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     return binaryContentRepository.findById(binaryContentId)
         .map(binaryContent -> binaryContentMapper.toDto(binaryContent))
         .orElseThrow(
-            () -> new NoSuchElementException(
-                "BinaryContent with id " + binaryContentId + " not found"));
+            () -> new BinaryContentNotFoundException(binaryContentId));
   }
 
   @Override
@@ -65,7 +64,7 @@ public class BasicBinaryContentService implements BinaryContentService {
   public void delete(UUID contentId) {
     if (!binaryContentRepository.existsById(contentId)) {
       log.warn("존재하지 않는 파일 아이디 {}", contentId);
-      throw new NoSuchElementException("BinaryContent with id " + contentId + " not found");
+      throw new BinaryContentNotFoundException(contentId);
     }
     log.info("첨부 파일 삭제 contentId={}", contentId);
     binaryContentRepository.deleteById(contentId);

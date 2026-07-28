@@ -7,6 +7,8 @@ import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -20,7 +22,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,11 +46,11 @@ public class BasicUserService implements UserService {
     String email = userCreateRequest.getEmail();
     if (userRepository.existsByEmail(email)) { // API 스펙에 맞춰 추가
       log.warn("이미 사용 중인 사용자 이메일 {}", email);
-      throw new IllegalArgumentException("User with email " + email + " already exists");
+      throw new UserAlreadyExistsException("중복된 email", email);
     }
     if (userRepository.existsByUsername(username)) {
       log.warn("이미 사용 중인 사용자 이름 {}", username);
-      throw new IllegalArgumentException("User with username " + username + " already exists");
+      throw new UserAlreadyExistsException("중복된 username", username);
     }
     // 프로필 이미지 있으면 등록
     BinaryContent savedProfile = optionalProfileCreateRequest
@@ -80,7 +81,7 @@ public class BasicUserService implements UserService {
     log.debug("사용자 조회 userId={}", userId);
     return userRepository.findById(userId)
         .map(user -> userMapper.toDto(user))
-        .orElseThrow(() -> new NoSuchElementException("User with id " + userId + " not found"));
+        .orElseThrow(() -> new UserNotFoundException(userId));
   }
 
   @Transactional(readOnly = true)
@@ -95,17 +96,17 @@ public class BasicUserService implements UserService {
   public UserDto update(UUID userId, UserUpdateRequest userUpdateRequest,
       Optional<BinaryContentCreateRequest> optionalProfileCreateRequest) {
     User user = userRepository.findById(userId)
-        .orElseThrow(() -> new NoSuchElementException("User with id " + userId + " not found"));
+        .orElseThrow(() -> new UserNotFoundException(userId));
     String newUsername = userUpdateRequest.getNewUsername();
     String newEmail = userUpdateRequest.getNewEmail();
     if (userRepository.existsByEmail(newEmail) && !user.getEmail()
         .equals(newEmail)) { // API 스펙에 맞춰 추가
       log.warn("이미 사용 중인 사용자 이메일 {}", newEmail);
-      throw new IllegalArgumentException("User with email " + newEmail + " already exists");
+      throw new UserAlreadyExistsException("중복된 email", newEmail);
     }
     if (userRepository.existsByUsername(newUsername)) {
       log.warn("이미 존재하는 사용자 이름 {}", newUsername);
-      throw new IllegalArgumentException("User with username " + newUsername + " already exists");
+      throw new UserAlreadyExistsException("중복된 username", newUsername);
     }
     // 프로필 이미지 선택적으로 대체
     BinaryContent profile = optionalProfileCreateRequest
@@ -121,7 +122,7 @@ public class BasicUserService implements UserService {
         .orElse(null);
     // 기존 프로필 삭제
     user.update(newUsername, newEmail, userUpdateRequest.getNewPassword(), profile); // profileId 추가
-    log.info("사용자 정보 수정 userId={}, newUserName={}, newEmail, fileName={}", userId,
+    log.info("사용자 정보 수정 userId={}, newUserName={}, newEmail={}, fileName={}", userId,
         newUsername, newEmail, profile.getFileName());
     return userMapper.toDto(user);
   }
@@ -131,7 +132,7 @@ public class BasicUserService implements UserService {
   public void delete(UUID userId) {
     if (userRepository.existsById(userId)) {
       log.warn("존재하지 않는 사용자 아이디 {}", userId);
-      throw new NoSuchElementException("User with id " + userId + " not found");
+      throw new UserNotFoundException(userId);
     }
     // user가 삭제되면 영속성 전이된 프로필 또한 삭제
     userRepository.deleteById(userId);
