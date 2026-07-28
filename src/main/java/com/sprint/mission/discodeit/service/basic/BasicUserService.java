@@ -136,19 +136,41 @@ public class BasicUserService implements UserService {
         User user = repository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
-        Optional<User> emailOwner = repository.findByEmail(command.email());
-        if (emailOwner.isPresent() && !emailOwner.get().getId().equals(id)) {
-            throw new UserAlreadyExistsException("email");
+        if (command.username() != null) {
+            if (command.username().isBlank()) {
+                throw new IllegalArgumentException("사용자 이름은 공백일 수 없습니다.");
+            }
+
+            repository.findByUsername(command.username())
+                    .filter(owner -> !owner.getId().equals(id))
+                    .ifPresent(owner -> {
+                        throw new UserAlreadyExistsException("username");
+                    });
+
+            user.updateUserName(command.username());
         }
 
-        Optional<User> usernameOwner = repository.findByUsername(command.username());
-        if (usernameOwner.isPresent() && !usernameOwner.get().getId().equals(id)) {
-            throw new UserAlreadyExistsException("username");
+        if (command.email() != null) {
+            if (command.email().isBlank()) {
+                throw new IllegalArgumentException("이메일은 공백일 수 없습니다.");
+            }
+
+            repository.findByEmail(command.email())
+                    .filter(owner -> !owner.getId().equals(id))
+                    .ifPresent(owner -> {
+                        throw new UserAlreadyExistsException("email");
+                    });
+
+            user.updateEmail(command.email());
         }
 
-        user.updateUserName(command.username());
-        user.updateEmail(command.email());
-        user.updatePassword(command.password());
+        if (command.password() != null) {
+            if (command.password().isBlank()) {
+                throw new IllegalArgumentException("비밀번호는 공백일 수 없습니다.");
+            }
+
+            user.updatePassword(command.password());
+        }
 
         if (profileImage != null) {
             BinaryContent oldProfile = user.getProfile();
@@ -163,7 +185,9 @@ public class BasicUserService implements UserService {
                                             "저장된 프로필 이미지를 찾을 수 없습니다."
                                     )
                             );
+
             user.updateProfile(newProfile);
+
             if (oldProfile != null) {
                 binaryContentRepository.delete(oldProfile);
             }

@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.dto.command.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.service.*;
@@ -35,8 +36,8 @@ public class ChannelController {
 
     @PatchMapping("/{channelId}")
     public ResponseEntity<ChannelDto> update(@PathVariable UUID channelId,
-                           @Valid @RequestBody CreatePublicChannelRequest request){
-        ChannelDto channel = channelService.update(channelId, request.toCommand());
+                                             @Valid @RequestBody UpdateChannelRequset requset){
+        ChannelDto channel = channelService.update(channelId, requset.toCommand());
         return ResponseEntity.ok(channel);
     }
 

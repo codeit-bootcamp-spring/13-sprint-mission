@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.command.*;
+import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.channel.*;
@@ -120,17 +121,21 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     @Transactional
-    public ChannelDto update(UUID id, CreatePublicChannelCommand request) {
+    public ChannelDto update(UUID id, UpdateChannelCommand command) {
         if (id == null) {
             throw new IllegalArgumentException("채널 ID는 필수입니다.");
         }
 
-        if (request == null) {
+        if (command == null) {
             throw new IllegalArgumentException("채널 수정 요청은 필수입니다.");
         }
 
-        if (request.name() == null || request.name().isBlank()) {
-            throw new IllegalArgumentException("채널 이름은 필수입니다.");
+        if (command.name() == null && command.description() == null)  {
+            throw new IllegalArgumentException("수정할 채널 정보가 없습니다.");
+        }
+
+        if (command.name() != null && command.name().isBlank()) {
+            throw new IllegalArgumentException("채널 이름은 공백일 수 없습니다.");
         }
 
         log.info("채널 수정 요청. id={}", id);
@@ -142,7 +147,7 @@ public class BasicChannelService implements ChannelService {
             throw new PrivateChannelUpdateException(id);
         }
 
-        channel.update(request.name(), request.description());
+        channel.update(command.name(), command.description());
         log.info("채널 수정 완료. id={}", id);
         return channelMapper.toDto(channel);
 

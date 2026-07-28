@@ -13,7 +13,7 @@ public interface ChannelService {
 
     ChannelDto find(UUID id);
 
-    ChannelDto update(UUID id, CreatePublicChannelCommand command);
+    ChannelDto update(UUID id, UpdateChannelCommand command);
 
     List<ChannelDto> findAllByUserId(UUID userId);
 
