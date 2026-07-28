@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.exception.message.*;
 import com.sprint.mission.discodeit.exception.user.*;
 import lombok.extern.slf4j.*;
 import org.springframework.http.*;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.*;
@@ -87,6 +88,37 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException exception
+    ) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        Map<String, Object> validationErrors = new LinkedHashMap<>();
+
+        exception.getBindingResult()
+                .getFieldErrors()
+                .forEach(error -> validationErrors.putIfAbsent(
+                        error.getField(),
+                        Optional.ofNullable(error.getDefaultMessage())
+                                .orElse("잘못된 값입니다.")
+                ));
+
+        ErrorResponse response = new ErrorResponse(
+                Instant.now(),
+                ErrorCode.INVALID_REQUEST.name(),
+                "요청 값이 올바르지 않습니다.",
+                validationErrors,
+                exception.getClass().getSimpleName(),
+                status.value()
+        );
+
+        log.warn("요청 값 검증에 실패했습니다. errors={}", validationErrors);
+
+        return ResponseEntity
+                .status(status)
+                .body(response);
+    }
 
 
 
