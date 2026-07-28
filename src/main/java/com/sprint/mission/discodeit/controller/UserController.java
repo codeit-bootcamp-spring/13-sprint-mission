@@ -26,7 +26,7 @@ public class UserController {
 
    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserDto> create(
-           @Valid @RequestPart("userCreateRequest") CreateUserRequest request,
+           @Valid @ModelAttribute CreateUserRequest request,
             @RequestPart(value = "profile", required = false) MultipartFile profile
     ) {
        CreateBinaryContentCommand profileImageCommand =
@@ -46,7 +46,7 @@ public class UserController {
     @PatchMapping(value = "/{userId}",
                     consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserDto> update(@PathVariable UUID userId,
-                          @Valid @RequestPart UpdateUserRequest request,
+                          @Valid @ModelAttribute UpdateUserRequest request,
                           @RequestParam(value = "profileImage", required = false) MultipartFile profileImage) {
 
         CreateBinaryContentCommand profileImageCommand =
@@ -78,9 +78,9 @@ public class UserController {
     @PatchMapping(value = "/{userId}/status")
     public ResponseEntity<UserStatusDto> updateStatus(
             @PathVariable UUID userId,
-            @Valid @RequestPart UpdateUserStatusCommand command
+            @Valid @RequestBody UpdateUserStatusRequest request
     ) {
-        UserStatusDto statusDto = userStatusService.updateByUserId(userId, command);
+        UserStatusDto statusDto = userStatusService.updateByUserId(userId, request.toCommand());
         return ResponseEntity.ok(statusDto);
     }
 }
