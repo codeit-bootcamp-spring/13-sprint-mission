@@ -211,7 +211,7 @@ public class BasicChannelService implements ChannelService {
 
     if (channel.getType() == Channel.ChannelType.PRIVATE) {
       log.warn("비공개 채널 수정 시도: channelId={}", id);
-      throw new PrivateChannelUnmodifiableException(channel.getId());
+      throw new PrivateChannelUnmodifiableException(id);
     }
 
     channel.update(request.newName(), request.newDescription());
