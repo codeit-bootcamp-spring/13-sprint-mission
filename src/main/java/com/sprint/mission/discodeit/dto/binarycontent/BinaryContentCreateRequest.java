@@ -2,6 +2,8 @@ package com.sprint.mission.discodeit.dto.binarycontent;
 
 import com.sprint.mission.discodeit.dto.command.binarycontent.BinaryContentCreateCommand;
 import com.sprint.mission.discodeit.entity.ContentType;
+import com.sprint.mission.discodeit.exception.binarycontent.InvalidFileSizeException;
+import com.sprint.mission.discodeit.exception.binarycontent.UnsupportedFileTypeException;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 
@@ -23,10 +25,10 @@ public record BinaryContentCreateRequest(
     public BinaryContentCreateRequest{
         //파일 크기 검증
         if (fileSize > MAX_FILE_SIZE) {
-            throw new IllegalArgumentException("파일 크기는 5MB 이하여야 합니다.");
+            throw InvalidFileSizeException.withSize(fileSize);
         }
         if (!ContentType.isSupported(contentType)) {
-            throw new IllegalArgumentException("지원하지 않는 파일 형식 입니다:" + contentType);
+            throw UnsupportedFileTypeException.withType(contentType);
         }
     }
 

@@ -1,30 +1,22 @@
 package com.sprint.mission.discodeit.dto.user;
 
-import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
 import com.sprint.mission.discodeit.dto.command.user.UserUpdateCommand;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
 
 public record UserUpdateRequest(
-    @Schema(description = "수정할 사용자 이름", example = "홍길이",  requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "수정할 사용자 이름", example = "홍길이")
+    @Pattern(regexp = "\\S+", message = "이름은 공백일 수 없습니다.")
     String newUsername,
-    @Schema(description = "수정할 이메일", example = "aaa@example.com",  requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "수정할 이메일", example = "aaa@example.com")
+    @Email(message = "이메일 형식이 올바르지 않습니다.")
     String newEmail,
-    @Schema(description = "수정할 비밀번호", example = "0000",  requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "수정할 비밀번호", example = "0000")
+    @Pattern(regexp = "\\S+", message = "비밀번호는 공백일 수 없습니다.")
     String newPassword
 )
 {
-    public UserUpdateRequest {
-        if (newUsername != null && newUsername.isBlank()) {
-            throw new IllegalArgumentException("이름을 입력해주세요.");
-        }
-        if (newEmail != null && newEmail.isBlank()) {
-            throw new IllegalArgumentException("이메일을 입력해주세요.");
-        }
-        if (newPassword != null && newPassword.isBlank()) {
-            throw new IllegalArgumentException("비밀번호를 입력해주세요.");
-        }
-    }
-
     public UserUpdateCommand toCommand() {
         return new UserUpdateCommand(newUsername, newEmail, newPassword);
     }

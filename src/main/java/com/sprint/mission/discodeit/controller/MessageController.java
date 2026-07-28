@@ -9,6 +9,7 @@ import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.util.FileUtils;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -35,7 +36,7 @@ public class MessageController implements MessageControllerDocs {
 
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<MessageDto> createMessage(@RequestPart("messageCreateRequest") MessageCreateRequest request,
+    public ResponseEntity<MessageDto> createMessage(@Valid @RequestPart("messageCreateRequest") MessageCreateRequest request,
                                                     @RequestPart(required = false) List<MultipartFile> attachments) {
         List<BinaryContentCreateCommand> attachmentRequests = attachments == null ?
                 new ArrayList<>() :
@@ -50,7 +51,8 @@ public class MessageController implements MessageControllerDocs {
 
 
     @PatchMapping("/{messageId}")
-    public ResponseEntity<MessageDto> updateMessage(@PathVariable UUID messageId, @RequestBody MessageUpdateRequest request) {
+    public ResponseEntity<MessageDto> updateMessage(@PathVariable UUID messageId,
+                                                    @Valid @RequestBody MessageUpdateRequest request) {
         MessageDto messageDto = messageService.updateMessage(messageId, request.toCommand());
         return ResponseEntity.status(HttpStatus.OK).body(messageDto);
     }

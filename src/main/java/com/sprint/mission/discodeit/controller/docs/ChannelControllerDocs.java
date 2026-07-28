@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +22,7 @@ public interface ChannelControllerDocs {
             @ApiResponse(responseCode = "201", description = "생성 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청")
     })
-    public ResponseEntity<ChannelDto> createChannel(@RequestBody PublicChannelRequest publicRequest);
+    public ResponseEntity<ChannelDto> createChannel(@Valid @RequestBody PublicChannelRequest publicRequest);
 
     @Operation(summary = "Private 채널 생성 API")
     @PostMapping("/private")
@@ -29,7 +30,7 @@ public interface ChannelControllerDocs {
             @ApiResponse(responseCode = "201", description = "생성 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청")
     })
-    public ResponseEntity<ChannelDto> createChannel(@RequestBody PrivateChannelRequest privateRequest);
+    public ResponseEntity<ChannelDto> createChannel(@Valid @RequestBody PrivateChannelRequest privateRequest);
 
     @Operation(summary = "Public 채널 수정 API")
     @PatchMapping("/{channelId}")
@@ -38,7 +39,7 @@ public interface ChannelControllerDocs {
             @ApiResponse(responseCode = "404", description = "존재하지 않음")
     })
     public ResponseEntity<ChannelDto> updateChannel(@PathVariable UUID channelId,
-                                                         @RequestBody ChannelUpdateRequest request);
+                                                    @Valid @RequestBody ChannelUpdateRequest request);
 
     @Operation(summary = "채널 삭제 API")
     @DeleteMapping("/{channelId}")

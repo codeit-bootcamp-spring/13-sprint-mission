@@ -10,6 +10,7 @@ import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import com.sprint.mission.discodeit.util.FileUtils;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -31,7 +32,7 @@ public class UserController implements UserControllerDocs {
 
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UserDto> createUser(@RequestPart("userCreateRequest") UserCreateRequest request,
+    public ResponseEntity<UserDto> createUser(@Valid @RequestPart("userCreateRequest") UserCreateRequest request,
                                               @RequestPart(required = false) MultipartFile profile) {
         Optional<BinaryContentCreateCommand> profileCommand = FileUtils.toCommand(profile);
         UserDto userDto = userService.createUser(request.toCommand(), profileCommand.orElse(null));
@@ -41,8 +42,8 @@ public class UserController implements UserControllerDocs {
 
     @PatchMapping(path = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserDto> updateUser(@PathVariable UUID userId,
-                                                   @RequestPart("userUpdateRequest") UserUpdateRequest request,
-                                                   @RequestPart(required = false) MultipartFile profile){
+                                              @Valid @RequestPart("userUpdateRequest") UserUpdateRequest request,
+                                              @RequestPart(required = false) MultipartFile profile){
         Optional<BinaryContentCreateCommand> profileCommand = FileUtils.toCommand(profile);
         UserDto userDto = userService.updateUser(userId, request.toCommand(), profileCommand.orElse(null));
         return ResponseEntity.status(HttpStatus.OK).body(userDto);
@@ -68,7 +69,7 @@ public class UserController implements UserControllerDocs {
 
     @PatchMapping("/{userId}/userStatus")
     public ResponseEntity<UserStatusDto> updateUserStatus(@PathVariable UUID userId,
-                                                          @RequestBody UserStatusUpdateRequest request){
+                                                          @Valid @RequestBody UserStatusUpdateRequest request){
         UserStatusDto userStatusResponse = userStatusService.updateByUserId(userId, request.toCommand());
         return ResponseEntity.status(HttpStatus.OK).body(userStatusResponse);
     }

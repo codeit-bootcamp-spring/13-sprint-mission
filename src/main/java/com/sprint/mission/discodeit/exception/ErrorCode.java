@@ -18,6 +18,9 @@ public enum ErrorCode {
     MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND,"존재하지 않는 메시지 입니다."),
     BINARY_CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 파일입니다."),
 
+    INVALID_FILE_SIZE(HttpStatus.PAYLOAD_TOO_LARGE, "파일 크기는 5MB 이하여야 합니다."),
+    UNSUPPORTED_FILE_TYPE(HttpStatus.BAD_REQUEST, "지원하지 않는 파일 형식입니다."),
+
     USER_STATUS_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 사용자 상태입니다."),
     USER_STATUS_ALREADY_EXISTS(HttpStatus.CONFLICT, "해당 사용자의 상태 정보가 이미 존재합니다."),
 
@@ -27,7 +30,8 @@ public enum ErrorCode {
 
     STORAGE_PUT_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장에 실패했습니다."),
     STORAGE_GET_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일을 불러오지 못했습니다."),
-    STORAGE_INIT_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "스토리지 초기화에 실패했습니다.");
+    STORAGE_INIT_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "스토리지 초기화에 실패했습니다."),
+    FILE_READ_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일을 읽는 중 오류가 발생했습니다.");
 
     private final HttpStatus status;
     private final String message;

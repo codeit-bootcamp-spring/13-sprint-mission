@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -31,7 +32,7 @@ public interface MessageControllerDocs {
             @ApiResponse(responseCode = "400", description = "잘못된 요청")
     })
     public ResponseEntity<MessageDto> createMessage(
-            @RequestPart MessageCreateRequest messageCreateRequest,
+            @Valid @RequestPart MessageCreateRequest messageCreateRequest,
             @RequestPart(required = false)List<MultipartFile> attachments);
 
 
@@ -42,7 +43,7 @@ public interface MessageControllerDocs {
             @ApiResponse(responseCode = "404", description = "존재하지 않음")
     })
     public ResponseEntity<MessageDto> updateMessage(
-            @PathVariable UUID messageId, @RequestBody MessageUpdateRequest request);
+            @PathVariable UUID messageId, @Valid @RequestBody MessageUpdateRequest request);
 
     @Operation(summary = "메시지 삭제 API")
     @DeleteMapping("/{messageId}")
