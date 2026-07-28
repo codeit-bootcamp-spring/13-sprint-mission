@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.inOrder;
@@ -12,12 +13,14 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Channel.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
@@ -32,10 +35,16 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
+import org.springframework.data.domain.Sort;
 
 @ExtendWith(MockitoExtension.class)
 class BasicMessageServiceTest {
@@ -63,6 +72,153 @@ class BasicMessageServiceTest {
 
   @InjectMocks
   private BasicMessageService basicMessageService;
+
+  @Test
+  @DisplayName("채널의 메시지를 최신순으로 조회할 수 있다")
+  void 채널_메시지_조회() {
+    // given
+    UUID channelId = UUID.randomUUID();
+
+    User author = new User(
+        "testUser",
+        "test@test.com",
+        "password",
+        null
+    );
+
+    Channel channel = new Channel(
+        "일반 채널",
+        "일반 채널입니다.",
+        ChannelType.PUBLIC
+    );
+
+    Message message = new Message(
+        "테스트 메시지",
+        channel,
+        author,
+        List.of()
+    );
+
+    MessageDto messageDto = new MessageDto(
+        UUID.randomUUID(),
+        null,
+        null,
+        "테스트 메시지",
+        channelId,
+        null,
+        List.of()
+    );
+
+    Pageable requestPageable = PageRequest.of(
+        0,
+        10,
+        Sort.by("content").ascending()
+    );
+
+    Slice<Message> messageSlice = new SliceImpl<>(
+        List.of(message),
+        requestPageable,
+        false
+    );
+
+    @SuppressWarnings("unchecked")
+    PageResponse<MessageDto> expected =
+        mock(PageResponse.class);
+
+    given(
+        messageRepository.findByChannel_Id(
+            eq(channelId),
+            any(Pageable.class)
+        )
+    ).willReturn(messageSlice);
+
+    given(messageMapper.toDto(message))
+        .willReturn(messageDto);
+
+    given(pageResponseMapper.fromSlice(any(Slice.class)))
+        .willReturn(expected);
+
+    // when
+    PageResponse<MessageDto> result =
+        basicMessageService.findAllByChannelId(
+            channelId,
+            requestPageable
+        );
+
+    // then
+    assertThat(result).isEqualTo(expected);
+
+    ArgumentCaptor<Pageable> pageableCaptor =
+        ArgumentCaptor.forClass(Pageable.class);
+
+    then(messageRepository).should()
+        .findByChannel_Id(
+            eq(channelId),
+            pageableCaptor.capture()
+        );
+
+    Pageable actualPageable = pageableCaptor.getValue();
+
+    assertThat(actualPageable.getPageNumber()).isZero();
+    assertThat(actualPageable.getPageSize()).isEqualTo(10);
+
+    Sort.Order createdAtOrder =
+        actualPageable.getSort().getOrderFor("createdAt");
+
+    assertThat(createdAtOrder).isNotNull();
+    assertThat(createdAtOrder.getDirection())
+        .isEqualTo(Sort.Direction.DESC);
+
+    then(messageMapper).should()
+        .toDto(message);
+
+    then(pageResponseMapper).should()
+        .fromSlice(any(Slice.class));
+  }
+
+  @Test
+  @DisplayName("채널에 메시지가 없으면 빈 페이지를 반환한다")
+  void 채널_빈페이지_반환() {
+    // given
+    UUID channelId = UUID.randomUUID();
+
+    Pageable pageable = PageRequest.of(0, 10);
+
+    Slice<Message> emptySlice = new SliceImpl<>(
+        List.of(),
+        pageable,
+        false
+    );
+
+    @SuppressWarnings("unchecked")
+    PageResponse<MessageDto> expected =
+        mock(PageResponse.class);
+
+    given(
+        messageRepository.findByChannel_Id(
+            eq(channelId),
+            any(Pageable.class)
+        )
+    ).willReturn(emptySlice);
+
+    given(pageResponseMapper.fromSlice(any(Slice.class)))
+        .willReturn(expected);
+
+    // when
+    PageResponse<MessageDto> result =
+        basicMessageService.findAllByChannelId(
+            channelId,
+            pageable
+        );
+
+    // then
+    assertThat(result).isEqualTo(expected);
+
+    then(messageMapper).shouldHaveNoInteractions();
+
+    then(pageResponseMapper).should()
+        .fromSlice(any(Slice.class));
+  }
 
   @Test
   @DisplayName("첨부파일 없이 메시지를 생성할 수 있다")
@@ -255,6 +411,26 @@ class BasicMessageServiceTest {
   }
 
   @Test
+  @DisplayName("존재하지 않는 메시지는 수정할 수 없다")
+  void 없는_메시지_수정_불가() {
+    // given
+    UUID messageId = UUID.randomUUID();
+
+    MessageUpdateRequest request =
+        new MessageUpdateRequest("수정된 메시지");
+
+    given(messageRepository.findById(messageId))
+        .willReturn(Optional.empty());
+
+    // when & then
+    assertThatThrownBy(
+        () -> basicMessageService.update(messageId, request)
+    ).isInstanceOf(MessageNotFoundException.class);
+
+    then(messageMapper).shouldHaveNoInteractions();
+  }
+
+  @Test
   @DisplayName("메시지 삭제 시 첨부파일과 메타데이터도 함께 삭제한다")
   void 메시지_삭제_첨부파일_삭제() {
     // given
@@ -307,5 +483,27 @@ class BasicMessageServiceTest {
 
     inOrder.verify(messageRepository)
         .delete(message);
+  }
+
+  @Test
+  @DisplayName("존재하지 않는 메시지는 삭제할 수 없다")
+  void 없는_메시지_삭제_불가() {
+    // given
+    UUID messageId = UUID.randomUUID();
+
+    given(messageRepository.findById(messageId))
+        .willReturn(Optional.empty());
+
+    // when & then
+    assertThatThrownBy(
+        () -> basicMessageService.delete(messageId)
+    ).isInstanceOf(MessageNotFoundException.class);
+
+    verifyNoInteractions(
+        binaryContentRepository,
+        binaryContentStorage
+    );
+
+    then(messageRepository).shouldHaveNoMoreInteractions();
   }
 }
