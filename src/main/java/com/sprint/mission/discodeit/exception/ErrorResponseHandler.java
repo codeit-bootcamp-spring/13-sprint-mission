@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.exception;
 
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -8,8 +9,21 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.Instant;
 
+@RequiredArgsConstructor
 @RestControllerAdvice
 public class ErrorResponseHandler {
+
+    private final ErrorCodeStatusMapper errorCodeStatusMapper;
+
+    @ExceptionHandler(DiscodeitException.class)
+    public ResponseEntity<ErrorResponse> handleDiscodeitException(
+            DiscodeitException e
+    ) {
+        HttpStatus status = errorCodeStatusMapper.map(e.getErrorCode());
+        ErrorResponse response = ErrorResponse.from(e, status.value());
+
+        return ResponseEntity.status(status).body(response);
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<GlobalException> handleIllegalArgumentException(
