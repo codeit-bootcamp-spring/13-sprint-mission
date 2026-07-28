@@ -44,3 +44,6 @@ bin/
 .DS_Store
 /users.ser
 .ser
+
+# 로컬 BinaryContentStorage가 생성하는 실제 파일 제외
+/.discodeit/

@@ -11,6 +11,7 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ public class BasicUserService implements UserService {
     private final UserStatusRepository userStatusRepository;
     private final BinaryContentRepository binaryContentRepository;
     private final UserMapper userMapper;
+    private final BinaryContentStorage binaryContentStorage;
 
     @Override
     public UserResponse create(UserRequest dto, BinaryContentRequest profileDto) {
@@ -40,10 +42,17 @@ public class BasicUserService implements UserService {
 
         User user = new User(dto.username(), dto.email(), dto.password());
 
-        if (profileDto.fileName() != null && !profileDto.fileName().isBlank()) {
-            BinaryContent binaryContent = new BinaryContent(profileDto.fileName(), profileDto.size(), profileDto.contentType(), profileDto.bytes());
-            binaryContentRepository.save(binaryContent);
-            user.updateProfile(binaryContent);
+        if (profileDto != null && profileDto.fileName() != null && !profileDto.fileName().isBlank()) {
+            BinaryContent binaryContent = new BinaryContent(
+                    profileDto.fileName(),
+                    profileDto.size(),
+                    profileDto.contentType()
+            );
+            BinaryContent savedProfile = binaryContentRepository.save(binaryContent);
+
+            binaryContentStorage.put(savedProfile.getId(), profileDto.bytes());
+
+            user.updateProfile(savedProfile);
         }
 
         User savedUser = userRepository.save(user);
@@ -78,11 +87,11 @@ public class BasicUserService implements UserService {
         user.update(dto.username(), dto.password(), dto.email());
 
         if (profileDto != null && profileDto.fileName() != null && !profileDto.fileName().isBlank()) {
-            BinaryContent newProfile = new BinaryContent(profileDto.fileName(), profileDto.size(), profileDto.contentType(), profileDto.bytes());
-            binaryContentRepository.save(newProfile);
-            user.updateProfile(newProfile);
+            BinaryContent newProfile = new BinaryContent(profileDto.fileName(), profileDto.size(), profileDto.contentType());
+            BinaryContent savedProfile = binaryContentRepository.save(newProfile);
+            binaryContentStorage.put(savedProfile.getId(), profileDto.bytes());
+            user.updateProfile(savedProfile);
         }
-
         return userMapper.toDto(user);
     }
 
