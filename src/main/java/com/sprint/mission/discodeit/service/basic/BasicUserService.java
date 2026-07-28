@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
@@ -10,6 +11,7 @@ import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,9 +30,10 @@ import java.util.stream.Collectors;
 public class BasicUserService implements UserService {
 
     private final UserRepository userRepository;
-    private final BinaryContentRepository binaryContentRepository;
     private final UserStatusRepository userStatusRepository;
     private final UserMapper userMapper;
+    private final BinaryContentService binaryContentService;
+
 
 
     @Override
@@ -43,12 +46,11 @@ public class BasicUserService implements UserService {
 
         BinaryContent profile = null;
         if (createRequest.profileBytes() != null) {
-            profile = new BinaryContent(
+            profile = binaryContentService.createEntity(new BinaryContentCreateRequest(
                     createRequest.profileName(),
                     createRequest.profileContentType(),
-                    (long) createRequest.profileBytes().length
-            );
-            binaryContentRepository.save(profile);
+                    createRequest.profileBytes()
+            ));
         }
 
         User user = new User(
@@ -109,19 +111,19 @@ public class BasicUserService implements UserService {
         BinaryContent profile = user.getProfile();
 
         if (updateRequest.profileBytes() != null) {
-            profile = new BinaryContent(
+            profile = binaryContentService.createEntity(new BinaryContentCreateRequest(
                     updateRequest.profileName(),
                     updateRequest.profileContentType(),
-                    (long) updateRequest.profileBytes().length
-            );
-            binaryContentRepository.save(profile);
+                    updateRequest.profileBytes()
+            ));
         }
 
         user.renew(
                 updateRequest.username(),
                 updateRequest.email(),
                 updateRequest.password(),
-                profile);
+                profile
+        );
 
         UserStatus userStatus = userStatusRepository.findByUserId(userId).orElse(null);
         return userMapper.toDto(user, userStatus);
@@ -135,7 +137,7 @@ public class BasicUserService implements UserService {
 
         BinaryContent profile = user.getProfile();
         if (profile != null) {
-            binaryContentRepository.delete(profile);
+            binaryContentService.delete(profile.getId());
         }
 
         userStatusRepository.findByUserId(id)

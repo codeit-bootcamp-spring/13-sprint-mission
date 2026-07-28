@@ -26,7 +26,7 @@ public class ErrorResponseHandler {
                 e.getMessage()
         );
 
-        return ResponseEntity.badRequest().body(response);
+        return ResponseEntity.status(status).body(response);
     }
 
     @ExceptionHandler(Exception.class)
@@ -45,6 +45,12 @@ public class ErrorResponseHandler {
 
     private boolean isNotFoundException(Exception e) {
         String message = e.getMessage();
-        return message != null && message.contains("존재하지") || message.toLowerCase().contains("not found");
+
+        if (message == null) {
+            return false;
+        }
+
+        return message.contains("존재하지")
+                || message.toLowerCase().contains("not found");
     }
 }

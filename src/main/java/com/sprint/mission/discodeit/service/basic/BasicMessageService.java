@@ -15,6 +15,7 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -35,7 +36,7 @@ public class BasicMessageService implements MessageService {
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
-    private final BinaryContentRepository binaryContentRepository;
+    private final BinaryContentService binaryContentService;
     private final MessageMapper messageMapper;
     private final PageResponseMapper pageResponseMapper;
 
@@ -57,13 +58,7 @@ public class BasicMessageService implements MessageService {
 
         if (request.attachments() != null) {
             for (BinaryContentCreateRequest attachmentRequest : request.attachments()) {
-                BinaryContent attachment = new BinaryContent(
-                        attachmentRequest.fileName(),
-                        attachmentRequest.contentType(),
-                        (long) attachmentRequest.bytes().length
-                );
-
-                binaryContentRepository.save(attachment);
+                BinaryContent attachment = binaryContentService.createEntity(attachmentRequest);
                 attachments.add(attachment);
             }
         }
@@ -118,11 +113,14 @@ public class BasicMessageService implements MessageService {
         Message message = messageRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 메세지 입니다."));
 
-        for (BinaryContent attachment : message.getAttachments()) {
-            binaryContentRepository.delete(attachment);
-        }
+        List<UUID> attachmentIds = message.getAttachments().stream()
+                .map(BinaryContent::getId)
+                .toList();
 
         messageRepository.delete(message);
-    }
 
-}
+        for (UUID attachmentId : attachmentIds) {
+            binaryContentService.delete(attachmentId);
+        }
+    }
+    }

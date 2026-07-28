@@ -10,9 +10,11 @@ import java.util.UUID;
 
 public interface BinaryContentService {
     BinaryContentDto create(BinaryContentCreateRequest request);
+    BinaryContent createEntity(BinaryContentCreateRequest request);
     BinaryContentDto findById(UUID id);
     Collection<BinaryContentDto> findAllByIdIn(Collection<UUID> ids);
     void delete(UUID id);
     BinaryContent findEntityById(UUID id);
     ResponseEntity<?> download(UUID id);
+
 }

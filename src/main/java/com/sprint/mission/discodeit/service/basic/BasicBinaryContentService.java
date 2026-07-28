@@ -27,15 +27,23 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     @Transactional
     public BinaryContentDto create(BinaryContentCreateRequest request) {
+        BinaryContent binaryContent = createEntity(request);
+        return binaryContentMapper.toDto(binaryContent);
+    }
+
+    @Override
+    @Transactional
+    public BinaryContent createEntity(BinaryContentCreateRequest request) {
         BinaryContent binaryContent = new BinaryContent(
                 request.fileName(),
                 request.contentType(),
                 (long) request.bytes().length
         );
+
         binaryContentRepository.save(binaryContent);
         binaryContentStorage.put(binaryContent.getId(), request.bytes());
 
-        return binaryContentMapper.toDto(binaryContent);
+        return binaryContent;
     }
 
     @Override
@@ -60,6 +68,7 @@ public class BasicBinaryContentService implements BinaryContentService {
             throw new IllegalArgumentException("존재하지 않는 파일입니다.");
         }
 
+        binaryContentStorage.delete(id);
         binaryContentRepository.deleteById(id);
     }
 
