@@ -15,7 +15,7 @@
     <property name="LOG_PATH" value=".logs"/>
     <property name="LOG_FILE" value="${LOG_PATH}/sprintlog.log"/>
     <property name="LOG_PATTERN"
-              value="%d{yy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+              value="%d{yy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{requestId} | %X{requestMethod} | %X{requestUrl}] - %msg%n"/>
 
     <!-- 콘솔 출력: 사람이 읽기 좋게(색상 포함 — Spring Boot 기본 패턴). -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
