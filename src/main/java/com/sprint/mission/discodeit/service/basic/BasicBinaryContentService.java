@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class BasicBinaryContentService implements BinaryContentService {
 
     private final BinaryContentRepository binaryContentRepository;
@@ -27,9 +29,15 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     public BinaryContentResponse create(BinaryContentRequest dto) {
 
+        log.debug("파일 업로드 시작: fileName={}, size={}, contentType={}",
+                dto.fileName(), dto.size(), dto.contentType());
+
         BinaryContent binaryContent = new BinaryContent(dto.fileName(), dto.size(), dto.contentType());
         BinaryContent savedBinaryContent = binaryContentRepository.save(binaryContent);
         binaryContentStorage.put(savedBinaryContent.getId(), dto.bytes());
+
+        log.info("파일 업로드 완료: binaryContentId={}, size={}",
+                savedBinaryContent.getId(), savedBinaryContent.getSize());
         return binaryContentMapper.toDto(savedBinaryContent);
     }
 
@@ -52,6 +60,8 @@ public class BasicBinaryContentService implements BinaryContentService {
 
     @Override
     public void delete(UUID id) {
+        log.debug("파일 메타데이터 삭제 시작: binaryContentId={}", id);
         binaryContentRepository.deleteById(id);
+        log.info("파일 메타데이터 삭제 완료: binaryContentId={}", id);
     }
 }

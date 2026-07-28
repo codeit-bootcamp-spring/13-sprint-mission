@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +15,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/binaryContents")
+@Slf4j
 public class BinaryContentController {
 
     private final BinaryContentService binaryContentService;
@@ -40,11 +42,14 @@ public class BinaryContentController {
     public ResponseEntity<?> downloadBinaryContent(
             @PathVariable UUID binaryContentId
     ) {
+        log.debug("파일 다운로드 API 요청: binaryContentId={}", binaryContentId);
         BinaryContentResponse metadata = binaryContentService.find(binaryContentId)
                 .orElseThrow(() -> new DiscodeitException.FileNotFoundException(
                         "해당 파일을 찾을 수 없습니다."
                 ));
 
+        log.info("파일 다운로드 응답 생성 완료: binaryContentId={}, fileName={}, size={}",
+                metadata.id(), metadata.fileName(), metadata.size());
         return binaryContentStorage.download(metadata);
     }
 

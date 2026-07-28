@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.response.MessageResponse;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/messages")
+@Slf4j
 public class MessageController {
 
     private final MessageService messageService;
@@ -26,6 +28,10 @@ public class MessageController {
     public ResponseEntity<MessageResponse> createMessage(
             @RequestPart("messageCreateRequest") MessageCreateRequest messageCreateRequest,
             @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments) {
+
+        int attachmentCount = attachments == null ? 0 : attachments.size();
+        log.debug("메시지 생성 API 요청: channelId={}, attachmentCount={}",
+                messageCreateRequest.channelId(), attachmentCount);
 
         MessageResponse response = messageService.create(messageCreateRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -45,12 +51,14 @@ public class MessageController {
             @PathVariable("messageId") UUID messageId,
             @RequestBody MessageUpdateRequest messageUpdateRequest) {
 
+        log.debug("메시지 수정 API 요청: messageId={}", messageId);
         MessageResponse response = messageService.update(messageId, messageUpdateRequest);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{messageId}")
     public ResponseEntity<Void> deleteMessage(@PathVariable("messageId") UUID messageId) {
+        log.debug("메시지 삭제 API 요청: messageId={}", messageId);
         messageService.delete(messageId);
         return ResponseEntity.noContent().build();
     }

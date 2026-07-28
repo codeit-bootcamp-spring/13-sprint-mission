@@ -16,6 +16,7 @@ import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -30,6 +31,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class BasicMessageService implements MessageService {
 
     private static final int MESSAGE_PAGE_SIZE = 50;
@@ -43,6 +45,9 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public MessageResponse create(MessageCreateRequest dto) {
+        int attachmentCount = dto.binaryContentIds() == null ? 0 : dto.binaryContentIds().size();
+        log.debug("메시지 생성 시작: channelId={}, senderId={}, attachmentCount={}",
+                dto.channelId(), dto.senderId(), attachmentCount);
         Channel channel = channelRepository.findById(dto.channelId())
                 .orElseThrow(() -> new IllegalArgumentException("채널을 찾을 수 없습니다."));
         User author = userRepository.findById(dto.senderId())
@@ -56,6 +61,8 @@ public class BasicMessageService implements MessageService {
         }
 
         Message savedMessage = messageRepository.save(message);
+        log.info("메시지 생성 완료: messageId={}, channelId={}",
+                savedMessage.getId(), dto.channelId());
         return messageMapper.toDto(savedMessage);
     }
 
@@ -98,16 +105,20 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public MessageResponse update(UUID id, MessageUpdateRequest dto) {
+        log.debug("메시지 수정 시작: messageId={}", id);
         Message message = messageRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 메시지를 찾을 수 없습니다."));
 
         message.updateContent(dto.content());
 
+        log.info("메시지 수정 완료: messageId={}", id);
         return messageMapper.toDto(message);
     }
 
     @Override
     public void delete(UUID id) {
+        log.debug("메시지 삭제 시작: messageId={}", id);
         messageRepository.deleteById(id);
+        log.info("메시지 삭제 완료: messageId={}", id);
     }
 }

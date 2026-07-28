@@ -47,3 +47,6 @@ bin/
 
 # 로컬 BinaryContentStorage가 생성하는 실제 파일 제외
 /.discodeit/
+
+# Logback이 생성하는 로그 파일 제외
+/.logs/

@@ -14,6 +14,7 @@ import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class BasicChannelService implements ChannelService {
 
     private final ChannelRepository channelRepository;
@@ -34,6 +36,8 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public ChannelResponse createPrivateChannel(ChannelPrivateRequest dto) {
+        int participantCount = dto.channelIds() == null ? 0 : dto.channelIds().size();
+        log.debug("PRIVATE 채널 생성 시작: participantCount={}", participantCount);
         Channel channel = new Channel(null, null, ChannelType.PRIVATE);
 
         Channel savedChannel = channelRepository.save(channel);
@@ -47,13 +51,18 @@ public class BasicChannelService implements ChannelService {
             }
         }
 
+        log.info("PRIVATE 채널 생성 완료: channelId={}, participantCount={}",
+                savedChannel.getId(), participantCount);
         return channelMapper.toDto(savedChannel);
     }
 
     @Override
     public ChannelResponse createPublicChannel(ChannelPublicRequest dto) {
+        log.debug("PUBLIC 채널 생성 시작: name={}", dto.name());
         Channel channel = new Channel(dto.name(), dto.description(), ChannelType.PUBLIC);
         Channel savedChannel = channelRepository.save(channel);
+
+        log.info("PUBLIC 채널 생성 완료: channelId={}", savedChannel.getId());
         return channelMapper.toDto(savedChannel);
     }
 
@@ -82,6 +91,7 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public ChannelResponse update(UUID id, ChannelPublicRequest dto) {
+        log.debug("채널 수정 시작: channelId={}", id);
         Channel channel = channelRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 채널을 찾을 수 없습니다."));
 
@@ -91,13 +101,16 @@ public class BasicChannelService implements ChannelService {
 
         channel.updateTitles(dto.name(), dto.description());
 
+        log.info("채널 수정 완료: channelId={}", id);
         return channelMapper.toDto(channel);
     }
 
     @Override
     public void delete(UUID id) {
+        log.debug("채널 삭제 시작: channelId={}", id);
         messageRepository.deleteByChannelId(id);
         readStatusRepository.deleteByChannelId(id);
         channelRepository.deleteById(id);
+        log.info("채널 삭제 완료: channelId={}", id);
     }
 }

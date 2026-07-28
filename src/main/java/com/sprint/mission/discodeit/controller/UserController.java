@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.request.UserRequest;
 import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/users")
+@Slf4j
 public class UserController {
 
     private final UserService userService;
@@ -28,6 +30,7 @@ public class UserController {
             @RequestPart("userCreateRequest") UserRequest userRequest,
             @RequestPart(value = "profile", required = false) MultipartFile profile) {
 
+        log.debug("사용자 생성 API 요청: profileIncluded={}", profile != null && !profile.isEmpty());
         UserResponse response = userService.create(userRequest, toBinaryContentRequest(profile));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -44,12 +47,14 @@ public class UserController {
             @RequestPart("userUpdateRequest") UserRequest userRequest,
             @RequestPart(value = "profile", required = false) MultipartFile profile) {
 
+        log.debug("사용자 수정 API 요청: userId={}, profileIncluded={}", userId, profile != null && !profile.isEmpty());
         UserResponse response = userService.update(userId, userRequest, toBinaryContentRequest(profile));
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteUser(@PathVariable("userId") UUID userId) {
+        log.debug("사용자 삭제 API 요청: userId={}", userId);
         userService.delete(userId);
         return ResponseEntity.noContent().build();
     }
@@ -79,6 +84,7 @@ public class UserController {
                     file.getBytes()
             );
         } catch (IOException e) {
+            log.error("프로필 파일 읽기 실패: originalFileName={}", file.getOriginalFilename(), e);
             throw new UncheckedIOException("프로필 파일을 읽을 수 없습니다.", e);
         }
     }
