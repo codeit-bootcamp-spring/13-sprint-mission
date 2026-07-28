@@ -6,7 +6,6 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
-import com.sprint.mission.discodeit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -38,7 +37,7 @@ public class ChannelMapper {
 
         return new ChannelResponse(
                 channel.getId(),
-                resolveName(channel),
+                channel.getName(),
                 channel.getDescription(),
                 channel.getType(),
                 participants,
@@ -46,10 +45,4 @@ public class ChannelMapper {
         );
     }
 
-    private String resolveName(Channel channel) {
-        if (channel.getName() != null && !channel.getName().isBlank()) {
-            return channel.getName();
-        }
-        return channel.getChannelTitles();
-    }
 }

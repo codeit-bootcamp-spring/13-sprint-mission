@@ -34,11 +34,7 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public ChannelResponse createPrivateChannel(ChannelPrivateRequest dto) {
-        Channel channel = new Channel("PRIVATE_CHANNEL", "비공개 채널", ChannelType.PRIVATE);
-
-        if (dto.channelIds() != null) {
-            channel.assignUsers(dto.channelIds());
-        }
+        Channel channel = new Channel(null, null, ChannelType.PRIVATE);
 
         Channel savedChannel = channelRepository.save(channel);
 
@@ -79,7 +75,7 @@ public class BasicChannelService implements ChannelService {
     public List<ChannelResponse> findAllByUserId(UUID userId) {
         return channelRepository.findAll().stream()
                 .filter(channel -> channel.getType() == ChannelType.PUBLIC
-                        || channel.getUserIds() != null && channel.getUserIds().contains(userId))
+                        || readStatusRepository.existsByChannelIdAndUserId(channel.getId(), userId))
                 .map(channelMapper::toDto)
                 .toList();
     }
