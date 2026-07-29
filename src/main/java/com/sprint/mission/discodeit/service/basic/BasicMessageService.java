@@ -8,6 +8,9 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -49,9 +52,9 @@ public class BasicMessageService implements MessageService {
         log.debug("메시지 생성 시작: channelId={}, senderId={}, attachmentCount={}",
                 dto.channelId(), dto.senderId(), attachmentCount);
         Channel channel = channelRepository.findById(dto.channelId())
-                .orElseThrow(() -> new IllegalArgumentException("채널을 찾을 수 없습니다."));
+                .orElseThrow(() -> new ChannelNotFoundException(dto.channelId()));
         User author = userRepository.findById(dto.senderId())
-                .orElseThrow(() -> new IllegalArgumentException("작성자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new UserNotFoundException(dto.senderId()));
 
         Message message = new Message(dto.content(), channel, author);
 
@@ -107,7 +110,7 @@ public class BasicMessageService implements MessageService {
     public MessageResponse update(UUID id, MessageUpdateRequest dto) {
         log.debug("메시지 수정 시작: messageId={}", id);
         Message message = messageRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 메시지를 찾을 수 없습니다."));
+                .orElseThrow(() -> new MessageNotFoundException(id));
 
         message.updateContent(dto.content());
 

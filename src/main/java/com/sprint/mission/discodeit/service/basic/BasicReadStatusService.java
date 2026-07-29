@@ -6,6 +6,10 @@ import com.sprint.mission.discodeit.dto.response.ReadStatusResponse;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.readstatus.ReadStatusAlreadyExistException;
+import com.sprint.mission.discodeit.exception.readstatus.ReadStatusNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ReadStatusMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -32,12 +36,12 @@ public class BasicReadStatusService implements ReadStatusService {
     @Override
     public ReadStatusResponse create(ReadStatusCreateRequest dto) {
         Channel channel = channelRepository.findById(dto.channelId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널입니다."));
+                .orElseThrow(() -> new ChannelNotFoundException(dto.channelId()));
         User user = userRepository.findById(dto.userId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new UserNotFoundException(dto.userId()));
 
         if (readStatusRepository.existsByChannelIdAndUserId(dto.channelId(), dto.userId())) {
-            throw new IllegalArgumentException("해당 채널과 사용자에 대한 읽음 상태 객체가 이미 존재합니다.");
+            throw new ReadStatusAlreadyExistException(dto.channelId(), dto.userId());
         }
 
         ReadStatus readStatus = new ReadStatus(channel, user);
@@ -64,7 +68,7 @@ public class BasicReadStatusService implements ReadStatusService {
     @Override
     public ReadStatusResponse update(UUID id, ReadStatusUpdateRequest dto) {
         ReadStatus readStatus = readStatusRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 읽음 상태 정보를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ReadStatusNotFoundException(id));
 
         readStatus.updateLastRead();
 

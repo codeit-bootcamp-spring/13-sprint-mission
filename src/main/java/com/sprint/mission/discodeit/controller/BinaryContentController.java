@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentResponse;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +25,7 @@ public class BinaryContentController {
     @GetMapping("/{binaryContentId}")
     public ResponseEntity<BinaryContentResponse> getBinaryContentById(@PathVariable UUID binaryContentId) {
         BinaryContentResponse response = binaryContentService.find(binaryContentId)
-                .orElseThrow(() -> new DiscodeitException.FileNotFoundException("해당 파일을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BinaryContentNotFoundException(binaryContentId));
         return ResponseEntity.ok(response);
     }
 
@@ -44,9 +45,7 @@ public class BinaryContentController {
     ) {
         log.debug("파일 다운로드 API 요청: binaryContentId={}", binaryContentId);
         BinaryContentResponse metadata = binaryContentService.find(binaryContentId)
-                .orElseThrow(() -> new DiscodeitException.FileNotFoundException(
-                        "해당 파일을 찾을 수 없습니다."
-                ));
+                .orElseThrow(() -> new BinaryContentNotFoundException(binaryContentId));
 
         log.info("파일 다운로드 응답 생성 완료: binaryContentId={}, fileName={}, size={}",
                 metadata.id(), metadata.fileName(), metadata.size());

@@ -6,6 +6,8 @@ import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.user.UserAlreadyExistException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -39,11 +41,11 @@ public class BasicUserService implements UserService {
                 dto.username(), profileDto != null);
         if (userRepository.existsByUsername(dto.username())) {
             log.warn("사용자 생성 실패 - 중복 username: {}", dto.username());
-            throw new IllegalArgumentException("이미 사용 중인 이름입니다.");
+            throw new UserAlreadyExistException("username", dto.username());
         }
         if (userRepository.existsByEmail(dto.email())) {
             log.warn("사용자 생성 실패 - 중복 email: {}", dto.email());
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+            throw new UserAlreadyExistException("email", dto.email());
         }
 
         User user = new User(dto.username(), dto.email(), dto.password());
@@ -90,7 +92,7 @@ public class BasicUserService implements UserService {
     public UserResponse update(UUID id, UserRequest dto, BinaryContentRequest profileDto) {
         log.debug("사용자 수정 시작: userId={}, profileIncluded={}", id, profileDto != null);
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new UserNotFoundException(id));
 
         user.update(dto.username(), dto.password(), dto.email());
 
@@ -108,7 +110,7 @@ public class BasicUserService implements UserService {
     public void delete(UUID id) {
         log.debug("사용자 삭제 시작: userId={}", id);
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new UserNotFoundException(id));
 
         userStatusRepository.deleteById(id);
         if (user.getProfile() != null) {

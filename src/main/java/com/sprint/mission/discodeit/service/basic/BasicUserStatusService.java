@@ -5,6 +5,9 @@ import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserStatusResponse;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import com.sprint.mission.discodeit.exception.userstatus.UserStatusAlreadyExistException;
+import com.sprint.mission.discodeit.exception.userstatus.UserStatusNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserStatusMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
@@ -29,10 +32,10 @@ public class BasicUserStatusService implements UserStatusService {
     @Override
     public UserStatusResponse create(UserStatusCreateRequest dto) {
         User user = userRepository.findById(dto.userId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new UserNotFoundException(dto.userId()));
 
         if (userStatusRepository.existsByUserId(dto.userId())) {
-            throw new IllegalArgumentException("해당 유저의 접속 상태 객체가 이미 존재합니다.");
+            throw new UserStatusAlreadyExistException(dto.userId());
         }
 
         UserStatus userStatus = new UserStatus(user);
@@ -61,7 +64,7 @@ public class BasicUserStatusService implements UserStatusService {
     @Override
     public UserStatusResponse update(UUID id, UserStatusUpdateRequest dto) {
         UserStatus userStatus = userStatusRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 접속 상태 정보를 찾을 수 없습니다."));
+                .orElseThrow(() -> new UserStatusNotFoundException("userStatusId", id));
 
         userStatus.updateLastSeenAt(dto.lastSeenAt());
 
@@ -71,7 +74,7 @@ public class BasicUserStatusService implements UserStatusService {
     @Override
     public UserStatusResponse updateByUserId(UUID userId, UserStatusUpdateRequest dto) {
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 유저의 접속 상태 정보를 찾을 수 없습니다."));
+                .orElseThrow(() -> new UserStatusNotFoundException("userId", userId));
 
         userStatus.updateLastSeenAt(dto.lastSeenAt());
 
