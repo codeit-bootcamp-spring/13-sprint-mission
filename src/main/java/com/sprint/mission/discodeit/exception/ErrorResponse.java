@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-@Builder
 public class ErrorResponse {
 
   private final Instant timestamp;
@@ -16,6 +15,7 @@ public class ErrorResponse {
   private final String exceptionType; // 발생한 예외의 클래스 이름
   private final int status; // HTTP 상태코드
 
+  @Builder
   public ErrorResponse(String code, String message, Map<String, Object> details,
       String exceptionType, int status) {
     this.timestamp = Instant.now();
