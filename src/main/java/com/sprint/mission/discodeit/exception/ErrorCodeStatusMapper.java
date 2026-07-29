@@ -20,7 +20,8 @@ public class ErrorCodeStatusMapper {
                  USER_STATUS_ALREADY_EXISTS -> HttpStatus.CONFLICT;
 
             case INVALID_CREDENTIALS -> HttpStatus.UNAUTHORIZED;
-            case PRIVATE_CHANNEL_UPDATE_NOT_ALLOWED -> HttpStatus.BAD_REQUEST;
+            case PRIVATE_CHANNEL_UPDATE_NOT_ALLOWED,
+                 VALIDATION_FAILED -> HttpStatus.BAD_REQUEST;
             case INTERNAL_SERVER_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
     }

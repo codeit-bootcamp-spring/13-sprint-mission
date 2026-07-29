@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.MessageResponse;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.service.MessageService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -26,7 +27,7 @@ public class MessageController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MessageResponse> createMessage(
-            @RequestPart("messageCreateRequest") MessageCreateRequest messageCreateRequest,
+            @Valid @RequestPart("messageCreateRequest") MessageCreateRequest messageCreateRequest,
             @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments) {
 
         int attachmentCount = attachments == null ? 0 : attachments.size();
@@ -49,7 +50,7 @@ public class MessageController {
     @PatchMapping("/{messageId}")
     public ResponseEntity<MessageResponse> updateMessage(
             @PathVariable("messageId") UUID messageId,
-            @RequestBody MessageUpdateRequest messageUpdateRequest) {
+            @Valid @RequestBody MessageUpdateRequest messageUpdateRequest) {
 
         log.debug("메시지 수정 API 요청: messageId={}", messageId);
         MessageResponse response = messageService.update(messageId, messageUpdateRequest);

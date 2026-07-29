@@ -4,11 +4,13 @@ import com.sprint.mission.discodeit.dto.request.BinaryContentRequest;
 import com.sprint.mission.discodeit.dto.request.UserRequest;
 import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,6 +29,7 @@ public class UserController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserResponse> createUser(
+            @Validated(UserRequest.Create.class)
             @RequestPart("userCreateRequest") UserRequest userRequest,
             @RequestPart(value = "profile", required = false) MultipartFile profile) {
 
@@ -44,7 +47,7 @@ public class UserController {
     @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable("userId") UUID userId,
-            @RequestPart("userUpdateRequest") UserRequest userRequest,
+            @Valid @RequestPart("userUpdateRequest") UserRequest userRequest,
             @RequestPart(value = "profile", required = false) MultipartFile profile) {
 
         log.debug("사용자 수정 API 요청: userId={}, profileIncluded={}", userId, profile != null && !profile.isEmpty());
@@ -62,7 +65,7 @@ public class UserController {
     @PatchMapping("/{userId}/userStatus")
     public ResponseEntity<UserResponse> updateUserStatus(
             @PathVariable("userId") UUID userId,
-            @RequestBody UserRequest request) {
+            @Valid @RequestBody UserRequest request) {
 
         UserResponse response = userService.update(userId, request, null);
         return ResponseEntity.ok(response);

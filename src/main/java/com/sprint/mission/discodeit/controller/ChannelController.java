@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.request.ChannelPrivateRequest;
 import com.sprint.mission.discodeit.dto.request.ChannelPublicRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelResponse;
 import com.sprint.mission.discodeit.service.ChannelService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -22,7 +23,7 @@ public class ChannelController {
     private final ChannelService channelService;
 
     @PostMapping("/private")
-    public ResponseEntity<ChannelResponse> createPrivateChannel(@RequestBody ChannelPrivateRequest channelRequest) {
+    public ResponseEntity<ChannelResponse> createPrivateChannel(@Valid @RequestBody ChannelPrivateRequest channelRequest) {
         int participantCount = channelRequest.channelIds() == null
                 ? 0
                 : channelRequest.channelIds().size();
@@ -33,7 +34,7 @@ public class ChannelController {
     }
 
     @PostMapping("/public")
-    public ResponseEntity<ChannelResponse> createPublicChannel(@RequestBody ChannelPublicRequest channelRequest) {
+    public ResponseEntity<ChannelResponse> createPublicChannel(@Valid @RequestBody ChannelPublicRequest channelRequest) {
         log.debug("PUBLIC 채널 생성 API 요청: name={}", channelRequest.name());
         ChannelResponse response = channelService.createPublicChannel(channelRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -48,7 +49,7 @@ public class ChannelController {
     @PatchMapping("/{channelId}")
     public ResponseEntity<ChannelResponse> updateChannel(
             @PathVariable("channelId") UUID channelId,
-            @RequestBody ChannelPublicRequest channelRequest) {
+            @Valid @RequestBody ChannelPublicRequest channelRequest) {
         log.debug("채널 수정 API 요청: channelId={}", channelId);
         ChannelResponse response = channelService.update(channelId, channelRequest);
         return ResponseEntity.ok(response);

@@ -23,6 +23,7 @@ public enum ErrorCode {
     USER_STATUS_NOT_FOUND("사용자 상태 정보를 찾을 수 없습니다."),
     USER_STATUS_ALREADY_EXISTS("이미 존재하는 사용자 상태 정보입니다."),
 
+    VALIDATION_FAILED("요청 데이터가 유효하지 않습니다."),
     INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다.");
 
     private final String message;

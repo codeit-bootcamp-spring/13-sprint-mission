@@ -1,12 +1,14 @@
 package com.sprint.mission.discodeit.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public record ChannelPublicRequest(
+        @NotBlank(message = "채널 이름은 필수입니다.")
+        @Size(max = 100, message = "채널 이름은 100자 이하여야 합니다.")
         String name,
+
+        @NotBlank(message = "채널 설명은 필수입니다.")
+        @Size(max = 500, message = "채널 설명은 500자 이하여야 합니다.")
         String description
 ) {}
-
-/*
-PUBLIC 채널을 생성할 때에는 기존 로직을 유지합니다.
-[ ] name과 description 속성이 필요합니다.
-[ ] 채널에 참여하는 User의 정보를 받아 User 별 ReadStatus 정보를 생성합니다.
- */
