@@ -14,6 +14,7 @@ public enum ErrorCode {
     BINARY_CONTENT_NOT_FOUND("존재하지 않는 파일입니다."),
     BINARY_CONTENT_STORAGE_ERROR("파일 저장소 처리 중 오류가 발생했습니다."),
 
+    DUPLICATE_READ_STATUS("이미 읽음 상태가 존재합니다."),
     READ_STATUS_NOT_FOUND("존재하지 않는 읽음 상태입니다."),
     USER_STATUS_NOT_FOUND("존재하지 않는 유저 상태입니다."),
     DUPLICATE_USER_STATUS("이미 유저 상태가 존재합니다.");

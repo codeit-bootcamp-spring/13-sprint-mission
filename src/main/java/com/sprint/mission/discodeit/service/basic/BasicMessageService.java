@@ -9,6 +9,10 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.message.InvalidMessageContentException;
+import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -47,15 +51,15 @@ public class BasicMessageService implements MessageService {
     public MessageDto create(MessageCreateRequest request) {
         log.info("Creating message: channelId={}, userId={}", request.channelId(), request.userId());
         Channel channel = channelRepository.findById(request.channelId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널의 메시지입니다."));
+                .orElseThrow(() -> new ChannelNotFoundException(request.channelId()));
 
         User author = userRepository.findById(request.userId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저의 메시지입니다."));
+                .orElseThrow(() -> new UserNotFoundException(request.userId()));
 
         if ((request.content() == null || request.content().isBlank())
                 && (request.attachments() == null || request.attachments().isEmpty())) {
             log.warn("Rejected empty message creation: channelId={}, userId={}", request.channelId(), request.userId());
-            throw new IllegalArgumentException("메시지 내용 또는 첨부파일이 필요합니다.");
+            throw new InvalidMessageContentException(request.channelId(), request.userId());
         }
 
         List<BinaryContent> attachments = new ArrayList<>();
@@ -83,7 +87,7 @@ public class BasicMessageService implements MessageService {
     @Override
     public MessageDto findById(UUID id) {
         Message message = messageRepository.findWithDetailsById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 메세지 입니다."));
+                .orElseThrow(() -> new MessageNotFoundException(id));
 
         return messageMapper.toDto(message);
     }
@@ -105,7 +109,7 @@ public class BasicMessageService implements MessageService {
     public MessageDto update(UUID messageId, MessageUpdateRequest request) {
         log.info("Updating message: messageId={}", messageId);
         Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 메세지 입니다."));
+                .orElseThrow(() -> new MessageNotFoundException(messageId));
 
         message.update(request.content());
         messageRepository.save(message);
@@ -117,7 +121,7 @@ public class BasicMessageService implements MessageService {
     public void delete(UUID id) {
         log.info("Deleting message: messageId={}", id);
         Message message = messageRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 메세지 입니다."));
+                .orElseThrow(() -> new MessageNotFoundException(id));
 
         List<UUID> attachmentIds = message.getAttachments().stream()
                 .map(BinaryContent::getId)

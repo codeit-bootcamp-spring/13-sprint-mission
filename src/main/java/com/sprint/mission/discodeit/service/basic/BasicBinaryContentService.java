@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
 import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
@@ -53,7 +54,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     public BinaryContentDto findById(UUID id) {
         BinaryContent binaryContent = binaryContentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 파일입니다."));
+                .orElseThrow(() -> new BinaryContentNotFoundException(id));
 
         return binaryContentMapper.toDto(binaryContent);
     }
@@ -70,7 +71,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     public void delete(UUID id) {
         log.info("Deleting binary content: binaryContentId={}", id);
         if (!binaryContentRepository.existsById(id)) {
-            throw new IllegalArgumentException("존재하지 않는 파일입니다.");
+            throw new BinaryContentNotFoundException(id);
         }
 
         binaryContentStorage.delete(id);
@@ -80,7 +81,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     public BinaryContent findEntityById(UUID id) {
         return binaryContentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 파일입니다."));
+                .orElseThrow(() -> new BinaryContentNotFoundException(id));
     }
 
     @Override

@@ -5,6 +5,9 @@ import com.sprint.mission.discodeit.dto.channel.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.channel.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.PrivateChannelUpdateException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
@@ -59,7 +62,7 @@ public class BasicChannelService implements ChannelService {
 
         for (UUID participantId : request.participantIds()) {
             User user = userRepository.findById(participantId)
-                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
+                    .orElseThrow(() -> new UserNotFoundException(participantId));
 
             participants.add(user);
         }
@@ -89,7 +92,7 @@ public class BasicChannelService implements ChannelService {
     @Override
     public ChannelDto findById(UUID id) {
         Channel channel = channelRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널입니다."));
+                .orElseThrow(() -> new ChannelNotFoundException(id));
 
         return channelMapper.toDto(channel);
     }
@@ -116,11 +119,11 @@ public class BasicChannelService implements ChannelService {
     public ChannelDto update(UUID channelId, ChannelUpdateRequest request) {
         log.info("Updating channel: channelId={}", channelId);
         Channel channel = channelRepository.findById(channelId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널입니다."));
+                .orElseThrow(() -> new ChannelNotFoundException(channelId));
 
         if (channel.getType() == ChannelType.PRIVATE) {
             log.warn("Rejected private channel update: channelId={}", channelId);
-            throw new IllegalArgumentException("PRIVATE 채널은 수정할 수 없습니다.");
+            throw new PrivateChannelUpdateException(channelId);
         }
 
         channel.update(request.name(), request.description());
@@ -134,7 +137,7 @@ public class BasicChannelService implements ChannelService {
     public void delete(UUID id) {
         log.info("Deleting channel: channelId={}", id);
         Channel channel = channelRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채널입니다."));
+                .orElseThrow(() -> new ChannelNotFoundException(id));
 
         messageRepository.deleteAll(messageRepository.findAllByChannel_Id(id));
 

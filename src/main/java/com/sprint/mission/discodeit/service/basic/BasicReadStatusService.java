@@ -4,6 +4,10 @@ import com.sprint.mission.discodeit.dto.readstatus.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusDto;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.readstatus.DuplicateReadStatusException;
+import com.sprint.mission.discodeit.exception.readstatus.ReadStatusNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ReadStatusMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -33,17 +37,17 @@ public class BasicReadStatusService implements ReadStatusService {
     @Transactional
     public ReadStatusDto create(ReadStatusCreateRequest request) {
         User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+                .orElseThrow(() -> new UserNotFoundException(request.userId()));
 
 
         Channel channel = channelRepository.findById(request.channelId())
-                .orElseThrow(() -> new IllegalArgumentException("채널을 찾을 수 없습니다."));
+                .orElseThrow(() -> new ChannelNotFoundException(request.channelId()));
 
         if (readStatusRepository.findByUser_IdAndChannel_Id(
                 request.userId(),
                 request.channelId()
         ).isPresent()) {
-            throw new IllegalArgumentException("읽음 상태입니다.");
+            throw new DuplicateReadStatusException(request.userId(), request.channelId());
         }
 
         ReadStatus readStatus = new ReadStatus(
@@ -59,7 +63,7 @@ public class BasicReadStatusService implements ReadStatusService {
     @Override
     public ReadStatusDto findById(UUID id) {
         ReadStatus readStatus = readStatusRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 읽음 상태입니다."));
+                .orElseThrow(() -> new ReadStatusNotFoundException(id));
 
         return readStatusMapper.toDto(readStatus);
     }
@@ -75,7 +79,7 @@ public class BasicReadStatusService implements ReadStatusService {
     @Transactional
     public ReadStatusDto update(UUID readStatusId, ReadStatusUpdateRequest request) {
         ReadStatus readStatus = readStatusRepository.findById(readStatusId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 읽음 상태입니다."));
+                .orElseThrow(() -> new ReadStatusNotFoundException(readStatusId));
 
         readStatus.updateReadAt(request.lastReadAt());
         readStatusRepository.save(readStatus);
@@ -86,7 +90,7 @@ public class BasicReadStatusService implements ReadStatusService {
     @Transactional
     public void delete(UUID id) {
         ReadStatus readStatus = readStatusRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 읽음 상태입니다."));
+                .orElseThrow(() -> new ReadStatusNotFoundException(id));
 
         readStatusRepository.delete(readStatus);
     }

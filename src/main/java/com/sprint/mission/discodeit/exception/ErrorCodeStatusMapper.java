@@ -16,6 +16,7 @@ public class ErrorCodeStatusMapper {
                  USER_STATUS_NOT_FOUND -> HttpStatus.NOT_FOUND;
 
             case DUPLICATE_USER,
+                 DUPLICATE_READ_STATUS,
                  DUPLICATE_USER_STATUS,
                  PRIVATE_CHANNEL_UPDATE,
                  INVALID_MESSAGE_CONTENT,

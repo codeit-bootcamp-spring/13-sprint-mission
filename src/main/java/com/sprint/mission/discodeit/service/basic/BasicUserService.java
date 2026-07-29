@@ -7,8 +7,9 @@ import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.user.DuplicateUserException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
-import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
@@ -74,7 +75,7 @@ public class BasicUserService implements UserService {
     @Override
     public UserDto findById(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 유저입니다."));
+                .orElseThrow(() -> new UserNotFoundException(id));
 
         UserStatus userStatus = userStatusRepository.findByUserId(id).orElse(null);
 
@@ -104,7 +105,7 @@ public class BasicUserService implements UserService {
         log.info("Updating user: userId={}", userId);
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 유저입니다."));
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         validateUniqueUserForUpdate(
                 userId,
@@ -139,7 +140,7 @@ public class BasicUserService implements UserService {
         log.info("Deleting user: userId={}", id);
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않은 유저입니다."));
+                .orElseThrow(() -> new UserNotFoundException(id));
 
         BinaryContent profile = user.getProfile();
         if (profile != null) {
@@ -155,12 +156,12 @@ public class BasicUserService implements UserService {
     private void validateUniqueUser(String username, String email) {
         if (userRepository.findByName(username).isPresent()) {
             log.warn("Duplicate username detected: username={}", username);
-            throw new IllegalArgumentException("이미 사용 중인 이름입니다.");
+            throw new DuplicateUserException("username", username);
         }
 
         if (userRepository.findByEmail(email).isPresent()) {
             log.warn("Duplicate email detected: email={}", email);
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+            throw new DuplicateUserException("email", email);
         }
     }
 
@@ -168,13 +169,15 @@ public class BasicUserService implements UserService {
         userRepository.findByName(username)
                 .filter(user -> !user.getId().equals(id))
                 .ifPresent(user -> {
-                    throw new IllegalArgumentException("이미 사용 중인 유저이름 입니다.");
+                    log.warn("Duplicate username detected during update: userId={}, username={}", id, username);
+                    throw new DuplicateUserException("username", username);
                 });
 
         userRepository.findByEmail(email)
                 .filter(user -> !user.getId().equals(id))
                 .ifPresent(user -> {
-                    throw new IllegalArgumentException("이미 사용 중인 E-mail입니다.");
+                    log.warn("Duplicate email detected during update: userId={}, email={}", id, email);
+                    throw new DuplicateUserException("email", email);
                 });
     }
 
