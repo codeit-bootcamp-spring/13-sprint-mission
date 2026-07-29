@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.message.MessageDto;
 import com.sprint.mission.discodeit.dto.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.service.MessageService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -32,7 +33,7 @@ public class MessageController {
 
     @RequestMapping(method = RequestMethod.POST)
     public ResponseEntity<MessageDto> create(
-            @RequestPart("messageCreateRequest") MessageCreateRequest request,
+            @RequestPart("messageCreateRequest") @Valid MessageCreateRequest request,
             @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
     ) throws IOException {
         log.info("Received message create request: channelId={}, userId={}", request.channelId(), request.userId());
@@ -77,7 +78,7 @@ public class MessageController {
     @RequestMapping(value = "/{messageId}", method = RequestMethod.PATCH)
     public ResponseEntity<MessageDto> update(
             @PathVariable UUID messageId,
-            @RequestBody MessageUpdateRequest request
+            @RequestBody @Valid MessageUpdateRequest request
     ) {
         log.info("Received message update request: messageId={}", messageId);
         return ResponseEntity.ok(messageService.update(messageId, request));

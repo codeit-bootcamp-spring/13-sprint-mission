@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.dto.userstatus.UserStatusDto;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -30,7 +31,7 @@ public class UserController {
 
     @RequestMapping(method = RequestMethod.POST)
     public ResponseEntity<UserDto> createUser(
-            @RequestPart("userCreateRequest") UserCreateRequest request,
+            @RequestPart("userCreateRequest") @Valid UserCreateRequest request,
             @RequestPart(value = "profile", required = false) MultipartFile profile
     ) throws IOException {
         log.info("Received user create request: username={}, email={}", request.username(), request.email());
@@ -61,7 +62,7 @@ public class UserController {
     @RequestMapping(value = "/{userId}", method = RequestMethod.PATCH)
     public ResponseEntity<UserDto> update(
             @PathVariable UUID userId,
-            @RequestPart("userUpdateRequest") UserUpdateRequest request,
+            @RequestPart("userUpdateRequest") @Valid UserUpdateRequest request,
             @RequestPart(value = "profile", required = false) MultipartFile profile
     ) throws IOException {
         log.info("Received user update request: userId={}", userId);
@@ -88,7 +89,7 @@ public class UserController {
     @RequestMapping(value = "/{userId}/userStatus", method = RequestMethod.PATCH)
     public ResponseEntity<UserStatusDto> updateStatus(
             @PathVariable UUID userId,
-            @RequestBody UserStatusUpdateRequest request
+            @RequestBody @Valid UserStatusUpdateRequest request
     ) {
         return ResponseEntity.ok(userStatusService.updateByUserId(userId, request));
     }

@@ -4,10 +4,13 @@ package com.sprint.mission.discodeit.exception;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.Instant;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @RestControllerAdvice
@@ -23,6 +26,31 @@ public class ErrorResponseHandler {
         ErrorResponse response = ErrorResponse.from(e, status.value());
 
         return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException e
+    ) {
+        Map<String, Object> details = e.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .collect(Collectors.toMap(
+                        fieldError -> fieldError.getField(),
+                        fieldError -> fieldError.getDefaultMessage(),
+                        (existing, replacement) -> existing
+                ));
+
+        ErrorResponse response = new ErrorResponse(
+                Instant.now(),
+                "VALIDATION_ERROR",
+                "요청 데이터가 올바르지 않습니다.",
+                details,
+                e.getClass().getSimpleName(),
+                HttpStatus.BAD_REQUEST.value()
+        );
+
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
