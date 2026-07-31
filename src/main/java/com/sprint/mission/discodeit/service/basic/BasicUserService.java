@@ -13,11 +13,13 @@ import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BasicUserService implements UserService {
 
     private final UserRepository userRepository;
@@ -25,20 +27,21 @@ public class BasicUserService implements UserService {
     private final BinaryContentRepository binaryContentRepository;
 
     @Override
+    @Transactional
     public UserResponse create(UserCreateRequest request) {
-        if(userRepository.findByUserName(request.userName())!=null) {
-            throw new IllegalArgumentException("이미 사용중인 계정입니다: " + request.userName());
+        if(userRepository.findByUsername(request.userName()).isPresent()) {
+            throw new IllegalArgumentException("이미 존재하는 이름입니다.");
         }
-        if(userRepository.findByEmail(request.email())!=null) {
-            throw new IllegalArgumentException("이미 사용중인 이메일입니다: " + request.email());
+        if(userRepository.findByEmail(request.email()).isPresent()) {
+            throw new IllegalArgumentException("이미 존재하는 계정입니다.");
         }
 
-        UUID savedProfileId = profileCheck(request.profile());
+        BinaryContent savedProfile = profileCheck(request.profile());
 
-        User user = new User(request.userName(), request.email(), request.password(), savedProfileId);
+        User user = new User(request.userName(), request.email(), request.password(), savedProfile);
         userRepository.save(user);
 
-        UserStatus userStatus = new UserStatus(user.getId());
+        UserStatus userStatus = new UserStatus(user);
         userStatusRepository.save(userStatus);
 
         return returnResponse(user, userStatus);
@@ -46,10 +49,11 @@ public class BasicUserService implements UserService {
 
     @Override
     public UserResponse find(UUID id) {
-        User user = userRepository.findById(id);
-        UserStatus userStatus = findByUserId(id);
+        User user = userRepository.findById(id)
+                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 계정입니다."));
+        UserStatus userStatus = user.getStatus();
 
-        if (user==null || userStatus==null) {
+        if (userStatus==null) {
             throw new IllegalArgumentException("존재하지 않는 계정입니다.");
         }
 
@@ -58,45 +62,37 @@ public class BasicUserService implements UserService {
 
     @Override
     public User findById(UUID id) {
-        User user = userRepository.findById(id);
-        if (user==null) {
-            throw new IllegalArgumentException("존재하지 않는 계정입니다.");
-        }
-        return user;
+        return userRepository.findById(id)
+                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 계정입니다."));
     }
 
     @Override
     public List<UserResponse> findAll() {
         List<User> users = userRepository.findAll();
-        List<UserStatus> userStatuses = userStatusRepository.findAll();
-
         List<UserResponse> userResponses = new ArrayList<>();
+
         for (User user : users) {
-            for (UserStatus userStatus : userStatuses) {
-                if(userStatus.getUserId().equals(user.getId())) {
-                    UserResponse dto = returnResponse(user, userStatus);
-                    userResponses.add(dto);
-                    break;
-                }
-            }
+            userResponses.add(returnResponse(user, user.getStatus()));
         }
 
         return userResponses;
     }
 
     @Override
+    @Transactional
     public UserResponse update(UserUpdateRequest request) {
-        User user = userRepository.findById(request.id());
-        UserStatus userStatus = findByUserId(request.id());
+        User user = userRepository.findById(request.id())
+                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 계정입니다."));
+        UserStatus userStatus = user.getStatus();
 
-        if (user==null || userStatus==null) {
+        if (userStatus==null) {
             throw new IllegalArgumentException("존재하지 않는 계정입니다.");
         }
 
-        UUID finalProfileId = user.getProfileId();
+        BinaryContent finalProfileId = user.getProfile();
         if (request.profile() != null) {
-            if (user.getProfileId() != null) {
-                binaryContentRepository.delete(user.getProfileId());
+            if (finalProfileId != null) {
+                binaryContentRepository.delete(user.getProfile());
             }
 
             finalProfileId = profileCheck(request.profile());
@@ -109,44 +105,27 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @Transactional
     public void delete(UUID id) {
-        User user = userRepository.findById(id);
-        if(user==null) {
-            throw new IllegalArgumentException("존재하지 않는 계정입니다.");
-        }
+        User user = userRepository.findById(id)
+                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 계정입니다."));
 
-        if (user.getProfileId() != null) {
-            binaryContentRepository.delete(user.getProfileId());
+        if (user.getProfile() != null) {
+            binaryContentRepository.delete(user.getProfile());
         }
-
-        UserStatus userStatus = findByUserId(id);
-        if(userStatus!=null) {
-            userStatusRepository.delete(userStatus.getId());
-        }
-        userRepository.delete(id);
+        userRepository.delete(user);
     }
 
-    private UserStatus findByUserId(UUID id) {
-        List<UserStatus> userStatuses = userStatusRepository.findAll();
-        for (UserStatus status : userStatuses) {
-            if (status.getUserId().equals(id)) {
-                return status;
-            }
-        }
-        return null;
-    }
-
-    private UUID profileCheck(BinaryContentCreateRequest profile) {
-        UUID savedProfileId = null;
+    private BinaryContent profileCheck(BinaryContentCreateRequest profile) {
+        BinaryContent binaryContent = null;
         if(profile!=null) {
-            BinaryContent binaryContent = new BinaryContent(profile.fileName(), profile.contentType(), profile.size(), profile.bytes());
+            binaryContent = new BinaryContent(profile.fileName(), profile.contentType(), profile.size(), profile.bytes());
             binaryContentRepository.save(binaryContent);
-            savedProfileId = binaryContent.getId();
         }
-        return savedProfileId;
+        return binaryContent;
     }
 
     private UserResponse returnResponse(User user, UserStatus userStatus) {
-        return new UserResponse(user.getId(), user.getUserName(), user.getEmail(), userStatus.isOnline());
+        return new UserResponse(user.getId(), user.getUsername(), user.getEmail(), userStatus.isOnline());
     }
 }
