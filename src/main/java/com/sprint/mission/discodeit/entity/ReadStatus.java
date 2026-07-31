@@ -40,6 +40,5 @@ public class ReadStatus extends BaseUpdatableEntity {
 
     public void updateLastReadAt(Instant lastReadAt) {
         this.lastReadAt = lastReadAt;
-        markUpdated();
     }
 }

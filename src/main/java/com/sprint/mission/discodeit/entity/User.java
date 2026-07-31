@@ -50,7 +50,6 @@ public class User extends BaseUpdatableEntity {
         this.email = email;
         this.password = password;
         this.profile = profile;
-        markUpdated();
     }
 
     public void assignStatus(UserStatus status) {

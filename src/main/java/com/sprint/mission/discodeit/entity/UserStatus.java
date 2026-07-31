@@ -34,7 +34,6 @@ public class UserStatus extends BaseUpdatableEntity {
 
     public void updateActiveTime(Instant lastActiveAt) {
         this.lastActiveAt = lastActiveAt;
-        markUpdated();
     }
 
     public boolean isOnline() {

@@ -22,8 +22,4 @@ public abstract class BaseUpdatableEntity extends BaseEntity {
         super();
         this.updatedAt = getCreatedAt();
     }
-
-    protected void markUpdated() {
-        this.updatedAt = Instant.now();
-    }
 }
