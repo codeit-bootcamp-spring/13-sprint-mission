@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.MessageResponse;
+import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,17 +19,17 @@ public class MessageController {
     private final MessageService messageService;
 
     @PostMapping
-    public ResponseEntity<MessageResponse> create(@RequestBody MessageCreateRequest request) {
+    public ResponseEntity<MessageDto> create(@RequestBody MessageCreateRequest request) {
         return ResponseEntity.ok(messageService.create(request));
     }
 
     @GetMapping
-    public ResponseEntity<List<MessageResponse>> findAllByChannelId(@RequestParam UUID channelId) {
+    public ResponseEntity<List<MessageDto>> findAllByChannelId(@RequestParam UUID channelId) {
         return ResponseEntity.ok(messageService.findAllByChannelId(channelId));
     }
 
     @PatchMapping(value = "/{messageId}")
-    public ResponseEntity<MessageResponse> update(@PathVariable UUID messageId, @RequestBody MessageUpdateRequest request) {
+    public ResponseEntity<MessageDto> update(@PathVariable UUID messageId, @RequestBody MessageUpdateRequest request) {
         return ResponseEntity.ok(messageService.update(request));
     }
 
