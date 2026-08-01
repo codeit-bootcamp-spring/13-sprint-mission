@@ -2,12 +2,9 @@ spring:
   application:
     name: discodeit
 
-  datasource: #Db 접속
-    url: jdbc:postgresql://localhost:5432/discodeit #DB주소
-    username: discodeit_user  #계정 명
-    password: discodeit1234
-    driver-class-name: org.postgresql.Driver #build.gradle에 추가한 드라이브
-
+  profiles:
+    active: dev   # 로컬 기본 프로파일. 배포 시 -Dspring.profiles.active=prod 로 덮어씀
+  
   jpa: #SQL로그 확인 + 테이블 자동 생성 방지(요구사항: DDL을 직접 작성하고 schema.sql에 포함하세요)
     hibernate:
       ddl-auto: validate        # schema.sql로 테이블 직접 관리할 거라 validate

@@ -2,11 +2,11 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.auth.InvalidCredentialsException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.AuthService;
 import java.time.Instant;
-import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,10 +26,10 @@ public class BasicAuthService implements AuthService {
     log.info("로그인 요청 - username: {}", username);
 
     User user = userRepository.findByUserName(username)
-        .orElseThrow(() -> new NoSuchElementException("username 틀렸습니다."));
+        .orElseThrow(() -> new InvalidCredentialsException(username));
 
     if (!user.getPassword().equals(password)) {
-      throw new IllegalArgumentException("password가 틀렸습니다.");
+      throw new InvalidCredentialsException(username);
     }
 
     user.getUserStatus().updateLastActiveAt(Instant.now());
