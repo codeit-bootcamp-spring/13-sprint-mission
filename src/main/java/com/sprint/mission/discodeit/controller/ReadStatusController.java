@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.request.ReadStatusCreateRequest;
-import com.sprint.mission.discodeit.dto.request.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ReadStatusDto;
 import com.sprint.mission.discodeit.service.ReadStatusService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,7 +23,7 @@ public class ReadStatusController {
 
   @RequestMapping(method = RequestMethod.POST)
   public ResponseEntity<ReadStatusDto> create(
-      @RequestBody ReadStatusCreateRequest readStatusCreateRequest) {
+      @RequestBody @Valid ReadStatusCreateRequest readStatusCreateRequest) {
     log.debug("[ReadStatus 생성 요청] userId: {}, channelId: {}",
         readStatusCreateRequest.userId(), readStatusCreateRequest.channelId());
 
@@ -52,12 +52,10 @@ public class ReadStatusController {
 
 
   @RequestMapping(value = "/{readStatusId}", method = RequestMethod.PATCH)
-  public ResponseEntity<ReadStatusDto> update(@PathVariable UUID readStatusId,
-      @RequestBody ReadStatusUpdateRequest readStatusUpdateRequest) {
+  public ResponseEntity<ReadStatusDto> update(@PathVariable UUID readStatusId) {
     log.debug("[ReadStatus 수정 요청] readStatusId: {}", readStatusId);
 
-    ReadStatusDto readStatusUpdate = readStatusService.update(readStatusId,
-        readStatusUpdateRequest);
+    ReadStatusDto readStatusUpdate = readStatusService.updateToNow(readStatusId);
 
     log.info("[ReadStatus 수정 완료] readStatusId: {}", readStatusUpdate.id());
     return ResponseEntity.status(HttpStatus.OK).body(readStatusUpdate);

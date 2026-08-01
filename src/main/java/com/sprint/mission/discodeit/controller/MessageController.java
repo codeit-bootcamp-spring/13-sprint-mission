@@ -55,7 +55,7 @@ public class MessageController {
 
   @RequestMapping(value = "/{messageId}", method = RequestMethod.PATCH)
   public ResponseEntity<MessageDto> update(@PathVariable UUID messageId,
-      @RequestBody MessageUpdateRequest messageUpdateRequest) {
+      @RequestBody @Valid MessageUpdateRequest messageUpdateRequest) {
     log.debug("[메시지 수정 요청] messageId: {}", messageId);
 
     MessageDto updateMessage = messageService.update(messageId, messageUpdateRequest);

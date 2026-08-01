@@ -3,7 +3,6 @@ package com.sprint.mission.discodeit.controller;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.UserService;
@@ -90,7 +89,7 @@ public class UserController {
       //getBytes(), getSize(), getContentType() 같은 메서드로 파일 정보를 꺼낼 수 있음.
       //프론트에서 요구하는 방식이라 일단 추가. 415오류 해결.
       @PathVariable UUID userId,
-      @RequestPart("userUpdateRequest") UserUpdateRequest userUpdateRequest) {
+      @RequestPart("userUpdateRequest") @Valid UserUpdateRequest userUpdateRequest) {
     log.debug("[User 수정 요청] userId: {}, profile 첨부 여부: {}", userId, profile != null);
 
     BinaryContentDto content = null;
@@ -123,12 +122,12 @@ public class UserController {
   }
 
   @RequestMapping(value = "/{userId}/userStatus", method = RequestMethod.PATCH)
-  public ResponseEntity<UserDto> updateByUserId(@PathVariable UUID userId,
-      @RequestBody UserStatusUpdateRequest userStatusUpdateRequest) {
-    UserDto userStatus = userStatusService.updateByUserId(userId, userStatusUpdateRequest);
-    // DTO를 통째로 서비스에 전달
-    // 서비스 내부에서 request.newLastActiveAt()을 꺼내 UserStatus 엔티티의
-    // lastActiveAt 필드를 수정 후 저장소에 저장 -> 각각의 필드 꺼낼 필요 없음.
+  public ResponseEntity<UserDto> updateByUserId(@PathVariable UUID userId) {
+    log.debug("[UserStatus 수정 요청] userId: {}", userId);
+
+    UserDto userStatus = userStatusService.updateToNowByUserId(userId);
+
+    log.info("[UserStatus 수정 완료] userId: {}", userId);
     return ResponseEntity.status(HttpStatus.OK).body(userStatus);
   }
 

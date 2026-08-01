@@ -1,7 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.ReadStatusCreateRequest;
-import com.sprint.mission.discodeit.dto.request.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ReadStatusDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ReadStatus;
@@ -15,6 +14,7 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ReadStatusService;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +47,7 @@ public class BasicReadStatusService implements ReadStatusService {
       throw new ReadStatusAlreadyExistsException(request.userId(), request.channelId());
     }
 
-    ReadStatus readStatus = new ReadStatus(user, channel, request.lastReadAt());
+    ReadStatus readStatus = new ReadStatus(user, channel, Instant.now());
     readStatusRepository.save(readStatus);
 
     log.info("ReadStatus 생성 완료 - readStatusId: {}", readStatus.getId());
@@ -82,12 +82,12 @@ public class BasicReadStatusService implements ReadStatusService {
 
   @Override
   @Transactional
-  public ReadStatusDto update(UUID readStatusId, ReadStatusUpdateRequest request) {
+  public ReadStatusDto updateToNow(UUID readStatusId) {
     log.info("ReadStatus 수정 요청 - readStatusId: {}", readStatusId);
 
     ReadStatus readStatus = readStatusRepository.findById(readStatusId)
         .orElseThrow(() -> new ReadStatusNotFoundException(readStatusId));
-    readStatus.updateLastReadAt(request.newLastReadAt());
+    readStatus.updateLastReadAt(Instant.now());
 
     log.info("ReadStatus 수정 완료 - readStatusId: {}", readStatusId);
     return readStatusMapper.toDto(readStatus);
