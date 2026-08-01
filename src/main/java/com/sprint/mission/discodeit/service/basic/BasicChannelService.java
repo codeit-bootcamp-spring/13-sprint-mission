@@ -60,7 +60,7 @@ public class BasicChannelService implements ChannelService {
         Channel cnl = new Channel("", "", ChannelType.PRIVATE);
         channelRepository.save(cnl);
 
-        log.info("public channel created - " + cnl.getName());
+        log.info("private channel created - " + cnl.getName());
 
         for (UUID pid : cpv.participantIds()){
             User user = getUserOrException(pid);
@@ -108,6 +108,7 @@ public class BasicChannelService implements ChannelService {
         cnl.setName(uci.newName());
         cnl.setDescription(uci.newDescription());
 
+        channelRepository.save(cnl);
         log.info("channel updated - " + cnl.getName());
 
         return mapStructMapper.toDto(cnl,userDtoFromChannel(cnl),lastMessageAt(cnl));

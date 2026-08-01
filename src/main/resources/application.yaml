@@ -1,3 +1,27 @@
+info:
+  application:
+    name: ${spring.application.name}
+    version: "1.7.0"
+    java-version: "17"
+    spring-boot-version: "3.4.0"
+
+  configuration:
+    datasource:
+      url: ${spring.datasource.url}
+#      driver-class-name: ${spring.datasource.driver-class-name}
+
+    jpa:
+      ddl-auto: ${spring.jpa.hibernate.ddl-auto}
+
+    storage:
+      type: ${discodeit.storage.type}
+      path: ${discodeit.storage.local.root-path}
+
+    multipart:
+      max-file-size: ${spring.servlet.multipart.max-file-size}
+      max-request-size: ${spring.servlet.multipart.max-request-size}
+
+
 spring:
   application:
     name: discodeit
@@ -12,11 +36,28 @@ logging:
   level:
     com.sprint.mission.discodeit: info
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, loggers # 꼭 필요한 정보만 노출
+      base-path: /management # 경로도 바꿔서 숨김
+
+  endpoint:
+    health:
+      show-details: always # 개발 환경에서는 always, 운영에서는 when-authorized(허가된 사람만 요청 가능하도록)
+  info:
+    env:
+      enabled: true
+  server:
+    port: 9090 # Actuator 전용 포트 (방화벽 같은데에서 Actuator는 허용된 ip만 접근이 가능하도록 막음)
+
 discodeit:
 #  repository:
 #    type: jcf
 #    path: "/home/latte/test"
   storage:
+    type: "local"
     local:
       root-path: "data"
 

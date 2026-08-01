@@ -20,6 +20,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @ConditionalOnProperty(prefix = "discodeit.storage", name = "type", havingValue = "local")
 public class LocalBinaryContentStorage implements BinaryContentStorage {
+
     @Value(value = "${discodeit.storage.local.root-path}")
     private Path root;
 

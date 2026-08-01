@@ -8,7 +8,6 @@ import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
-import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.exception.UserDuplicatedException;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
@@ -114,6 +113,7 @@ public class BasicUserService implements UserService {
             user.setProfile(bc);
         }
 
+        user = userRepository.save(user);
         log.info("user with id - {} updated", id);
 
         return mapStructMapper.toDto(

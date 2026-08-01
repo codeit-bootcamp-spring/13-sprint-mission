@@ -98,7 +98,7 @@ public class BasicMessageService implements MessageService {
                 atts
         );
 
-        messageRepository.save(res);
+        res = messageRepository.save(res);
 
         log.info("Message Created - {}", res.getId());
 
@@ -154,6 +154,8 @@ public class BasicMessageService implements MessageService {
             binaryContentRepository.deleteAll(msg.getAttachment());
         }
 
+        // real file delete logic need
+
         messageRepository.delete(msg);
 
         log.info("Message Deleted - {}", msg.getId());
@@ -175,6 +177,7 @@ public class BasicMessageService implements MessageService {
     }
 
     private byte[] bytesFromBinaryContent(BinaryContent bc){
+        if (bc == null) return null; // null point exception 방지용. catch 에서 안 잡힘.
         try (InputStream in = binaryContentStorage.get(bc.getId())){
             return in.readAllBytes();
         } catch (IOException e) {

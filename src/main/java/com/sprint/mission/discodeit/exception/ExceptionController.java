@@ -5,12 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
@@ -55,6 +57,14 @@ public class ExceptionController {
     public ProblemDetail handleTypeMismatch(MethodArgumentTypeMismatchException e) {
         log.warn("invalid param or query type - {}", e.getMessage());
         return from(ExceptionCode.REQUEST_VALUE_ERROR, null, Instant.now());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail handleTypeMismatch(MethodArgumentNotValidException e) {
+        log.warn("invalid value - {}", e.getMessage());
+        HashMap<String, Object> errors = new HashMap<>();
+        errors.put("detail", e.getMessage());
+        return from(ExceptionCode.REQUEST_VALUE_ERROR, errors, Instant.now());
     }
 
     @ExceptionHandler(value = Exception.class)
