@@ -1,8 +1,9 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
-import com.sprint.mission.discodeit.dto.response.BinaryContentResponse;
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import lombok.RequiredArgsConstructor;
@@ -19,30 +20,31 @@ import java.util.UUID;
 public class BasicBinaryContentService implements BinaryContentService {
 
     private final BinaryContentRepository binaryContentRepository;
+    private final BinaryContentMapper binaryContentMapper;
 
     @Override
     @Transactional
-    public BinaryContentResponse create(BinaryContentCreateRequest request) {
+    public BinaryContentDto create(BinaryContentCreateRequest request) {
         BinaryContent binaryContent = new BinaryContent(request.fileName(), request.contentType(), request.size(), request.bytes());
         binaryContentRepository.save(binaryContent);
-        return returnResponse(binaryContent);
+        return binaryContentMapper.toDto(binaryContent);
     }
 
     @Override
-    public BinaryContentResponse find(UUID id) {
+    public BinaryContentDto find(UUID id) {
         BinaryContent binaryContent = binaryContentRepository.findById(id)
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 파일입니다."));
 
-        return returnResponse(binaryContent);
+        return binaryContentMapper.toDto(binaryContent);
     }
 
     @Override
-    public List<BinaryContentResponse> findAllByIdIn(List<UUID> ids) {
-        List<BinaryContentResponse> responses = new ArrayList<>();
+    public List<BinaryContentDto> findAllByIdIn(List<UUID> ids) {
+        List<BinaryContentDto> responses = new ArrayList<>();
         List<BinaryContent> binaryContents = binaryContentRepository.findAllById(ids);
 
         for (BinaryContent binaryContent : binaryContents) {
-            responses.add(returnResponse(binaryContent));
+            responses.add(binaryContentMapper.toDto(binaryContent));
         }
         return responses;
     }
@@ -55,9 +57,4 @@ public class BasicBinaryContentService implements BinaryContentService {
         }
         binaryContentRepository.deleteById(id);
     }
-
-    private BinaryContentResponse returnResponse(BinaryContent binaryContent) {
-        return new BinaryContentResponse(binaryContent.getId(), binaryContent.getFileName(), binaryContent.getContentType(), binaryContent.getSize(), binaryContent.getBytes());
-    }
-
 }

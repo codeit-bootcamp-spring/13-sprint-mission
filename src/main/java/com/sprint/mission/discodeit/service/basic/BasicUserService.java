@@ -3,10 +3,11 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.UserResponse;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
@@ -25,10 +26,11 @@ public class BasicUserService implements UserService {
     private final UserRepository userRepository;
     private final UserStatusRepository userStatusRepository;
     private final BinaryContentRepository binaryContentRepository;
+    private final UserMapper userMapper;
 
     @Override
     @Transactional
-    public UserResponse create(UserCreateRequest request) {
+    public UserDto create(UserCreateRequest request) {
         if(userRepository.findByUsername(request.userName()).isPresent()) {
             throw new IllegalArgumentException("이미 존재하는 이름입니다.");
         }
@@ -44,11 +46,11 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = new UserStatus(user);
         userStatusRepository.save(userStatus);
 
-        return returnResponse(user, userStatus);
+        return userMapper.toDto(user);
     }
 
     @Override
-    public UserResponse find(UUID id) {
+    public UserDto find(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 계정입니다."));
         UserStatus userStatus = user.getStatus();
@@ -57,7 +59,7 @@ public class BasicUserService implements UserService {
             throw new IllegalArgumentException("존재하지 않는 계정입니다.");
         }
 
-        return returnResponse(user, userStatus);
+        return userMapper.toDto(user);
     }
 
     @Override
@@ -67,20 +69,20 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public List<UserResponse> findAll() {
+    public List<UserDto> findAll() {
         List<User> users = userRepository.findAll();
-        List<UserResponse> userResponses = new ArrayList<>();
+        List<UserDto> userDtos = new ArrayList<>();
 
         for (User user : users) {
-            userResponses.add(returnResponse(user, user.getStatus()));
+            userDtos.add(userMapper.toDto(user));
         }
 
-        return userResponses;
+        return userDtos;
     }
 
     @Override
     @Transactional
-    public UserResponse update(UserUpdateRequest request) {
+    public UserDto update(UserUpdateRequest request) {
         User user = userRepository.findById(request.id())
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 계정입니다."));
         UserStatus userStatus = user.getStatus();
@@ -101,7 +103,7 @@ public class BasicUserService implements UserService {
         user.update(request.userName(), request.email(), request.password(), finalProfileId);
         userRepository.save(user);
 
-        return returnResponse(user, userStatus);
+        return userMapper.toDto(user);
     }
 
     @Override
@@ -123,9 +125,5 @@ public class BasicUserService implements UserService {
             binaryContentRepository.save(binaryContent);
         }
         return binaryContent;
-    }
-
-    private UserResponse returnResponse(User user, UserStatus userStatus) {
-        return new UserResponse(user.getId(), user.getUsername(), user.getEmail(), userStatus.isOnline());
     }
 }

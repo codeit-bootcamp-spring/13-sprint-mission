@@ -3,10 +3,10 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
-import com.sprint.mission.discodeit.dto.response.ChannelResponse;
+import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
-import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -28,20 +27,20 @@ public class BasicChannelService implements ChannelService {
 
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
-    private final MessageRepository messageRepository;
     private final ReadStatusRepository readStatusRepository;
+    private final ChannelMapper channelMapper;
 
     @Override
     @Transactional
-    public ChannelResponse createPublic(PublicChannelCreateRequest request) {
+    public ChannelDto createPublic(PublicChannelCreateRequest request) {
         Channel channel = new Channel(ChannelType.PUBLIC ,request.channelName(), request.description());
         channelRepository.save(channel);
-        return new ChannelResponse(channel.getId(), ChannelType.PUBLIC, channel.getName(), channel.getDescription(), null, List.of());
+        return channelMapper.toDto(channel);
     }
 
     @Override
     @Transactional
-    public ChannelResponse createPrivate(PrivateChannelCreateRequest request) {
+    public ChannelDto createPrivate(PrivateChannelCreateRequest request) {
         Channel channel = new Channel(ChannelType.PRIVATE, null, null);
         channelRepository.save(channel);
 
@@ -53,23 +52,20 @@ public class BasicChannelService implements ChannelService {
             readStatusRepository.save(readStatus);
         }
 
-        return new ChannelResponse(channel.getId(), ChannelType.PRIVATE, null, null, null, request.userIds());
+        return channelMapper.toDto(channel);
     }
 
     @Override
-    public ChannelResponse find(UUID id) {
+    public ChannelDto find(UUID id) {
         Channel channel = channelRepository.findById(id)
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 채널입니다."));
 
-        Instant lastMessageAt = lastedAt(channel.getId());
-        List<UUID> memberIds = joinMembers(channel);
-
-        return new ChannelResponse(channel.getId(), channel.getType(), channel.getName(), channel.getDescription(), lastMessageAt, memberIds);
+        return channelMapper.toDto(channel);
     }
 
     @Override
-    public List<ChannelResponse> findAllByUserId(UUID userId) {
-        List<ChannelResponse> responses = new ArrayList<>();
+    public List<ChannelDto> findAllByUserId(UUID userId) {
+        List<ChannelDto> responses = new ArrayList<>();
         List<Channel> channels = channelRepository.findAll();
 
         Set<UUID> joinedChannelIds = readStatusRepository.findAllByUser_Id(userId).stream()
@@ -81,10 +77,7 @@ public class BasicChannelService implements ChannelService {
                     || joinedChannelIds.contains(channel.getId());
 
             if(isJoin) {
-                Instant lastMessageAt = lastedAt(channel.getId());
-                List<UUID> memberIds = joinMembers(channel);
-
-                responses.add(new ChannelResponse(channel.getId(), channel.getType(), channel.getName(), channel.getDescription(), lastMessageAt, memberIds));
+                responses.add(channelMapper.toDto(channel));
             }
         }
 
@@ -93,7 +86,7 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     @Transactional
-    public ChannelResponse update(UUID channelId, ChannelUpdateRequest request) {
+    public ChannelDto update(UUID channelId, ChannelUpdateRequest request) {
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 채널입니다."));
         if(channel.getType()==ChannelType.PRIVATE) {
@@ -103,10 +96,7 @@ public class BasicChannelService implements ChannelService {
         channel.update(request.channelName(), request.description());
         channelRepository.save(channel);
 
-        Instant lastMessageAt = lastedAt(channel.getId());
-        List<UUID> memberIds = joinMembers(channel);
-
-        return new ChannelResponse(channel.getId(), channel.getType(), channel.getName(), channel.getDescription(), lastMessageAt, memberIds);
+        return channelMapper.toDto(channel);
     }
 
     @Override
@@ -116,27 +106,5 @@ public class BasicChannelService implements ChannelService {
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 채널입니다."));
 
         channelRepository.delete(channel);
-    }
-
-    private Instant lastedAt(UUID channelId) {
-        List<Message> messages = messageRepository.findAllByChannel_Id(channelId);
-        Instant lastMessageAt = null;
-        for (Message message : messages) {
-            if(lastMessageAt==null || message.getUpdatedAt().isAfter(lastMessageAt)) {
-                lastMessageAt = message.getUpdatedAt();
-            }
-        }
-        return lastMessageAt;
-    }
-
-    private List<UUID> joinMembers(Channel channel) {
-        List<UUID> memberIds = new ArrayList<>();
-        if(channel.getType()==ChannelType.PUBLIC) return memberIds;
-
-        List<ReadStatus> readStatuses = readStatusRepository.findAllByChannel_Id(channel.getId());
-        for (ReadStatus readStatus : readStatuses) {
-            memberIds.add(readStatus.getUser().getId());
-        }
-        return memberIds;
     }
 }

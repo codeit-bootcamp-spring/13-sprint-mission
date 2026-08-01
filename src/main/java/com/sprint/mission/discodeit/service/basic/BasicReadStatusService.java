@@ -2,10 +2,11 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.ReadStatusUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.ReadStatusResponse;
+import com.sprint.mission.discodeit.dto.response.ReadStatusDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.mapper.ReadStatusMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -26,10 +27,11 @@ public class BasicReadStatusService implements ReadStatusService {
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
     private final ReadStatusRepository readStatusRepository;
+    private final ReadStatusMapper readStatusMapper;
 
     @Override
     @Transactional
-    public ReadStatusResponse create(ReadStatusCreateRequest request) {
+    public ReadStatusDto create(ReadStatusCreateRequest request) {
         User user = userRepository.findById(request.userId())
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 계정입니다."));
         Channel channel = channelRepository.findById(request.channelId())
@@ -41,26 +43,26 @@ public class BasicReadStatusService implements ReadStatusService {
 
         ReadStatus readStatus = new ReadStatus(user, channel);
         readStatusRepository.save(readStatus);
-        return returnResponse(readStatus);
+        return readStatusMapper.toDto(readStatus);
     }
 
     @Override
-    public ReadStatusResponse find(UUID id) {
+    public ReadStatusDto find(UUID id) {
         ReadStatus readStatus = readStatusCheck(id);
-        return returnResponse(readStatus);
+        return readStatusMapper.toDto(readStatus);
     }
 
     @Override
-    public List<ReadStatusResponse> findAllByUserId(UUID userId) {
+    public List<ReadStatusDto> findAllByUserId(UUID userId) {
         if (!userRepository.existsById(userId)) {
             throw new IllegalArgumentException("존재하지 않는 계정입니다.");
         }
 
         List<ReadStatus> readStatuses = readStatusRepository.findAllByUser_Id(userId);
-        List<ReadStatusResponse> responses = new ArrayList<>();
+        List<ReadStatusDto> responses = new ArrayList<>();
 
         for (ReadStatus readStatus : readStatuses) {
-            responses.add(returnResponse(readStatus));
+            responses.add(readStatusMapper.toDto(readStatus));
         }
 
         return responses;
@@ -68,12 +70,12 @@ public class BasicReadStatusService implements ReadStatusService {
 
     @Override
     @Transactional
-    public ReadStatusResponse update(ReadStatusUpdateRequest request) {
+    public ReadStatusDto update(ReadStatusUpdateRequest request) {
         ReadStatus readStatus = readStatusCheck(request.id());
 
         readStatus.updateLastReadAt(request.lastReadAt());
         readStatusRepository.save(readStatus);
-        return returnResponse(readStatus);
+        return readStatusMapper.toDto(readStatus);
     }
 
     @Override
@@ -86,9 +88,5 @@ public class BasicReadStatusService implements ReadStatusService {
     private ReadStatus readStatusCheck(UUID id) {
         return readStatusRepository.findById(id)
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 읽기 상태입니다."));
-    }
-
-    private ReadStatusResponse returnResponse(ReadStatus readStatus) {
-        return new ReadStatusResponse(readStatus.getId(), readStatus.getUser().getId(), readStatus.getChannel().getId(), readStatus.getUpdatedAt());
     }
 }
