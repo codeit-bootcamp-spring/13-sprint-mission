@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.dto.binarycontent;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
