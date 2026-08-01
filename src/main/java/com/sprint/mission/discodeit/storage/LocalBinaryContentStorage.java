@@ -1,11 +1,9 @@
 package com.sprint.mission.discodeit.storage;
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
-import jakarta.annotation.PostConstruct;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -13,140 +11,86 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @Component
-@ConditionalOnProperty(
-        name = "discodeit.storage.type",
-        havingValue = "local"
-)
 public class LocalBinaryContentStorage implements BinaryContentStorage {
 
-    private final Path root;
+    private final Path rootPath;
 
     public LocalBinaryContentStorage(
-            @Value("${discodeit.storage.local.root-path}") String rootPath
+            @Value("${storage.local.root-path}") String rootPath
     ) {
-        this.root = Path.of(rootPath);
-    }
-
-    @PostConstruct
-    public void init() {
-        try {
-            Files.createDirectories(root);
-        } catch (IOException e) {
-            throw new UncheckedIOException(
-                    "로컬 저장소 디렉토리를 생성할 수 없습니다: " + root,
-                    e
-            );
-        }
-    }
-
-    protected Path resolvePath(UUID id) {
-        return root.resolve(id.toString());
+        this.rootPath = Path.of(rootPath);
     }
 
     @Override
-    public UUID put(UUID id, byte[] bytes) {
-        if (id == null) {
-            throw new IllegalArgumentException("BinaryContent id는 필수입니다.");
-        }
-
-        if (bytes == null) {
-            throw new IllegalArgumentException("저장할 바이너리 데이터는 필수입니다.");
-        }
-
-        Path path = resolvePath(id);
-
+    public void put(UUID id, byte[] bytes) {
         try {
-            Files.write(
-                    path,
-                    bytes,
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.WRITE
-            );
+            Files.createDirectories(rootPath);
 
-            return id;
-        } catch (IOException e) {
-            throw new UncheckedIOException(
+            Path filePath = rootPath.resolve(id.toString());
+
+            Files.write(filePath, bytes);
+        } catch (IOException exception) {
+            throw new RuntimeException(
                     "파일 저장에 실패했습니다: " + id,
-                    e
+                    exception
             );
         }
     }
 
     @Override
-    public InputStream get(UUID id) {
-        if (id == null) {
-            throw new IllegalArgumentException("BinaryContent id는 필수입니다.");
-        }
-
-        Path path = resolvePath(id);
-
-        if (!Files.exists(path)) {
-            throw new IllegalArgumentException(
-                    "저장된 파일을 찾을 수 없습니다: " + id
-            );
-        }
-
-        try {
-            return Files.newInputStream(
-                    path,
-                    StandardOpenOption.READ
-            );
-        } catch (IOException e) {
-            throw new UncheckedIOException(
-                    "파일을 읽을 수 없습니다: " + id,
-                    e
-            );
-        }
-    }
-
-    @Override
-    public ResponseEntity<Resource> download(
+    public ResponseEntity<?> download(
             BinaryContentDto binaryContentDto
     ) {
-        if (binaryContentDto == null) {
-            throw new IllegalArgumentException(
-                    "BinaryContentDto는 필수입니다."
-            );
-        }
-
-        InputStream inputStream = get(binaryContentDto.id());
-        Resource resource = new InputStreamResource(inputStream);
-
-        MediaType mediaType;
-
         try {
-            mediaType = MediaType.parseMediaType(
-                    binaryContentDto.contentType()
+            Path filePath = rootPath.resolve(
+                    binaryContentDto.id().toString()
             );
-        } catch (Exception e) {
-            mediaType = MediaType.APPLICATION_OCTET_STREAM;
+
+            Resource resource = new UrlResource(
+                    filePath.toUri()
+            );
+
+            if (!resource.exists()) {
+                throw new IllegalArgumentException(
+                        "저장된 파일을 찾을 수 없습니다: "
+                                + binaryContentDto.id()
+                );
+            }
+
+            ContentDisposition disposition =
+                    ContentDisposition.attachment()
+                            .filename(
+                                    binaryContentDto.fileName(),
+                                    StandardCharsets.UTF_8
+                            )
+                            .build();
+
+            return ResponseEntity.ok()
+                    .contentType(
+                            MediaType.parseMediaType(
+                                    binaryContentDto.contentType()
+                            )
+                    )
+                    .contentLength(binaryContentDto.size())
+                    .header(
+                            HttpHeaders.CONTENT_DISPOSITION,
+                            disposition.toString()
+                    )
+                    .body(resource);
+
+        } catch (MalformedURLException exception) {
+            throw new RuntimeException(
+                    "파일 다운로드에 실패했습니다: "
+                            + binaryContentDto.id(),
+                    exception
+            );
         }
-
-        ContentDisposition contentDisposition =
-                ContentDisposition.attachment()
-                        .filename(
-                                binaryContentDto.fileName(),
-                                StandardCharsets.UTF_8
-                        )
-                        .build();
-
-        return ResponseEntity.ok()
-                .contentType(mediaType)
-                .contentLength(binaryContentDto.size())
-                .header(
-                        HttpHeaders.CONTENT_DISPOSITION,
-                        contentDisposition.toString()
-                )
-                .body(resource);
     }
 }
