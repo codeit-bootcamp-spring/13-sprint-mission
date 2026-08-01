@@ -23,15 +23,8 @@ logging:
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
 
-file:
-  path:
-    user: data/users.ser
-    channel: data/channel.ser
-    message: data/message.ser
-    userStatus: data/userStatus.ser
-    readStatus: data/readStatus.ser
-    binaryContent: data/binaryContent.ser
-
 discodeit:
-  repository:
-    type: file
+  storage:
+    type: local
+    local:
+      root-path: ./storage

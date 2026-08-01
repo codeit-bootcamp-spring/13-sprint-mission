@@ -13,6 +13,7 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ public class BasicMessageService implements MessageService {
     private final ChannelRepository channelRepository;
     private final MessageRepository messageRepository;
     private final MessageMapper messageMapper;
+    private final BinaryContentStorage binaryContentStorage;
 
     @Override
     @Transactional
@@ -42,7 +44,8 @@ public class BasicMessageService implements MessageService {
         List<BinaryContent> savedFiles = new ArrayList<>();
         if(request.attachment()!=null && !request.attachment().isEmpty()) {
             for (BinaryContentCreateRequest fileDto : request.attachment()) {
-                BinaryContent binaryContent = new BinaryContent(fileDto.fileName(), fileDto.contentType(), fileDto.size(), fileDto.bytes());
+                BinaryContent binaryContent = new BinaryContent(fileDto.fileName(), fileDto.contentType(), fileDto.size());
+                binaryContentStorage.put(binaryContent.getId(), fileDto.bytes());
                 savedFiles.add(binaryContent);
             }
         }
