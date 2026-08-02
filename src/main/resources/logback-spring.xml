@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!--
+      로그 출력 패턴 정의
+      %d{yy-MM-dd HH:mm:ss.SSS} : 날짜/시간 (예: 26-07-05 10:33:55.740)
+      [%thread]                  : 스레드 이름 (예: [main])
+      %-5level                   : 로그 레벨을 5글자로 맞춤 (예: DEBUG, INFO , WARN , ERROR)
+      %logger{36}                : 로거 이름 최대 36글자로 축약 (예: c.s.m.discodeit.DiscodeitApp)
+      - %msg%n                   : 메시지 + 줄바꿈
+    -->
+    <property name="LOG_PATTERN"
+              value="%d{yy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+
+    <!-- 로그 파일 저장 경로 -->
+    <property name="LOG_PATH" value=".logs"/>
+    <property name="LOG_FILE_NAME" value="${LOG_PATH}/discodeit"/>
+
+    <!--
+      Appender: 로그를 어디에 출력할지 정의
+      CONSOLE Appender: 콘솔(터미널)에 출력
+    -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE_NAME}.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_FILE_NAME}.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <!-- 30일이 지난 로그 파일은 자동 삭제 -->
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <springProfile name="dev">
+        <!-- root: 모든 로거의 기본 설정 (INFO 이상 출력) -->
+        <root level="info">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+        <logger name="com.sprint.mission.discodeit" level="debug" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </logger>
+    </springProfile>
+
+    <!-- 운영 환경: INFO 레벨로만 출력 -->
+    <springProfile name="prod">
+        <root level="info">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+        <logger name="com.sprint.mission.discodeit" level="info" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </logger>
+    </springProfile>
+
+    <!-- 프로파일이 없을 때 기본값 -->
+    <springProfile name="!dev &amp; !prod">
+        <root level="info">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+</configuration>

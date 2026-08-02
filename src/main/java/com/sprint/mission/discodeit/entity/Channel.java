@@ -10,19 +10,17 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "channels")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Channel extends BaseUpdatableEntity {
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false, length = 10)
+  @Column(nullable = false)
   private ChannelType type;
-
   @Column(length = 100)
   private String name;
-
   @Column(length = 500)
   private String description;
 

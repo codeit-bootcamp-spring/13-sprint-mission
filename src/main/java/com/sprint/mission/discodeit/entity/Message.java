@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToOne;
@@ -14,40 +15,36 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "messages")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Message extends BaseUpdatableEntity {
 
-  @Column(columnDefinition = "TEXT")
+  @Column(columnDefinition = "text", nullable = false)
   private String content;
-
-  // UUID channelId → Channel 객체로 직접 참조
-  @ManyToOne(optional = false)
-  @JoinColumn(name = "channel_id", nullable = false)
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "channel_id", columnDefinition = "uuid")
   private Channel channel;
-
-  // UUID authorId → User 객체로 직접 참조
-  @ManyToOne
-  @JoinColumn(name = "author_id")
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "author_id", columnDefinition = "uuid")
   private User author;
-
-  // List<UUID> attachmentIds → message_attachments 중간 테이블로 연결
-  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+  @BatchSize(size = 100)
+  @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
   @JoinTable(
-          name = "message_attachments",
-          joinColumns = @JoinColumn(name = "message_id"),
-          inverseJoinColumns = @JoinColumn(name = "attachment_id")
+      name = "message_attachments",
+      joinColumns = @JoinColumn(name = "message_id"),
+      inverseJoinColumns = @JoinColumn(name = "attachment_id")
   )
   private List<BinaryContent> attachments = new ArrayList<>();
 
   public Message(String content, Channel channel, User author, List<BinaryContent> attachments) {
-    this.content = content;
     this.channel = channel;
+    this.content = content;
     this.author = author;
-    this.attachments = new ArrayList<>(attachments);
+    this.attachments = attachments;
   }
 
   public void update(String newContent) {
