@@ -6,6 +6,10 @@ import com.sprint.mission.discodeit.dto.response.ReadStatusDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.readstatus.ReadStatusAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.readstatus.ReadStatusNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ReadStatusMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -33,12 +37,12 @@ public class BasicReadStatusService implements ReadStatusService {
     @Transactional
     public ReadStatusDto create(ReadStatusCreateRequest request) {
         User user = userRepository.findById(request.userId())
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 계정입니다."));
+                .orElseThrow(()->new UserNotFoundException(request.userId()));
         Channel channel = channelRepository.findById(request.channelId())
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 채널입니다."));
+                .orElseThrow(()->new ChannelNotFoundException(request.channelId()));
 
         if(readStatusRepository.existsByUser_IdAndChannel_Id(user.getId(), channel.getId())){
-            throw new IllegalArgumentException("해당 채널에 대한 읽기 상태가 존재합니다.");
+            throw new ReadStatusAlreadyExistsException(user.getId(), channel.getId());
         }
 
         ReadStatus readStatus = new ReadStatus(user, channel);
@@ -49,7 +53,7 @@ public class BasicReadStatusService implements ReadStatusService {
     @Override
     public List<ReadStatusDto> findAllByUserId(UUID userId) {
         if (!userRepository.existsById(userId)) {
-            throw new IllegalArgumentException("존재하지 않는 계정입니다.");
+            throw new UserNotFoundException(userId);
         }
 
         List<ReadStatus> readStatuses = readStatusRepository.findAllByUser_Id(userId);
@@ -74,6 +78,6 @@ public class BasicReadStatusService implements ReadStatusService {
 
     private ReadStatus readStatusCheck(UUID id) {
         return readStatusRepository.findById(id)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 읽기 상태입니다."));
+                .orElseThrow(()->new ReadStatusNotFoundException(id));
     }
 }

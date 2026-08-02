@@ -7,6 +7,8 @@ import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -36,10 +38,10 @@ public class BasicUserService implements UserService {
     @Transactional
     public UserDto create(UserCreateRequest request) {
         if(userRepository.findByUsername(request.userName()).isPresent()) {
-            throw new IllegalArgumentException("이미 존재하는 이름입니다.");
+            throw new UserAlreadyExistsException("username", request.userName());
         }
         if(userRepository.findByEmail(request.email()).isPresent()) {
-            throw new IllegalArgumentException("이미 존재하는 계정입니다.");
+            throw new UserAlreadyExistsException("email", request.email());
         }
 
         BinaryContent savedProfile = profileCheck(request.profile());
@@ -70,11 +72,11 @@ public class BasicUserService implements UserService {
     @Transactional
     public UserDto update(UserUpdateRequest request) {
         User user = userRepository.findById(request.id())
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 계정입니다."));
+                .orElseThrow(()->new UserNotFoundException(request.id()));
         UserStatus userStatus = user.getStatus();
 
         if (userStatus==null) {
-            throw new IllegalArgumentException("존재하지 않는 계정입니다.");
+            throw new UserNotFoundException(request.id());
         }
 
         BinaryContent finalProfileId = user.getProfile();
@@ -97,7 +99,7 @@ public class BasicUserService implements UserService {
     @Transactional
     public void delete(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 계정입니다."));
+                .orElseThrow(()->new UserNotFoundException(id));
 
         if (user.getProfile() != null) {
             binaryContentRepository.delete(user.getProfile());

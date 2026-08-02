@@ -6,6 +6,9 @@ import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import com.sprint.mission.discodeit.exception.userstatus.UserStatusAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.userstatus.UserStatusNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserStatusMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
@@ -29,10 +32,10 @@ public class BasicUserStatusService implements UserStatusService {
     @Transactional
     public UserStatusDto create(UserStatusCreateRequest request) {
         User user = userRepository.findById(request.userId())
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 계정입니다."));
+                .orElseThrow(()->new UserNotFoundException(request.userId()));
 
         if(user.getStatus()!=null) {
-            throw new IllegalArgumentException("해당 계정의 상태 정보가 이미 존재합니다.");
+            throw new UserStatusAlreadyExistsException(user.getId());
         }
 
         UserStatus userStatus = new UserStatus(user);
@@ -54,7 +57,7 @@ public class BasicUserStatusService implements UserStatusService {
     @Transactional
     public UserStatusDto updateByUserId(UserStatusUpdateByUserIdRequest request) {
         UserStatus userStatus = userStatusRepository.findByUser_Id(request.userId())
-                .orElseThrow(() -> new IllegalArgumentException("해당 계정의 상태 정보가 존재하지 않습니다."));
+                .orElseThrow(() -> new UserStatusNotFoundException(request.userId()));
 
         userStatus.updateActiveTime(request.updatedAt());
         userStatusRepository.save(userStatus);
@@ -70,6 +73,6 @@ public class BasicUserStatusService implements UserStatusService {
 
     private UserStatus userStatusCheck(UUID id) {
         return userStatusRepository.findById(id)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 계정 상태입니다."));
+                .orElseThrow(()->new UserStatusNotFoundException(id));
     }
 }

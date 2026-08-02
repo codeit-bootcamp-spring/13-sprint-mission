@@ -3,6 +3,8 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.LoginRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.auth.AuthUserNotFoundException;
+import com.sprint.mission.discodeit.exception.auth.InvalidPasswordException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.AuthService;
@@ -23,12 +25,12 @@ public class BasicAuthService implements AuthService {
     @Override
     public UserDto login(LoginRequest request) {
         User user = userRepository.findByUsername(request.userName())
-                                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 계정입니다."));
+                                    .orElseThrow(() -> new AuthUserNotFoundException(request.userName()));
 
         if(request.password().equals(user.getPassword())) {
             user.getStatus().updateActiveTime(Instant.now());
             return userMapper.toDto(user);
         }
-        throw new IllegalArgumentException("비밀번호가 맞지 않습니다.");
+        throw new InvalidPasswordException(user.getId());
     }
 }

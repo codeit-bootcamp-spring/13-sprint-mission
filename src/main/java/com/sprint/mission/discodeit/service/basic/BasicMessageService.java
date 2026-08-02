@@ -9,6 +9,9 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -45,9 +48,9 @@ public class BasicMessageService implements MessageService {
     @Transactional
     public MessageDto create(MessageCreateRequest request) {
         User user = userRepository.findById(request.userId())
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 계정입니다."));
+                .orElseThrow(()->new UserNotFoundException(request.userId()));
         Channel channel = channelRepository.findById(request.channelId())
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 채널입니다."));
+                .orElseThrow(()->new ChannelNotFoundException(request.channelId()));
 
         List<BinaryContent> savedFiles = new ArrayList<>();
         if(request.attachment()!=null && !request.attachment().isEmpty()) {
@@ -68,7 +71,7 @@ public class BasicMessageService implements MessageService {
     @Override
     public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Instant cursor, Pageable pageable) {
         if (!channelRepository.existsById(channelId)) {
-            throw new IllegalArgumentException("존재하지 않는 채널입니다.");
+            throw new ChannelNotFoundException(channelId);
         }
 
         Instant effectiveCursor = (cursor != null) ? cursor : Instant.now();
@@ -88,7 +91,7 @@ public class BasicMessageService implements MessageService {
     @Transactional
     public MessageDto update(MessageUpdateRequest request) {
         Message message = messageRepository.findById(request.id())
-                        .orElseThrow(()->new IllegalArgumentException("존재하지 않는 메시지입니다."));
+                        .orElseThrow(()->new MessageNotFoundException(request.id()));
 
         message.update(request.content());
         messageRepository.save(message);
@@ -101,7 +104,7 @@ public class BasicMessageService implements MessageService {
     @Transactional
     public void delete(UUID id) {
         Message message = messageRepository.findById(id)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 메시지입니다."));
+                .orElseThrow(()->new MessageNotFoundException(id));
 
         messageRepository.delete(message);
         log.info("메시지 삭제 완료: id={}", id);

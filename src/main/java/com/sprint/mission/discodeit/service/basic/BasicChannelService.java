@@ -6,6 +6,9 @@ import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.PrivateChannelUpdateException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -52,7 +55,7 @@ public class BasicChannelService implements ChannelService {
 
         for (UUID userId : request.userIds()) {
             User user = userRepository.findById(userId)
-                    .orElseThrow(()->new IllegalArgumentException("존재하지 않는 계정입니다."));
+                    .orElseThrow(()->new UserNotFoundException(userId));
 
             ReadStatus readStatus = new ReadStatus(user, channel);
             readStatusRepository.save(readStatus);
@@ -96,9 +99,9 @@ public class BasicChannelService implements ChannelService {
     @Transactional
     public ChannelDto update(UUID channelId, ChannelUpdateRequest request) {
         Channel channel = channelRepository.findById(channelId)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 채널입니다."));
+                .orElseThrow(()->new ChannelNotFoundException(channelId));
         if(channel.getType()==ChannelType.PRIVATE) {
-            throw new IllegalArgumentException("비공개 채널은 수정할 수 없습니다.");
+            throw new PrivateChannelUpdateException(channelId);
         }
 
         channel.update(request.channelName(), request.description());
@@ -112,7 +115,7 @@ public class BasicChannelService implements ChannelService {
     @Transactional
     public void delete(UUID id) {
         Channel channel = channelRepository.findById(id)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 채널입니다."));
+                .orElseThrow(()->new ChannelNotFoundException(id));
 
         channelRepository.delete(channel);
         log.info("채널 삭제 완료: id={}", id);
