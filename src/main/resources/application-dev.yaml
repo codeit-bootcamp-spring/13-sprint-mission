@@ -22,6 +22,11 @@ spring:
     init:
       mode: never
 
+  boot:
+    admin:
+      client:
+        url: http://localhost:9090
+
 server:
   port: 59080
 

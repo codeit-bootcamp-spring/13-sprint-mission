@@ -139,7 +139,7 @@ public class ChannelServiceTest {
             Channel channel = privateChannel();
             PublicChannelUpdateRequest request = new PublicChannelUpdateRequest("public","modified");
             // when
-
+            given(channelRepository.findById(id)).willReturn(Optional.of(channel));
             // then
             assertThatThrownBy(() -> channelService.update(id,request)).isInstanceOf(ChannelTypeException.class);
 

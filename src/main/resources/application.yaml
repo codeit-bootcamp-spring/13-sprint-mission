@@ -32,6 +32,12 @@ spring:
   profiles:
     active: dev
 
+  boot:
+    admin:
+      client:
+        instance:
+          name: discodeit
+
 management:
   endpoints:
     web:
@@ -46,7 +52,7 @@ management:
     env:
       enabled: true
   server:
-    port: 9090 # Actuator 전용 포트 (방화벽 같은데에서 Actuator는 허용된 ip만 접근이 가능하도록 막음)
+    port: 59090 # Actuator 전용 포트 (방화벽 같은데에서 Actuator는 허용된 ip만 접근이 가능하도록 막음)
 
 discodeit:
 #  repository:
@@ -56,6 +62,9 @@ discodeit:
     type: "local"
     local:
       root-path: "data"
+
+
+
 
 
 #springdoc:

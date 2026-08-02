@@ -12,6 +12,12 @@ spring:
         format_sql: false
     open-in-view: false
 
+  boot:
+    admin:
+      client:
+        url:
+
+
 server:
   port: 80
 
