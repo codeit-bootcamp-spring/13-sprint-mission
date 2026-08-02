@@ -22,6 +22,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -61,14 +62,22 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Pageable pageable) {
+    public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Instant cursor, Pageable pageable) {
         if (!channelRepository.existsById(channelId)) {
             throw new IllegalArgumentException("존재하지 않는 채널입니다.");
         }
 
-        Slice<Message> slice = messageRepository.findAllByChannel_Id(channelId, pageable);
+        Instant effectiveCursor = (cursor != null) ? cursor : Instant.now();
+        Slice<Message> slice = messageRepository.findAllByChannel_IdAndCreatedAtLessThan(channelId, effectiveCursor, pageable);
+
+        List<Message> messages = slice.getContent();
+        Instant nextCursor = null;
+        if (slice.hasNext() && !messages.isEmpty()) {
+            nextCursor = messages.get(messages.size() - 1).getCreatedAt();
+        }
+
         Slice<MessageDto> dtoSlice = slice.map(messageMapper::toDto);
-        return pageResponseMapper.fromSlice(dtoSlice);
+        return pageResponseMapper.fromSlice(dtoSlice, nextCursor);
     }
 
     @Override

@@ -12,6 +12,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @RestController
@@ -29,9 +30,10 @@ public class MessageController {
     @GetMapping
     public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(
             @RequestParam UUID channelId,
+            @RequestParam(required = false) Instant cursor,
             @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(messageService.findAllByChannelId(channelId, pageable));
+        return ResponseEntity.ok(messageService.findAllByChannelId(channelId, cursor, pageable));
     }
 
     @PatchMapping(value = "/{messageId}")
