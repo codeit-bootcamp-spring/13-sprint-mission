@@ -37,7 +37,6 @@ public class Message extends BaseUpdatableEntity {
             joinColumns = @JoinColumn(name = "message_id", nullable = false),
             inverseJoinColumns = @JoinColumn(name = "attachment_id", nullable = false)
     )
-    @OnDelete(action = OnDeleteAction.CASCADE)
     private List<BinaryContent> attachments;
 
     public Message(User author, Channel channel, String content) {
