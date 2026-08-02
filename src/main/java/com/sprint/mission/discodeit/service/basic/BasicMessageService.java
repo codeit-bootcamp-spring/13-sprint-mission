@@ -4,17 +4,21 @@ import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
+import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +36,7 @@ public class BasicMessageService implements MessageService {
     private final MessageRepository messageRepository;
     private final MessageMapper messageMapper;
     private final BinaryContentStorage binaryContentStorage;
+    private final PageResponseMapper pageResponseMapper;
 
     @Override
     @Transactional
@@ -56,18 +61,14 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public List<MessageDto> findAllByChannelId(UUID channelId) {
+    public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Pageable pageable) {
         if (!channelRepository.existsById(channelId)) {
             throw new IllegalArgumentException("존재하지 않는 채널입니다.");
         }
 
-        List<Message> messages = messageRepository.findAllByChannel_Id(channelId);
-        List<MessageDto> responses = new ArrayList<>();
-
-        for (Message message : messages) {
-            responses.add(messageMapper.toDto(message));
-        }
-        return responses;
+        Slice<Message> slice = messageRepository.findAllByChannel_Id(channelId, pageable);
+        Slice<MessageDto> dtoSlice = slice.map(messageMapper::toDto);
+        return pageResponseMapper.fromSlice(dtoSlice);
     }
 
     @Override
