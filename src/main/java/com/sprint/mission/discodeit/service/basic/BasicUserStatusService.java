@@ -14,8 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -40,23 +38,6 @@ public class BasicUserStatusService implements UserStatusService {
         UserStatus userStatus = new UserStatus(user);
         userStatusRepository.save(userStatus);
         return userStatusMapper.toDto(userStatus);
-    }
-
-    @Override
-    public UserStatusDto find(UUID id) {
-        UserStatus userStatus = userStatusCheck(id);
-        return userStatusMapper.toDto(userStatus);
-    }
-
-    @Override
-    public List<UserStatusDto> findAll() {
-        List<UserStatusDto> responses = new ArrayList<>();
-        List<UserStatus> userStatuses = userStatusRepository.findAll();
-
-        for (UserStatus userStatus : userStatuses) {
-            responses.add(userStatusMapper.toDto(userStatus));
-        }
-        return responses;
     }
 
     @Override

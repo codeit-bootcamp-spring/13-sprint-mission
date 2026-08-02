@@ -59,14 +59,6 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ChannelDto find(UUID id) {
-        Channel channel = channelRepository.findById(id)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 채널입니다."));
-
-        return channelMapper.toDto(channel);
-    }
-
-    @Override
     public List<ChannelDto> findAllByUserId(UUID userId) {
         List<Channel> channels = channelRepository.findAll();
 

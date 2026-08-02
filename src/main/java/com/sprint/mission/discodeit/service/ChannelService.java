@@ -14,8 +14,6 @@ public interface ChannelService {
 
     ChannelDto createPrivate(PrivateChannelCreateRequest request);
 
-    ChannelDto find(UUID id);
-
     List<ChannelDto> findAllByUserId(UUID userId);
 
     ChannelDto update(UUID channelId, ChannelUpdateRequest request);

@@ -47,12 +47,6 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    public ReadStatusDto find(UUID id) {
-        ReadStatus readStatus = readStatusCheck(id);
-        return readStatusMapper.toDto(readStatus);
-    }
-
-    @Override
     public List<ReadStatusDto> findAllByUserId(UUID userId) {
         if (!userRepository.existsById(userId)) {
             throw new IllegalArgumentException("존재하지 않는 계정입니다.");
@@ -76,13 +70,6 @@ public class BasicReadStatusService implements ReadStatusService {
         readStatus.updateLastReadAt(request.lastReadAt());
         readStatusRepository.save(readStatus);
         return readStatusMapper.toDto(readStatus);
-    }
-
-    @Override
-    @Transactional
-    public void delete(UUID id) {
-        ReadStatus readStatus = readStatusCheck(id);
-        readStatusRepository.delete(readStatus);
     }
 
     private ReadStatus readStatusCheck(UUID id) {

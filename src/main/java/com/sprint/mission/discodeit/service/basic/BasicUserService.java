@@ -12,6 +12,7 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,7 @@ public class BasicUserService implements UserService {
     private final UserStatusRepository userStatusRepository;
     private final BinaryContentRepository binaryContentRepository;
     private final UserMapper userMapper;
+    private final BinaryContentStorage binaryContentStorage;
 
     @Override
     @Transactional
@@ -47,25 +49,6 @@ public class BasicUserService implements UserService {
         userStatusRepository.save(userStatus);
 
         return userMapper.toDto(user);
-    }
-
-    @Override
-    public UserDto find(UUID id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 계정입니다."));
-        UserStatus userStatus = user.getStatus();
-
-        if (userStatus==null) {
-            throw new IllegalArgumentException("존재하지 않는 계정입니다.");
-        }
-
-        return userMapper.toDto(user);
-    }
-
-    @Override
-    public User findById(UUID id) {
-        return userRepository.findById(id)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 계정입니다."));
     }
 
     @Override
@@ -120,8 +103,9 @@ public class BasicUserService implements UserService {
 
     private BinaryContent profileCheck(BinaryContentCreateRequest profile) {
         BinaryContent binaryContent = null;
-        if(profile!=null) {
-            binaryContent = new BinaryContent(profile.fileName(), profile.contentType(), profile.size(), profile.bytes());
+        if (profile != null) {
+            binaryContent = new BinaryContent(profile.fileName(), profile.contentType(), profile.size());
+            binaryContentStorage.put(binaryContent.getId(), profile.bytes());
             binaryContentRepository.save(binaryContent);
         }
         return binaryContent;

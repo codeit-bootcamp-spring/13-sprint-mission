@@ -5,7 +5,6 @@ import com.sprint.mission.discodeit.dto.request.UserStatusUpdateByUserIdRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.dto.response.UserStatusDto;
-import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +22,6 @@ public class UserController {
 
     private final UserService userService;
     private final UserStatusService userStatusService;
-    private final UserMapper userMapper;
 
     @PostMapping
     public ResponseEntity<UserDto> create(@RequestBody UserCreateRequest request) {
