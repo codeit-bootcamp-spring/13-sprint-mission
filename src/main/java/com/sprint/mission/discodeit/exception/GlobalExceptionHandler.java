@@ -4,8 +4,14 @@ import com.sprint.mission.discodeit.dto.response.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
@@ -26,6 +32,26 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException e) {
+        Map<String, Object> details = new HashMap<>();
+        for (FieldError fieldError : e.getBindingResult().getFieldErrors()) {
+            details.put(fieldError.getField(), fieldError.getDefaultMessage());
+        }
+        log.warn("유효성 검증 실패: {}", details);
+
+        ErrorResponse response = new ErrorResponse(
+                Instant.now(),
+                "VALIDATION_FAILED",
+                "요청 값이 유효하지 않습니다.",
+                details,
+                e.getClass().getSimpleName(),
+                HttpStatus.BAD_REQUEST.value()
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     private HttpStatus resolveStatus(ErrorCode errorCode) {

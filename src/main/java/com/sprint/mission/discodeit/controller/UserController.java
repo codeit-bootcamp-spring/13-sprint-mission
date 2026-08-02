@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +27,7 @@ public class UserController {
     private final UserStatusService userStatusService;
 
     @PostMapping
-    public ResponseEntity<UserDto> create(@RequestBody UserCreateRequest request) {
+    public ResponseEntity<UserDto> create(@Valid @RequestBody UserCreateRequest request) {
         log.info("사용자 생성 요청: username={}", request.userName());
         return ResponseEntity.ok(userService.create(request));
     }
@@ -37,7 +38,7 @@ public class UserController {
     }
 
     @PatchMapping(value = "/{userId}")
-    public ResponseEntity<UserDto> update(@PathVariable UUID userId, @RequestBody UserUpdateRequest request) {
+    public ResponseEntity<UserDto> update(@PathVariable UUID userId, @Valid @RequestBody UserUpdateRequest request) {
         log.info("사용자 수정 요청: userId={}", userId);
         UserUpdateRequest dto = new UserUpdateRequest(userId, request.userName(), request.email(), request.password(), request.profile());
         return ResponseEntity.ok(userService.update(dto));

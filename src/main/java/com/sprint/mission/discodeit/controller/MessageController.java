@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.service.MessageService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -25,7 +26,7 @@ public class MessageController {
     private final MessageService messageService;
 
     @PostMapping
-    public ResponseEntity<MessageDto> create(@RequestBody MessageCreateRequest request) {
+    public ResponseEntity<MessageDto> create(@Valid @RequestBody MessageCreateRequest request) {
         log.info("메시지 생성 요청: channelId={}, userId={}", request.channelId(), request.userId());
         return ResponseEntity.ok(messageService.create(request));
     }
@@ -40,7 +41,7 @@ public class MessageController {
     }
 
     @PatchMapping(value = "/{messageId}")
-    public ResponseEntity<MessageDto> update(@PathVariable UUID messageId, @RequestBody MessageUpdateRequest request) {
+    public ResponseEntity<MessageDto> update(@PathVariable UUID messageId, @Valid @RequestBody MessageUpdateRequest request) {
         log.info("메시지 수정 요청: messageId={}", messageId);
         return ResponseEntity.ok(messageService.update(request));
     }
