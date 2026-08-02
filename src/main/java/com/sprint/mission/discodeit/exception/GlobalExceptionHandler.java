@@ -9,6 +9,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 import java.util.List;
@@ -57,6 +58,28 @@ public class GlobalExceptionHandler {
                 ErrorCode.VALIDATION_FAILED.getMessage(),
                 exception.getClass().getSimpleName(),
                 Map.of("errors", errors)
+        ));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(
+            NoResourceFoundException exception) {
+
+        HttpStatus status = errorCodeStatusMapper.toHttpStatus(ErrorCode.RESOURCE_NOT_FOUND);
+        Map<String, Object> details = Map.of(
+                "resourcePath", exception.getResourcePath()
+        );
+
+        log.debug("정적 리소스를 찾을 수 없습니다: resourcePath={}",
+                exception.getResourcePath());
+
+        return ResponseEntity.status(status).body(new ErrorResponse(
+                Instant.now(),
+                status.value(),
+                ErrorCode.RESOURCE_NOT_FOUND.name(),
+                ErrorCode.RESOURCE_NOT_FOUND.getMessage(),
+                exception.getClass().getSimpleName(),
+                details
         ));
     }
 

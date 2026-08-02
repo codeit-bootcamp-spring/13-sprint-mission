@@ -13,7 +13,8 @@ public class ErrorCodeStatusMapper {
                  MESSAGE_NOT_FOUND,
                  BINARY_CONTENT_NOT_FOUND,
                  READ_STATUS_NOT_FOUND,
-                 USER_STATUS_NOT_FOUND -> HttpStatus.NOT_FOUND;
+                 USER_STATUS_NOT_FOUND,
+                 RESOURCE_NOT_FOUND -> HttpStatus.NOT_FOUND;
 
             case USER_ALREADY_EXISTS,
                  READ_STATUS_ALREADY_EXISTS,
