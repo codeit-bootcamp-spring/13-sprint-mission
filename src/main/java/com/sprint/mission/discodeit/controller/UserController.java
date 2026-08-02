@@ -32,6 +32,7 @@ public class UserController implements UserControllerDoc {
 
     @RequestMapping(value = "",method = RequestMethod.GET)
     public ResponseEntity<List<UserDto>> findAll(){
+        log.debug("get all users request");
         return ResponseEntity.ok(this.userService.getUserList());
     }
 

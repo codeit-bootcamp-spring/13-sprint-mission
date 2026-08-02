@@ -12,14 +12,15 @@
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
     <!-- 로그 파일 위치 — 환경변수 LOG_PATH 로 덮어쓸 수 있다(운영 서버마다 경로가 다르므로). -->
-    <property name="LOG_PATH" value="${LOG_PATH:-logs}"/>
+    <property name="LOG_PATH" value="${LOG_PATH:.}"/>
     <property name="LOG_FILE" value="${LOG_PATH}/sprintlog.log"/>
 
     <!-- 콘솔 출력: 사람이 읽기 좋게(색상 포함 — Spring Boot 기본 패턴). -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <!--            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern> -->
-            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+<!--            MDC 추가한 패턴 [%X{requestId:-}] -->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{requestId:-}]- %msg%n</pattern>
+<!--            <pattern>${CONSOLE_LOG_PATTERN}</pattern>-->
             <charset>UTF-8</charset>
         </encoder>
     </appender>

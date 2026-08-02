@@ -32,10 +32,6 @@ spring:
   profiles:
     active: dev
 
-logging:
-  level:
-    com.sprint.mission.discodeit: info
-
 management:
   endpoints:
     web:
