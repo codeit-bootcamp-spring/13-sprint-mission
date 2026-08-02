@@ -9,6 +9,7 @@ import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -38,6 +39,16 @@ public class ChannelMapper {
         );
     }
 
+    public ChannelDto toDto(Channel channel, List<UserDto> participants, Instant lastMessageAt) {
+        return new ChannelDto(
+                channel.getId(),
+                channel.getType(),
+                channel.getName(),
+                channel.getDescription(),
+                participants,
+                lastMessageAt);
+    }
+
     private List<UserDto> getParticipants(Channel channel) {
         List<UserDto> participants = new ArrayList<>();
         if(channel.getType()== ChannelType.PUBLIC) return participants;
@@ -50,7 +61,7 @@ public class ChannelMapper {
     }
 
     private Instant getLastMessageAt(UUID id) {
-        List<Message> messages = messageRepository.findAllByChannel_Id(id);
+        List<Message> messages = messageRepository.findAllByChannel_Id(id, Pageable.unpaged()).getContent();
         Instant lastMessageAt = null;
         for (Message message : messages) {
             if(lastMessageAt==null || message.getUpdatedAt().isAfter(lastMessageAt)) {
