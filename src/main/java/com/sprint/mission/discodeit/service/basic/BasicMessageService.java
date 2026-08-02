@@ -17,6 +17,7 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -58,6 +60,8 @@ public class BasicMessageService implements MessageService {
 
         Message message = new Message(user, channel, request.content(), savedFiles);
         messageRepository.save(message);
+
+        log.info("메시지 생성 완료: id={}, channelId={}", message.getId(), channel.getId());
         return messageMapper.toDto(message);
     }
 
@@ -89,6 +93,7 @@ public class BasicMessageService implements MessageService {
         message.update(request.content());
         messageRepository.save(message);
 
+        log.info("메시지 수정 완료: id={}", message.getId());
         return messageMapper.toDto(message);
     }
 
@@ -99,5 +104,6 @@ public class BasicMessageService implements MessageService {
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 메시지입니다."));
 
         messageRepository.delete(message);
+        log.info("메시지 삭제 완료: id={}", id);
     }
 }

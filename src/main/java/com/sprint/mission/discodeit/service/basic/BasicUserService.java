@@ -14,11 +14,13 @@ import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -48,6 +50,7 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = new UserStatus(user);
         userStatusRepository.save(userStatus);
 
+        log.info("사용자 생성 완료: id={}, username={}", user.getId(), user.getUsername());
         return userMapper.toDto(user);
     }
 
@@ -86,6 +89,7 @@ public class BasicUserService implements UserService {
         user.update(request.userName(), request.email(), request.password(), finalProfileId);
         userRepository.save(user);
 
+        log.info("사용자 수정 완료: id={}", user.getId());
         return userMapper.toDto(user);
     }
 
@@ -99,6 +103,7 @@ public class BasicUserService implements UserService {
             binaryContentRepository.delete(user.getProfile());
         }
         userRepository.delete(user);
+        log.info("사용자 삭제 완료: id={}", id);
     }
 
     private BinaryContent profileCheck(BinaryContentCreateRequest profile) {

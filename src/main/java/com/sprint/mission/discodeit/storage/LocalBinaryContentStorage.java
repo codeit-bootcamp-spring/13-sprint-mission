@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.storage;
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.Resource;
@@ -19,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
 
+@Slf4j
 @Component
 @ConditionalOnProperty(name = "discodeit.storage.type", havingValue = "local")
 public class LocalBinaryContentStorage implements BinaryContentStorage {
@@ -45,18 +47,22 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
         try {
             Files.write(path, bytes);
         } catch (IOException e) {
+            log.error("파일 저장 실패: id={}", id, e);
             throw new UncheckedIOException("파일 저장 실패", e);
         }
+        log.debug("파일 저장: id={}, path={}", id, path);
         return id;
     }
 
     @Override
     public InputStream get(UUID id) {
         Path path = resolvePath(id);
+        log.debug("파일 읽기: id={}, path={}", id, path);
 
         try {
             return Files.newInputStream(path);
         } catch (IOException e) {
+            log.error("파일 읽기 실패: id={}", id, e);
             throw new UncheckedIOException("파일 읽기 실패", e);
         }
     }

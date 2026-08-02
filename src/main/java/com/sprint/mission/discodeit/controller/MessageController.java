@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Instant;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/messages")
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class MessageController {
 
     @PostMapping
     public ResponseEntity<MessageDto> create(@RequestBody MessageCreateRequest request) {
+        log.info("메시지 생성 요청: channelId={}, userId={}", request.channelId(), request.userId());
         return ResponseEntity.ok(messageService.create(request));
     }
 
@@ -38,11 +41,13 @@ public class MessageController {
 
     @PatchMapping(value = "/{messageId}")
     public ResponseEntity<MessageDto> update(@PathVariable UUID messageId, @RequestBody MessageUpdateRequest request) {
+        log.info("메시지 수정 요청: messageId={}", messageId);
         return ResponseEntity.ok(messageService.update(request));
     }
 
     @DeleteMapping(value = "/{messageId}")
     public ResponseEntity<Void> delete(@PathVariable UUID messageId) {
+        log.info("메시지 삭제 요청: messageId={}", messageId);
         messageService.delete(messageId);
         return ResponseEntity.noContent().build();
     }

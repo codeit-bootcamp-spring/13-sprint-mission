@@ -6,12 +6,14 @@ import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/channels")
 @RequiredArgsConstructor
@@ -21,11 +23,13 @@ public class ChannelController {
 
     @PostMapping(value = "/public")
     public ResponseEntity<ChannelDto> createPublic(@RequestBody PublicChannelCreateRequest request) {
+        log.info("공개 채널 생성 요청: name={}", request.channelName());
         return ResponseEntity.ok(channelService.createPublic(request));
     }
 
     @PostMapping(value = "/private")
     public ResponseEntity<ChannelDto> createPrivate(@RequestBody PrivateChannelCreateRequest request) {
+        log.info("비공개 채널 생성 요청: 참여자 수={}", request.userIds().size());
         return ResponseEntity.ok(channelService.createPrivate(request));
     }
 
@@ -36,11 +40,13 @@ public class ChannelController {
 
     @PatchMapping(value = "/{channelId}")
     public ResponseEntity<ChannelDto> update(@PathVariable UUID channelId, @RequestBody ChannelUpdateRequest request) {
+        log.info("채널 수정 요청: channelId={}", channelId);
         return ResponseEntity.ok(channelService.update(channelId, request));
     }
 
     @DeleteMapping(value = "/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        log.info("채널 삭제 요청: channelId={}", id);
         channelService.delete(id);
         return ResponseEntity.noContent().build();
     }
