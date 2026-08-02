@@ -25,6 +25,7 @@ dependencies {
     implementation 'org.postgresql:postgresql'
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    testImplementation 'com.h2database:h2'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
