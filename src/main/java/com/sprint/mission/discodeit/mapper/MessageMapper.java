@@ -9,6 +9,10 @@ import java.util.*;
 @Mapper(componentModel = "spring", uses = {UserMapper.class, BinaryContentMapper.class})
 public interface MessageMapper {
 
+    @Mapping(
+            target = "channelId",
+            source = "channel.id"
+    )
     MessageDto toDto(Message message);
 
     List<MessageDto> toDtoList(List<Message> messages);
