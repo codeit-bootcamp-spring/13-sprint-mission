@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/binaryContents")
@@ -31,7 +33,7 @@ public class BinaryContentController {
     @RequestMapping(value = "/{binaryContentId}", method = RequestMethod.GET)
     public ResponseEntity<BinaryContentDto> findBinaryContent(@Parameter(description = "조회할 첨부 파일 ID", required = true)
                                                               @PathVariable UUID binaryContentId) {
-        BinaryContentDto binaryContent = binaryContentService.findBinaryContentById(binaryContentId);
+        BinaryContentDto binaryContent = binaryContentService.getBinaryContent(binaryContentId);
 
         return ResponseEntity.ok().body(binaryContent);
     }
@@ -42,7 +44,7 @@ public class BinaryContentController {
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<List<BinaryContentDto>> findBinaryContents(@Parameter(description = "조회할 첨부 파일 ID 목록", required = true)
                                                                      @RequestParam List<UUID> binaryContentIds) {
-        List<BinaryContentDto> binaryContentList = binaryContentService.findAllBinaryContentByIdIn(binaryContentIds);
+        List<BinaryContentDto> binaryContentList = binaryContentService.getBinaryContentsByIdIn(binaryContentIds);
 
         return ResponseEntity.ok().body(binaryContentList);
     }
@@ -53,8 +55,9 @@ public class BinaryContentController {
     @RequestMapping(value = "/{binaryContentId}/download", method = RequestMethod.GET)
     public ResponseEntity<Resource> downloadBinaryContent(@Parameter(description = "다운로드할 파일 ID", required = true)
                                                           @PathVariable UUID binaryContentId) {
+        log.debug("파일 다운로드 API 요청");
 
-        return binaryContentStorage.download(binaryContentService.findBinaryContentById(binaryContentId));
+        return binaryContentStorage.download(binaryContentService.getBinaryContent(binaryContentId));
     }
 
 

@@ -12,8 +12,8 @@ import java.util.UUID;
 public interface ReadStatusService {
 
     ReadStatusDto createReadStatus(ReadStatusCreateRequest request);
-    ReadStatusDto findReadStatus(UUID readStatusId);
-    List<ReadStatusDto> findAllReadStatusByUserId(UUID userId);
+    ReadStatusDto getReadStatus(UUID readStatusId);
+    List<ReadStatusDto> getReadStatusesByUserId(UUID userId);
     ReadStatusDto updateReadStatus(UUID readStatusId, ReadStatusUpdateRequest request);
     void deleteReadStatus(UUID readStatusId);
 }

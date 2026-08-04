@@ -3,74 +3,88 @@ package com.sprint.mission.discodeit.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
-    //DuplicateResourceException 예외 발생했을 때 처리
-    @ExceptionHandler(DuplicateResourceException.class)
-    public ProblemDetail handleDuplicateResourceException(DuplicateResourceException e) {
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
-        pd.setTitle("리소스 중복 예외 발생");
-        pd.setProperty("timestamp", Instant.now());
+    @ExceptionHandler(DiscodeitException.class)
+    public ResponseEntity<ErrorResponse> handleDiscodeitException(DiscodeitException ex) {
 
-        log.warn(e.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(
+                ex.getErrorCode(),
+                ex.getDetails(),
+                ex.getClass().getSimpleName()
+        );
 
-        return pd;
+        return ResponseEntity
+                .status(ex.getErrorCode().getHttpStatus())
+                .body(errorResponse);
     }
 
-    //ObjectNotFoundException 예외 발생했을 때 처리
-    @ExceptionHandler(ObjectNotFoundException.class)
-    public ProblemDetail handleObjectNotFoundException(ObjectNotFoundException e) {
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
-        pd.setTitle("데이터 검색 실패 예외 발생");
-        pd.setProperty("timestamp", Instant.now());
-
-        log.warn(e.getMessage());
-
-        return pd;
-    }
-
-    //WrongTypeException 예외 발생했을 때 처리
-    @ExceptionHandler(WrongTypeException.class)
-    public ProblemDetail handleWrongTypeException(WrongTypeException e) {
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
-        pd.setTitle("Type 미스매치 예외 발생");
-        pd.setProperty("timestamp", Instant.now());
-
-        log.warn(e.getMessage());
-
-        return pd;
-    }
-
-    //FileException 예외 발생했을 때 처리
-    @ExceptionHandler(FileException.class)
-    public ProblemDetail handleFileException(FileException e) {
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
-        pd.setTitle("파일 관련 예외 발생");
-        pd.setProperty("timestamp", Instant.now());
-
-        log.warn(e.getMessage());
-
-        return pd;
-    }
-
-    //MethodArgumentNotValidException 예외 발생했을 때 처리
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
-        pd.setTitle("입력값 검증 예외 발생");
-        pd.setProperty("timestamp", Instant.now());
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
 
-        log.warn(e.getMessage());
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
+        Map<String, Object> details = new HashMap<>();
+        ex.getBindingResult()
+                .getFieldErrors()
+                .forEach(fieldError -> details.put(fieldError.getField(), fieldError.getDefaultMessage()));
 
-        return pd;
+        ErrorResponse errorResponse = new ErrorResponse(
+                errorCode,
+                details,
+                ex.getClass().getSimpleName()
+        );
+
+        return ResponseEntity
+                .status(errorCode.getHttpStatus())
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
+
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
+        Map<String, Object> details = new HashMap<>();
+        details.put("parameter", ex.getParameterName());
+        details.put("message", "필수 요청 파라미터가 누락되었습니다.");
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                errorCode,
+                details,
+                ex.getClass().getSimpleName()
+        );
+
+        return ResponseEntity
+                .status(errorCode.getHttpStatus())
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleException(Exception ex) {
+
+        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+        Map<String, Object> details = Map.of();
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                errorCode,
+                details,
+                ex.getClass().getSimpleName()
+        );
+
+        return ResponseEntity
+                .status(errorCode.getHttpStatus())
+                .body(errorResponse);
     }
 
 }

@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.dto.request;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -11,6 +12,7 @@ public record UserUpdateRequest(
         String newUsername,
 
         @NotBlank(message = "newEmail은 비워둘 수 없습니다.")
+        @Email
         String newEmail,
 
         @NotBlank(message = "newPassword은 비워둘 수 없습니다.")

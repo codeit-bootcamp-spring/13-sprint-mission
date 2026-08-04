@@ -11,12 +11,5 @@ import java.util.UUID;
 
 public interface BinaryContentRepository extends JpaRepository<BinaryContent, UUID> {
 
-//    void createBinaryContent(BinaryContent binaryContent);
-//    Optional<BinaryContent> findBinaryContentById(UUID binaryContentId);
-//    List<BinaryContent> findAllBinaryContentByIdIn(List<UUID> binaryContentIds);
-//    void deleteBinaryContent(UUID id);
-
     List<BinaryContent> findAllByIdIn(List<UUID> uuidList);
-
-
 }

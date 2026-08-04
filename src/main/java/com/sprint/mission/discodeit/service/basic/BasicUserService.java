@@ -4,9 +4,10 @@ import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.exception.DuplicateResourceException;
-import com.sprint.mission.discodeit.exception.FileException;
-import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
+import com.sprint.mission.discodeit.exception.file.FileStorageException;
+import com.sprint.mission.discodeit.exception.user.UserEmailAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.user.UserNameAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.UserService;
@@ -39,6 +40,8 @@ public class BasicUserService implements UserService {
     @Override
     @Transactional
     public UserDto createUser(UserCreateRequest request, MultipartFile file) {
+        log.debug("유저 생성 시작");
+
         //중복된 이름, 이메일로 생성 요청을 한 경우 검증
         validateNameExists(request.username());
         validateEmailExists(request.email());
@@ -46,8 +49,11 @@ public class BasicUserService implements UserService {
         BinaryContent binaryContent = null;
         //프로필 사진 파일 존재 시
         if (file != null && !file.isEmpty()) {
+            log.debug("프로필 파일 업로드 처리 시작");
             //binaryContent 생성
             binaryContent = createBinaryContent(file);
+
+            log.info("프로필 파일 업로드 완료");
         }
 
         //유저 생성
@@ -61,26 +67,24 @@ public class BasicUserService implements UserService {
         user.assignStatus(userStatus);
         user = userRepository.save(user);
 
+        log.info("유저 생성 완료");
+
         return userMapper.toDto(user);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UserDto findUser(UUID userId) {
+    public UserDto getUser(UUID userId) {
         //유저 검색
         User userTemp = userRepository.findById(userId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
-
-        //유저 상태 검색
-        UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         return userMapper.toDto(userTemp);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserDto> findAllUsers() {
+    public List<UserDto> getUsers() {
         //유저들 검색
         List<User> users = userRepository.findAll();
 
@@ -92,9 +96,14 @@ public class BasicUserService implements UserService {
     @Override
     @Transactional
     public UserDto updateUser(UUID userId, UserUpdateRequest request, MultipartFile file) {
+        log.debug("유저 수정 시작");
+
         //유저 검색
         User userTemp = userRepository.findById(userId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> {
+                    log.warn("유저 수정 실패: 해당 유저는 데이터파일에 존재하지 않습니다.");
+                    return new UserNotFoundException(userId);
+                });
 
         //중복된 이름, 이메일로 수정 요청을 한 경우 검증
         if (!userTemp.getUsername().equals(request.newUsername())) {
@@ -107,12 +116,15 @@ public class BasicUserService implements UserService {
         BinaryContent binaryContent = userTemp.getProfile();
         //프로필 사진 파일 존재 시
         if (file != null && !file.isEmpty()) {
+            log.debug("프로필 파일 업로드 처리 시작");
             //기존 프로필 이미지 삭제
             if (binaryContent != null) {
                 binaryContentRepository.deleteById(binaryContent.getId());
             }
             //binaryContent 생성
             binaryContent = createBinaryContent(file);
+
+            log.info("프로필 파일 업로드 완료");
         }
 
         log.info("유저: {}가 수정됨.", userTemp.getUsername());
@@ -123,15 +135,22 @@ public class BasicUserService implements UserService {
         //dirty checking
         //userTemp = userRepository.save(userTemp);
 
+        log.info("유저 수정 완료");
+
         return userMapper.toDto(userTemp);
     }
 
     @Override
     @Transactional
     public void deleteUser(UUID userId) {
+        log.debug("유저 삭제 시작");
+
         //유저 검색
         User userTemp = userRepository.findById(userId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> {
+                    log.warn("유저 삭제 실패: 해당 유저는 데이터파일에 존재하지 않습니다.");
+                    return new UserNotFoundException(userId);
+                });
 
         //유저 상태 검색 및 삭제
         //UserStatus는 cascade로 함께 삭제되므로 별도 삭제하지 않음
@@ -150,6 +169,8 @@ public class BasicUserService implements UserService {
         userRepository.deleteById(userId);
 
         log.info("유저: {}가 삭제됨.", userTemp.getUsername());
+
+        log.info("유저 삭제 완료");
     }
 
     //binaryContent 생성
@@ -166,18 +187,13 @@ public class BasicUserService implements UserService {
             binaryContentStorage.put(binaryContent.getId(), file.getBytes());
 
         } catch (IOException e) {
-            throw new FileException(e.getMessage());
+            log.error("프로필 파일 업로드 실패");
+            throw new FileStorageException(file.getOriginalFilename());
         }
 
         return binaryContent;
     }
 
-    //유저 상태 검색 및 삭제
-    private void deleteUserStatus(UUID userId) {
-        UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 유저의 온라인 상태를 불러올 수 없습니다."));
-        userStatusRepository.deleteById(userStatus.getId());
-    }
 
     //유저가 가입한 채널에 대한 ReadStatus 검색 및 삭제
     private void deleteReadStatus(UUID userId) {
@@ -200,24 +216,26 @@ public class BasicUserService implements UserService {
 
     //유저의 현재 프로필 이미지가 존재한다면 삭제하기
     private void deleteProfileImage(User user) {
-        UUID binaryContentId = user.getProfile().getId();
+        BinaryContent binaryContent = user.getProfile();
 
-        if (binaryContentId != null) {
-            binaryContentRepository.deleteById(binaryContentId);
+        if (binaryContent != null && binaryContent.getId() != null) {
+            binaryContentRepository.deleteById(binaryContent.getId());
         }
     }
 
     // 들어온 이름 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateNameExists(String name) {
         if (userRepository.existsByUsername(name)) {
-            throw new DuplicateResourceException("이름: " + name + "은 이미 사용중입니다.");
+            log.warn("이름: {}은 이미 사용중입니다.", name);
+            throw new UserNameAlreadyExistsException(name);
         }
     }
 
     // 들어온 이메일 필드가 레포지터리에 존재하는지 검증하는 메서드
     private void validateEmailExists(String email) {
         if (userRepository.existsByEmail(email)) {
-            throw new DuplicateResourceException("이메일: " + email + "은 이미 사용중입니다.");
+            log.warn("이메일: {}은 이미 사용중입니다.", email);
+            throw new UserEmailAlreadyExistsException(email);
         }
     }
 }

@@ -3,8 +3,8 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
-import com.sprint.mission.discodeit.exception.FileException;
-import com.sprint.mission.discodeit.exception.ObjectNotFoundException;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
+import com.sprint.mission.discodeit.exception.file.FileStorageException;
 import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
@@ -32,6 +32,8 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     @Transactional
     public BinaryContentDto createBinaryContent(BinaryContentCreateRequest request) {
+        log.debug("파일 업로드 시작");
+
         BinaryContent binaryContent;
         try {
             //binaryContent 생성
@@ -46,25 +48,28 @@ public class BasicBinaryContentService implements BinaryContentService {
             log.info("BinaryContent가 생성됨.");
 
         } catch (IOException e) {
-            throw new FileException(e.getMessage());
+            log.error("첨부 파일 업로드 실패");
+            throw new FileStorageException(request.file().getOriginalFilename());
         }
+
+        log.info("파일 업로드 완료");
 
         return binaryContentMapper.toDto(binaryContent);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public BinaryContentDto findBinaryContentById(UUID binaryContentId) {
+    public BinaryContentDto getBinaryContent(UUID binaryContentId) {
         //BinaryContent 검색
         BinaryContent binaryContentTemp = binaryContentRepository.findById(binaryContentId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new BinaryContentNotFoundException(binaryContentId));
 
         return binaryContentMapper.toDto(binaryContentTemp);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<BinaryContentDto> findAllBinaryContentByIdIn(List<UUID> binaryContentIds) {
+    public List<BinaryContentDto> getBinaryContentsByIdIn(List<UUID> binaryContentIds) {
         //BinaryContent들 검색
         List<BinaryContent> binaryContentList = binaryContentRepository.findAllByIdIn(binaryContentIds);
 
@@ -78,7 +83,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     public void deleteBinaryContent(UUID binaryContentId) {
         //BinaryContent 검색
         BinaryContent binaryContentTemp = binaryContentRepository.findById(binaryContentId)
-                .orElseThrow(() -> new ObjectNotFoundException("에러: 해당 BinaryContent는 데이터파일에 존재하지 않습니다."));
+                .orElseThrow(() -> new BinaryContentNotFoundException(binaryContentId));
 
         binaryContentRepository.deleteById(binaryContentId);
 

@@ -2,6 +2,12 @@ spring:
   application:
     name: discodeit
 
+  boot:
+    admin:
+      client:
+        instance:
+          name: discodeit
+
   datasource:
     url: jdbc:postgresql://localhost:5432/discodeit
     username: discodeit_user
@@ -21,6 +27,16 @@ spring:
         format_sql: true
     open-in-view: false
 
+  profiles:
+    active: dev
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 20MB
+
+
 discodeit:
   repository:
     type: jcf     # jcf | file
@@ -33,4 +49,39 @@ discodeit:
 
 logging:
   level:
-    com.sprintlog: debug
+    com.sprint.mission.discodeit: info
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, loggers
+  info:
+    env:
+      enabled: true
+
+
+info:
+  app:
+    name: Discodeit
+    version: 1.7.0
+    java-version: 17
+    spring-boot-version: 3.4.0
+
+  config:
+    datasource:
+      url: ${spring.datasource.url}
+      driver-class-name: ${spring.datasource.driver-class-name}
+
+    jpa:
+      ddl-auto: ${spring.jpa.hibernate.ddl-auto}
+
+    storage:
+      type: ${discodeit.storage.type}
+      path: ${discodeit.storage.local.root-path}
+
+    multipart:
+      max-file-size: ${spring.servlet.multipart.max-file-size}
+      max-request-size: ${spring.servlet.multipart.max-request-size}
+

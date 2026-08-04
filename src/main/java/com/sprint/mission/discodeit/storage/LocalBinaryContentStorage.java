@@ -1,8 +1,11 @@
 package com.sprint.mission.discodeit.storage;
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
-import com.sprint.mission.discodeit.exception.FileException;
+import com.sprint.mission.discodeit.exception.file.FileStorageException;
+import com.sprint.mission.discodeit.exception.file.FolderCreateException;
+import com.sprint.mission.discodeit.exception.file.StoredFileNotFoundException;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.InputStreamResource;
@@ -13,9 +16,9 @@ import org.springframework.stereotype.Component;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.UUID;
 
+@Slf4j
 @Component
 @ConditionalOnProperty(
         value = "discodeit.storage.type",
@@ -35,7 +38,8 @@ public class LocalBinaryContentStorage implements BinaryContentStorage{
         try {
             Files.createDirectories(root);
         } catch (IOException e) {
-            throw new FileException("폴더 생성에 실패했습니다.");
+            log.error("폴더 생성에 실패했습니다.");
+            throw new FolderCreateException(root.toString());
         }
     }
 
@@ -47,7 +51,8 @@ public class LocalBinaryContentStorage implements BinaryContentStorage{
         try {
             Files.write(path, bytes);
         } catch (IOException e) {
-            throw new FileException("파일 저장에 실패했습니다.");
+            log.error("파일 저장에 실패했습니다.");
+            throw new FileStorageException(binaryContentId);
         }
 
         return binaryContentId;
@@ -59,19 +64,24 @@ public class LocalBinaryContentStorage implements BinaryContentStorage{
 
         try {
             if (!Files.exists(path)) {
-                throw new FileException("파일이 존재하지 않습니다.");
+                throw new StoredFileNotFoundException(binaryContentId);
             }
 
             return Files.newInputStream(path);
         } catch (IOException e) {
-            throw new FileException("파일 읽기 실패");
+            log.error("파일 읽기에 실패했습니다.");
+            throw new FileStorageException(binaryContentId);
         }
     }
 
     @Override
     public ResponseEntity<Resource> download(BinaryContentDto binaryContentDto) {
+        log.debug("파일 다운로드 시작");
+
         InputStream inputStream = get(binaryContentDto.id());
         Resource resource = new InputStreamResource(inputStream);
+
+        log.info("파일 다운로드 완료");
 
         return ResponseEntity.ok().body(resource);
     }
