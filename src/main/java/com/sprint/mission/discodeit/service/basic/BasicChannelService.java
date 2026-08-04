@@ -6,13 +6,15 @@ import com.sprint.mission.discodeit.dto.request.PublicChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.exception.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.ChannelTypeException;
+import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.mapper.MapperMethod;
-import com.sprint.mission.discodeit.repository.JPAChannelRepository;
-import com.sprint.mission.discodeit.repository.JAPReadStatusRepository;
-import com.sprint.mission.discodeit.repository.JPAMessageRepository;
-import com.sprint.mission.discodeit.repository.JPAUserRepository;
+import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.ReadStatusRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 
 import jakarta.transaction.Transactional;
@@ -31,10 +33,10 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 @Slf4j
 public class BasicChannelService implements ChannelService {
-    private final JPAChannelRepository channelRepository;
-    private final JAPReadStatusRepository readStatusRepository;
-    private final JPAUserRepository userRepository;
-    private final JPAMessageRepository messageRepository;
+    private final ChannelRepository channelRepository;
+    private final ReadStatusRepository readStatusRepository;
+    private final UserRepository userRepository;
+    private final MessageRepository messageRepository;
     private final MapperMethod mapperMethod;
     private final MapStructMapper mapStructMapper;
 
@@ -42,6 +44,9 @@ public class BasicChannelService implements ChannelService {
     @Transactional
     public ChannelDto createPublicChannel(PublicChannelCreateRequest cpb){
         Channel cnl = new Channel(cpb.name(), cpb.description(), ChannelType.PUBLIC);
+
+        log.info("public channel created - " + cnl.getName());
+
         return mapStructMapper.toDto(
                 channelRepository.save(cnl)
                 ,userDtoFromChannel(cnl)
@@ -55,18 +60,18 @@ public class BasicChannelService implements ChannelService {
         Channel cnl = new Channel("", "", ChannelType.PRIVATE);
         channelRepository.save(cnl);
 
+        log.info("private channel created - " + cnl.getName());
+
         for (UUID pid : cpv.participantIds()){
-            User user = userRepository.findById(pid).stream().findFirst().orElseThrow(
-                    () -> new DiscodeitException(
-                            "User by id - " + pid + " not existed."
-                            ,"Channel"
-                            ,400
-                    )
-            );
+            User user = getUserOrException(pid);
             readStatusRepository.save(new ReadStatus(user,cnl,Instant.now()));
+            log.debug("User with id - " + pid + " is joined channel");
         }
         return mapStructMapper.toDto(cnl,userDtoFromChannel(cnl),lastMessageAt(cnl));
     }
+
+
+
 
     @Override
     @Transactional
@@ -93,25 +98,18 @@ public class BasicChannelService implements ChannelService {
     @Override
     @Transactional
     public ChannelDto update(UUID id, PublicChannelUpdateRequest uci) {
-        Channel cnl = channelRepository.findById(id).orElseThrow(
-                () -> new DiscodeitException(
-                        "channel with id " + id + "not found",
-                        "Channel",
-                        404
-                )
-        );
+        Channel cnl = getChannelOrException(id);
 
-        if (cnl.getType().equals(ChannelType.PRIVATE)) {
-            throw new DiscodeitException(
-                    "Private channel can not be update",
-                    "Channel",
-                    400
-            );
-        }
+        log.debug("channel id - " + cnl.getId() + "updating...");
+
+        channelTypeCheck(cnl);
 
 
         cnl.setName(uci.newName());
         cnl.setDescription(uci.newDescription());
+
+        channelRepository.save(cnl);
+        log.info("channel updated - " + cnl.getName());
 
         return mapStructMapper.toDto(cnl,userDtoFromChannel(cnl),lastMessageAt(cnl));
     }
@@ -119,16 +117,30 @@ public class BasicChannelService implements ChannelService {
     @Override
     @Transactional
     public void deleteChannel(UUID id) {
-        channelRepository.findById(id).orElseThrow(
-                () -> new DiscodeitException(
-                        "Channel whith id " + id + "not found",
-                        "Channel",
-                        404
-                )
-        );
-
+        getChannelOrException(id);
         channelRepository.deleteById(id);
+        log.info("channel deleted - " + id);
     }
+
+    private User getUserOrException(UUID id){
+        return userRepository.findById(id).stream().findFirst().orElseThrow(
+                () -> new UserNotFoundException("User with id - {} not found",id)
+        );
+    }
+
+
+    private void channelTypeCheck(Channel cnl){
+        if (cnl.getType().equals(ChannelType.PRIVATE)) {
+            throw new ChannelTypeException("Channel with id - {} was private",cnl.getId());
+        }
+    }
+
+    private Channel getChannelOrException(UUID id){
+        return channelRepository.findById(id).orElseThrow(
+                () -> new ChannelNotFoundException("Channel with id - {} not found",id)
+        );
+    }
+
 
     private List<UserDto> userDtoFromChannel(Channel channel) {
         return readStatusRepository.findByChannelId(channel.getId())

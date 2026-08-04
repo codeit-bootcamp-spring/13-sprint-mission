@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,7 @@ public class UserController implements UserControllerDoc {
 
     @RequestMapping(value = "",method = RequestMethod.GET)
     public ResponseEntity<List<UserDto>> findAll(){
+        log.debug("get all users request");
         return ResponseEntity.ok(this.userService.getUserList());
     }
 
@@ -40,7 +42,7 @@ public class UserController implements UserControllerDoc {
             consumes = { MediaType.MULTIPART_FORM_DATA_VALUE }
     )
     public ResponseEntity<UserDto> create(
-            @RequestPart("userCreateRequest") UserCreateRequest uci,
+            @Valid @RequestPart("userCreateRequest") UserCreateRequest uci,
             @RequestPart(value = "profile", required = false) MultipartFile tmb
     ) {
         Optional<BinaryContentCreate> bcc = Optional.ofNullable(tmb).flatMap(this::thumbnailResolver);
@@ -64,7 +66,7 @@ public class UserController implements UserControllerDoc {
     )
     public ResponseEntity<UserDto> update(
             @PathVariable UUID userId,
-            @RequestPart("userUpdateRequest") UserUpdateRequest uui,
+            @Valid @RequestPart("userUpdateRequest") UserUpdateRequest uui,
             @RequestPart (value = "profile", required = false) MultipartFile tmb
     ){
         Optional<BinaryContentCreate> bcc = Optional.ofNullable(tmb).flatMap(this::thumbnailResolver);
@@ -98,6 +100,8 @@ public class UserController implements UserControllerDoc {
                     fileSize,
                     content
             );
+
+            log.info("file uploaded: {}", filename);
 
             return Optional.of(bc);
         } catch (IOException e){

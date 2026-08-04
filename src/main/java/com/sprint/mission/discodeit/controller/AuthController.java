@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.controller.docs.AuthControllerDoc;
 import com.sprint.mission.discodeit.dto.request.LoginRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +24,7 @@ public class AuthController implements AuthControllerDoc {
 
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     public ResponseEntity<UserDto> login(
-            @RequestBody LoginRequest loginRequest
+            @Valid @RequestBody LoginRequest loginRequest
     ){
         return ResponseEntity.ok(authService.login(loginRequest));
     }

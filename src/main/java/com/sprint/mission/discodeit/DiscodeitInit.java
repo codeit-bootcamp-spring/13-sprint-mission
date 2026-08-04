@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit;
 
 import com.sprint.mission.discodeit.config.DiscodeitConfig;
 
-import com.sprint.mission.discodeit.service.*;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -25,7 +24,5 @@ public class DiscodeitInit implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        log.info(dci.getFilePath().toString());
-        log.info(dci.getRepoType());
     }
 }

@@ -1,0 +1,38 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:discodeit;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+#  datasource:
+#    url: jdbc:postgresql://smb.docklas.com:55432/discodeit
+#    username: discodeit_user
+#    password: discodeit1234
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+  # .sql 파일을 이용하지 않고, hibernate 가 DDL 을 작성하도록 설정.
+  sql:
+    init:
+      mode: never
+
+  boot:
+    admin:
+      client:
+        url: http://localhost:9090
+
+server:
+  port: 59080
+
+
+logging:
+  level:
+    com.sprint.mission.discodeit: debug
+    org.hiberate.SQL: INFO
+    org.hibernate.orm.jdbc.bind: INFO

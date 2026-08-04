@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.14'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'jacoco'
 }
 
 group = 'com.sprint.mission'
@@ -24,8 +25,9 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.18.0'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -37,6 +39,9 @@ dependencies {
 	implementation 'org.mapstruct:mapstruct:1.6.3'
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 	runtimeOnly 'com.h2database:h2'
+
+	// admin client
+	implementation 'de.codecentric:spring-boot-admin-starter-client:3.4.5'
 }
 
 tasks.named('test') {
@@ -59,3 +64,16 @@ tasks.named('test') {
 //jar {
 //	enabled = false // plain.jar 생성을 막아 Railway가 헷갈리지 않게 합니다.
 //}
+
+test {
+	finalizedBy
+	jacocoTestReport
+}
+
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required = true
+		html.required = true
+	}
+}

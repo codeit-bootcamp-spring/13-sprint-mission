@@ -5,10 +5,12 @@ import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.exception.ExceptionCode;
+import com.sprint.mission.discodeit.exception.UserException;
+import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.mapper.MapperMethod;
-import com.sprint.mission.discodeit.repository.JPAUserRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
 
 import com.sprint.mission.discodeit.service.AuthService;
 import jakarta.transaction.Transactional;
@@ -20,30 +22,18 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Slf4j
 public class BasicAuthService implements AuthService {
-    private final JPAUserRepository JPAUserRepository;
+    private final UserRepository userRepository;
     private final MapStructMapper mapStructMapper;
     private final MapperMethod mapperMethod;
 
     @Override
     @Transactional
     public UserDto login(LoginRequest loginRequest){
+        log.debug("Login Request: {}", loginRequest);
 
-        User user = JPAUserRepository.findByEmail(loginRequest.username()).stream().findFirst()
-                .orElseThrow(
-                () -> new DiscodeitException(
-                        "User with username " + loginRequest.username() + " not found",
-                        "Auth",
-                        404
-                )
-        );
+        User user = getUserOrExceptionByName(loginRequest.username());
+        checkPassword(user, loginRequest.password());
 
-        if(!user.getPassword().equals(loginRequest.password())){
-            throw new DiscodeitException(
-                    "Wrong password",
-                    "Auth",
-                    400
-            );
-        }
         return userDto(user);
     }
 
@@ -54,5 +44,18 @@ public class BasicAuthService implements AuthService {
 
     private BinaryContentDto binaryContentDto(BinaryContent bc){
         return mapStructMapper.toDto(bc, mapperMethod.getByteFrom(bc));
+    }
+
+    private User getUserOrExceptionByName(String name){
+        return userRepository.findByUsername(name).stream().findFirst()
+                .orElseThrow(
+                        () -> new UserNotFoundException("User not found with name: {} " , name)
+                );
+    }
+
+    private void checkPassword (User user, String password){
+        if(!user.getPassword().equals(password)){
+            throw new UserException(ExceptionCode.REQUEST_VALUE_ERROR,"Wrong password");
+        }
     }
 }

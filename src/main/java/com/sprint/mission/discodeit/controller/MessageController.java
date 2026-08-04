@@ -10,6 +10,7 @@ import com.sprint.mission.discodeit.dto.response.PageResponse;
 
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.service.MessageService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -54,7 +55,7 @@ public class MessageController implements MessageControllerDoc {
             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}
     )
     public ResponseEntity<MessageDto> create(
-            @RequestPart(value = "messageCreateRequest") MessageCreateRequest mcr,
+            @Valid @RequestPart(value = "messageCreateRequest") MessageCreateRequest mcr,
             @RequestPart(value = "attachments", required = false) List<MultipartFile> att
     ) {
         Optional<List<BinaryContentCreate>> lbcc =  Optional.ofNullable(att).map( mp ->
@@ -79,7 +80,7 @@ public class MessageController implements MessageControllerDoc {
     @RequestMapping(value = "/{messageId}", method = RequestMethod.PATCH)
     public ResponseEntity<MessageDto> modifyMessage(
             @PathVariable UUID messageId,
-            @RequestBody MessageUpdateRequest msi
+            @Valid @RequestBody MessageUpdateRequest msi
     ) {
         MessageDto res = messageService.updateMessageData(messageId, msi);
         return ResponseEntity.ok(res);
