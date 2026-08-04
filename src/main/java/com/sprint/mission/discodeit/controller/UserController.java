@@ -2,12 +2,11 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.controller.api.UserApi;
 import com.sprint.mission.discodeit.dto.data.UserDto;
+import com.sprint.mission.discodeit.dto.data.UserStatusDto;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import java.io.IOException;
@@ -19,7 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,7 +31,7 @@ public class UserController implements UserApi {
 
   //새로운 사용자를 생성하는 요청을 처리하는 메서드
   @Override
-  public ResponseEntity<User> create(
+  public ResponseEntity<UserDto> create(
       @RequestPart("userCreateRequest") UserCreateRequest userCreateRequest, //사용자 생성 정보를 전달받음.
       @RequestPart(value = "profile", required = false) MultipartFile profile
       //프로필 이미지를 전달받음.(프로필 이미지가 없어도 요청가능)
@@ -41,7 +39,7 @@ public class UserController implements UserApi {
     Optional<BinaryContentCreateRequest> profileRequest = Optional.ofNullable(
             profile) //전달 받은 MultipartFile을 BinaryContentCreateRequest로 변환함.
         .flatMap(this::resolveProfileRequest);
-    User createdUser = userService.create(userCreateRequest, profileRequest);
+    UserDto createdUser = userService.create(userCreateRequest, profileRequest);
     return ResponseEntity
         .status(HttpStatus.CREATED)
         .body(createdUser);
@@ -49,15 +47,15 @@ public class UserController implements UserApi {
 
   //기존 사용자 정보를 수정하는 요청을 처리하는 메서드
   @Override
-  public ResponseEntity<User> update(
+  public ResponseEntity<UserDto> update(
       @PathVariable UUID userId, //수정한 사용자의 UUID를 전달받음.
       @RequestPart("userUpdateRequest") UserUpdateRequest userUpdateRequest, //수정할 사용자 정보를 전달받음.
-      @RequestParam(value = "profile", required = false) MultipartFile profile //수정할 프로필 이미지를 전달받음.
+      @RequestPart(value = "profile", required = false) MultipartFile profile //수정할 프로필 이미지를 전달받음.
   ) {
     Optional<BinaryContentCreateRequest> profileRequest = Optional.ofNullable(
             profile) //프로필 이미지를 BinaryContentCreateRequest로 변환함.
         .flatMap(this::resolveProfileRequest);
-    User updatedUser = userService.update(userId, userUpdateRequest, profileRequest);
+    UserDto updatedUser = userService.update(userId, userUpdateRequest, profileRequest);
     return ResponseEntity
         .status(HttpStatus.OK)
         .body(updatedUser);
@@ -81,9 +79,9 @@ public class UserController implements UserApi {
 
 
   @Override
-  public ResponseEntity<UserStatus> updateUserStatusByUserId(@PathVariable UUID userId,
+  public ResponseEntity<UserStatusDto> updateUserStatusByUserId(@PathVariable UUID userId,
       @RequestBody UserStatusUpdateRequest request) {
-    UserStatus updatedUserStatus = userStatusService.updateByUserId(userId, request);
+    UserStatusDto updatedUserStatus = userStatusService.updateByUserId(userId, request);
     return ResponseEntity
         .status(HttpStatus.OK)
         .body(updatedUserStatus);

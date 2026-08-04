@@ -1,10 +1,12 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.data.UserStatusDto;
 import com.sprint.mission.discodeit.dto.request.user.UserStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.service.ReadStatusService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ public class BasicUserStatusService implements UserStatusService {
 
   private final UserStatusRepository userStatusRepository; //사용자 상태 저장소
   private final UserRepository userRepository; //사용자 저장소
+  private final ReadStatusService readStatusService;
 
   @Override //사용자 상태 생성
   public UserStatus create(UserStatusCreateRequest request) {
@@ -28,7 +31,7 @@ public class BasicUserStatusService implements UserStatusService {
     UUID userId = request.getUserId();
 
     //사용자 상태 생성 전 사용자 존재 여부 확인
-    if (!userStatusRepository.existsById(userId)) {
+    if (!userRepository.existsById(userId)) {
       throw new NoSuchElementException("User with id " + userId + " does not exist");
     }
     //이미 해당 사용자의 상태 정보가 존재하는지 확인
@@ -62,11 +65,12 @@ public class BasicUserStatusService implements UserStatusService {
         .orElseThrow(() -> new NoSuchElementException(
             "UserStatus with id " + userStatusId + " does not exist"));
 
+    userStatus.update(newLastActiveAt);
     return userStatusRepository.save(userStatus); //수정된 객체 저장 후 반환
   }
 
   @Override //사용자 ID 기준 상태 정보 수정
-  public UserStatus updateByUserId(UUID userId, UserStatusUpdateRequest request) {
+  public UserStatusDto updateByUserId(UUID userId, UserStatusUpdateRequest request) {
     Instant newLastActiveAt = request.getNewLastActiveAt(); //변경할 마지막 활동 시간 조회
 
     UserStatus userStatus = userStatusRepository.findByUserId(userId) //사용자 ID로 상태 정보 조회

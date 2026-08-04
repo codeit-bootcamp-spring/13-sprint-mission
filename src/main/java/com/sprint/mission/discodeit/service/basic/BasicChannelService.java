@@ -29,7 +29,7 @@ public class BasicChannelService implements ChannelService {
   private final MessageRepository messageRepository; //메시지 저장소
 
   @Override //공개 채널 생성
-  public Channel create(PublicChannelCreateRequest request) {
+  public ChannelDto create(PublicChannelCreateRequest request) {
     String name = request.getName();
     String description = request.getDescription();
     Channel channel = new Channel(ChannelType.PUBLIC, name, description);
@@ -37,14 +37,15 @@ public class BasicChannelService implements ChannelService {
   }
 
   @Override //비공개 채널 생성
-  public Channel create(PrivateChannelCreateRequest request) {
+  public ChannelDto create(PrivateChannelCreateRequest request) {
     //비공개 채널은 이름/설명이 없음 (필요 시 확장가능)
     Channel channel = new Channel(ChannelType.PRIVATE, null, null);
     Channel createChannel = channelRepository.save(channel);
 
     //참여자 목록을 readStatus로 변환
     request.getParticipantIds().stream()
-        .map(userId -> new ReadStatus(userId, createChannel.getId(), Instant.MIN))
+        .map(userId -> new ReadStatus(userId, createChannel.getId(),
+            channel.getCreatedAt())) //forEach(readStatusRepository::save);
         .forEach(readStatusRepository::save);
     return createChannel;
   }
@@ -68,7 +69,7 @@ public class BasicChannelService implements ChannelService {
   }
 
   @Override //채널 수정
-  public Channel update(UUID channelId, PublicChannelUpdateRequest request) {
+  public ChannelDto update(UUID channelId, PublicChannelUpdateRequest request) {
     String newName = request.getNewName();
     String newDecription = request.getNewDescription();
     Channel channel = channelRepository.findById(channelId)

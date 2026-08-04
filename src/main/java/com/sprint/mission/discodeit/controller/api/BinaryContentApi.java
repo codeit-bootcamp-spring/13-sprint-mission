@@ -1,7 +1,14 @@
 package com.sprint.mission.discodeit.controller.api;
 
+import com.sprint.mission.discodeit.dto.data.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.UUID;
@@ -15,16 +22,31 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/api/binaryContents")
 public interface BinaryContentApi {
 
+  //단건조회
   @Operation(summary = "첨부 파일 조회")
-  @GetMapping("/api/binaryContentId")
-  ResponseEntity<BinaryContent> find(
-      @PathVariable UUID binaryContentId
+  @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "첨부 파일 조회 성공"),
+      @ApiResponse(responseCode = "404", description = "첨부 파일을 찾을 수 없음",
+          content = @Content(examples = @ExampleObject(value = "BinaryContent with id {binaryContentId} not found")))
+  })
+  @GetMapping("/{binaryContentId}")
+  ResponseEntity<BinaryContentDto> find(
+      @Parameter(description = "조회할 첨부 파일 ID") @PathVariable UUID binaryContentId
   );
 
+  //다중조회
   @Operation(summary = "여러 첨부 파일 조회")
+  @ApiResponse(responseCode = "200", description = "첨부 파일 목록 조회 성공")
   @GetMapping
-  ResponseEntity<List<BinaryContent>> findAllByIdIn(
-      @RequestParam List<UUID> binaryContentIds
+  ResponseEntity<List<BinaryContentDto>> findAllByIdIn(
+      @Parameter(description = "조회할 첨부 파일 ID 목록") @RequestParam List<UUID> binaryContentIds
   );
 
+  //파일 다운로드
+  @Operation(summary = "파일 다운로드")
+  @ApiResponse(responseCode = "200", description = "파일 다운로드 성공",
+      content = @Content(schema = @Schema(implementation = String.class)))
+  @GetMapping({"/{binaryContentId}/download"})
+  ResponseEntity<BinaryContent> filedownload(
+      @Parameter(description = "다운로드할 파일 ID") @PathVariable UUID binaryContentId
+  );
 }
