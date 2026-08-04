@@ -1,0 +1,20 @@
+# intellij
+.git
+.gitignore
+.idea
+*.iml
+
+# build or unuse source
+build/
+.gradle/
+logs/
+*.log
+uploads/
+
+# docker build file
+Dockerfile
+.dockerignore
+
+# etc
+README*.md
+HELP.md

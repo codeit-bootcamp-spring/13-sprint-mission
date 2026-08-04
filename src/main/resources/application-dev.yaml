@@ -6,7 +6,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
@@ -17,13 +17,11 @@ spring:
     init:
       mode: never
 
-  boot:
-    admin:
-      client:
-        url: http://localhost:9090
-
-server:
-  port: 59080
+  # Spring admin 클라이언트 등록용 설정.
+#  boot:
+#    admin:
+#      client:
+#        url: http://localhost:9090
 
 
 logging:
