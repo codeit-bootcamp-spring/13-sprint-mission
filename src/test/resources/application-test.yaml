@@ -1,14 +1,12 @@
 # test 전용 설정. 테스트 클래스에서 이 설정을 불러오는 로직을 따로 작성해서 적용.
 
 spring:
-  # 1. H2 인메모리 데이터베이스 설정 (테스트용)
   datasource:
     url: jdbc:h2:mem:discodeit;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
     username: sa
     password:
 
-  # 2. JPA 설정 (테스트 시작 시 테이블 생성, 완료 후 드롭)
   jpa:
     hibernate:
       ddl-auto: create-drop

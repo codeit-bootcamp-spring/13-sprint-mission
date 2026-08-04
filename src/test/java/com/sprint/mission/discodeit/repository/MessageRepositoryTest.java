@@ -15,6 +15,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -30,6 +31,7 @@ import static org.mockito.Mockito.mock;
 @TestPropertySource(properties = {
         "spring.jpa.properties.hibernate.generate_statistics=true"
 })
+@ActiveProfiles("test")
 @Slf4j
 public class MessageRepositoryTest {
 
