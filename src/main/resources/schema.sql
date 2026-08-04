@@ -1,4 +1,4 @@
-﻿CREATE TABLE "read_statuses" (
+CREATE TABLE "read_statuses" (
 	"id"	uuid		NOT NULL,
 	"created_at"	timestamptz		NOT NULL,
 	"updated_at"	timestamptz		NULL,
