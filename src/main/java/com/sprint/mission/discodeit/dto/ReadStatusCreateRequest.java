@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.dto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 
 import java.util.UUID;
@@ -10,9 +11,11 @@ import java.util.UUID;
 public class ReadStatusCreateRequest {
 
     // 읽음 상태를 생성할 사용자 id
+    @NotNull(message = "사용자 ID는 필수입니다.")
     private UUID userId;
 
     // 읽음 상태를 생성할 채널 id
+    @NotNull(message = "채널 ID는 필수입니다.")
     private UUID channelId;
 
     // ReadStatus 생성 요청 객체를 생성하는 생성자

@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.ReadStatusResponse;
 import com.sprint.mission.discodeit.dto.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.service.ReadStatusService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +29,7 @@ public class ReadStatusController {
      */
     @PostMapping
     public ResponseEntity<ReadStatusResponse> create(
-            @RequestBody ReadStatusCreateRequest request
+            @Valid @RequestBody ReadStatusCreateRequest request
     ) {
         ReadStatusResponse response = readStatusService.create(request);
 
@@ -81,7 +82,7 @@ public class ReadStatusController {
      */
     @PatchMapping
     public ResponseEntity<ReadStatusResponse> update(
-            @RequestBody ReadStatusUpdateRequest request
+            @Valid @RequestBody ReadStatusUpdateRequest request
     ) {
         ReadStatusResponse response = readStatusService.update(request);
 
@@ -103,7 +104,7 @@ public class ReadStatusController {
     @PatchMapping("/{readStatusId}")
     public ResponseEntity<ReadStatusResponse> updateByPathVariable(
             @PathVariable UUID readStatusId,
-            @RequestBody ReadStatusUpdateRequest request
+            @Valid @RequestBody ReadStatusUpdateRequest request
     ) {
         ReadStatusUpdateRequest fixedRequest = new ReadStatusUpdateRequest(
                 readStatusId,

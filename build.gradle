@@ -2,10 +2,11 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.14'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'jacoco'
 }
 
 group = 'com.sprint.mission'
-version = '0.0.1-SNAPSHOT'
+version = '1.7.0'
 
 java {
 	toolchain {
@@ -18,26 +19,53 @@ repositories {
 }
 
 dependencies {
+	// Spring Web
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	// Spring Validation
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
 	// Spring Data JPA
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
+	// Spring Boot Actuator
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+	// Spring Boot Admin Client
+	implementation 'de.codecentric:spring-boot-admin-starter-client:3.4.5'
+
 	// PostgreSQL JDBC Driver
 	runtimeOnly 'org.postgresql:postgresql'
 
-	// Swagger / OpenAPI 문서 생성
+	// Swagger / OpenAPI
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17'
 
+	// Lombok
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
+	// Test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testCompileOnly 'org.projectlombok:lombok'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testAnnotationProcessor 'org.projectlombok:lombok'
+	testRuntimeOnly 'com.h2database:h2'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+
+	// 테스트가 끝난 뒤 JaCoCo 리포트를 자동 생성
+	finalizedBy tasks.named('jacocoTestReport')
+}
+
+jacocoTestReport {
+	// 리포트 생성 전에 테스트 실행
+	dependsOn test
+
+	reports {
+		xml.required = true
+		html.required = true
+		csv.required = false
+	}
 }

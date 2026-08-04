@@ -2,6 +2,9 @@ package com.sprint.mission.discodeit.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.sprint.mission.discodeit.entity.ChannelType;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -22,6 +25,14 @@ public class ChannelUpdateRequest {
      * 기존 프론트/기존 코드 호환용 필드
      * title, channelName으로 들어와도 name에 매핑
      */
+    @Size(
+            max = 100,
+            message = "채널 이름은 100자 이하여야 합니다."
+    )
+    @Pattern(
+            regexp = ".*\\S.*",
+            message = "채널 이름은 공백으로만 구성할 수 없습니다."
+    )
     @JsonAlias({"title", "channelName"})
     private String name;
 
@@ -29,17 +40,33 @@ public class ChannelUpdateRequest {
      * 기존 프론트/기존 코드 호환용 필드
      * desc로 들어와도 description에 매핑
      */
+    @Size(
+            max = 500,
+            message = "채널 설명은 500자 이하여야 합니다."
+    )
     @JsonAlias({"desc"})
     private String description;
 
     /*
      * API 명세 v1.2 기준 필드
      */
+    @Size(
+            max = 100,
+            message = "새 채널 이름은 100자 이하여야 합니다."
+    )
+    @Pattern(
+            regexp = ".*\\S.*",
+            message = "새 채널 이름은 공백으로만 구성할 수 없습니다."
+    )
     private String newName;
 
     /*
      * API 명세 v1.2 기준 필드
      */
+    @Size(
+            max = 500,
+            message = "새 채널 설명은 500자 이하여야 합니다."
+    )
     private String newDescription;
 
     public ChannelUpdateRequest(
@@ -78,5 +105,13 @@ public class ChannelUpdateRequest {
         }
 
         return description;
+    }
+
+    @AssertTrue(message = "수정할 채널 이름 또는 설명이 필요합니다.")
+    public boolean isUpdateValueProvided() {
+        return name != null
+                || description != null
+                || newName != null
+                || newDescription != null;
     }
 }

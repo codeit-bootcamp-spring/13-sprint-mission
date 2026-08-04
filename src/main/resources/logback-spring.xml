@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration>
+
+    <!-- application.yaml의 애플리케이션 이름 -->
+    <springProperty
+            scope="context"
+            name="APPLICATION_NAME"
+            source="spring.application.name"
+            defaultValue="discodeit"
+    />
+
+    <!-- application.yaml의 logging.level.root 값 -->
+    <springProperty
+            scope="context"
+            name="ROOT_LOG_LEVEL"
+            source="logging.level.root"
+            defaultValue="INFO"
+    />
+
+    <!-- 프로젝트 루트 기준 로그 저장 경로 -->
+    <property name="LOG_PATH" value=".logs"/>
+
+    <!-- 현재 실행 중 기록되는 로그 파일 -->
+    <property
+            name="LOG_FILE"
+            value="${LOG_PATH}/${APPLICATION_NAME}.log"
+    />
+
+    <!--
+        날짜 및 시간
+        스레드 이름
+        로그 레벨 5글자 정렬
+        로거 이름 최대 36글자
+        MDC 요청 ID
+        MDC 요청 메소드
+        MDC 요청 URL
+        로그 메시지
+        줄바꿈
+    -->
+    <property
+            name="LOG_PATTERN"
+            value="%d{yy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{requestId:--} | %X{requestMethod:--} | %X{requestUrl:--}] - %msg%n"
+    />
+
+    <!-- 콘솔 로그 출력 -->
+    <appender
+            name="CONSOLE"
+            class="ch.qos.logback.core.ConsoleAppender">
+
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 파일 로그 출력 -->
+    <appender
+            name="FILE"
+            class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+        <!-- 현재 로그가 기록되는 파일 -->
+        <file>${LOG_FILE}</file>
+
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+
+        <!-- 날짜 기준 로그 롤링 -->
+        <rollingPolicy
+                class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+
+            <!-- 날짜가 변경되면 기존 로그를 날짜별 파일로 저장 -->
+            <fileNamePattern>
+                ${LOG_PATH}/${APPLICATION_NAME}.%d{yyyy-MM-dd}.log
+            </fileNamePattern>
+
+            <!-- 로그 파일 30일 보관 -->
+            <maxHistory>30</maxHistory>
+
+            <!-- 애플리케이션 시작 시 보관 기간이 지난 로그 정리 -->
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+
+        </rollingPolicy>
+    </appender>
+
+    <!-- YAML의 logging.level.root 값을 사용 -->
+    <root level="${ROOT_LOG_LEVEL}">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+</configuration>

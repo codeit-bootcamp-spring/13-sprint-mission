@@ -8,8 +8,13 @@ import com.sprint.mission.discodeit.dto.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.UserResponse;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.message.InvalidMessageException;
+import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -18,6 +23,7 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,13 +31,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -44,69 +47,139 @@ public class BasicMessageService implements MessageService {
     private final BinaryContentService binaryContentService;
     private final PageResponseMapper pageResponseMapper;
 
-    // 메시지 생성
     @Override
     public MessageResponse create(MessageCreateRequest request) {
+        log.info("메시지 생성을 시작합니다.");
+
         if (request == null) {
-            throw new IllegalArgumentException("메시지 생성 요청은 비어 있을 수 없습니다.");
+            log.warn("메시지 생성 요청이 비어 있습니다.");
+            throw new InvalidMessageException("메시지 생성 요청은 비어 있을 수 없습니다.");
         }
 
         String content = request.getContent();
         UUID authorId = request.getAuthorId();
         UUID channelId = request.getChannelId();
+        List<BinaryContentCreateRequest> attachments = request.getAttachments();
 
         validateContent(content);
 
         if (authorId == null) {
-            throw new IllegalArgumentException("메시지 작성자 id는 필수입니다.");
+            log.warn("메시지 생성에 실패했습니다. authorId가 null입니다.");
+            throw new InvalidMessageException("메시지 작성자 id는 필수입니다.");
         }
 
         if (channelId == null) {
-            throw new IllegalArgumentException("메시지를 작성할 채널 id는 필수입니다.");
+            log.warn("메시지 생성에 실패했습니다. channelId가 null입니다.");
+            throw new InvalidMessageException("메시지를 작성할 채널 id는 필수입니다.");
         }
 
-        if (!userRepository.existsById(authorId)) {
-            throw new IllegalArgumentException("메시지를 작성할 사용자를 찾을 수 없습니다. authorId=" + authorId);
-        }
-
-        if (!channelRepository.existsById(channelId)) {
-            throw new IllegalArgumentException("메시지를 작성할 채널을 찾을 수 없습니다. channelId=" + channelId);
-        }
-
-        Message message = new Message(
-                content,
+        log.debug(
+                "메시지 생성 요청을 처리합니다. authorId={}, channelId={}, contentLength={}, attachmentCount={}",
                 authorId,
-                channelId
+                channelId,
+                content.length(),
+                attachments == null ? 0 : attachments.size()
         );
 
-        List<BinaryContentCreateRequest> attachments = request.getAttachments();
+        User author = userRepository.findById(authorId)
+                .orElseThrow(() -> {
+                    log.warn(
+                            "메시지 작성자를 찾을 수 없습니다. authorId={}",
+                            authorId
+                    );
 
-        if (attachments != null && !attachments.isEmpty()) {
-            for (BinaryContentCreateRequest attachmentRequest : attachments) {
-                if (attachmentRequest == null) {
-                    continue;
+                    return new UserNotFoundException(authorId);
+                });
+
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> {
+                    log.warn(
+                            "메시지를 작성할 채널을 찾을 수 없습니다. channelId={}",
+                            channelId
+                    );
+
+                    return new ChannelNotFoundException(channelId);
+                });
+
+        try {
+            Message message = new Message(
+                    content,
+                    author,
+                    channel
+            );
+
+            if (attachments != null && !attachments.isEmpty()) {
+                for (BinaryContentCreateRequest attachmentRequest : attachments) {
+                    if (attachmentRequest == null) {
+                        log.warn(
+                                "null 첨부파일 요청을 건너뜁니다. authorId={}, channelId={}",
+                                authorId,
+                                channelId
+                        );
+                        continue;
+                    }
+
+                    validateAttachment(attachmentRequest);
+
+                    log.debug(
+                            "메시지 첨부파일을 저장합니다. fileName={}, contentType={}, size={}",
+                            attachmentRequest.getFileName(),
+                            attachmentRequest.getContentType(),
+                            attachmentRequest.getBytes().length
+                    );
+
+                    BinaryContentResponse savedAttachment =
+                            binaryContentService.create(attachmentRequest);
+
+                    BinaryContent attachment =
+                            binaryContentRepository.findById(savedAttachment.getId())
+                                    .orElseThrow(() -> {
+                                        log.error(
+                                                "저장된 첨부파일 메타데이터를 찾을 수 없습니다. attachmentId={}",
+                                                savedAttachment.getId()
+                                        );
+
+                                        return new IllegalStateException(
+                                                "저장된 첨부파일을 찾을 수 없습니다. attachmentId="
+                                                        + savedAttachment.getId()
+                                        );
+                                    });
+
+                    message.addAttachment(attachment);
+
+                    log.debug(
+                            "메시지에 첨부파일을 연결했습니다. attachmentId={}, fileName={}",
+                            attachment.getId(),
+                            attachment.getFileName()
+                    );
                 }
-
-                validateAttachment(attachmentRequest);
-
-                /*
-                 * 중요:
-                 * BinaryContentRepository를 직접 사용하지 않고
-                 * BinaryContentService를 통해 저장해야 local storage에도 실제 파일이 저장된다.
-                 */
-                BinaryContentResponse savedAttachment =
-                        binaryContentService.create(attachmentRequest);
-
-                message.addAttachment(savedAttachment.getId());
             }
+
+            Message savedMessage = messageRepository.save(message);
+
+            log.info(
+                    "메시지 생성이 완료되었습니다. messageId={}, authorId={}, channelId={}, attachmentCount={}",
+                    savedMessage.getId(),
+                    savedMessage.getAuthorId(),
+                    savedMessage.getChannelId(),
+                    savedMessage.getAttachmentIds() == null
+                            ? 0
+                            : savedMessage.getAttachmentIds().size()
+            );
+
+            return toResponse(savedMessage);
+
+        } catch (RuntimeException e) {
+            log.error(
+                    "메시지 생성 중 오류가 발생했습니다. authorId={}, channelId={}",
+                    authorId,
+                    channelId,
+                    e
+            );
+            throw e;
         }
-
-        Message savedMessage = messageRepository.save(message);
-
-        return toResponse(savedMessage);
     }
 
-    // 메시지 단건 조회
     @Override
     @Transactional(readOnly = true)
     public MessageResponse read(UUID id) {
@@ -115,21 +188,32 @@ public class BasicMessageService implements MessageService {
         return toResponse(message);
     }
 
-    // 기존 호환용 메시지 목록 조회
     @Override
     @Transactional(readOnly = true)
     public List<MessageResponse> findAllByChannelId(UUID channelId) {
         validateChannelId(channelId);
 
-        List<Message> messages = messageRepository.findByChannelIdOrderByCreatedAtDesc(
+        log.debug(
+                "채널 메시지 목록을 조회합니다. channelId={}, limit={}",
                 channelId,
-                PageRequest.of(0, 50)
+                50
+        );
+
+        List<Message> messages =
+                messageRepository.findByChannel_IdOrderByCreatedAtDesc(
+                        channelId,
+                        PageRequest.of(0, 50)
+                );
+
+        log.debug(
+                "채널 메시지 목록 조회가 완료되었습니다. channelId={}, resultCount={}",
+                channelId,
+                messages.size()
         );
 
         return toResponses(messages);
     }
 
-    // 커서 페이지네이션 기반 메시지 목록 조회
     @Override
     @Transactional(readOnly = true)
     public PageResponse<MessageResponse> findAllByChannelId(
@@ -142,19 +226,27 @@ public class BasicMessageService implements MessageService {
         int safeSize = size <= 0 ? 50 : size;
         Pageable pageable = PageRequest.of(0, safeSize + 1);
 
+        log.debug(
+                "채널 메시지 커서 페이지 조회를 시작합니다. channelId={}, cursor={}, size={}",
+                channelId,
+                cursor,
+                safeSize
+        );
+
         List<Message> messages;
 
         if (cursor == null) {
-            messages = messageRepository.findByChannelIdOrderByCreatedAtDesc(
+            messages = messageRepository.findByChannel_IdOrderByCreatedAtDesc(
                     channelId,
                     pageable
             );
         } else {
-            messages = messageRepository.findByChannelIdAndCreatedAtLessThanOrderByCreatedAtDesc(
-                    channelId,
-                    cursor,
-                    pageable
-            );
+            messages =
+                    messageRepository.findByChannel_IdAndCreatedAtLessThanOrderByCreatedAtDesc(
+                            channelId,
+                            cursor,
+                            pageable
+                    );
         }
 
         boolean hasNext = messages.size() > safeSize;
@@ -171,6 +263,14 @@ public class BasicMessageService implements MessageService {
             nextCursor = messages.get(messages.size() - 1).getCreatedAt();
         }
 
+        log.debug(
+                "채널 메시지 커서 페이지 조회가 완료되었습니다. channelId={}, resultCount={}, hasNext={}, nextCursor={}",
+                channelId,
+                content.size(),
+                hasNext,
+                nextCursor
+        );
+
         return pageResponseMapper.toCursorPageResponse(
                 content,
                 nextCursor,
@@ -179,88 +279,172 @@ public class BasicMessageService implements MessageService {
         );
     }
 
-    // 메시지 수정
     @Override
     public MessageResponse update(MessageUpdateRequest request) {
+        log.info(
+                "메시지 수정을 시작합니다. messageId={}",
+                request == null ? null : request.getId()
+        );
+
         if (request == null) {
-            throw new IllegalArgumentException("메시지 수정 요청은 비어 있을 수 없습니다.");
+            log.warn("메시지 수정 요청이 비어 있습니다.");
+            throw new InvalidMessageException("메시지 수정 요청은 비어 있을 수 없습니다.");
         }
 
         if (request.getId() == null) {
-            throw new IllegalArgumentException("수정할 메시지 id는 필수입니다.");
+            log.warn("메시지 수정에 실패했습니다. messageId가 null입니다.");
+            throw new InvalidMessageException("수정할 메시지 id는 필수입니다.");
         }
 
         validateContent(request.getContent());
 
-        Message message = findMessageById(request.getId());
+        try {
+            Message message = findMessageById(request.getId());
 
-        message.update(request.getContent());
+            log.debug(
+                    "메시지 수정 요청을 처리합니다. messageId={}, contentLength={}",
+                    request.getId(),
+                    request.getContent().length()
+            );
 
-        Message savedMessage = messageRepository.save(message);
+            message.update(request.getContent());
 
-        return toResponse(savedMessage);
+            Message savedMessage = messageRepository.save(message);
+
+            log.info(
+                    "메시지 수정이 완료되었습니다. messageId={}",
+                    savedMessage.getId()
+            );
+
+            return toResponse(savedMessage);
+
+        } catch (RuntimeException e) {
+            log.error(
+                    "메시지 수정 중 오류가 발생했습니다. messageId={}",
+                    request.getId(),
+                    e
+            );
+            throw e;
+        }
     }
 
-    // 메시지 삭제
     @Override
     public void delete(UUID id) {
-        Message message = findMessageById(id);
+        log.info("메시지 삭제를 시작합니다. messageId={}", id);
 
+        Message message = findMessageById(id);
         List<UUID> attachmentIds = message.getAttachmentIds();
 
-        if (attachmentIds != null && !attachmentIds.isEmpty()) {
-            for (UUID attachmentId : attachmentIds) {
-                if (attachmentId != null) {
+        try {
+            log.debug(
+                    "메시지 첨부파일 삭제를 준비합니다. messageId={}, attachmentCount={}",
+                    id,
+                    attachmentIds == null ? 0 : attachmentIds.size()
+            );
+
+            if (attachmentIds != null && !attachmentIds.isEmpty()) {
+                for (UUID attachmentId : attachmentIds) {
+                    if (attachmentId == null) {
+                        continue;
+                    }
+
+                    log.debug(
+                            "메시지 첨부파일을 삭제합니다. messageId={}, attachmentId={}",
+                            id,
+                            attachmentId
+                    );
+
                     binaryContentService.delete(attachmentId);
                 }
             }
-        }
 
-        messageRepository.deleteById(id);
+            messageRepository.deleteById(id);
+
+            log.info(
+                    "메시지 삭제가 완료되었습니다. messageId={}, deletedAttachmentCount={}",
+                    id,
+                    attachmentIds == null ? 0 : attachmentIds.size()
+            );
+
+        } catch (RuntimeException e) {
+            log.error(
+                    "메시지 삭제 중 오류가 발생했습니다. messageId={}",
+                    id,
+                    e
+            );
+            throw e;
+        }
     }
 
     private Message findMessageById(UUID id) {
         if (id == null) {
-            throw new IllegalArgumentException("메시지 id는 필수입니다.");
+            log.warn("메시지 조회에 실패했습니다. messageId가 null입니다.");
+            throw new InvalidMessageException("메시지 id는 필수입니다.");
         }
 
         return messageRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "메시지를 찾을 수 없습니다. id=" + id
-                ));
+                .orElseThrow(() -> {
+                    log.warn(
+                            "메시지를 찾을 수 없습니다. messageId={}",
+                            id
+                    );
+
+                    return new MessageNotFoundException(id);
+                });
     }
 
     private void validateChannelId(UUID channelId) {
         if (channelId == null) {
-            throw new IllegalArgumentException("메시지를 조회할 채널 id는 필수입니다.");
+            log.warn("메시지 조회에 실패했습니다. channelId가 null입니다.");
+            throw new InvalidMessageException(
+                    "메시지를 조회할 채널 id는 필수입니다."
+            );
         }
 
         if (!channelRepository.existsById(channelId)) {
-            throw new IllegalArgumentException("메시지를 조회할 채널을 찾을 수 없습니다. channelId=" + channelId);
+            log.warn(
+                    "메시지를 조회할 채널을 찾을 수 없습니다. channelId={}",
+                    channelId
+            );
+
+            throw new ChannelNotFoundException(channelId);
         }
     }
 
     private void validateContent(String content) {
         if (content == null || content.isBlank()) {
-            throw new IllegalArgumentException("메시지 내용은 비어 있을 수 없습니다.");
+            log.warn("메시지 내용 검증에 실패했습니다. 내용이 비어 있습니다.");
+            throw new InvalidMessageException(
+                    "메시지 내용은 비어 있을 수 없습니다."
+            );
         }
     }
 
     private void validateAttachment(BinaryContentCreateRequest request) {
-        if (request.getFileName() == null || request.getFileName().isBlank()) {
-            throw new IllegalArgumentException("첨부파일 이름은 비어 있을 수 없습니다.");
+        if (request.getFileName() == null
+                || request.getFileName().isBlank()) {
+
+            log.warn("첨부파일 검증에 실패했습니다. 파일 이름이 비어 있습니다.");
+
+            throw new InvalidMessageException(
+                    "첨부파일 이름은 비어 있을 수 없습니다."
+            );
         }
 
-        if (request.getBytes() == null || request.getBytes().length == 0) {
-            throw new IllegalArgumentException("첨부파일 데이터는 비어 있을 수 없습니다.");
+        if (request.getBytes() == null
+                || request.getBytes().length == 0) {
+
+            log.warn(
+                    "첨부파일 검증에 실패했습니다. 파일 데이터가 비어 있습니다. fileName={}",
+                    request.getFileName()
+            );
+
+            throw new InvalidMessageException(
+                    "첨부파일 데이터는 비어 있을 수 없습니다."
+            );
         }
     }
 
-    /*
-     * 메시지 목록 DTO 변환
-     *
-     * 작성자 id, 첨부파일 id, 프로필 id를 먼저 모아서 findAllById로 한 번에 조회한다.
-     */
     private List<MessageResponse> toResponses(List<Message> messages) {
         List<MessageResponse> responses = new ArrayList<>();
 
@@ -268,86 +452,20 @@ public class BasicMessageService implements MessageService {
             return responses;
         }
 
-        Set<UUID> authorIds = new HashSet<>();
-        Set<UUID> attachmentIds = new HashSet<>();
-
         for (Message message : messages) {
-            if (message.getAuthorId() != null) {
-                authorIds.add(message.getAuthorId());
-            }
-
-            if (message.getAttachmentIds() != null) {
-                attachmentIds.addAll(message.getAttachmentIds());
-            }
-        }
-
-        Map<UUID, User> authorMap = new HashMap<>();
-
-        for (User user : userRepository.findAllById(authorIds)) {
-            authorMap.put(user.getId(), user);
-        }
-
-        Set<UUID> binaryContentIds = new HashSet<>(attachmentIds);
-
-        for (User author : authorMap.values()) {
-            if (author.getProfileId() != null) {
-                binaryContentIds.add(author.getProfileId());
-            }
-        }
-
-        Map<UUID, BinaryContent> binaryContentMap = new HashMap<>();
-
-        for (BinaryContent binaryContent : binaryContentRepository.findAllById(binaryContentIds)) {
-            binaryContentMap.put(binaryContent.getId(), binaryContent);
-        }
-
-        for (Message message : messages) {
-            responses.add(toResponse(message, authorMap, binaryContentMap));
+            responses.add(toResponse(message));
         }
 
         return responses;
     }
 
-    private MessageResponse toResponse(
-            Message message,
-            Map<UUID, User> authorMap,
-            Map<UUID, BinaryContent> binaryContentMap
-    ) {
-        List<UUID> attachmentIds = new ArrayList<>();
-
-        if (message.getAttachmentIds() != null) {
-            attachmentIds.addAll(message.getAttachmentIds());
-        }
-
-        User author = authorMap.get(message.getAuthorId());
-        UserResponse authorResponse = toAuthorResponse(author, binaryContentMap);
-
-        List<BinaryContentResponse> attachments =
-                toAttachmentResponses(attachmentIds, binaryContentMap);
-
-        return new MessageResponse(
-                message.getId(),
-                message.getCreatedAt(),
-                message.getUpdatedAt(),
-                message.getContent(),
-                message.getAuthorId(),
-                authorResponse,
-                message.getChannelId(),
-                attachmentIds,
-                attachments
-        );
-    }
-
     private MessageResponse toResponse(Message message) {
-        List<UUID> attachmentIds = new ArrayList<>();
+        User author = message.getAuthor();
+        UserResponse authorResponse = toAuthorResponse(author);
 
-        if (message.getAttachmentIds() != null) {
-            attachmentIds.addAll(message.getAttachmentIds());
-        }
-
-        UserResponse authorResponse = toAuthorResponse(message.getAuthorId());
-
-        List<BinaryContentResponse> attachments = toAttachmentResponses(attachmentIds);
+        List<UUID> attachmentIds = message.getAttachmentIds();
+        List<BinaryContentResponse> attachments =
+                toAttachmentResponses(message.getAttachments());
 
         return new MessageResponse(
                 message.getId(),
@@ -362,128 +480,61 @@ public class BasicMessageService implements MessageService {
         );
     }
 
-    private List<BinaryContentResponse> toAttachmentResponses(List<UUID> attachmentIds) {
-        List<BinaryContentResponse> attachments = new ArrayList<>();
-
-        if (attachmentIds == null || attachmentIds.isEmpty()) {
-            return attachments;
+    private UserResponse toAuthorResponse(User author) {
+        if (author == null) {
+            return null;
         }
 
-        for (UUID attachmentId : attachmentIds) {
-            if (attachmentId == null) {
-                continue;
-            }
+        BinaryContentResponse profileResponse =
+                toBinaryContentResponse(author.getProfile());
 
-            binaryContentRepository.findById(attachmentId)
-                    .map(this::toBinaryContentResponse)
-                    .ifPresent(attachments::add);
-        }
-
-        return attachments;
+        return new UserResponse(
+                author.getId(),
+                author.getCreatedAt(),
+                author.getUpdatedAt(),
+                author.getUsername(),
+                author.getEmail(),
+                author.getProfileId(),
+                profileResponse,
+                false
+        );
     }
 
     private List<BinaryContentResponse> toAttachmentResponses(
-            List<UUID> attachmentIds,
-            Map<UUID, BinaryContent> binaryContentMap
+            List<BinaryContent> binaryContents
     ) {
         List<BinaryContentResponse> attachments = new ArrayList<>();
 
-        if (attachmentIds == null || attachmentIds.isEmpty()) {
+        if (binaryContents == null || binaryContents.isEmpty()) {
             return attachments;
         }
 
-        for (UUID attachmentId : attachmentIds) {
-            if (attachmentId == null) {
-                continue;
-            }
-
-            BinaryContent binaryContent = binaryContentMap.get(attachmentId);
-
+        for (BinaryContent binaryContent : binaryContents) {
             if (binaryContent != null) {
-                attachments.add(toBinaryContentResponse(binaryContent));
+                attachments.add(
+                        toBinaryContentResponse(binaryContent)
+                );
             }
         }
 
         return attachments;
     }
 
-    private BinaryContentResponse toBinaryContentResponse(BinaryContent binaryContent) {
-        String contentType = safeContentType(binaryContent.getContentType());
+    private BinaryContentResponse toBinaryContentResponse(
+            BinaryContent binaryContent
+    ) {
+        if (binaryContent == null) {
+            return null;
+        }
 
         return new BinaryContentResponse(
                 binaryContent.getId(),
                 binaryContent.getCreatedAt(),
                 binaryContent.getUpdatedAt(),
                 binaryContent.getFileName(),
-                contentType,
+                safeContentType(binaryContent.getContentType()),
                 binaryContent.getSize()
         );
-    }
-
-    private UserResponse toAuthorResponse(UUID authorId) {
-        if (authorId == null) {
-            return null;
-        }
-
-        User author = userRepository.findById(authorId)
-                .orElse(null);
-
-        if (author == null) {
-            return null;
-        }
-
-        BinaryContentResponse profileResponse = toProfileResponse(author.getProfileId());
-
-        return new UserResponse(
-                author.getId(),
-                author.getCreatedAt(),
-                author.getUpdatedAt(),
-                author.getUsername(),
-                author.getEmail(),
-                author.getProfileId(),
-                profileResponse,
-                false
-        );
-    }
-
-    private UserResponse toAuthorResponse(
-            User author,
-            Map<UUID, BinaryContent> binaryContentMap
-    ) {
-        if (author == null) {
-            return null;
-        }
-
-        BinaryContentResponse profileResponse = null;
-
-        if (author.getProfileId() != null) {
-            BinaryContent profile = binaryContentMap.get(author.getProfileId());
-
-            if (profile != null) {
-                profileResponse = toBinaryContentResponse(profile);
-            }
-        }
-
-        return new UserResponse(
-                author.getId(),
-                author.getCreatedAt(),
-                author.getUpdatedAt(),
-                author.getUsername(),
-                author.getEmail(),
-                author.getProfileId(),
-                profileResponse,
-                false
-        );
-    }
-
-    private BinaryContentResponse toProfileResponse(UUID profileId) {
-        if (profileId == null) {
-            return null;
-        }
-
-        return binaryContentRepository.findById(profileId)
-                .map(this::toBinaryContentResponse)
-                .orElse(null);
     }
 
     private String safeContentType(String contentType) {

@@ -90,15 +90,6 @@ public class MessageMultipartMapper {
         List<BinaryContentCreateRequest> attachmentRequests =
                 toBinaryContentCreateRequests(multipartFiles);
 
-        /*
-         * 파일만 보내는 경우 프론트가 content를 빈 문자열로 보낼 수 있다.
-         * 기존 Message 엔티티/서비스는 content blank를 허용하지 않으므로
-         * 첨부파일이 있으면 기본 문구를 넣어 400 오류를 방지한다.
-         */
-        if (isBlank(content) && !attachmentRequests.isEmpty()) {
-            content = "첨부파일";
-        }
-
         return new MessageCreateRequest(
                 content,
                 authorId,

@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.service.ChannelService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,21 +28,20 @@ public class ChannelController {
      */
     @PostMapping("/public")
     public ResponseEntity<ChannelResponse> createPublicChannel(
-            @RequestBody ChannelCreateRequest request
+            @Valid @RequestBody ChannelCreateRequest request
     ) {
-        if (request == null) {
-            throw new IllegalArgumentException("공개 채널 생성 요청은 비어 있을 수 없습니다.");
-        }
-
         ChannelCreateRequest fixedRequest = new ChannelCreateRequest(
                 ChannelType.PUBLIC,
                 request.getName(),
                 request.getDescription()
         );
 
-        ChannelResponse response = channelService.createPublicChannel(fixedRequest);
+        ChannelResponse response =
+                channelService.createPublicChannel(fixedRequest);
 
-        URI location = URI.create("/api/channels/" + response.getId());
+        URI location = URI.create(
+                "/api/channels/" + response.getId()
+        );
 
         return ResponseEntity
                 .created(location)
@@ -54,15 +54,14 @@ public class ChannelController {
      */
     @PostMapping("/private")
     public ResponseEntity<ChannelResponse> createPrivateChannel(
-            @RequestBody PrivateChannelCreateRequest request
+            @Valid @RequestBody PrivateChannelCreateRequest request
     ) {
-        if (request == null) {
-            throw new IllegalArgumentException("비공개 채널 생성 요청은 비어 있을 수 없습니다.");
-        }
+        ChannelResponse response =
+                channelService.createPrivateChannel(request);
 
-        ChannelResponse response = channelService.createPrivateChannel(request);
-
-        URI location = URI.create("/api/channels/" + response.getId());
+        URI location = URI.create(
+                "/api/channels/" + response.getId()
+        );
 
         return ResponseEntity
                 .created(location)
@@ -71,13 +70,13 @@ public class ChannelController {
 
     /*
      * 기존 테스트/Postman 호환용 단건 조회
-     * API 명세 v1.2에는 명시되어 있지 않지만 유지해도 괜찮음
      */
     @GetMapping("/{channelId}")
     public ResponseEntity<ChannelResponse> find(
             @PathVariable UUID channelId
     ) {
-        ChannelResponse response = channelService.find(channelId);
+        ChannelResponse response =
+                channelService.find(channelId);
 
         return ResponseEntity.ok(response);
     }
@@ -90,26 +89,23 @@ public class ChannelController {
     public ResponseEntity<List<ChannelResponse>> findAllByUserId(
             @RequestParam UUID userId
     ) {
-        List<ChannelResponse> responses = channelService.findAllByUserId(userId);
+        List<ChannelResponse> responses =
+                channelService.findAllByUserId(userId);
 
         return ResponseEntity.ok(responses);
     }
 
     /*
-     * 기존 호환용
+     * 기존 호환용 채널 수정
      *
-     * API 명세 v1.2 공식 수정 경로는 PATCH /api/channels/{channelId} 이지만,
-     * 기존 Postman 테스트에서 PATCH /api/channels 로 보낼 수도 있어서 유지
+     * PATCH /api/channels
      */
     @PatchMapping
     public ResponseEntity<ChannelResponse> update(
-            @RequestBody ChannelUpdateRequest request
+            @Valid @RequestBody ChannelUpdateRequest request
     ) {
-        if (request == null) {
-            throw new IllegalArgumentException("채널 수정 요청은 비어 있을 수 없습니다.");
-        }
-
-        ChannelResponse response = channelService.update(request);
+        ChannelResponse response =
+                channelService.update(request);
 
         return ResponseEntity.ok(response);
     }
@@ -127,20 +123,18 @@ public class ChannelController {
     @PatchMapping("/{channelId}")
     public ResponseEntity<ChannelResponse> updateByPathVariable(
             @PathVariable UUID channelId,
-            @RequestBody ChannelUpdateRequest request
+            @Valid @RequestBody ChannelUpdateRequest request
     ) {
-        if (request == null) {
-            throw new IllegalArgumentException("채널 수정 요청은 비어 있을 수 없습니다.");
-        }
+        ChannelUpdateRequest fixedRequest =
+                new ChannelUpdateRequest(
+                        channelId,
+                        ChannelType.PUBLIC,
+                        request.getName(),
+                        request.getDescription()
+                );
 
-        ChannelUpdateRequest fixedRequest = new ChannelUpdateRequest(
-                channelId,
-                ChannelType.PUBLIC,
-                request.getName(),
-                request.getDescription()
-        );
-
-        ChannelResponse response = channelService.update(fixedRequest);
+        ChannelResponse response =
+                channelService.update(fixedRequest);
 
         return ResponseEntity.ok(response);
     }

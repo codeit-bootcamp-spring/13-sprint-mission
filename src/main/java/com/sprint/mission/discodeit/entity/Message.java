@@ -1,12 +1,7 @@
 package com.sprint.mission.discodeit.entity;
 
 import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,38 +16,34 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Message extends BaseUpdatableEntity {
 
-    // 메시지 내용
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
-    // 메시지를 작성한 User의 id
-    @Column(name = "author_id", nullable = false)
-    private UUID authorId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "author_id", nullable = false)
+    private User author;
 
-    // 메시지가 작성된 Channel의 id
-    @Column(name = "channel_id", nullable = false)
-    private UUID channelId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "channel_id", nullable = false)
+    private Channel channel;
 
-    // 메시지에 첨부된 BinaryContent들의 id 목록
-    @ElementCollection
-    @CollectionTable(
+    @OneToMany
+    @JoinTable(
             name = "message_attachments",
-            joinColumns = @JoinColumn(name = "message_id")
+            joinColumns = @JoinColumn(name = "message_id"),
+            inverseJoinColumns = @JoinColumn(name = "attachment_id")
     )
-    @Column(name = "attachment_id", nullable = false)
-    private List<UUID> attachmentIds = new ArrayList<>();
+    private List<BinaryContent> attachments = new ArrayList<>();
 
-    // 생성자: 메시지 내용, 작성자 id, 채널 id를 받아 Message 객체 생성
-    public Message(String content, UUID authorId, UUID channelId) {
-        validate(content, authorId, channelId);
+    public Message(String content, User author, Channel channel) {
+        validate(content, author, channel);
 
         this.content = content;
-        this.authorId = authorId;
-        this.channelId = channelId;
-        this.attachmentIds = new ArrayList<>();
+        this.author = author;
+        this.channel = channel;
+        this.attachments = new ArrayList<>();
     }
 
-    // 메시지 내용을 수정하는 메서드
     public void update(String content) {
         validateContent(content);
 
@@ -60,30 +51,45 @@ public class Message extends BaseUpdatableEntity {
         markUpdated();
     }
 
-    // 메시지에 첨부파일 id를 추가하는 메서드
-    public void addAttachment(UUID binaryContentId) {
-        if (binaryContentId == null) {
-            throw new IllegalArgumentException("첨부파일 ID는 비어 있을 수 없습니다.");
+    public void addAttachment(BinaryContent binaryContent) {
+        if (binaryContent == null) {
+            throw new IllegalArgumentException("첨부파일은 비어 있을 수 없습니다.");
         }
 
-        this.attachmentIds.add(binaryContentId);
+        this.attachments.add(binaryContent);
         markUpdated();
     }
 
-    // 메시지 생성 시 필요한 값들을 검증하는 메서드
-    private void validate(String content, UUID authorId, UUID channelId) {
-        validateContent(content);
+    public UUID getAuthorId() {
+        return author == null ? null : author.getId();
+    }
 
-        if (authorId == null) {
-            throw new IllegalArgumentException("작성자 ID는 비어 있을 수 없습니다.");
+    public UUID getChannelId() {
+        return channel == null ? null : channel.getId();
+    }
+
+    public List<UUID> getAttachmentIds() {
+        if (attachments == null || attachments.isEmpty()) {
+            return List.of();
         }
 
-        if (channelId == null) {
-            throw new IllegalArgumentException("채널 ID는 비어 있을 수 없습니다.");
+        return attachments.stream()
+                .map(BinaryContent::getId)
+                .toList();
+    }
+
+    private void validate(String content, User author, Channel channel) {
+        validateContent(content);
+
+        if (author == null) {
+            throw new IllegalArgumentException("작성자는 비어 있을 수 없습니다.");
+        }
+
+        if (channel == null) {
+            throw new IllegalArgumentException("채널은 비어 있을 수 없습니다.");
         }
     }
 
-    // 메시지 내용이 null, 빈 문자열, 공백 문자열인지 검증하는 메서드
     private void validateContent(String content) {
         if (content == null || content.isBlank()) {
             throw new IllegalArgumentException("메시지 내용은 비어 있을 수 없습니다.");

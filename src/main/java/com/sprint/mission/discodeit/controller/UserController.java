@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.UserResponse;
 import com.sprint.mission.discodeit.dto.UserUpdateRequest;
 import com.sprint.mission.discodeit.mapper.UserMultipartMapper;
 import com.sprint.mission.discodeit.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +33,7 @@ public class UserController {
      */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UserResponse> create(
-            @RequestBody UserCreateRequest request
+            @Valid @RequestBody UserCreateRequest request
     ) {
         UserResponse response = userService.create(request);
 
@@ -51,8 +52,12 @@ public class UserController {
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserResponse> createWithMultipart(
-            @RequestPart("userCreateRequest") UserCreateRequest userCreateRequest,
-            @RequestPart(value = "profile", required = false) MultipartFile profile
+            @Valid
+            @RequestPart("userCreateRequest")
+            UserCreateRequest userCreateRequest,
+
+            @RequestPart(value = "profile", required = false)
+            MultipartFile profile
     ) throws IOException {
         UserCreateRequest request = userMultipartMapper.toCreateRequest(
                 userCreateRequest,
@@ -66,9 +71,6 @@ public class UserController {
 
     /*
      * 기존/프론트 호환용 사용자 단건 조회
-     *
-     * API 명세 v1.2에는 GET /api/users/{userId}가 명시되어 있지는 않지만,
-     * 기존 테스트 호환을 위해 유지한다.
      */
     @GetMapping("/{userId}")
     public ResponseEntity<UserResponse> read(
@@ -106,14 +108,14 @@ public class UserController {
 
     /*
      * 기존 호환용 JSON 사용자 수정
-     *
-     * API 명세 v1.2 공식 요청은 multipart/form-data 이지만,
-     * 기존 Postman 테스트나 JSON 테스트 호환을 위해 유지한다.
      */
-    @PatchMapping(value = "/{userId}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PatchMapping(
+            value = "/{userId}",
+            consumes = MediaType.APPLICATION_JSON_VALUE
+    )
     public ResponseEntity<UserResponse> update(
             @PathVariable UUID userId,
-            @RequestBody UserUpdateRequest request
+            @Valid @RequestBody UserUpdateRequest request
     ) {
         UserUpdateRequest fixedRequest = new UserUpdateRequest(
                 userId,
@@ -131,19 +133,20 @@ public class UserController {
 
     /*
      * API 명세 v1.2 기준 사용자 수정
-     *
-     * PATCH /api/users/{userId}
-     * Content-Type: multipart/form-data
-     *
-     * parts:
-     * - userUpdateRequest
-     * - profile
      */
-    @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PatchMapping(
+            value = "/{userId}",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public ResponseEntity<UserResponse> updateWithMultipart(
             @PathVariable UUID userId,
-            @RequestPart("userUpdateRequest") UserUpdateRequest userUpdateRequest,
-            @RequestPart(value = "profile", required = false) MultipartFile profile
+
+            @Valid
+            @RequestPart("userUpdateRequest")
+            UserUpdateRequest userUpdateRequest,
+
+            @RequestPart(value = "profile", required = false)
+            MultipartFile profile
     ) throws IOException {
         UserUpdateRequest request = userMultipartMapper.toUpdateRequest(
                 userId,

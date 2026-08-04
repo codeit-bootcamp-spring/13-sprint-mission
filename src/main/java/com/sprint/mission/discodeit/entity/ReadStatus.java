@@ -1,9 +1,12 @@
 package com.sprint.mission.discodeit.entity;
 
 import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Column;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -26,36 +29,33 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ReadStatus extends BaseUpdatableEntity {
 
-    // 어떤 사용자의 읽음 상태인지 참조하기 위한 User의 id
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    // 읽음 상태를 가진 사용자
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    // 어떤 채널에 대한 읽음 상태인지 참조하기 위한 Channel의 id
-    @Column(name = "channel_id", nullable = false)
-    private UUID channelId;
+    // 읽음 상태가 적용되는 채널
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "channel_id", nullable = false)
+    private Channel channel;
 
     // 해당 사용자가 해당 채널을 마지막으로 읽은 시간
     @Column(name = "last_read_at", nullable = false)
     private Instant lastReadAt;
 
-    // 생성자: 사용자 id와 채널 id를 받아 ReadStatus 객체를 생성
-    public ReadStatus(UUID userId, UUID channelId) {
-        validate(userId, channelId);
+    public ReadStatus(User user, Channel channel) {
+        validate(user, channel);
 
-        this.userId = userId;
-        this.channelId = channelId;
+        this.user = user;
+        this.channel = channel;
         this.lastReadAt = Instant.now();
     }
 
-    // 마지막 읽은 시간을 현재 시간으로 갱신하는 메서드
     public void updateLastReadAt() {
-        Instant now = Instant.now();
-
-        this.lastReadAt = now;
+        this.lastReadAt = Instant.now();
         markUpdated();
     }
 
-    // 필요하면 특정 시간으로 갱신할 때 사용
     public void updateLastReadAt(Instant lastReadAt) {
         if (lastReadAt == null) {
             throw new IllegalArgumentException("마지막 읽은 시간은 비어 있을 수 없습니다.");
@@ -65,13 +65,21 @@ public class ReadStatus extends BaseUpdatableEntity {
         markUpdated();
     }
 
-    private void validate(UUID userId, UUID channelId) {
-        if (userId == null) {
-            throw new IllegalArgumentException("사용자 ID는 비어 있을 수 없습니다.");
+    public UUID getUserId() {
+        return user == null ? null : user.getId();
+    }
+
+    public UUID getChannelId() {
+        return channel == null ? null : channel.getId();
+    }
+
+    private void validate(User user, Channel channel) {
+        if (user == null) {
+            throw new IllegalArgumentException("사용자는 비어 있을 수 없습니다.");
         }
 
-        if (channelId == null) {
-            throw new IllegalArgumentException("채널 ID는 비어 있을 수 없습니다.");
+        if (channel == null) {
+            throw new IllegalArgumentException("채널은 비어 있을 수 없습니다.");
         }
     }
 }

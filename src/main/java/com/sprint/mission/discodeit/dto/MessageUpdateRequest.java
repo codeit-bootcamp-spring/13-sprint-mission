@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.dto;
 
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -14,9 +16,17 @@ public class MessageUpdateRequest {
     private UUID id;
 
     // 기존 프론트/기존 코드 호환용
+    @Size(
+            max = 1000,
+            message = "메시지 내용은 1000자 이하여야 합니다."
+    )
     private String content;
 
     // API 명세 v1.2 기준 필드명
+    @Size(
+            max = 1000,
+            message = "새 메시지 내용은 1000자 이하여야 합니다."
+    )
     private String newContent;
 
     public MessageUpdateRequest(UUID id, String content) {
@@ -36,5 +46,11 @@ public class MessageUpdateRequest {
         }
 
         return content;
+    }
+
+    @AssertTrue(message = "수정할 메시지 내용은 필수입니다.")
+    public boolean isContentProvided() {
+        return (newContent != null && !newContent.isBlank())
+                || (content != null && !content.isBlank());
     }
 }

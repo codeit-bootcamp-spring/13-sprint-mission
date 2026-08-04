@@ -6,6 +6,9 @@ import com.sprint.mission.discodeit.dto.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.mapper.MessageMultipartMapper;
 import com.sprint.mission.discodeit.service.MessageService;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Valid;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,11 +29,12 @@ public class MessageController {
 
     private final MessageService messageService;
     private final MessageMultipartMapper messageMultipartMapper;
+    private final Validator validator;
 
     // 메시지 생성 - JSON 요청 처리
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<MessageResponse> create(
-            @RequestBody MessageCreateRequest request
+            @Valid @RequestBody MessageCreateRequest request
     ) {
         MessageResponse response = messageService.create(request);
 
@@ -42,12 +46,20 @@ public class MessageController {
     public ResponseEntity<MessageResponse> createWithMultipart(
             @RequestParam MultiValueMap<String, String> formData,
 
-            @RequestPart(value = "messageCreateRequest", required = false) String messageCreateRequestJson,
-            @RequestPart(value = "request", required = false) String requestJson,
-            @RequestPart(value = "messageRequest", required = false) String messageRequestJson,
+            @RequestPart(value = "messageCreateRequest", required = false)
+            String messageCreateRequestJson,
 
-            @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments,
-            @RequestPart(value = "files", required = false) List<MultipartFile> files
+            @RequestPart(value = "request", required = false)
+            String requestJson,
+
+            @RequestPart(value = "messageRequest", required = false)
+            String messageRequestJson,
+
+            @RequestPart(value = "attachments", required = false)
+            List<MultipartFile> attachments,
+
+            @RequestPart(value = "files", required = false)
+            List<MultipartFile> files
     ) throws IOException {
         MessageCreateRequest request = messageMultipartMapper.toCreateRequest(
                 formData,
@@ -57,6 +69,12 @@ public class MessageController {
                 attachments,
                 files
         );
+
+        var violations = validator.validate(request);
+
+        if (!violations.isEmpty()) {
+            throw new ConstraintViolationException(violations);
+        }
 
         MessageResponse response = messageService.create(request);
 
@@ -113,7 +131,7 @@ public class MessageController {
     @PatchMapping("/{messageId}")
     public ResponseEntity<MessageResponse> update(
             @PathVariable UUID messageId,
-            @RequestBody MessageUpdateRequest request
+            @Valid @RequestBody MessageUpdateRequest request
     ) {
         MessageUpdateRequest fixedRequest = new MessageUpdateRequest(
                 messageId,

@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -19,6 +21,8 @@ public class ReadStatusUpdateRequest {
      * API 명세 v1.2 기준 필드명은 newLastReadAt
      * 기존 코드/프론트 호환을 위해 lastReadAt도 같이 허용
      */
+    @NotNull(message = "마지막으로 읽은 시각은 필수입니다.")
+    @PastOrPresent(message = "마지막으로 읽은 시각은 현재 또는 과거여야 합니다.")
     @JsonAlias({"newLastReadAt", "lastReadAt"})
     private Instant lastReadAt;
 

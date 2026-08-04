@@ -55,19 +55,26 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
     @Override
     public byte[] get(UUID id) {
         if (id == null) {
-            throw new IllegalArgumentException("조회할 바이너리 콘텐츠 id는 필수입니다.");
+            throw new IllegalArgumentException(
+                    "조회할 바이너리 콘텐츠 id는 필수입니다."
+            );
         }
 
         Path path = resolvePath(id);
 
         if (!Files.exists(path)) {
-            throw new IllegalArgumentException("바이너리 콘텐츠 파일을 찾을 수 없습니다. id=" + id);
+            throw new IllegalStateException(
+                    "바이너리 콘텐츠 파일을 찾을 수 없습니다. id=" + id
+            );
         }
 
         try {
             return Files.readAllBytes(path);
         } catch (IOException e) {
-            throw new RuntimeException("바이너리 콘텐츠 파일 조회 중 오류가 발생했습니다. id=" + id, e);
+            throw new RuntimeException(
+                    "바이너리 콘텐츠 파일 조회 중 오류가 발생했습니다. id=" + id,
+                    e
+            );
         }
     }
 

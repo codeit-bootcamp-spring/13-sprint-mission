@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -20,8 +22,8 @@ public class PrivateChannelCreateRequest {
      *   "participantIds": ["uuid1", "uuid2"]
      * }
      */
-    @JsonAlias({"participantUserIds", "participants", "userIds", "memberIds"})
-    private List<UUID> participantIds;
+    @NotEmpty(message = "PRIVATE 채널 참여자는 한 명 이상 필요합니다.")
+    private List<@NotNull(message = "참여자 ID는 null일 수 없습니다.") UUID> participantIds;
 
     public PrivateChannelCreateRequest(List<UUID> participantIds) {
         this.participantIds = participantIds;
