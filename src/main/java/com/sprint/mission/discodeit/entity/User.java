@@ -1,51 +1,69 @@
 package com.sprint.mission.discodeit.entity;
 
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.UUID;
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-public class User implements Serializable {
+@Getter
+@Entity
+@Table(name = "users")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class User extends BaseUpdatableEntity {
 
-    private static final long serialVersionUID = 1L;
-
-    private final UUID id;
-    private final Long createdAt;
-    private Long updatedAt;
-
+    @Column(name = "username", nullable = false, unique = true, length = 50)
     private String username;
+
+    @Column(name = "email", nullable = false, unique = true, length = 100)
     private String email;
 
-    public User(String username, String email) {
-        this.id = UUID.randomUUID();
-        this.createdAt = Instant.now().toEpochMilli();
+    @Column(name = "password", nullable = false, length = 60)
+    private String password;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", unique = true)
+    private BinaryContent profile;
+
+    @OneToOne(
+            mappedBy = "user",
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private UserStatus status;
+
+    public User(
+            String username,
+            String email,
+            String password,
+            BinaryContent profile
+    ) {
         this.username = username;
         this.email = email;
+        this.password = password;
+        this.profile = profile;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public Long getCreatedAt() {
-        return createdAt;
-    }
-
-    public Long getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void update(String username, String email) {
+    public void update(
+            String username,
+            String email,
+            String password,
+            BinaryContent profile
+    ) {
         this.username = username;
         this.email = email;
-        this.updatedAt = Instant.now().toEpochMilli();
+        this.password = password;
+        this.profile = profile;
+    }
+
+    public void updateStatus(UserStatus status) {
+        this.status = status;
     }
 }
