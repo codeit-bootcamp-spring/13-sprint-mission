@@ -3,12 +3,12 @@ package com.sprint.mission.discodeit.controller.docs;
 
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusDto;
-import com.sprint.mission.discodeit.dto.readstatus.ReadStatusResponse;
 import com.sprint.mission.discodeit.dto.readstatus.ReadStatusUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +24,7 @@ public interface ReadStatusControllerDocs {
             @ApiResponse(responseCode = "400", description = "잘못된 요청")
     })
     public ResponseEntity<ReadStatusDto> createReadStatus(
-            @RequestBody ReadStatusCreateRequest request);
+            @Valid @RequestBody ReadStatusCreateRequest request);
 
     @Operation(summary = "Message 읽음 상태 수정 API")
     @PatchMapping( "/{readStatusId}")
@@ -33,7 +33,7 @@ public interface ReadStatusControllerDocs {
             @ApiResponse(responseCode = "404", description = "존재하지 않음")
     })
     public ResponseEntity<ReadStatusDto> ReadStatusUpdate(
-            @PathVariable UUID readStatusId, @RequestBody ReadStatusUpdateRequest request);
+            @PathVariable UUID readStatusId, @Valid @RequestBody ReadStatusUpdateRequest request);
 
     @Operation(summary = "User Message 읽음 상태 목록 조회 API")
     @GetMapping()

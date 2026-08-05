@@ -7,6 +7,8 @@ import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -43,12 +45,14 @@ public class BasicUserService implements UserService {
 
         //userName 중복 검사
         if (userRepository.existsByUsername(command.username())){
-            throw new IllegalArgumentException("이미 사용중인 이름 입니다.");
+            log.warn("사용자 생성 실패 - 중복된 username: {}", command.username());
+            throw UserAlreadyExistsException.withName(command.username());
         }
 
         //email 중복 체크
         if (userRepository.existsByEmail(command.email())) {
-            throw new IllegalArgumentException("이미 사용중인 이메일 입니다.");
+            log.warn("사용자 생성 실패 - 중복된 email: {}", command.email());
+            throw UserAlreadyExistsException.withEmail(command.email());
         }
 
         //프로필 이미지 처리
@@ -73,12 +77,12 @@ public class BasicUserService implements UserService {
     @Override
     public UserDto findByUserId(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자 입니다."));
+                .orElseThrow(() -> UserNotFoundException.withId(userId));
 
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
                 .orElse(null);
 
-        log.info("유저 조회 - name: {}", user.getUsername());
+        log.debug("유저 조회 - name: {}", user.getUsername());
 
         return userMapper.toDto(user, userStatus);
     }
@@ -90,7 +94,7 @@ public class BasicUserService implements UserService {
         if (users.isEmpty()) {
             return  new ArrayList<>();
         }
-        log.info("전체 유저 조회 완료 - 총 {}명", users.size());
+        log.debug("전체 유저 조회 완료 - 총 {}명", users.size());
         return  users.stream()
                 .map(user -> {
                     UserStatus userStatus = userStatusRepository.findByUserId(user.getId())
@@ -103,7 +107,7 @@ public class BasicUserService implements UserService {
     @Override
     public UserDto updateUser(UUID userId, UserUpdateCommand command, BinaryContentCreateCommand profileRequest) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> UserNotFoundException.withId(userId));
 
         //프로필 이미지 선택적 처리
         if (profileRequest != null) {
@@ -119,14 +123,16 @@ public class BasicUserService implements UserService {
         }
         if (command.newUsername() != null) {
             if (userRepository.existsByUsername(command.newUsername())){
-                throw new IllegalArgumentException("이미 사용중인 이름입니다.");
+                log.warn("이름 변경 실패 - 중복된 username: {}", command.newUsername());
+                throw UserAlreadyExistsException.withName(command.newUsername());
             }
             user.updateUserName(command.newUsername());
         }
 
         if (command.newEmail() != null) {
             if (userRepository.existsByEmail(command.newEmail())) {
-                throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
+                log.warn("이메일 변경 실패 - 중복된 email: {}", command.newEmail());
+                throw UserAlreadyExistsException.withEmail(command.newEmail());
             }
             user.updateUserEmail(command.newEmail());
         }
@@ -149,7 +155,7 @@ public class BasicUserService implements UserService {
     @Override
     public void deleteUser(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(()->new NoSuchElementException("존재하지 않는 사용자 입니다."));
+                .orElseThrow(()->UserNotFoundException.withId(userId));
         if (user.getProfile() != null){
             binaryContentRepository.delete(user.getProfile());
         }

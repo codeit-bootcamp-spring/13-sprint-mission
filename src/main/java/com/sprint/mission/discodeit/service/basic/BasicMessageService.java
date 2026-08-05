@@ -9,6 +9,9 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -46,9 +49,9 @@ public class BasicMessageService implements MessageService {
     @Override
     public MessageDto create(MessageCreateCommand command, List<BinaryContentCreateCommand> attachments) {
         Channel channel = channelRepository.findById(command.channelId())
-                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널입니다."));
+                .orElseThrow(() -> ChannelNotFoundException.withId(command.channelId()));
         User user = userRepository.findById(command.authorId())
-                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> UserNotFoundException.withId(command.authorId()));
 
         List<BinaryContent> attachmentIds = new ArrayList<>();
         if (attachments != null && ! attachments.isEmpty()) {
@@ -64,9 +67,8 @@ public class BasicMessageService implements MessageService {
             });
         }
         Message message = new Message(command.content(), channel, user, attachmentIds);
-        log.info("메시지 생성 완료 - 채널: {}, 작성자: {} 메시지: {}",
-                command.channelId(), command.authorId(), command.content());
         messageRepository.save(message);
+        log.info("메시지 생성 완료 - messageId: {}, 채널Id: {}, 작성자Id: {}",message.getId(), command.channelId(), command.authorId());
         return messageMapper.toDto(message);
     }
 
@@ -75,8 +77,8 @@ public class BasicMessageService implements MessageService {
     @Override
     public MessageDto findById(UUID messageId) {
         Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 메시지 입니다."));
-
+                .orElseThrow(() -> MessageNotFoundException.withId(messageId));
+        log.debug("메시지 조회 완료 - messageId: {}", message.getId());
         return messageMapper.toDto(message);
     }
 
@@ -85,12 +87,12 @@ public class BasicMessageService implements MessageService {
     @Transactional(readOnly = true)
     public PageResponse<MessageDto> findAllByChannelIdWithCursor(UUID channelId, Instant cursor, Pageable pageable) {
         channelRepository.findById(channelId)
-                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 채널입니다."));
+                .orElseThrow(() -> ChannelNotFoundException.withId(channelId));
         Slice<Message> messages = (cursor == null)
                 ? messageRepository.findAllByChannelIdOrderByCreatedAtDesc(channelId, pageable)
                 : messageRepository.findAllByChannelIdAndCreatedAtLessThanOrderByCreatedAtDesc(channelId, cursor, pageable);
         Slice<MessageDto> messageDtos = messages.map(messageMapper::toDto);
-        log.info("채널id: {}, 전체 메시지 조회 완료: {}개", channelId, messages.getNumberOfElements());
+        log.debug("메시지 조회 완료 - channelId: {}", channelId);
         return pageResponseMapper.toDto(messageDtos, MessageDto::createdAt);
     }
 
@@ -100,10 +102,10 @@ public class BasicMessageService implements MessageService {
     @Override
     public MessageDto updateMessage(UUID messageId, MessageUpdateCommand command) {
         Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 메시지 입니다."));
+                .orElseThrow(() -> MessageNotFoundException.withId(messageId));
         message.updateContent(command.content());
         messageRepository.save(message);
-        log.info("메시지 수정 완료 - 메시지: {}", message.getContent());
+        log.info("메시지 수정 완료 - messageId: {}", message.getId());
         return messageMapper.toDto(message);
     }
 
@@ -114,9 +116,9 @@ public class BasicMessageService implements MessageService {
     @Override
     public void delete(UUID messageId) {
         Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new NoSuchElementException("존재하지 않는 메시지 입니다."));
+                .orElseThrow(() -> MessageNotFoundException.withId(messageId));
         messageRepository.deleteById(messageId);
 
-        log.info("메시지 삭제완료 - 메시지id: {}, 메시지: {}", message.getId(), message.getContent());
+        log.info("메시지 삭제완료 - messageId: {}", message.getId());
     }
 }
