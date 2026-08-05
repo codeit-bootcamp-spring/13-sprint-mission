@@ -52,6 +52,14 @@ services:
       - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
       - SPRING_DATASOURCE_USER=${SPRING_DATASOURCE_USER}
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      # storage type config
+      - STORAGE_TYPE=${STORAGE_TYPE}
+      - STORAGE_LOCAL_ROOT_PATH=${STORAGE_LOCAL_ROOT_PATH}
+      # s3 config
+      - S3_BUCKET=${S3_BUCKET}
+      - S3_REGION=${S3_REGION}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_PRESIGN_TIME=${S3_PRESIGN_TIME}
 
     depends_on:
       db:
@@ -60,7 +68,7 @@ services:
     # set bin data volume
     # todo - change to variable with env
     volumes:
-      - app:/app/data
+      - app:${STORAGE_LOCAL_ROOT_PATH}
 
     # same network with db
     networks:

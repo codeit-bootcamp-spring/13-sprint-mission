@@ -17,14 +17,20 @@ server:
 
 # Custom setting
 discodeit:
-#  repository:
-#    type: jcf
-#    path: "/home/latte/test"
   storage:
-    type: "local"
-    local:
-      root-path: "data"
+    type: ${STORAGE_TYPE:local}
 
+    # root path for type "local"
+    local:
+      root-path: ${STORAGE_LOCAL_ROOT_PATH:.discodeit/storage}
+
+    # aws config for type "s3"
+    aws:
+      s3:
+        bucket: ${S3_BUCKET}
+        region: ${S3_REGION}
+        endpoint: ${S3_ENDPOINT}
+        presign-time: ${S3_PRESIGN_TIME:5}
 
 
 
