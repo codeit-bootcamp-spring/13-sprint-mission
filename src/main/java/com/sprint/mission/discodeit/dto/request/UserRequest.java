@@ -1,13 +1,33 @@
 package com.sprint.mission.discodeit.dto.request;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.groups.Default;
+
 public record UserRequest(
+        @NotBlank(
+                groups = Create.class,
+                message = "사용자 이름은 필수입니다."
+        )
+        @Size(min = 2, max = 50, message = "사용자 이름은 2자 이상 50자 이하여야 합니다.")
         String username,
+
+        @NotBlank(
+                groups = Create.class,
+                message = "이메일은 필수입니다."
+        )
+        @Email(message = "올바른 이메일 형식이어야 합니다.")
         String email,
-        String password,
-        String profileImageName
-) {}
-/*
-프로필 이미지, username, email, 패스워드, 대체할 프로필 이미지
-유저를 등록하기 위해 필요한 파라미터, 프로필 이미지를 등록하기 위해 필요한 파라미터, 수정 대상 객체의 id 파라미터(수정할 사용자의 id), 수정할 값 파라미터(이름, 이메일, 패스워드, 프로필이미지이름)
-관련된 도메인도 같이 삭제: BinaryContent(프로필), UserStatus
- */
+
+        @NotBlank(
+                groups = Create.class,
+                message = "비밀번호는 필수입니다."
+        )
+        @Size(min = 8, max = 100, message = "비밀번호는 8자 이상 100자 이하여야 합니다.")
+        String password
+) {
+
+    public interface Create extends Default {
+    }
+}

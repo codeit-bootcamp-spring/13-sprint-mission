@@ -7,18 +7,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "read_statuses")
 public class ReadStatus extends BaseUpdatableEntity {
-
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
-
-    private UUID channelId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -28,12 +22,12 @@ public class ReadStatus extends BaseUpdatableEntity {
     @JoinColumn(name = "channel_id", nullable = false)
     private Channel channel;
 
+    @Column(name = "last_read_at", nullable = false)
     private Instant lastReadAt;
 
-    public ReadStatus(Channel channel, UUID userId) {
-        this.userId = userId;
-        this.channelId = channelId;
+    public ReadStatus(Channel channel, User user) {
         this.channel = channel;
+        this.user = user;
         this.lastReadAt = Instant.now();
     }
 

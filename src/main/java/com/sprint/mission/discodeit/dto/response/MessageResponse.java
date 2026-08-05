@@ -9,8 +9,9 @@ public record MessageResponse(
         UUID channelId,
         UUID senderId,
         String content,
-        List<UUID> binaryContentIds,
+        List<BinaryContentResponse> attachments,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        UserResponse author
 ) {
 }
