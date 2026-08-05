@@ -3,6 +3,14 @@
 #컴퓨터 자체가 아니라 도커 컨테이너에 다운하는 이유-> 나중에 갈아 끼우기 편해서.
 FROM amazoncorretto:17
 
+# amazoncorretto 베이스 이미지엔 findutils(xargs)가 없어서 gradlew 실행 전 설치
+#yum: 아마존 리눅스에서 사용하는 프로그램 페키지 설치 도구
+#findutils: 리눅스에서 파일, 텍스트를 찾아 처리하는 유틸리티 패키지
+#-y y/n 선택지에 무조건 y 선택
+#&&: 앞에 명령어 성공시 뒤에 먕령어 실행
+#clean all: 임시 설치 파일 식제
+RUN yum install -y findutils && yum clean all
+
 # 컨테이너 내부 작업 디렉토리 설정 (이후 명령어들은 이 경로 기준으로 실행됨)
 #AWS 컴퓨터 안에 독커 컨테이너 안에 app폴더를 만들고 이후 명령어들은 이 폴더 내부에 적용 된다.
 WORKDIR /app
