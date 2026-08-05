@@ -16,6 +16,12 @@ spring:
     init:
       mode: never
 
+discodeit:
+  storage:
+    type: local
+    local:
+      root-path: ${java.io.tmpdir}/discodeit-test-storage
+
 logging:
   level:
     root: info
