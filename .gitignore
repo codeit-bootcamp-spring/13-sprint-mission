@@ -46,8 +46,8 @@ out/
 .DS_Store
 
 # Local application data
-.discodeit/
-storage/
+/.discodeit/
+/storage/
 
 # Application logs
 .logs/
