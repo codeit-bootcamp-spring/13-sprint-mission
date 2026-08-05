@@ -7,10 +7,7 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
-  boot:
-    admin:
-      client:
-        url: ${SPRING_BOOT_ADMIN_CLIENT_URL}
+
   jpa:
     hibernate:
       ddl-auto: none
@@ -22,3 +19,10 @@ spring:
 logging:
   level:
     com.sprint.mission.discodeit: info
+    org.hibernate.SQL: info
+    org.hibernate.orm.jdbc.bind: off
+
+management:
+  info:
+    env:
+      enabled: false

@@ -61,7 +61,7 @@ class UserControllerTest {
         UserCreateRequest request = new UserCreateRequest(
                 "tester",
                 "tester@example.com",
-                "password",
+                "Password1!",
                 null,
                 null,
                 null
@@ -150,7 +150,7 @@ class UserControllerTest {
         UserUpdateRequest request = new UserUpdateRequest(
                 "updated",
                 "updated@example.com",
-                "newPassword",
+                "NewPassword1!",
                 null,
                 null,
                 null

@@ -3,11 +3,6 @@ spring:
     name: discodeit
   profiles:
     active: dev
-  boot:
-    admin:
-      client:
-        instance:
-          name: discodeit
   servlet:
     multipart:
       max-file-size: 10MB
@@ -16,8 +11,6 @@ spring:
 logging:
   level:
     root: info
-    org.hibernate.SQL: debug
-    org.hibernate.orm.jdbc.bind: trace
 
 discodeit:
   storage:
@@ -32,7 +25,7 @@ management:
         include: health,info,metrics,loggers
   info:
     env:
-      enabled: true
+      enabled: false
 
 info:
   app:
