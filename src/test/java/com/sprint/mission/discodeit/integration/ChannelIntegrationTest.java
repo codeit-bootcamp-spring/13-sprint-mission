@@ -46,7 +46,7 @@ public class ChannelIntegrationTest {
 
         @Test
         @DisplayName("정상적인 요청이면 공개 채널을 생성하고 201을 반환")
-        void 공개_채널_생성_성공() throws Exception {
+        void create_success() throws Exception {
             // given
             PublicChannelCreateRequest request = new PublicChannelCreateRequest(
                     "공지",
@@ -78,7 +78,7 @@ public class ChannelIntegrationTest {
 
         @Test
         @DisplayName("채널 이름이 비어 있으면 400을 반환")
-        void 공개_채널_생성_실패_유효성_검증() throws Exception {
+        void create_fail() throws Exception {
             // given
             PublicChannelCreateRequest request = new PublicChannelCreateRequest(
                     "",
@@ -105,7 +105,7 @@ public class ChannelIntegrationTest {
 
         @Test
         @DisplayName("존재하는 공개 채널을 수정하고 200을 반환")
-        void 공개_채널_수정_성공() throws Exception {
+        void update_success() throws Exception {
             // given
             Channel savedChannel = savePublicChannel(
                     "기존 공지",
@@ -141,7 +141,7 @@ public class ChannelIntegrationTest {
 
         @Test
         @DisplayName("존재하지 않는 채널을 수정하면 404를 반환")
-        void 공개_채널_수정_실패_채널_없음() throws Exception {
+        void update_fail() throws Exception {
             // given
             UUID unknownChannelId = UUID.randomUUID();
 
@@ -172,7 +172,7 @@ public class ChannelIntegrationTest {
 
         @Test
         @DisplayName("존재하는 채널을 삭제하고 204를 반환")
-        void 채널_삭제_성공() throws Exception {
+        void delete_success() throws Exception {
             // given
             Channel savedChannel = savePublicChannel(
                     "공지",
@@ -191,7 +191,7 @@ public class ChannelIntegrationTest {
 
         @Test
         @DisplayName("존재하지 않는 채널을 삭제하면 404를 반환")
-        void 채널_삭제_실패_채널_없음() throws Exception {
+        void delete_fail() throws Exception {
             // given
             UUID unknownChannelId = UUID.randomUUID();
 

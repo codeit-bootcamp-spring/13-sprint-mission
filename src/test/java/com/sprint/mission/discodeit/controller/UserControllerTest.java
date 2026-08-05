@@ -55,7 +55,7 @@ class UserControllerTest {
 
         @Test
         @DisplayName("올바른 요청이면 사용자를 생성하고 201을 반환")
-        void 사용자_생성_성공() throws Exception {
+        void create_success() throws Exception {
             // given
             UserCreateRequest request = new UserCreateRequest(
                     "user1",
@@ -98,7 +98,7 @@ class UserControllerTest {
 
         @Test
         @DisplayName("이메일 형식이 잘못되면 400을 반환")
-        void 사용자_생성_실패_유효성_검증() throws Exception {
+        void create_fail() throws Exception {
             // given
             UserCreateRequest request = new UserCreateRequest(
                     "user1",
@@ -126,7 +126,7 @@ class UserControllerTest {
 
         @Test
         @DisplayName("전체 사용자 목록과 200을 반환")
-        void 전체_사용자_조회_성공() throws Exception {
+        void get_success() throws Exception {
             // given
             UserDto firstUser = new UserDto(
                     UUID.randomUUID(),
@@ -162,7 +162,7 @@ class UserControllerTest {
 
         @Test
         @DisplayName("사용자가 없으면 빈 배열을 반환")
-        void 전체_사용자_조회_결과_없음() throws Exception {
+        void get_fail() throws Exception {
             // given
             given(userService.getUsers())
                     .willReturn(List.of());
@@ -183,7 +183,7 @@ class UserControllerTest {
 
         @Test
         @DisplayName("올바른 요청이면 사용자 정보를 수정하고 200을 반환")
-        void 사용자_수정_성공() throws Exception {
+        void update_success() throws Exception {
             // given
             UserUpdateRequest request = new UserUpdateRequest(
                     "new-user",
@@ -237,7 +237,7 @@ class UserControllerTest {
 
         @Test
         @DisplayName("수정할 사용자가 없으면 404를 반환")
-        void 사용자_수정_실패_사용자_없음() throws Exception {
+        void update_fail() throws Exception {
             // given
             UserUpdateRequest request = new UserUpdateRequest(
                     "new-user",
@@ -285,7 +285,7 @@ class UserControllerTest {
 
         @Test
         @DisplayName("사용자 온라인 상태를 수정하고 200을 반환")
-        void 사용자_상태_수정_성공() throws Exception {
+        void update_success() throws Exception {
             // given
             UserStatusUpdateRequest request = new UserStatusUpdateRequest(Instant.now());
 
@@ -324,7 +324,7 @@ class UserControllerTest {
 
         @Test
         @DisplayName("사용자가 존재하면 삭제하고 204를 반환")
-        void 사용자_삭제_성공() throws Exception {
+        void delete_success() throws Exception {
             // given
             // void 메서드는 별도 given 설정이 없어도 됨
 
@@ -337,7 +337,7 @@ class UserControllerTest {
 
         @Test
         @DisplayName("삭제할 사용자가 없으면 404를 반환한다")
-        void 사용자_삭제_실패_사용자_없음() throws Exception {
+        void delete_fail() throws Exception {
             // given
             willThrow(new UserNotFoundException(userId))
                     .given(userService).deleteUser(userId);

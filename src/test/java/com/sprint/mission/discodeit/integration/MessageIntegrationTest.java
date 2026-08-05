@@ -58,7 +58,7 @@ public class MessageIntegrationTest {
 
         @Test
         @DisplayName("정상적인 요청이면 메시지를 생성하고 201을 반환")
-        void 메시지_생성_성공() throws Exception {
+        void create_success() throws Exception {
             // given
             User author = saveUser(
                     "user1",
@@ -105,7 +105,7 @@ public class MessageIntegrationTest {
 
         @Test
         @DisplayName("존재하지 않는 채널에 메시지를 생성하면 404를 반환")
-        void 메시지_생성_실패_채널_없음() throws Exception {
+        void create_fail() throws Exception {
             // given
             User author = saveUser(
                     "user1",
@@ -143,7 +143,7 @@ public class MessageIntegrationTest {
 
         @Test
         @DisplayName("존재하는 메시지의 내용을 수정하고 200을 반환")
-        void 메시지_수정_성공() throws Exception {
+        void update_success() throws Exception {
             // given
             User author = saveUser(
                     "user1",
@@ -187,7 +187,7 @@ public class MessageIntegrationTest {
 
         @Test
         @DisplayName("존재하지 않는 메시지를 수정하면 404를 반환")
-        void 메시지_수정_실패_메시지_없음() throws Exception {
+        void update_fail() throws Exception {
             // given
             UUID unknownMessageId = UUID.randomUUID();
 
@@ -215,7 +215,7 @@ public class MessageIntegrationTest {
 
         @Test
         @DisplayName("존재하는 메시지를 삭제하고 204를 반환")
-        void 메시지_삭제_성공() throws Exception {
+        void delete_success() throws Exception {
             // given
             User author = saveUser(
                     "user1",
@@ -246,7 +246,7 @@ public class MessageIntegrationTest {
 
         @Test
         @DisplayName("존재하지 않는 메시지를 삭제하면 404를 반환")
-        void 메시지_삭제_실패_메시지_없음() throws Exception {
+        void delete_fail() throws Exception {
             // given
             UUID unknownMessageId = UUID.randomUUID();
 
@@ -267,7 +267,7 @@ public class MessageIntegrationTest {
 
         @Test
         @DisplayName("해당 채널의 메시지 목록을 반환")
-        void 메시지_목록_조회_성공() throws Exception {
+        void get_success() throws Exception {
             // given
             User author = saveUser(
                     "user1",
@@ -335,7 +335,7 @@ public class MessageIntegrationTest {
 
         @Test
         @DisplayName("채널에 메시지가 없으면 빈 목록을 반환")
-        void 메시지_목록_조회_결과_없음() throws Exception {
+        void get_fail() throws Exception {
             // given
             Channel channel = savePublicChannel(
                     "공지",

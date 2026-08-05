@@ -53,7 +53,7 @@ class BasicBinaryContentServiceTest {
 
         @Test
         @DisplayName("파일 정보와 데이터를 저장하고 DTO를 반환한다")
-        void 생성_성공() throws IOException {
+        void create_success() throws IOException {
             // given
             byte[] bytes = "file-data".getBytes();
 
@@ -111,7 +111,7 @@ class BasicBinaryContentServiceTest {
 
         @Test
         @DisplayName("파일 데이터를 읽지 못하면 FileStorageException이 발생한다")
-        void 생성_실패_파일_읽기() throws IOException {
+        void create_fail() throws IOException {
             // given
             MultipartFile file = mock(MultipartFile.class);
 
@@ -138,7 +138,7 @@ class BasicBinaryContentServiceTest {
 
         @Test
         @DisplayName("BinaryContent가 존재하면 DTO로 반환한다")
-        void 조회_성공() {
+        void get_success() {
             // given
             UUID binaryContentId = UUID.randomUUID();
 
@@ -168,7 +168,7 @@ class BasicBinaryContentServiceTest {
 
         @Test
         @DisplayName("BinaryContent가 존재하지 않으면 예외가 발생한다")
-        void 조회_실패() {
+        void get_fail() {
             // given
             UUID binaryContentId = UUID.randomUUID();
 
@@ -187,7 +187,7 @@ class BasicBinaryContentServiceTest {
 
         @Test
         @DisplayName("ID 목록에 해당하는 BinaryContent를 DTO 목록으로 반환한다")
-        void 목록_조회_성공() {
+        void get_success() {
             // given
             UUID id1 = UUID.randomUUID();
             UUID id2 = UUID.randomUUID();
@@ -227,7 +227,7 @@ class BasicBinaryContentServiceTest {
 
         @Test
         @DisplayName("해당하는 BinaryContent가 없으면 빈 목록을 반환한다")
-        void 목록_조회_결과_없음() {
+        void get_fail() {
             // given
             List<UUID> ids = List.of(UUID.randomUUID());
 
@@ -250,7 +250,7 @@ class BasicBinaryContentServiceTest {
 
         @Test
         @DisplayName("BinaryContent가 존재하면 삭제한다")
-        void 삭제_성공() {
+        void delete_success() {
             // given
             UUID binaryContentId = UUID.randomUUID();
 
@@ -272,7 +272,7 @@ class BasicBinaryContentServiceTest {
 
         @Test
         @DisplayName("BinaryContent가 존재하지 않으면 예외가 발생한다")
-        void 삭제_실패() {
+        void delete_fail() {
             // given
             UUID binaryContentId = UUID.randomUUID();
 

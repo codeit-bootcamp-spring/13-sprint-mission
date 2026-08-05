@@ -54,7 +54,7 @@ class BasicUserStatusServiceTest {
 
         @Test
         @DisplayName("사용자가 존재하고 상태가 중복되지 않으면 생성한다")
-        void 생성_성공() {
+        void create_success() {
             // given
             UUID userId = UUID.randomUUID();
             UserStatusCreateRequest request =
@@ -98,7 +98,7 @@ class BasicUserStatusServiceTest {
 
         @Test
         @DisplayName("사용자가 존재하지 않으면 예외가 발생한다")
-        void 생성_실패_사용자_없음() {
+        void create_fail_no_user() {
             // given
             UUID userId = UUID.randomUUID();
             UserStatusCreateRequest request = new UserStatusCreateRequest(userId);
@@ -113,7 +113,7 @@ class BasicUserStatusServiceTest {
 
         @Test
         @DisplayName("이미 UserStatus가 존재하면 예외가 발생한다")
-        void 생성_실패_중복() {
+        void create_fail_duplicate() {
             // given
             UUID userId = UUID.randomUUID();
             UserStatusCreateRequest request = new UserStatusCreateRequest(userId);
@@ -141,7 +141,7 @@ class BasicUserStatusServiceTest {
 
         @Test
         @DisplayName("UserStatus가 존재하면 DTO로 반환한다")
-        void 조회_성공() {
+        void get_success() {
             // given
             UUID userStatusId = UUID.randomUUID();
 
@@ -170,7 +170,7 @@ class BasicUserStatusServiceTest {
 
         @Test
         @DisplayName("UserStatus가 존재하지 않으면 예외가 발생한다")
-        void 조회_실패() {
+        void get_fail() {
             // given
             UUID userStatusId = UUID.randomUUID();
 
@@ -189,7 +189,7 @@ class BasicUserStatusServiceTest {
 
         @Test
         @DisplayName("저장된 UserStatus 목록을 DTO 목록으로 반환한다")
-        void 목록_조회_성공() {
+        void get_success() {
             // given
             UserStatus userStatus1 = mock(UserStatus.class);
             UserStatus userStatus2 = mock(UserStatus.class);
@@ -223,7 +223,7 @@ class BasicUserStatusServiceTest {
 
         @Test
         @DisplayName("저장된 UserStatus가 없으면 빈 목록을 반환한다")
-        void 목록_조회_결과_없음() {
+        void get_fail() {
             // given
             given(userStatusRepository.findAll())
                     .willReturn(List.of());
@@ -243,7 +243,7 @@ class BasicUserStatusServiceTest {
 
         @Test
         @DisplayName("사용자 ID에 해당하는 상태가 존재하면 마지막 접속 시간을 수정한다")
-        void 수정_성공() {
+        void update_success() {
             // given
             UUID userId = UUID.randomUUID();
 
@@ -277,7 +277,7 @@ class BasicUserStatusServiceTest {
 
         @Test
         @DisplayName("사용자 ID에 해당하는 상태가 없으면 예외가 발생한다")
-        void 수정_실패() {
+        void update_fail() {
             // given
             UUID userId = UUID.randomUUID();
 
@@ -300,7 +300,7 @@ class BasicUserStatusServiceTest {
 
         @Test
         @DisplayName("UserStatus가 존재하면 삭제한다")
-        void 삭제_성공() {
+        void delete_success() {
             // given
             UUID userStatusId = UUID.randomUUID();
 
@@ -322,7 +322,7 @@ class BasicUserStatusServiceTest {
 
         @Test
         @DisplayName("UserStatus가 존재하지 않으면 예외가 발생한다")
-        void 삭제_실패() {
+        void delete_fail() {
             // given
             UUID userStatusId = UUID.randomUUID();
 

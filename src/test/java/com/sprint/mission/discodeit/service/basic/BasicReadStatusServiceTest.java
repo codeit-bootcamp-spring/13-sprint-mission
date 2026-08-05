@@ -61,7 +61,7 @@ class BasicReadStatusServiceTest {
 
         @Test
         @DisplayName("사용자와 채널이 존재하고 중복이 아니면 생성")
-        void 생성_성공() {
+        void create_success() {
             // given
             UUID userId = UUID.randomUUID();
             UUID channelId = UUID.randomUUID();
@@ -109,7 +109,7 @@ class BasicReadStatusServiceTest {
 
         @Test
         @DisplayName("사용자가 존재하지 않으면 예외가 발생한다")
-        void 생성_실패_사용자_없음() {
+        void create_fail_no_user() {
             // given
             UUID userId = UUID.randomUUID();
             UUID channelId = UUID.randomUUID();
@@ -126,7 +126,7 @@ class BasicReadStatusServiceTest {
 
         @Test
         @DisplayName("채널이 존재하지 않으면 예외가 발생")
-        void 생성_실패_채널_없음() {
+        void create_fail_no_channel() {
             // given
             UUID userId = UUID.randomUUID();
             UUID channelId = UUID.randomUUID();
@@ -148,7 +148,7 @@ class BasicReadStatusServiceTest {
 
         @Test
         @DisplayName("동일한 사용자와 채널의 ReadStatus가 존재하면 예외가 발생")
-        void 생성_실패_중복() {
+        void create_fail_duplicate() {
             // given
             UUID userId = UUID.randomUUID();
             UUID channelId = UUID.randomUUID();
@@ -184,7 +184,7 @@ class BasicReadStatusServiceTest {
 
         @Test
         @DisplayName("ReadStatus가 존재하면 DTO로 반환")
-        void 조회_성공() {
+        void get_success() {
             // given
             UUID readStatusId = UUID.randomUUID();
 
@@ -212,7 +212,7 @@ class BasicReadStatusServiceTest {
 
         @Test
         @DisplayName("ReadStatus가 존재하지 않으면 예외가 발생")
-        void 조회_실패() {
+        void get_fail() {
             // given
             UUID readStatusId = UUID.randomUUID();
 
@@ -231,7 +231,7 @@ class BasicReadStatusServiceTest {
 
         @Test
         @DisplayName("사용자 ID에 해당하는 ReadStatus 목록을 DTO로 반환")
-        void 목록_조회_성공() {
+        void get_success() {
             // given
             UUID userId = UUID.randomUUID();
 
@@ -269,7 +269,7 @@ class BasicReadStatusServiceTest {
 
         @Test
         @DisplayName("ReadStatus가 없으면 빈 목록을 반환")
-        void 목록_조회_결과_없음() {
+        void get_no_list() {
             // given
             UUID userId = UUID.randomUUID();
 
@@ -291,7 +291,7 @@ class BasicReadStatusServiceTest {
 
         @Test
         @DisplayName("ReadStatus가 존재하면 마지막 확인 시간을 수정")
-        void 수정_성공() {
+        void update_success() {
             // given
             UUID readStatusId = UUID.randomUUID();
 
@@ -325,7 +325,7 @@ class BasicReadStatusServiceTest {
 
         @Test
         @DisplayName("ReadStatus가 존재하지 않으면 예외가 발생")
-        void 수정_실패() {
+        void update_fail() {
             // given
             UUID readStatusId = UUID.randomUUID();
 
@@ -348,7 +348,7 @@ class BasicReadStatusServiceTest {
 
         @Test
         @DisplayName("ReadStatus가 존재하면 삭제")
-        void 삭제_성공() {
+        void delete_success() {
             // given
             UUID readStatusId = UUID.randomUUID();
 
@@ -370,7 +370,7 @@ class BasicReadStatusServiceTest {
 
         @Test
         @DisplayName("ReadStatus가 존재하지 않으면 예외가 발생")
-        void 삭제_실패() {
+        void delete_fail() {
             // given
             UUID readStatusId = UUID.randomUUID();
 

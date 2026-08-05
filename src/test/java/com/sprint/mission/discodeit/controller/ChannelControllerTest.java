@@ -48,7 +48,7 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("올바른 요청이면 공개 채널을 생성하고 201을 반환")
-        void 공개_채널_생성_성공() throws Exception {
+        void create_success() throws Exception {
             // given
             PublicChannelCreateRequest request =
                     new PublicChannelCreateRequest(
@@ -89,7 +89,7 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("채널 이름이 비어 있으면 400을 반환")
-        void 공개_채널_생성_실패_유효성_검증() throws Exception {
+        void create_fail() throws Exception {
             // given
             PublicChannelCreateRequest request =
                     new PublicChannelCreateRequest(
@@ -112,7 +112,7 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("사용자가 볼 수 있는 채널 목록을 반환")
-        void 채널_목록_조회_성공() throws Exception {
+        void get_success() throws Exception {
             // given
             UUID userId = UUID.randomUUID();
 
@@ -151,7 +151,7 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("userId가 없으면 400을 반환")
-        void 채널_목록_조회_실패_요청값_없음() throws Exception {
+        void get_fail() throws Exception {
             // when & then
             mockMvc.perform(get("/api/channels"))
                     .andExpect(status().isBadRequest());
@@ -165,7 +165,7 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("공개 채널 정보를 수정하고 200을 반환")
-        void 공개_채널_수정_성공() throws Exception {
+        void update_success() throws Exception {
             // given
             PublicChannelUpdateRequest request = new PublicChannelUpdateRequest(
                             "수정된 공지",
@@ -204,7 +204,7 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("채널 이름이 비어 있으면 400을 반환")
-        void 공개_채널_수정_실패_유효성_검증() throws Exception {
+        void update_fail() throws Exception {
             // given
             PublicChannelUpdateRequest request =
                     new PublicChannelUpdateRequest(
@@ -227,7 +227,7 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("채널 삭제에 성공하면 204를 반환")
-        void 채널_삭제_성공() throws Exception {
+        void delete_success() throws Exception {
             // given
             willDoNothing()
                     .given(channelService)
@@ -243,7 +243,7 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("존재하지 않는 채널을 삭제하면 404를 반환")
-        void 채널_삭제_실패_채널_없음() throws Exception {
+        void delete_fail() throws Exception {
             // given
             willThrow(new ChannelNotFoundException(channelId))
                     .given(channelService)

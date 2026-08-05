@@ -42,7 +42,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("해당 채널의 메시지를 조회")
-        void 조회_성공() {
+        void get_success() {
             // given
             User user = new User(
                     "user1",
@@ -118,7 +118,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("해당 채널에 메시지가 없으면 빈 Slice를 반환")
-        void 조회_실패_결과_없음() {
+        void get_fail() {
             // given
             Channel channel = new Channel(
                     ChannelType.PUBLIC,
@@ -150,7 +150,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("해당 사용자가 작성한 메시지를 조회")
-        void 조회_성공() {
+        void get_success() {
             // given
             User targetUser = new User(
                     "user1",
@@ -226,7 +226,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("해당 사용자가 작성한 메시지가 없으면 빈 목록을 반환")
-        void 조회_실패_결과_없음() {
+        void get_fail() {
             // given
             User user = new User(
                     "user1",

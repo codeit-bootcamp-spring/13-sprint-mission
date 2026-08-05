@@ -64,7 +64,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("Public 채널 생성에 성공")
-        void 생성_성공() {
+        void create_success() {
             // given
             PublicChannelCreateRequest request = new PublicChannelCreateRequest(
                     "테스트 채널",
@@ -111,7 +111,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("참여자들과 함께 Private 채널을 생성")
-        void 생성_성공() {
+        void create_success() {
             // given
             UUID firstUserId = UUID.randomUUID();
             UUID secondUserId = UUID.randomUUID();
@@ -166,7 +166,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("참여자가 존재하지 않으면 예외 발생")
-        void 생성_실패_참여자_없음() {
+        void create_fail() {
             // given
             UUID userId = UUID.randomUUID();
 
@@ -198,7 +198,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("Public 채널의 이름과 설명을 수정")
-        void 수정_성공() {
+        void update_success() {
             // given
             UUID channelId = UUID.randomUUID();
 
@@ -240,7 +240,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("Private 채널은 수정 불가")
-        void 수정_실패_Private_채널() {
+        void update_fail() {
             // given
             UUID channelId = UUID.randomUUID();
 
@@ -269,7 +269,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("채널이 존재하면 관련 데이터와 채널을 삭제")
-        void 삭제_성공() {
+        void delete_success() {
             // given
             UUID channelId = UUID.randomUUID();
 
@@ -306,7 +306,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("삭제할 채널이 존재하지 않으면 예외 발생")
-        void 삭제_실패_채널_없음() {
+        void delete_fail() {
             // given
             UUID channelId = UUID.randomUUID();
 
@@ -331,7 +331,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("사용자의 Private 채널과 전체 Public 채널을 조회")
-        void 조회_성공() {
+        void get_success() {
             // given
             UUID userId = UUID.randomUUID();
             UUID privateChannelId = UUID.randomUUID();
@@ -390,7 +390,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("사용자가 존재하지 않으면 예외가 발생")
-        void 조회_실패_사용자_없음() {
+        void get_fail() {
             // given
             UUID userId = UUID.randomUUID();
 
