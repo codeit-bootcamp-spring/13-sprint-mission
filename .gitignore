@@ -38,3 +38,10 @@ out/
 
 ### macOS ###
 .DS_Store
+
+# Local application data
+.discodeit/
+storage/
+
+# Application logs
+.logs/

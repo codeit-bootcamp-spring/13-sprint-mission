@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.service.MessageService;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -37,9 +38,18 @@ public class MessageController {
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<MessageDto> create(
-      @RequestPart("messageCreateRequest") MessageCreateRequest request,
-      @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
+      @RequestPart("messageCreateRequest") @Valid MessageCreateRequest request,
+      @RequestPart(value = "attachments", required = false)
+      List<MultipartFile> attachments
   ) {
+    int attachmentCount = attachments == null ? 0 : attachments.size();
+
+    log.debug(
+        "메시지 생성 요청: authorId={}, channelId={}, attachmentCount={}",
+        request.authorId(),
+        request.channelId(),
+        attachmentCount
+    );
 
     MessageDto response = messageService.create(request, attachments);
 
@@ -49,21 +59,32 @@ public class MessageController {
   @PatchMapping("/{messageId}")
   public ResponseEntity<MessageDto> update(
       @PathVariable("messageId") UUID id,
-      @RequestBody MessageUpdateRequest request) {
-    MessageDto update = messageService.update(id, request);
+      @RequestBody @Valid MessageUpdateRequest request
+  ) {
+    log.debug("메시지 수정 요청: messageId={}", id);
 
-    return ResponseEntity.ok(update);
+    MessageDto response = messageService.update(id, request);
+
+    return ResponseEntity.ok(response);
   }
 
   @DeleteMapping("/{messageId}")
-  public ResponseEntity<Void> delete(@PathVariable("messageId") UUID id) {
+  public ResponseEntity<Void> delete(
+      @PathVariable("messageId") UUID id
+  ) {
+    log.debug("메시지 삭제 요청: messageId={}", id);
+
     messageService.delete(id);
 
     return ResponseEntity.noContent().build();
   }
 
   @GetMapping("/{messageId}")
-  public ResponseEntity<MessageDto> findById(@PathVariable("messageId") UUID id) {
+  public ResponseEntity<MessageDto> findById(
+      @PathVariable("messageId") UUID id
+  ) {
+    log.debug("메시지 단건 조회 요청: messageId={}", id);
+
     MessageDto response = messageService.findById(id);
 
     return ResponseEntity.ok(response);
@@ -71,7 +92,7 @@ public class MessageController {
 
   @GetMapping
   public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(
-      @RequestParam UUID channelId,
+      @RequestParam("channelId") UUID channelId,
       @PageableDefault(
           size = 50,
           sort = "createdAt",
@@ -79,10 +100,16 @@ public class MessageController {
       )
       Pageable pageable
   ) {
+    log.debug(
+        "채널별 메시지 목록 조회 요청: channelId={}, page={}, size={}",
+        channelId,
+        pageable.getPageNumber(),
+        pageable.getPageSize()
+    );
 
-    PageResponse<MessageDto> response = messageService.findAllByChannelId(channelId, pageable);
+    PageResponse<MessageDto> response =
+        messageService.findAllByChannelId(channelId, pageable);
 
     return ResponseEntity.ok(response);
   }
-
 }

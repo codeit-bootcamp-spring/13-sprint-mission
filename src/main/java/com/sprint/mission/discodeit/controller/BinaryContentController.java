@@ -24,20 +24,55 @@ public class BinaryContentController {
   private final BinaryContentStorage binaryContentStorage;
 
   @GetMapping("/{binaryContentId}")
-  public BinaryContentDto find(@PathVariable("binaryContentId") UUID id) {
-    return binaryContentService.find(id);
+  public BinaryContentDto find(
+      @PathVariable("binaryContentId") UUID id
+  ) {
+    log.debug("파일 정보 조회 요청: binaryContentId={}", id);
+
+    BinaryContentDto response = binaryContentService.find(id);
+
+    log.debug("파일 정보 조회 응답 완료: binaryContentId={}", id);
+
+    return response;
   }
 
   @GetMapping
-  public List<BinaryContentDto> findByIdIn(@RequestParam("binaryContentIds") List<UUID> ids) {
-    return binaryContentService.findByIdIn(ids);
+  public List<BinaryContentDto> findByIdIn(
+      @RequestParam("binaryContentIds") List<UUID> ids
+  ) {
+    log.debug("파일 정보 목록 조회 요청: requestedCount={}", ids.size());
+
+    List<BinaryContentDto> response =
+        binaryContentService.findByIdIn(ids);
+
+    log.debug(
+        "파일 정보 목록 조회 응답 완료: requestedCount={}, resultCount={}",
+        ids.size(),
+        response.size()
+    );
+
+    return response;
   }
 
   @GetMapping("/{binaryContentId}/download")
-  public ResponseEntity<?> download(@PathVariable("binaryContentId") UUID id) {
-    BinaryContentDto binaryContentDto = binaryContentService.find(id);
-    
-    return binaryContentStorage.download(binaryContentDto);
+  public ResponseEntity<?> download(
+      @PathVariable("binaryContentId") UUID id
+  ) {
+    log.debug("파일 다운로드 요청: binaryContentId={}", id);
+
+    BinaryContentDto binaryContentDto =
+        binaryContentService.find(id);
+
+    ResponseEntity<?> response =
+        binaryContentStorage.download(binaryContentDto);
+
+    log.info(
+        "파일 다운로드 응답 완료: binaryContentId={}, status={}",
+        id,
+        response.getStatusCode()
+    );
+
+    return response;
   }
 
 }

@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.service.UserService;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -31,9 +32,13 @@ public class UserController {
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<UserDto> create(
-      @RequestPart("userCreateRequest") UserCreateRequest request,
+      @RequestPart("userCreateRequest") @Valid UserCreateRequest request,
       @RequestPart(value = "profile", required = false) MultipartFile profile
   ) {
+    log.debug(
+        "사용자 생성 요청: hasProfile={}",
+        profile != null && !profile.isEmpty()
+    );
 
     UserDto response = userService.create(request, profile);
 
@@ -43,16 +48,26 @@ public class UserController {
   @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<UserDto> update(
       @PathVariable("userId") UUID id,
-      @RequestPart(value = "userUpdateRequest") UserUpdateRequest request,
+      @RequestPart("userUpdateRequest") @Valid UserUpdateRequest request,
       @RequestPart(value = "profile", required = false) MultipartFile profile
   ) {
+    log.debug(
+        "사용자 수정 요청: userId={}, hasProfile={}",
+        id,
+        profile != null && !profile.isEmpty()
+    );
+
     UserDto response = userService.update(id, request, profile);
 
-    return ResponseEntity.ok().body(response);
+    return ResponseEntity.ok(response);
   }
 
-  @GetMapping(value = "/{userId}")
-  public ResponseEntity<UserDto> findById(@PathVariable("userId") UUID id) {
+  @GetMapping("/{userId}")
+  public ResponseEntity<UserDto> findById(
+      @PathVariable("userId") UUID id
+  ) {
+    log.debug("사용자 단건 조회 요청: userId={}", id);
+
     UserDto response = userService.findById(id);
 
     return ResponseEntity.ok(response);
@@ -60,18 +75,23 @@ public class UserController {
 
   @GetMapping
   public ResponseEntity<List<UserDto>> findAll() {
-    List<UserDto> all = userService.findAll();
+    log.debug("사용자 목록 조회 요청");
 
-    return ResponseEntity.ok(all);
+    List<UserDto> response = userService.findAll();
+
+    return ResponseEntity.ok(response);
   }
 
   @DeleteMapping("/{userId}")
-  public ResponseEntity<Void> delete(@PathVariable("userId") UUID id) {
+  public ResponseEntity<Void> delete(
+      @PathVariable("userId") UUID id
+  ) {
+    log.debug("사용자 삭제 요청: userId={}", id);
+
     userService.delete(id);
 
     return ResponseEntity.noContent().build();
   }
-
 }
 
 
