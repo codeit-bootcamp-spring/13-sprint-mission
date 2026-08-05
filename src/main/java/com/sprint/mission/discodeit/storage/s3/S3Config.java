@@ -22,7 +22,7 @@ public class S3Config {
   public S3Client s3Client(S3Properties properties) {
     return S3Client.builder()
         .region(Region.of(properties.getRegion()))
-        .credentialsProvider(DefaultCredentialsProvider.create())
+        .credentialsProvider(DefaultCredentialsProvider.builder().build())
         .build();
   }
 
@@ -30,7 +30,7 @@ public class S3Config {
   public S3Presigner s3Presigner(S3Properties properties) {
     return S3Presigner.builder()
         .region(Region.of(properties.getRegion()))
-        .credentialsProvider(DefaultCredentialsProvider.create())
+        .credentialsProvider(DefaultCredentialsProvider.builder().build())
         .build();
   }
 }
