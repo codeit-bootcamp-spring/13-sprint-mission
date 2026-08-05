@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Getter
 @Setter
-@ConfigurationProperties(prefix = "discodeit.storage.se")
+@ConfigurationProperties(prefix = "discodeit.storage.s3")
 public class S3Properties {
 
   private String region = "ap-northeast-2";

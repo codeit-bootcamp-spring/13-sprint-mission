@@ -50,6 +50,7 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
       log.debug("S3 파일 업로드 완료: binaryContentId={}", id);
       return id;
     } catch (RuntimeException e) {
+      log.error("S3 파일 업로드 실패: bucket={}, binaryContentId={}", properties.getBucket(), id, e);
       throw new BinaryContentUploadException(id, e);
     }
   }
