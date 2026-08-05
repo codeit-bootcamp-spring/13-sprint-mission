@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 @Component
 @ConditionalOnProperty(
     prefix = "discodeit.storage",
-    name = "discodeit.storage.type",
+    name = "type",
     havingValue = "local",
     matchIfMissing = true
 )
