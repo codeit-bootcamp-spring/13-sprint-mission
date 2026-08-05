@@ -1,15 +1,57 @@
 package com.sprint.mission.discodeit.exception;
 
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.Instant;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 @RestControllerAdvice
 public class ErrorResponseHandler {
+
+    private final ErrorCodeStatusMapper errorCodeStatusMapper;
+
+    @ExceptionHandler(DiscodeitException.class)
+    public ResponseEntity<ErrorResponse> handleDiscodeitException(
+            DiscodeitException e
+    ) {
+        HttpStatus status = errorCodeStatusMapper.map(e.getErrorCode());
+        ErrorResponse response = ErrorResponse.from(e, status.value());
+
+        return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException e
+    ) {
+        Map<String, Object> details = e.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .collect(Collectors.toMap(
+                        fieldError -> fieldError.getField(),
+                        fieldError -> fieldError.getDefaultMessage(),
+                        (existing, replacement) -> existing
+                ));
+
+        ErrorResponse response = new ErrorResponse(
+                Instant.now(),
+                "VALIDATION_ERROR",
+                "요청 데이터가 올바르지 않습니다.",
+                details,
+                e.getClass().getSimpleName(),
+                HttpStatus.BAD_REQUEST.value()
+        );
+
+        return ResponseEntity.badRequest().body(response);
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<GlobalException> handleIllegalArgumentException(
@@ -26,7 +68,7 @@ public class ErrorResponseHandler {
                 e.getMessage()
         );
 
-        return ResponseEntity.badRequest().body(response);
+        return ResponseEntity.status(status).body(response);
     }
 
     @ExceptionHandler(Exception.class)
@@ -45,6 +87,12 @@ public class ErrorResponseHandler {
 
     private boolean isNotFoundException(Exception e) {
         String message = e.getMessage();
-        return message != null && message.contains("존재하지") || message.toLowerCase().contains("not found");
+
+        if (message == null) {
+            return false;
+        }
+
+        return message.contains("존재하지")
+                || message.toLowerCase().contains("not found");
     }
 }

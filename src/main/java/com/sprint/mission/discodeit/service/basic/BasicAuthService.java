@@ -8,10 +8,13 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import com.sprint.mission.discodeit.exception.user.InvalidCredentialsException;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BasicAuthService implements AuthService {
@@ -20,11 +23,14 @@ public class BasicAuthService implements AuthService {
 
     @Override
     public LoginResponse login(LoginRequest request) {
+        log.info("Login requested: username={}", request.username());
+
         User user = userRepository.findByName(request.username())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
+                .orElseThrow(() -> new InvalidCredentialsException(request.username()));
 
         if (!user.getPassword().equals(request.password())) {
-            throw new IllegalArgumentException("Invalid username or password");
+            log.warn("Login failed: username={}", request.username());
+            throw new InvalidCredentialsException(request.username());
         }
 
         UserStatus userStatus = userStatusRepository.findByUserId(user.getId())

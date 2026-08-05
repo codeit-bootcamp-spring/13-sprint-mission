@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.storage;
 
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentDto;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentStorageException;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -44,7 +46,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
             Files.write(resolvePath(binaryContentId), bytes);
             return binaryContentId;
         } catch (Exception e) {
-            throw new RuntimeException("파일 저장에 실패했습니다.", e);
+            throw new BinaryContentStorageException(binaryContentId);
         }
     }
 
@@ -53,7 +55,16 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
         try {
             return Files.newInputStream(resolvePath(binaryContentId));
         } catch (Exception e) {
-            throw new IllegalArgumentException("파일을 찾을 수 없습니다.");
+            throw new BinaryContentNotFoundException(binaryContentId);
+        }
+    }
+
+    @Override
+    public void delete(UUID binaryContentId) {
+        try {
+            Files.deleteIfExists(resolvePath(binaryContentId));
+        } catch (Exception e) {
+            throw new BinaryContentStorageException(binaryContentId);
         }
     }
 
