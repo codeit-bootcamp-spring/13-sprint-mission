@@ -27,10 +27,9 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
     @Query("SELECT m FROM Message m WHERE m.channel.id = :id AND m.createdAt < :ctime")
     Slice<Message> findByChannelWithCursor(@Param("id") UUID channelId, Pageable pageable,@Param("ctime") Instant ctime);
 
-
     @Query(
             """
-            select m.createdAt
+            select m
             from Message m
             order by m.createdAt desc
             limit 1

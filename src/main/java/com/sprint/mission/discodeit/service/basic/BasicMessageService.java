@@ -1,8 +1,8 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreate;
-import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
-import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
+import com.sprint.mission.discodeit.dto.request.message.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.request.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
@@ -148,10 +148,11 @@ public class BasicMessageService implements MessageService {
     @Transactional
     public void deleteMessage(UUID id){
         Message msg = getMessageOrException(id);
+        List<BinaryContent> attachments = msg.getAttachment();
 
         // delete attribute
-        if (!msg.getAttachment().isEmpty()){
-            binaryContentRepository.deleteAll(msg.getAttachment());
+        if (!attachments.isEmpty()){
+            binaryContentRepository.deleteAll(attachments);
         }
 
         // real file delete logic need
@@ -159,6 +160,12 @@ public class BasicMessageService implements MessageService {
         messageRepository.delete(msg);
 
         log.info("Message Deleted - {}", msg.getId());
+    }
+
+    private void deleteAttachment(List<BinaryContent> attachments){
+        for (BinaryContent attachment : attachments){
+            binaryContentStorage.delete(attachment.getId());
+        }
     }
 
     private List<BinaryContentDto> attrDto(Message msg){

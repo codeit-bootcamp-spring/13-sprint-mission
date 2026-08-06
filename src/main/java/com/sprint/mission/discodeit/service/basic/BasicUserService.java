@@ -131,6 +131,9 @@ public class BasicUserService implements UserService {
         Optional<UserStatus> us = userStatusRepository.findByUserId(id).stream().findFirst();
 
         userRepository.delete(user);
+        if (user.getProfile() != null) {
+            binaryContentStorage.delete(user.getProfile().getId());
+        }
         us.ifPresent(userStatusRepository::delete);
 
         log.info("user with id - {} deleted", id);

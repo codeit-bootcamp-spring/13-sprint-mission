@@ -56,6 +56,9 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
     }
 
+    @Override
+    public void delete(UUID id) {}
+
     private S3Client getS3Client() {
         return null;
     }
