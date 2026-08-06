@@ -42,7 +42,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("ChannelService 슬라이스 테스트 (Mockito)")
+@DisplayName("ChannelService 단위 테스트 (Mockito)")
 public class ChannelServiceTest {
 
   @Mock

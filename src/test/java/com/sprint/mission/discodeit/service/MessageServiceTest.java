@@ -47,7 +47,7 @@ import org.springframework.data.domain.SliceImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("MessageService 슬라이스 테스트 (Mockito)")
+@DisplayName("MessageService 단위 테스트 (Mockito)")
 public class MessageServiceTest {
 
   @Mock

@@ -30,7 +30,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class) // Mockito 활용해 Repository 의존성 모의
-@DisplayName("UserService 슬라이스 테스트 (Mockito)")
+@DisplayName("UserService 단위 테스트 (Mockito)")
 public class UserServiceTest { // UserService: create, update, delete 메소드
 // 서비스의 핵심 메소드에 대해 각각 최소 2개 이상(성공, 실패)의 테스트 케이스를 작성
 
