@@ -16,6 +16,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -65,7 +66,7 @@ public class S3BinaryContentStorageTest {
 
 
     @Test
-    @DisplayName("s3 file test")
+    @DisplayName("s3 file test- upload, download, get")
     void test() throws IOException, InterruptedException {
         // given
         UUID id = UUID.randomUUID();
@@ -74,23 +75,31 @@ public class S3BinaryContentStorageTest {
 
         // when
         // then
+
+        // upload
         UUID res = s3BinaryContentStorage.put(id,content);
         assertThat(res).isEqualTo(id);
 
         log.info("S3 upload - id = {}",id);
 
-        ResponseEntity<?> rent =  s3BinaryContentStorage.download(dto);
-
+        // download
+        ResponseEntity<?> rent = s3BinaryContentStorage.download(dto);
         URI url = rent.getHeaders().getLocation();
+        log.info("S3 download url returned - {}", url);
+        assertThat(url).isNotNull();
 
-        log.info("S3 download url returned - {}", rent.getHeaders().getLocation());
 
-        HttpResponse<byte[]> response = HttpClient.newHttpClient().send(
-                HttpRequest.newBuilder(url).build(),
-                HttpResponse.BodyHandlers.ofByteArray()
-        );
+        // get
+        try (InputStream in = s3BinaryContentStorage.get(id)){
+            byte[] data = in.readAllBytes();
 
-        assertThat(response.body()).isEqualTo(content);
-        log.debug("S3 download uri test\norigin = {}\nsaved = {}",content,response.body());
+            assertThat(content).isEqualTo(data);
+            log.debug("S3 download uri test\norigin = {}\nsaved = {}",content, data);
+        } catch (IOException e){
+          log.error(e.getMessage(),e);
+        }
+
+
+
     }
 }

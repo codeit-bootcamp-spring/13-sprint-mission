@@ -107,10 +107,9 @@ public class BasicUserService implements UserService {
         if (uui.newUsername() != null) user.setUsername(uui.newUsername());
         if (uui.newEmail() != null) user.setEmail(uui.newEmail());
         if (uui.newPassword() != null) user.setPassword(uui.newPassword());
-        if (profileIdFromOBCC(obcc) != null) {
+        if (obcc.isPresent()) {
             // db save check
-            BinaryContent bc = profileIdFromOBCC(obcc);
-            user.setProfile(bc);
+            user.setProfile(profileIdFromOBCC(obcc));
         }
 
         user = userRepository.save(user);

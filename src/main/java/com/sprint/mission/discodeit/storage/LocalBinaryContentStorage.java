@@ -19,7 +19,7 @@ import java.util.UUID;
 
 @Component
 @NoArgsConstructor
-@ConditionalOnProperty(prefix = "discodeit.storage", name = "type", havingValue = "local")
+@ConditionalOnProperty(prefix = "discodeit.storage", name = "type", havingValue = "local", matchIfMissing = true)
 @Slf4j
 public class LocalBinaryContentStorage implements BinaryContentStorage {
 

@@ -4,9 +4,11 @@ import com.sprint.mission.discodeit.config.S3Property;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.exception.FileStorageException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -18,11 +20,19 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.UUID;
 
+
+// Todo - API 는 비동기 처리 할 수 있도록
+
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "discodeit.storage.type", havingValue = "s3")
+@Component
+@Slf4j
 public class S3BinaryContentStorage implements BinaryContentStorage {
 
     private final S3Presigner s3Presigner;
@@ -47,7 +57,27 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
 
     @Override
     public InputStream get(UUID id) throws IOException {
-        return null;
+        // set type for getting data stream => octet-stream.
+        String CONTENT_TYPE = "application/octet-stream";
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(
+                        URI.create(
+                                generatePresignedUrl(id.toString(),CONTENT_TYPE)
+                        )
+                )
+                .GET()
+                .build();
+
+        try {
+            return HttpClient.newHttpClient().send(
+                    request,
+                    HttpResponse.BodyHandlers.ofInputStream()
+            ).body();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Failed to get stream", e);
+        }
     }
     @Override
     public ResponseEntity<?> download(BinaryContentDto binaryContentDto) {
@@ -63,6 +93,7 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
         return null;
     }
 
+    // key == entity id
     private String generatePresignedUrl(String key, String contentType){
         GetObjectPresignRequest request = GetObjectPresignRequest.builder()
                 .signatureDuration(Duration.ofMinutes(s3Property.getPresignTime()))

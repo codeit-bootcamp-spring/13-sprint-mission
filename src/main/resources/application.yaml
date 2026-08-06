@@ -30,7 +30,7 @@ discodeit:
       s3:
         bucket: ${S3_BUCKET}
         region: ${S3_REGION}
-        endpoint: ${S3_ENDPOINT}
+        endpoint: ${S3_ENDPOINT:}
         presign-time: ${S3_PRESIGN_TIME:5}
 
 
