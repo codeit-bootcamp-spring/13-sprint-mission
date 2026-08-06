@@ -2,7 +2,9 @@ package com.sprint.mission.discodeit.controller;
 
 
 import com.sprint.mission.discodeit.controller.docs.ChannelControllerDoc;
-import com.sprint.mission.discodeit.dto.request.*;
+import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.channel.PublicChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.service.ChannelService;
 import jakarta.validation.Valid;

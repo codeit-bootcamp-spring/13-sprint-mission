@@ -2,8 +2,8 @@ package com.sprint.mission.discodeit.service;
 
 
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreate;
-import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
-import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 
 

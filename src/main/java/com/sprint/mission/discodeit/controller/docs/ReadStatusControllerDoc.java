@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.controller.docs;
 
-import com.sprint.mission.discodeit.dto.request.ReadStatusCreateRequest;
-import com.sprint.mission.discodeit.dto.request.ReadStatusUpdateRequest;
+import com.sprint.mission.discodeit.dto.request.readstatus.ReadStatusCreateRequest;
+import com.sprint.mission.discodeit.dto.request.readstatus.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ReadStatusDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
