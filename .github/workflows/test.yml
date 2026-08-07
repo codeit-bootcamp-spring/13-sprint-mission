@@ -1,13 +1,12 @@
 name: test.yml
 on:
-#  push:  # when push
-  pull_request: # when pull request
+  pull_request:
     branches: [ "main" ]
-  workflow_dispatch: # manually actions
+  workflow_dispatch: # manually actions for test
 
 jobs:
   build:
-    runs-on: ubuntu-latest # github
+    runs-on: ubuntu-latest
     steps:
       - name: 코드 체크아웃
         uses: actions/checkout@v7
@@ -22,7 +21,6 @@ jobs:
         run: |
           chmod +x gradlew 
           ./gradlew build
-          
 
       - uses: codecov/codecov-action@v5
         with:

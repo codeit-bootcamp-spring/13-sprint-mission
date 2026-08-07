@@ -8,8 +8,8 @@ spring:
       max-file-size: 10MB
       max-request-size: 20MB
   profiles:
-    active: dev
-#    active: ${PROFILE:prod}
+#    active: dev
+    active: ${PROFILE:prod}
 
 # Server port.
 # set 80 fix in docker container
