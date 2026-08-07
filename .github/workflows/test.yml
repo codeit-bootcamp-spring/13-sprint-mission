@@ -1,0 +1,42 @@
+name: test.yml
+on:
+#  push:  # when push
+  pull_request: # when pull request
+    branches: [ "main" ]
+  workflow_dispatch: # manually actions
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # github
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v7
+
+      - name: JDK 17 설치
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: 빌드 + 테스트
+        run: |
+          chmod +x gradlew 
+          ./gradlew build
+          
+
+      - uses: codecov/codecov-action@v5
+        with:
+          files: build/reports/jacoco/test/jacocoTestReport.xml
+
+  aws-connection-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: AWS 자격증명 설정 (Github Secrets)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: 연동 확인 (내 계정/역할이 맞는지)
+        run: aws sts get-caller-identity

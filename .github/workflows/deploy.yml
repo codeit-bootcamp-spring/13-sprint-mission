@@ -1,0 +1,122 @@
+name: deploy.yml
+on:
+  pull_request:
+    branches:
+      - "release"
+  workflow_dispatch: # manually actions
+
+#env:
+#  AWS_REGION: ap-northeast-2
+#  ECR_REPOSITORY: sprintlog
+#  ECS_CLUSTER: sprintlog-cluster
+#  ECS_SERVICE: sprintlog-ecs-service
+#  ECS_TASK_DEFINITION: sprintlog-task
+#  CONTAINER_NAME: sprintlog-app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # Github가 빌려주는 리눅스 운영체제 러너
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v7 # 내 github repository에서 코드를 가져오겠다.
+
+      - name: JDK 17 설치
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: 빌드 + 테스트
+        run: |
+          chmod +x gradlew 
+          ./gradlew build
+
+
+  # image build and push
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+
+    # 이미지 빌드
+      - name: 코드 체크아웃
+        uses: actions/checkout@v7
+
+      # ECR 이미지 업로드
+      - name: AWS 자격증명 (OIDC 역할 assume - 키 없음)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: ECR 로그인 with us-east1 리전
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public   # public type ECR
+
+
+      - name: Buildx 준비 (멀티 플랫폼 빌더)
+        uses: docker/setup-buildx-action@v4
+
+      # amd64만
+      - name: build, taging, push
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
+            -t "$ECR_REGISTRY/$ECR_REPOSITORY:latest" \
+            --push .
+
+        # save env $GITHUB_OUTPUT
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+
+  # ECS service on
+  srvcontroll:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: AWS 자격증명 (OIDC 역할 assume - 키 없음)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # task definition update
+      - name: 현재 작업 정의(task definition) 내려받기
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition "$ECS_TASK_DEFINITION" \
+            --query taskDefinition > task-definition.json
+
+        # describe 응답엔 등록 불가한 읽기전용 필드가 섞여 있어 제거(jq 는 러너에 기본 설치).
+        # json 안에 있는 여러가지 property 중에 읽기 전용 프로퍼티는 등록만 해도 에러가 발생하기 때문에
+        # json에서 깔끔하게 제거 -> task-definition-clean.json으로 저장 -> task-definition.json 파일에 덮어 쓰겠다.
+
+          jq 'del(
+            .taskDefinitionArn, .revision, .status, .requiresAttributes,
+            .compatibilities, .registeredAt, .registeredBy, .enableFaultInjection
+          )' task-definition.json > task-definition-clean.json
+          mv task-definition-clean.json task-definition.json
+
+      - name: 작업 정의에 새 이미지 반영
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: ECS 배포
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true   # 새 태스크가 안정될 때까지 기다림(성공 확인)
