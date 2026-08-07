@@ -95,9 +95,6 @@ public class ChannelController {
   ) {
     log.debug("사용자별 채널 목록 조회 요청: userId={}", userId);
 
-    List<ChannelDto> responses =
-        channelService.findAllByUserId(userId);
-
-    return ResponseEntity.ok(responses);
+    return ResponseEntity.ok(channelService.findAllByUserId(userId));
   }
 }

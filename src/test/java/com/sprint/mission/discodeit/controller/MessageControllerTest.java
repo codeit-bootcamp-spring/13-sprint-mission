@@ -14,7 +14,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
-import com.sprint.mission.discodeit.exception.ErrorCodeStatusMapper;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.service.MessageService;
 import java.nio.charset.StandardCharsets;
@@ -23,7 +22,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
@@ -32,7 +30,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(MessageController.class)
 @ActiveProfiles("test")
-@Import(ErrorCodeStatusMapper.class)
 class MessageControllerTest {
 
   @Autowired
@@ -119,7 +116,7 @@ class MessageControllerTest {
         )
         .andExpect(
             jsonPath("$.code")
-                .value("MESSAGE_NOT_FOUND")
+                .value("M001")
         )
         .andExpect(
             jsonPath("$.status")

@@ -127,18 +127,21 @@ public class BasicChannelService implements ChannelService {
   public List<ChannelDto> findAllByUserId(UUID userId) {
     log.debug("사용자별 채널 목록 조회 시작: userId={}", userId);
 
-    List<Channel> channels =
-        channelRepository.findVisibleChannelsByUserId(
-            userId,
-            ChannelType.PUBLIC
-        );
+    List<Channel> channels = new ArrayList<>(
+        channelRepository.findByType(ChannelType.PUBLIC)
+    );
+
+    List<ReadStatus> privateReadStatuses =
+        readStatusRepository.findByUser_IdAndChannel_Type(userId, ChannelType.PRIVATE);
+
+    channels.addAll(privateReadStatuses.stream()
+        .map(ReadStatus::getChannel)
+        .toList()
+    );
 
     if (channels.isEmpty()) {
-      log.debug(
-          "사용자별 채널 목록 조회 완료: userId={}, count=0",
-          userId
-      );
-
+      log.debug("사용자별 채널 목록 조회 완료: userId={}, count=0", userId);
+    
       return List.of();
     }
 

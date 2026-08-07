@@ -172,7 +172,7 @@ class MessageIntegrationTest {
         .andExpect(status().isNotFound())
         .andExpect(
             jsonPath("$.code")
-                .value("MESSAGE_NOT_FOUND")
+                .value("M001")
         )
         .andExpect(
             jsonPath("$.status")
