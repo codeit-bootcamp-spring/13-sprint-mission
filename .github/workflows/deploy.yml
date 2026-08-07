@@ -2,6 +2,9 @@ name: CD
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 최성웅-sprint8
 
 permissions:
   contents: read
