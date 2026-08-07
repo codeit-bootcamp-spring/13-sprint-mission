@@ -8,6 +8,7 @@ on:
 env:
   # target task definition for upload
   ECS_TASK_DEFINITION: ${{ vars.ECS_TASK_DEFINITION }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
 
 
 jobs:
