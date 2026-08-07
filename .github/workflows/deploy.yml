@@ -76,16 +76,13 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       # task definition update
+      # jq command ->  remove filed what is not registrable(read only field => occur error).
       - name: 현재 작업 정의(task definition) 내려받기
         run: |
           aws ecs describe-task-definition \
             --task-definition "$ECS_TASK_DEFINITION" \
             --query taskDefinition > task-definition.json
-
-        # describe 응답엔 등록 불가한 읽기전용 필드가 섞여 있어 제거(jq 는 러너에 기본 설치).
-        # json 안에 있는 여러가지 property 중에 읽기 전용 프로퍼티는 등록만 해도 에러가 발생하기 때문에
-        # json에서 깔끔하게 제거 -> task-definition-clean.json으로 저장 -> task-definition.json 파일에 덮어 쓰겠다.
-
+          
           jq 'del(
             .taskDefinitionArn, .revision, .status, .requiresAttributes,
             .compatibilities, .registeredAt, .registeredBy, .enableFaultInjection
