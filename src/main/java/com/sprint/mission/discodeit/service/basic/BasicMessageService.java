@@ -3,119 +3,110 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.MessageResponse;
+import com.sprint.mission.discodeit.dto.response.MessageDto;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.repository.BinaryContentRepository;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import com.sprint.mission.discodeit.mapper.MessageMapper;
+import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BasicMessageService implements MessageService {
 
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
     private final MessageRepository messageRepository;
-    private final BinaryContentRepository binaryContentRepository;
+    private final MessageMapper messageMapper;
+    private final BinaryContentStorage binaryContentStorage;
+    private final PageResponseMapper pageResponseMapper;
 
     @Override
-    public MessageResponse create(MessageCreateRequest request) {
-        if (userRepository.findById(request.userId()) == null) {
-            throw new IllegalArgumentException("존재하지 않는 유저입니다.");
-        }
-        if (channelRepository.findById(request.channelId()) == null) {
-            throw new IllegalArgumentException("존재하지 않는 채널입니다.");
-        }
+    @Transactional
+    public MessageDto create(MessageCreateRequest request) {
+        User user = userRepository.findById(request.userId())
+                .orElseThrow(()->new UserNotFoundException(request.userId()));
+        Channel channel = channelRepository.findById(request.channelId())
+                .orElseThrow(()->new ChannelNotFoundException(request.channelId()));
 
-        List<UUID> savedFileIds = new ArrayList<>();
+        List<BinaryContent> savedFiles = new ArrayList<>();
         if(request.attachment()!=null && !request.attachment().isEmpty()) {
             for (BinaryContentCreateRequest fileDto : request.attachment()) {
-                BinaryContent binaryContent = new BinaryContent(fileDto.fileName(), fileDto.contentType(), fileDto.size(), fileDto.bytes());
-                binaryContentRepository.save(binaryContent);
-
-                savedFileIds.add(binaryContent.getId());
+                BinaryContent binaryContent = new BinaryContent(fileDto.fileName(), fileDto.contentType(), fileDto.size());
+                binaryContentStorage.put(binaryContent.getId(), fileDto.bytes());
+                savedFiles.add(binaryContent);
             }
         }
 
-        Message message = new Message(request.userId(), request.channelId(), request.content(), savedFileIds);
+        Message message = new Message(user, channel, request.content(), savedFiles);
         messageRepository.save(message);
-        return new MessageResponse(message.getId(), message.getUserId(), message.getChannelId(), message.getContent(), request.attachment());
+
+        log.info("메시지 생성 완료: id={}, channelId={}", message.getId(), channel.getId());
+        return messageMapper.toDto(message);
     }
 
     @Override
-    public List<MessageResponse> findAllByChannelId(UUID channelId) {
-        if(channelRepository.findById(channelId)==null) {
-            throw new IllegalArgumentException("존재하지 않는 채널입니다.");
+    public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Instant cursor, Pageable pageable) {
+        if (!channelRepository.existsById(channelId)) {
+            throw new ChannelNotFoundException(channelId);
         }
 
-        List<MessageResponse> responses = new ArrayList<>();
-        List<Message> messages = messageRepository.findAll();
+        Instant effectiveCursor = (cursor != null) ? cursor : Instant.now();
+        Slice<Message> slice = messageRepository.findAllByChannel_IdAndCreatedAtLessThan(channelId, effectiveCursor, pageable);
 
-        List<BinaryContent> allFiles = binaryContentRepository.findAll();
-        for (Message message : messages) {
-            if(message.getChannelId().equals(channelId)) {
-                responses.add(returnResponse(message, allFiles));
-            }
+        List<Message> messages = slice.getContent();
+        Instant nextCursor = null;
+        if (slice.hasNext() && !messages.isEmpty()) {
+            nextCursor = messages.get(messages.size() - 1).getCreatedAt();
         }
-        return responses;
+
+        Slice<MessageDto> dtoSlice = slice.map(messageMapper::toDto);
+        return pageResponseMapper.fromSlice(dtoSlice, nextCursor);
     }
 
     @Override
-    public MessageResponse update(MessageUpdateRequest request) {
-        Message message = messageRepository.findById(request.id());
-        if(message==null) {
-            throw new IllegalArgumentException("존재하지 않는 메시지입니다.");
-        }
+    @Transactional
+    public MessageDto update(MessageUpdateRequest request) {
+        Message message = messageRepository.findById(request.id())
+                        .orElseThrow(()->new MessageNotFoundException(request.id()));
 
         message.update(request.content());
         messageRepository.save(message);
 
-        List<BinaryContent> allFiles = binaryContentRepository.findAll();
-        return returnResponse(message, allFiles);
+        log.info("메시지 수정 완료: id={}", message.getId());
+        return messageMapper.toDto(message);
     }
 
     @Override
+    @Transactional
     public void delete(UUID id) {
-        Message message = messageRepository.findById(id);
-        if(message==null) {
-            throw new IllegalArgumentException("존재하지 않는 메시지입니다.");
-        }
+        Message message = messageRepository.findById(id)
+                .orElseThrow(()->new MessageNotFoundException(id));
 
-        if (message.getAttachmentIds() != null && !message.getAttachmentIds().isEmpty()) {
-            for (UUID attachmentId : message.getAttachmentIds()) {
-                binaryContentRepository.delete(attachmentId);
-            }
-        }
-        messageRepository.delete(id);
-    }
-
-    private List<BinaryContentCreateRequest> getAttachment(Message message, List<BinaryContent> allFiles) {
-        List<BinaryContentCreateRequest> attachments = new ArrayList<>();
-
-        if(message.getAttachmentIds()==null || message.getAttachmentIds().isEmpty()) {
-            return attachments;
-        }
-
-        for (BinaryContent file : allFiles) {
-            if (message.getAttachmentIds().contains(file.getId())) {
-                attachments.add(new BinaryContentCreateRequest(
-                        file.getFileName(), file.getContentType(), file.getSize(), file.getBytes()
-                ));
-            }
-        }
-        return attachments;
-    }
-
-    private MessageResponse returnResponse(Message message, List<BinaryContent> allFiles) {
-        return new MessageResponse(message.getId(), message.getUserId(), message.getChannelId(), message.getContent(), getAttachment(message, allFiles));
+        messageRepository.delete(message);
+        log.info("메시지 삭제 완료: id={}", id);
     }
 }

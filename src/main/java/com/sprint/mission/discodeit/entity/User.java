@@ -1,50 +1,58 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
-import java.io.Serial;
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.UUID;
-
+@Entity
 @Getter
-@ToString
-public class User implements Serializable {
+@ToString(callSuper = true)
+@Table(name = "users")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class User extends BaseUpdatableEntity {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
+    @Column(nullable = false, unique = true)
+    private String username;
 
-    private final UUID id;
-    private final Instant createdAt;
-    private Instant updatedAt;
-    private String userName;
+    @Column(nullable = false, unique = true)
     private String email;
+
+    @Column(nullable = false)
     private String password;
 
-    private UUID profileId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", unique = true)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    private BinaryContent profile;
 
-    public User(String userName, String email, String password) {
-        this(userName, email, password, null);
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserStatus status;
+
+    public User(String username, String email, String password) {
+        this(username, email, password, null);
     }
 
-    public User(String userName, String email, String password, UUID profileId) {
-        this.id = UUID.randomUUID();
-        this.createdAt = Instant.now();
-        this.updatedAt = createdAt;
-
-        this.userName = userName;
+    public User(String username, String email, String password, BinaryContent profile) {
+        super();
+        this.username = username;
         this.email = email;
         this.password = password;
-        this.profileId = profileId;
+        this.profile = profile;
     }
 
-    public void update(String userName, String email, String password, UUID profileId) {
-        this.updatedAt = Instant.now();
-
-        this.userName = userName;
+    public void update(String username, String email, String password, BinaryContent profile) {
+        this.username = username;
         this.email = email;
         this.password = password;
-        this.profileId = profileId;
+        this.profile = profile;
+    }
+
+    public void assignStatus(UserStatus status) {
+        this.status = status;
     }
 }

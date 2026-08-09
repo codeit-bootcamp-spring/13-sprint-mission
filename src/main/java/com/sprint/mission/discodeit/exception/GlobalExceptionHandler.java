@@ -1,25 +1,66 @@
 package com.sprint.mission.discodeit.exception;
 
+import com.sprint.mission.discodeit.dto.response.ErrorResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException e) {
+    @ExceptionHandler(DiscodeitException.class)
+    public ResponseEntity<ErrorResponse> handleDiscodeitException(DiscodeitException e) {
+        HttpStatus status = resolveStatus(e.getErrorCode());
+        log.warn("[{}] {}", e.getErrorCode(), e.getMessage());
 
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Bad Request");
-        errorResponse.put("message", e.getMessage());
+        ErrorResponse response = new ErrorResponse(
+                e.getTimestamp(),
+                e.getErrorCode().name(),
+                e.getMessage(),
+                e.getDetails(),
+                e.getClass().getSimpleName(),
+                status.value()
+        );
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(errorResponse);
+        return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException e) {
+        Map<String, Object> details = new HashMap<>();
+        for (FieldError fieldError : e.getBindingResult().getFieldErrors()) {
+            details.put(fieldError.getField(), fieldError.getDefaultMessage());
+        }
+        log.warn("유효성 검증 실패: {}", details);
+
+        ErrorResponse response = new ErrorResponse(
+                Instant.now(),
+                "VALIDATION_FAILED",
+                "요청 값이 유효하지 않습니다.",
+                details,
+                e.getClass().getSimpleName(),
+                HttpStatus.BAD_REQUEST.value()
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    private HttpStatus resolveStatus(ErrorCode errorCode) {
+        return switch (errorCode) {
+            case USER_NOT_FOUND, CHANNEL_NOT_FOUND, MESSAGE_NOT_FOUND,
+                 READ_STATUS_NOT_FOUND, USER_STATUS_NOT_FOUND, BINARY_CONTENT_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case DUPLICATE_USER, READ_STATUS_ALREADY_EXISTS, USER_STATUS_ALREADY_EXISTS -> HttpStatus.CONFLICT;
+            case INVALID_PASSWORD -> HttpStatus.UNAUTHORIZED;
+            case PRIVATE_CHANNEL_UPDATE -> HttpStatus.BAD_REQUEST;
+        };
     }
 }

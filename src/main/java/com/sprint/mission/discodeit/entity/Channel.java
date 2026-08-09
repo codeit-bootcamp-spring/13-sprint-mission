@@ -1,41 +1,36 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import java.io.Serial;
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.UUID;
-
+@Entity
 @Getter
-@ToString
-public class Channel implements Serializable {
+@Table(name = "channels")
+@ToString(callSuper = true)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Channel extends BaseUpdatableEntity {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ChannelType type;
 
-    private final UUID id;
-    private final Instant createdAt;
-    private Instant updatedAt;
-    private final ChannelType type;
-    private String channelName;
+    private String name;
+
     private String description;
 
-    public Channel(ChannelType type, String channelName, String description) {
-        this.id = UUID.randomUUID();
-        this.createdAt = Instant.now();
-        this.updatedAt = createdAt;
-
+    public Channel(ChannelType type, String name, String description) {
+        super();
         this.type = type;
-        this.channelName = channelName;
+        this.name = name;
         this.description = description;
     }
 
-    public void update(String channelName, String description) {
-        this.updatedAt = Instant.now();
-
-        this.channelName = channelName;
+    public void update(String name, String description) {
+        this.name = name;
         this.description = description;
     }
 }

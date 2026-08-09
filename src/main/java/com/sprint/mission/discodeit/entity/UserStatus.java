@@ -1,38 +1,42 @@
 package com.sprint.mission.discodeit.entity;
 
+import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.time.Instant;
-import java.util.UUID;
 
+@Entity
 @Getter
-@ToString
-public class UserStatus implements Serializable {
+@Table(name = "user_statuses")
+@ToString(callSuper = true)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class UserStatus extends BaseUpdatableEntity {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
+    @OneToOne
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private User user;
 
-    private final UUID id;
-    private final UUID userId;
-    private final Instant createdAt;
-    private Instant updatedAt;
+    @Column(nullable = false)
+    private Instant lastActiveAt;
 
-    public UserStatus(UUID userId) {
-        this.id = UUID.randomUUID();
-        this.userId = userId;
-        this.createdAt = Instant.now();
-        this.updatedAt = createdAt;
+    public UserStatus(User user) {
+        super();
+        this.user = user;
+        this.lastActiveAt = Instant.now();
     }
 
-    public void updateActiveTime(Instant updatedAt) {
-        this.updatedAt = updatedAt;
+    public void updateActiveTime(Instant lastActiveAt) {
+        this.lastActiveAt = lastActiveAt;
     }
 
     public boolean isOnline() {
-        return updatedAt.plusSeconds(300).isAfter(Instant.now());
+        return lastActiveAt.plusSeconds(300).isAfter(Instant.now());
     }
-
 }

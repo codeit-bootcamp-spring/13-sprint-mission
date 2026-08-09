@@ -3,100 +3,86 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.UserResponse;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BasicUserService implements UserService {
 
     private final UserRepository userRepository;
     private final UserStatusRepository userStatusRepository;
     private final BinaryContentRepository binaryContentRepository;
+    private final UserMapper userMapper;
+    private final BinaryContentStorage binaryContentStorage;
 
     @Override
-    public UserResponse create(UserCreateRequest request) {
-        if(userRepository.findByUserName(request.userName())!=null) {
-            throw new IllegalArgumentException("이미 사용중인 계정입니다: " + request.userName());
+    @Transactional
+    public UserDto create(UserCreateRequest request) {
+        if(userRepository.findByUsername(request.userName()).isPresent()) {
+            throw new UserAlreadyExistsException("username", request.userName());
         }
-        if(userRepository.findByEmail(request.email())!=null) {
-            throw new IllegalArgumentException("이미 사용중인 이메일입니다: " + request.email());
+        if(userRepository.findByEmail(request.email()).isPresent()) {
+            throw new UserAlreadyExistsException("email", request.email());
         }
 
-        UUID savedProfileId = profileCheck(request.profile());
+        BinaryContent savedProfile = profileCheck(request.profile());
 
-        User user = new User(request.userName(), request.email(), request.password(), savedProfileId);
+        User user = new User(request.userName(), request.email(), request.password(), savedProfile);
         userRepository.save(user);
 
-        UserStatus userStatus = new UserStatus(user.getId());
+        UserStatus userStatus = new UserStatus(user);
         userStatusRepository.save(userStatus);
 
-        return returnResponse(user, userStatus);
+        log.info("사용자 생성 완료: id={}, username={}", user.getId(), user.getUsername());
+        return userMapper.toDto(user);
     }
 
     @Override
-    public UserResponse find(UUID id) {
-        User user = userRepository.findById(id);
-        UserStatus userStatus = findByUserId(id);
-
-        if (user==null || userStatus==null) {
-            throw new IllegalArgumentException("존재하지 않는 계정입니다.");
-        }
-
-        return returnResponse(user, userStatus);
-    }
-
-    @Override
-    public User findById(UUID id) {
-        User user = userRepository.findById(id);
-        if (user==null) {
-            throw new IllegalArgumentException("존재하지 않는 계정입니다.");
-        }
-        return user;
-    }
-
-    @Override
-    public List<UserResponse> findAll() {
+    public List<UserDto> findAll() {
         List<User> users = userRepository.findAll();
-        List<UserStatus> userStatuses = userStatusRepository.findAll();
+        List<UserDto> userDtos = new ArrayList<>();
 
-        List<UserResponse> userResponses = new ArrayList<>();
         for (User user : users) {
-            for (UserStatus userStatus : userStatuses) {
-                if(userStatus.getUserId().equals(user.getId())) {
-                    UserResponse dto = returnResponse(user, userStatus);
-                    userResponses.add(dto);
-                    break;
-                }
-            }
+            userDtos.add(userMapper.toDto(user));
         }
 
-        return userResponses;
+        return userDtos;
     }
 
     @Override
-    public UserResponse update(UserUpdateRequest request) {
-        User user = userRepository.findById(request.id());
-        UserStatus userStatus = findByUserId(request.id());
+    @Transactional
+    public UserDto update(UserUpdateRequest request) {
+        User user = userRepository.findById(request.id())
+                .orElseThrow(()->new UserNotFoundException(request.id()));
+        UserStatus userStatus = user.getStatus();
 
-        if (user==null || userStatus==null) {
-            throw new IllegalArgumentException("존재하지 않는 계정입니다.");
+        if (userStatus==null) {
+            throw new UserNotFoundException(request.id());
         }
 
-        UUID finalProfileId = user.getProfileId();
+        BinaryContent finalProfileId = user.getProfile();
         if (request.profile() != null) {
-            if (user.getProfileId() != null) {
-                binaryContentRepository.delete(user.getProfileId());
+            if (finalProfileId != null) {
+                binaryContentRepository.delete(user.getProfile());
             }
 
             finalProfileId = profileCheck(request.profile());
@@ -105,48 +91,30 @@ public class BasicUserService implements UserService {
         user.update(request.userName(), request.email(), request.password(), finalProfileId);
         userRepository.save(user);
 
-        return returnResponse(user, userStatus);
+        log.info("사용자 수정 완료: id={}", user.getId());
+        return userMapper.toDto(user);
     }
 
     @Override
+    @Transactional
     public void delete(UUID id) {
-        User user = userRepository.findById(id);
-        if(user==null) {
-            throw new IllegalArgumentException("존재하지 않는 계정입니다.");
-        }
+        User user = userRepository.findById(id)
+                .orElseThrow(()->new UserNotFoundException(id));
 
-        if (user.getProfileId() != null) {
-            binaryContentRepository.delete(user.getProfileId());
+        if (user.getProfile() != null) {
+            binaryContentRepository.delete(user.getProfile());
         }
-
-        UserStatus userStatus = findByUserId(id);
-        if(userStatus!=null) {
-            userStatusRepository.delete(userStatus.getId());
-        }
-        userRepository.delete(id);
+        userRepository.delete(user);
+        log.info("사용자 삭제 완료: id={}", id);
     }
 
-    private UserStatus findByUserId(UUID id) {
-        List<UserStatus> userStatuses = userStatusRepository.findAll();
-        for (UserStatus status : userStatuses) {
-            if (status.getUserId().equals(id)) {
-                return status;
-            }
-        }
-        return null;
-    }
-
-    private UUID profileCheck(BinaryContentCreateRequest profile) {
-        UUID savedProfileId = null;
-        if(profile!=null) {
-            BinaryContent binaryContent = new BinaryContent(profile.fileName(), profile.contentType(), profile.size(), profile.bytes());
+    private BinaryContent profileCheck(BinaryContentCreateRequest profile) {
+        BinaryContent binaryContent = null;
+        if (profile != null) {
+            binaryContent = new BinaryContent(profile.fileName(), profile.contentType(), profile.size());
+            binaryContentStorage.put(binaryContent.getId(), profile.bytes());
             binaryContentRepository.save(binaryContent);
-            savedProfileId = binaryContent.getId();
         }
-        return savedProfileId;
-    }
-
-    private UserResponse returnResponse(User user, UserStatus userStatus) {
-        return new UserResponse(user.getId(), user.getUserName(), user.getEmail(), userStatus.isOnline());
+        return binaryContent;
     }
 }

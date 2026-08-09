@@ -2,15 +2,62 @@ spring:
   application:
     name: discodeit
 
-file:
-  path:
-    user: data/users.ser
-    channel: data/channel.ser
-    message: data/message.ser
-    userStatus: data/userStatus.ser
-    readStatus: data/readStatus.ser
-    binaryContent: data/binaryContent.ser
+  profiles:
+      active: dev
+
+  sql:
+    init:
+      mode: always
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        highlight_sql: true
+        default_batch_fetch_size: 100
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+logging:
+  level:
+    root: info
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
 
 discodeit:
-  repository:
-    type: file
+  storage:
+    type: local
+    local:
+      root-path: ./storage
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, loggers
+
+info:
+  app:
+    name: Discodeit
+    version: 1.7.0
+    java-version: "17"
+    spring-boot-version: 3.4.0
+  datasource:
+    url: ${spring.datasource.url}
+    driver-class-name: ${spring.datasource.driver-class-name}
+  jpa:
+    ddl-auto: ${spring.jpa.hibernate.ddl-auto}
+  storage:
+    type: ${discodeit.storage.type}
+    path: ${discodeit.storage.local.root-path}
+  multipart:
+    max-file-size: ${spring.servlet.multipart.max-file-size}
+    max-request-size: ${spring.servlet.multipart.max-request-size}
