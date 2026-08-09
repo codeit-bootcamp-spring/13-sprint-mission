@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusDto;
 import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentUploadException;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +22,7 @@ import jakarta.validation.Valid;
 import java.io.IOException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +32,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @RestController // RESTful API로 다시 설계
 @RequiredArgsConstructor
 @RequestMapping("/api/users") // 컨트롤러에 공통 url 매핑, 기본 시작을 지정
@@ -60,7 +63,8 @@ public class UserController {
                 file.getContentType(), file.getBytes());
 
           } catch (IOException e) {
-            throw new IllegalArgumentException(e);
+            log.error("사용자 프로필 등록 실패", e);
+            throw new BinaryContentUploadException();
           }
         });
     return ResponseEntity
@@ -90,7 +94,8 @@ public class UserController {
             return new BinaryContentCreateRequest(file.getOriginalFilename(),
                 file.getContentType(), file.getBytes());
           } catch (IOException e) {
-            throw new RuntimeException(e);
+            log.error("사용자 프로필 수정 실패", e);
+            throw new BinaryContentUploadException();
           }
         });
     return ResponseEntity

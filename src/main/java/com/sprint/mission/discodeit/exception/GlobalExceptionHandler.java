@@ -1,72 +1,88 @@
 package com.sprint.mission.discodeit.exception;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+  @ExceptionHandler(DiscodeitException.class)
+  public ResponseEntity<ErrorResponse> handleDiscodeitException(DiscodeitException e) {
+    log.error("발생한 예외 클래스명: {}, 예외 메시지: {}", e.getClass().getSimpleName(), e.getMessage());
+    return ResponseEntity
+        .status(e.getErrorCode().getStatus())
+        .body(
+            ErrorResponse.builder()
+                .code(e.getErrorCode().name())
+                .message(e.getMessage())
+                .details(e.getDetails())
+                .exceptionType(e.getClass().getSimpleName())
+                .status(e.getErrorCode().getStatus().value())
+                .build()
+        );
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<ProblemDetail> handleValidation(MethodArgumentNotValidException e) {
-    Map<String, String> errors = new HashMap<>(); // 오류 결과 담을 Map, key는 필드명, value는 에러 메시지
+  public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException e) {
+    Map<String, Object> errors = new HashMap<>(); // 오류 결과 담을 Map, key는 필드명, value는 에러 메시지
 
     // 최대한 변수 선언 없이 method chaining 이용해 호출
     e.getBindingResult().getFieldErrors().forEach(error -> {
       errors.put(error.getField(), error.getDefaultMessage());
     });
-    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
-        "요청 본문에 일부 필드가 유효하지 않습니다.");
-    problemDetail.setTitle("입력 검증 실패");
-    problemDetail.setProperty("timestamp", Instant.now());
-    problemDetail.setProperty("errors", errors);
+    log.warn("유효성 검사 에러: {}", errors);
     return ResponseEntity
-        .status(HttpStatus.BAD_REQUEST)
-        .body(problemDetail);
-  }
-
-  // 404 - 일치하는 자원이 없을 때
-  @ExceptionHandler(NoSuchElementException.class)
-  public ResponseEntity<String> handleNotFound(NoSuchElementException e) { // 제공된 API 스펙과 맞춘다
-    return ResponseEntity
-        .status(HttpStatus.NOT_FOUND)
-        .body(e.getMessage());
-  }
-
-  // 400 - 잘못된 입력이 요청으로 들어왔을 때
-  @ExceptionHandler(IllegalArgumentException.class)
-  public ResponseEntity<String> handleIllegalArgument(IllegalArgumentException e) {
-    return ResponseEntity
-        .status(HttpStatus.BAD_REQUEST)
-        .body(e.getMessage());
+        .status(ErrorCode.PARAM_ERROR.getStatus())
+        .body(
+            ErrorResponse.builder()
+                .code(ErrorCode.PARAM_ERROR.name())
+                .message(ErrorCode.PARAM_ERROR.getMessage())
+                .details(errors)
+                .exceptionType(e.getClass().getSimpleName())
+                .status(ErrorCode.PARAM_ERROR.getStatus().value())
+                .build()
+        );
   }
 
   // 400 - JSON 자체가 깨졌거나 enum에 없는 값 등, 요청 본문을 읽지 못할 때
   @ExceptionHandler(HttpMessageNotReadableException.class)
-  public ResponseEntity<String> handleNotReadable(HttpMessageNotReadableException e) {
+  public ResponseEntity<ErrorResponse> handleNotReadable(HttpMessageNotReadableException e) {
+    log.warn("요청 본문을 읽을 수 없음: {}", e.getMessage());
     return ResponseEntity
-        .status(HttpStatus.BAD_REQUEST)
-        .body("요청 본문(JSON)을 읽을 수 없습니다. 형식이나 값을 확인하세요.");
+        .status(ErrorCode.MESSAGE_CONVERTER_ERROR.getStatus())
+        .body(
+            ErrorResponse.builder()
+                .code(ErrorCode.MESSAGE_CONVERTER_ERROR.name())
+                .message(ErrorCode.MESSAGE_CONVERTER_ERROR.getMessage())
+                .details(Map.of())
+                .exceptionType(e.getClass().getSimpleName())
+                .status(ErrorCode.MESSAGE_CONVERTER_ERROR.getStatus().value())
+                .build()
+        );
   }
 
   // 500 - 그 밖의 예상치 못 한 오류, 원본 메시지는 로그에만 주고 클라이언트에게는 안전한 문구를 준다
   @ExceptionHandler(Exception.class)
-  public ResponseEntity<String> handleException(Exception e) {
+  public ResponseEntity<ErrorResponse> handleException(Exception e) {
     log.error("예상치 못한 서버 오류", e);
     return ResponseEntity
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .body("서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.");
+        .status(ErrorCode.UNKNOWN_ERROR.getStatus())
+        .body(
+            ErrorResponse.builder()
+                .code(ErrorCode.UNKNOWN_ERROR.name())
+                .message(ErrorCode.UNKNOWN_ERROR.getMessage())
+                .details(Map.of())
+                .exceptionType(e.getClass().getSimpleName())
+                .status(ErrorCode.UNKNOWN_ERROR.getStatus().value())
+                .build()
+        );
   }
-
 }

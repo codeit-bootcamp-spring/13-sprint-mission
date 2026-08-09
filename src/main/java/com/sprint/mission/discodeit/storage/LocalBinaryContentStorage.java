@@ -30,10 +30,12 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
 
   @PostConstruct // Bean 생성되면 자동으로 호출
   public void init() { // 루트 디렉토리 초기화
-    try {
-      Files.createDirectories(root);
-    } catch (IOException e) {
-      throw new FileStorageException("업로드 디렉터리 생성 실패: " + root, e);
+    if (!Files.exists(root)) {
+      try {
+        Files.createDirectories(root);
+      } catch (IOException e) {
+        throw new FileStorageException("업로드 디렉터리 생성 실패: " + root, e);
+      }
     }
   }
 
@@ -43,6 +45,9 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
 
   @Override
   public UUID put(UUID id, byte[] bytes) {
+    if (Files.exists(resolvePath(id))) {
+      throw new FileStorageException("이미 존재하는 파일: " + id);
+    }
     try {
       Files.write(resolvePath(id), bytes);
       return id;
@@ -53,6 +58,9 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
 
   @Override
   public InputStream get(UUID id) {
+    if (Files.notExists(resolvePath(id))) {
+      throw new FileStorageException("존재하지 않는 파일: " + id);
+    }
     try {
       return Files.newInputStream(resolvePath(id));
     } catch (IOException e) {
