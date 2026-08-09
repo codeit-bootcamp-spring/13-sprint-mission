@@ -2,9 +2,7 @@ package com.sprint.mission.discodeit;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
-@EnableJpaAuditing // @CreatedDate, @LastModifiedDate가 자동으로 작동
 @SpringBootApplication
 public class DiscodeitApplication {
 

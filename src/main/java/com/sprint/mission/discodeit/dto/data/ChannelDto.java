@@ -10,7 +10,7 @@ public record ChannelDto(
     ChannelType type,
     String name,
     String description,
-    List<UUID> participantIds,  // private 채널 참여자 ID 목록 (유지)
+    List<UserDto> participants,
     Instant lastMessageAt
 ) {
 
