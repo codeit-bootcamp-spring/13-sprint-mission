@@ -1,7 +1,6 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.response.*;
-import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.service.*;
 import com.sprint.mission.discodeit.storage.*;
 import lombok.*;
@@ -22,7 +21,7 @@ public class BinaryContentController {
 
     @GetMapping("/{binaryContentId}")
     public ResponseEntity<Resource> find(@PathVariable UUID binaryContentId) {
-        BinaryContentResponse response =
+        BinaryContentDto response =
                 binaryContentService.find(binaryContentId);
 
         InputStream inputStream = binaryContentStorage.get(binaryContentId);
@@ -34,25 +33,23 @@ public class BinaryContentController {
     }
 
     @GetMapping
-    public List<BinaryContentResponse> finaAll(@RequestParam List<UUID> ids) {
-        return binaryContentService.findAllByIdIn(ids);
+    public ResponseEntity<List<BinaryContentDto>> finaAll(@RequestParam List<UUID> ids) {
+        List<BinaryContentDto> dto = binaryContentService.findAllByIdIn(ids);
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/find")
-    public ResponseEntity<BinaryContentResponse> findByRequestParam(
+    public ResponseEntity<BinaryContentDto> findByRequestParam(
             @RequestParam UUID binaryContentId
     ) {
-        System.out.println("컨트롤러 들어옴 binaryContentId = " + binaryContentId);
-
-        return ResponseEntity.ok(
-                binaryContentService.find(binaryContentId)
-        );
+        BinaryContentDto dto = binaryContentService.find(binaryContentId);
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/{binaryContentId}/download")
-    public ResponseEntity<Resource> download(@PathVariable UUID binaryContentId) {
-        BinaryContentResponse response = binaryContentService.find(binaryContentId);
-        return binaryContentStorage.download(response);
+    public ResponseEntity<?> download(@PathVariable UUID binaryContentId) {
+        BinaryContentDto dto = binaryContentService.find(binaryContentId);
+        return binaryContentStorage.download(dto);
     }
 
 }

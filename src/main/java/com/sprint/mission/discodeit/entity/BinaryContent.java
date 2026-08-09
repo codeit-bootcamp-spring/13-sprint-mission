@@ -12,32 +12,21 @@ import java.util.*;
 @Table(name = "binary_contents")
 public class BinaryContent extends BaseEntity {
 
-    @Column(name = "content_type", nullable = false)
+    @Column(nullable = false, length = 100)
     private String contentType;
 
-    @Column(name = "file_name", nullable = false)
+    @Column(nullable = false, length = 255)
     private String fileName;
 
     @Column(nullable = false)
     private Long size;
 
-    @Column(nullable = false)
-    private String fileUrl;
-
-    public BinaryContent(String fileName, Long size, String contentType, String fileUrl) {
-
-        this.fileName = fileName;
-        this.size = size;
-        this.contentType = contentType;
-        this.fileUrl= fileUrl;
-
-    }
-
     public BinaryContent(String fileName, Long size, String contentType) {
+
         this.fileName = fileName;
         this.size = size;
         this.contentType = contentType;
-    }
 
+    }
 
 }

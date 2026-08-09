@@ -40,8 +40,8 @@ public class UserStatus extends BaseUpdatableEntity {
         return !lastActivityAt.isBefore(now.minus(Duration.ofMinutes(5)));
     }
 
-    public void updateLastOnlineAt(Instant lastOnlineAt) {
-        this.lastActivityAt = lastOnlineAt;
+    public void updateLastActivityAt(Instant lastActivityAt) {
+        this.lastActivityAt = lastActivityAt;
     }
 
 }

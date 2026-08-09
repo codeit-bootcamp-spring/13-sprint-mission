@@ -1,10 +1,26 @@
 package com.sprint.mission.discodeit.dto.request;
 
+import com.sprint.mission.discodeit.dto.command.*;
+import jakarta.validation.constraints.*;
+
 import java.time.*;
 import java.util.*;
 
 public record CreateUserStatusRequest(
+        @NotNull(message = "사용자 ID는 필수입니다.")
         UUID userId,
-        Instant lastOnlineAt
+
+        @PastOrPresent (message = "마지막 접속 시간은 미래 시점일 수 없습니다.")
+        Instant lastActiveAt
 ) {
+    public CreateUserStatusRequest{
+        if (lastActiveAt == null) {
+            lastActiveAt = Instant.now();
+        }
+    }
+
+    public CreateUserStatusCommand toCommand(){
+        return new CreateUserStatusCommand(userId, lastActiveAt);
+    }
+
 }

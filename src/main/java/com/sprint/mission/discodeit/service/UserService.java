@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service;
 
 
+import com.sprint.mission.discodeit.dto.command.*;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.response.*;
 
@@ -8,14 +9,14 @@ import java.util.*;
 
 public interface UserService {
 
-    UserResponse create(UserRequest.CreateUserRequest request, CreateBinaryContentRequest profileImage);
+    UserDto create(CreateUserCommand command, CreateBinaryContentCommand profileImage);
 
-    UserResponse find(UUID id);
+    UserDto findByUserId(UUID userId);
 
-    List<UserResponse> findAll();
+    List<UserDto> findAll();
 
-    UserResponse update(UUID id,UserRequest.UpdateUserRequest request,CreateBinaryContentRequest profileImage);
+    UserDto update(UUID id, UpdateUserCommand command, CreateBinaryContentCommand profileImage);
 
-    void delete(UUID id);
+    void delete(UUID userId);
 
 }
