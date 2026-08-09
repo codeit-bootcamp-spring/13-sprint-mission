@@ -5,6 +5,9 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.PrivateChannelUpdateException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
@@ -13,7 +16,6 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import java.time.Instant;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,9 +54,11 @@ public class BasicChannelService implements ChannelService {
     Channel channel = new Channel(ChannelType.PRIVATE, null, null);
     channelRepository.save(channel);
     participantIds.forEach(userId -> {
+
       User user = userRepository.findById(userId)
-          .orElseThrow(() -> new NoSuchElementException("존재하지 않는 user입니다."));
+          .orElseThrow(() -> new UserNotFoundException(userId));
       readStatusRepository.save(new ReadStatus(user, channel, Instant.now()));
+
     }); //Instant.now(): 현재 시간을 Instant 타입으로 반환하는 메서드.
 
     log.info("PRIVATE 채널 생성 완료 - channelId: {}", channel.getId());
@@ -67,7 +71,7 @@ public class BasicChannelService implements ChannelService {
     log.info("채널 단건 조회 요청 - channelId: {}", channelId);
 
     Channel channel = channelRepository.findById(channelId)
-        .orElseThrow(() -> new NoSuchElementException("존재하지 않는 channelId 입니다."));
+        .orElseThrow(() -> new ChannelNotFoundException(channelId));
 
     log.info("채널 단건 조회 완료 - channelId: {}", channelId);
 
@@ -99,9 +103,9 @@ public class BasicChannelService implements ChannelService {
     log.info("채널 수정 요청 - channelId: {}", channelId);
 
     Channel channel = channelRepository.findById(channelId)
-        .orElseThrow(() -> new NoSuchElementException("존재하지 않는 channelId 입니다."));
+        .orElseThrow(() -> new ChannelNotFoundException(channelId));
     if (channel.getType() == ChannelType.PRIVATE) {
-      throw new IllegalArgumentException("PRIVATE 채널은 수정할 수 없습니다.");
+      throw new PrivateChannelUpdateException(channelId);
     }
     channel.update(newName, newDescription);
 
@@ -116,7 +120,7 @@ public class BasicChannelService implements ChannelService {
     log.info("채널 삭제 요청 - channelId: {}", channelId)
     ;
     if (!channelRepository.existsById(channelId)) {
-      throw new NoSuchElementException("존재하지 않는 channelId 입니다.");
+      throw new ChannelNotFoundException(channelId);
     }
     channelRepository.deleteById(channelId);
 

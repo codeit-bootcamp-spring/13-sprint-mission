@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- XML 문서 선언. 버전/인코딩 정보 -->
+<configuration>
+  <!-- 로그 출력 패턴을 변수로 정의 (아래서 재사용) -->
+  <property name="LOG_PATTERN"
+    value="%d{yy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+
+  <!-- 콘솔 출력용 appender -->
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <!-- 위에서 정의한 패턴 사용 -->
+      <pattern>${LOG_PATTERN}</pattern>
+    </encoder>
+  </appender>
+
+  <!-- 파일 출력용 appender (날짜별 롤링) -->
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <!-- 현재 쓰이고 있는 로그 파일 경로 -->
+    <file>.logs/discodeit.log</file>
+    <encoder>
+      <pattern>${LOG_PATTERN}</pattern>
+    </encoder>
+    <!-- 날짜 기준으로 파일을 롤링(교체)하는 정책 -->
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <!-- 롤링된 과거 파일의 이름 규칙 (날짜가 파일명에 들어감) -->
+      <fileNamePattern>.logs/discodeit.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <!-- 최대 30일치 파일만 보관, 이후 자동 삭제 -->
+      <maxHistory>30</maxHistory>
+    </rollingPolicy>
+  </appender>
+
+  <!-- 최상위 로거 설정: 레벨은 INFO, CONSOLE+FILE 둘 다에 로그 전달 -->
+  <root level="INFO">
+    <appender-ref ref="CONSOLE"/>
+    <appender-ref ref="FILE"/>
+  </root>
+</configuration>

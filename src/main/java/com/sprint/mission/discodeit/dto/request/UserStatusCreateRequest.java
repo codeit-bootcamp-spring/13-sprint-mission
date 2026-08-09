@@ -1,7 +1,10 @@
 package com.sprint.mission.discodeit.dto.request;
 
-import java.time.Instant;
+import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
-public record UserStatusCreateRequest(UUID userId, Instant lastActiveAt) {
+public record UserStatusCreateRequest(
+    @NotNull(message = "userId를 입력해주세요.")
+    UUID userId) {
+
 }

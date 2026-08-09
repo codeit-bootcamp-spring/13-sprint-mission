@@ -3,6 +3,9 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.user.DuplicateEmailException;
+import com.sprint.mission.discodeit.exception.user.DuplicateUsernameException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -10,7 +13,6 @@ import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
 import java.time.Instant;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,10 +35,10 @@ public class BasicUserService implements UserService {
     log.info("유저 생성 요청 - username: {}, email: {}", username, email);
 
     if (userRepository.findByUserName(username).isPresent()) {
-      throw new IllegalArgumentException("이미 사용중인 userName입니다. ");
+      throw new DuplicateUsernameException(username);
     }
     if (userRepository.findByEmail(email).isPresent()) {
-      throw new IllegalArgumentException("이미 사용중인 email입니다: " + email);
+      throw new DuplicateEmailException(email);
     }
 
     User user = new User(username, password, email);
@@ -60,7 +62,7 @@ public class BasicUserService implements UserService {
 
     User user = userRepository.findById(userId)
         .orElseThrow(()
-            -> new NoSuchElementException("존재하지 않는 userId입니다."));
+            -> new UserNotFoundException(userId));
 
     log.info("유저 단건 조회 완료 - userId: {}", userId);
     return userMapper.toDto(user);
@@ -86,7 +88,7 @@ public class BasicUserService implements UserService {
     log.info("유저 수정 요청 - userId: {}", userId);
 
     User user = userRepository.findById(userId)
-        .orElseThrow(() -> new NoSuchElementException("존재하지 않는 userId입니다."));
+        .orElseThrow(() -> new UserNotFoundException(userId));
 
     user.update(newUsername, newEmail, newPassword);
     if (newProfileId != null) {
@@ -103,7 +105,7 @@ public class BasicUserService implements UserService {
     log.info("유저 삭제 요청 - userId: {}", userId);
     User user = userRepository.findById(userId)
         .orElseThrow(()
-            -> new NoSuchElementException("User with id " + userId + " not found"));
+            -> new UserNotFoundException(userId));
 
     if (user.getProfile() != null) {
       binaryContentRepository.deleteById(user.getProfile().getId());

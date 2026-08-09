@@ -3,7 +3,6 @@ package com.sprint.mission.discodeit.controller;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.UserService;
@@ -12,6 +11,7 @@ import jakarta.validation.Valid;
 import java.io.IOException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +22,7 @@ import java.util.UUID;
 import org.springframework.web.multipart.MultipartFile;
 
 // @Controller + @ResponseBody: 빈등록, 컨트롤러 명시, 모든 메서드 자동 @ResponseBody 적용
+@Slf4j
 @RestController
 @RequiredArgsConstructor// LomBok어노테이션, final필드를 매개변수로 바든 생성자 자동 생성
 @RequestMapping("/api/users")
@@ -37,6 +38,8 @@ public class UserController {
       @RequestPart(value = "profile", required = false) MultipartFile profile,
       @RequestPart("userCreateRequest") @Valid UserCreateRequest request) {
     //└> @RequestBody JSON -> Java 객체로              //└> Dto를 인수로 넣음
+    log.debug("[User 생성 요청] username: {}, email: {}, profile 첨부 여부: {}",
+        request.username(), request.email(), profile != null);
     BinaryContentDto content = null;
     if (profile != null) {
       try {
@@ -62,6 +65,7 @@ public class UserController {
         //.orElse(null) -> 옵셔널로 감싼 값(id)을 다시 꺼내서 반환
         //-> ofNullable에서 null이였으면 map 스킵되고 바로 orElse(null)에서 null을 꺼내서 반환.
     );
+    log.info("[User 생성 완료] userId: {}", userDto.id());
     return ResponseEntity.status(HttpStatus.CREATED).body(userDto);
   }                                                //└>새로운 리소스 추가
 
@@ -85,7 +89,8 @@ public class UserController {
       //getBytes(), getSize(), getContentType() 같은 메서드로 파일 정보를 꺼낼 수 있음.
       //프론트에서 요구하는 방식이라 일단 추가. 415오류 해결.
       @PathVariable UUID userId,
-      @RequestPart("userUpdateRequest") UserUpdateRequest userUpdateRequest) {
+      @RequestPart("userUpdateRequest") @Valid UserUpdateRequest userUpdateRequest) {
+    log.debug("[User 수정 요청] userId: {}, profile 첨부 여부: {}", userId, profile != null);
 
     BinaryContentDto content = null;
     if (profile != null) {
@@ -102,22 +107,27 @@ public class UserController {
         userUpdateRequest.newPassword(),
         content != null ? content.id() : userUpdateRequest.newProfileId()
     );
+    log.info("[User 수정 완료] userId: {}", newUser.id());
     return ResponseEntity.status(HttpStatus.OK).body(newUser);
   }                                                 //└> 리소스 수정 200 요청 성공
 
   @RequestMapping(value = "/{userId}", method = RequestMethod.DELETE)
   public ResponseEntity<Void> delete(@PathVariable UUID userId) {
+    log.debug("[User 삭제 요청] userId: {}", userId);
+
     userService.delete(userId);
+
+    log.info("[User 삭제 완료] userId: {}", userId);
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 
   @RequestMapping(value = "/{userId}/userStatus", method = RequestMethod.PATCH)
-  public ResponseEntity<UserDto> updateByUserId(@PathVariable UUID userId,
-      @RequestBody UserStatusUpdateRequest userStatusUpdateRequest) {
-    UserDto userStatus = userStatusService.updateByUserId(userId, userStatusUpdateRequest);
-    // DTO를 통째로 서비스에 전달
-    // 서비스 내부에서 request.newLastActiveAt()을 꺼내 UserStatus 엔티티의
-    // lastActiveAt 필드를 수정 후 저장소에 저장 -> 각각의 필드 꺼낼 필요 없음.
+  public ResponseEntity<UserDto> updateByUserId(@PathVariable UUID userId) {
+    log.debug("[UserStatus 수정 요청] userId: {}", userId);
+
+    UserDto userStatus = userStatusService.updateToNowByUserId(userId);
+
+    log.info("[UserStatus 수정 완료] userId: {}", userId);
     return ResponseEntity.status(HttpStatus.OK).body(userStatus);
   }
 
