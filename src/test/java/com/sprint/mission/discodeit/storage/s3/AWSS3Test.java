@@ -121,16 +121,4 @@ public class AWSS3Test {
         System.out.println("Presigned URL = " + url);
     }
 
-//    private void uploadTestObject() {
-//        PutObjectRequest request = PutObjectRequest.builder()
-//                .bucket(bucket)
-//                .key(TEST_KEY)
-//                .contentType("text/plain")
-//                .build();
-//
-//        s3Client.putObject(
-//                request,
-//                RequestBody.fromString(TEST_CONTENT)
-//        );
-//    }
 }
