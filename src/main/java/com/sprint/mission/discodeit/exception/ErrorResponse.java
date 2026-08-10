@@ -12,14 +12,16 @@ public record ErrorResponse(
         int status
 ) {
 
-    public static ErrorResponse from(DiscodeitException exception, int status) {
+    public static ErrorResponse from(DiscodeitException exception) {
+        ErrorCode errorCode = exception.getErrorCode();
+
         return new ErrorResponse(
                 exception.getTimestamp(),
-                exception.getErrorCode().name(),
+                errorCode.getErrorCode(),
                 exception.getMessage(),
                 exception.getDetails(),
                 exception.getClass().getName(),
-                status
+                errorCode.getStatus().value()
         );
     }
 
