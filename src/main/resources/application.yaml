@@ -29,6 +29,9 @@ discodeit:
     local:
       root-path: ./upload-files
 
+swagger:
+  server-url: http://localhost:8080
+
 management:
   endpoints:
     web:
