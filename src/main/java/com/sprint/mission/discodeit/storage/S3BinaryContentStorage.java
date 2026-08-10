@@ -51,11 +51,12 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
             @Value("${discodeit.storage.s3.bucket}") String bucket,
             @Value("${discodeit.storage.s3.presigned-url-expiration}") long presignedUrlExpiration
     ) {
-        this.accessKey = accessKey;
-        this.secretKey = secretKey;
         this.region = region;
         this.bucket = bucket;
         this.presignedUrlExpiration = presignedUrlExpiration;
+
+        this.accessKey = null;
+        this.secretKey = null;
         this.endpoint = null;
     }
 
@@ -124,29 +125,33 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
 
 
     private S3Client getS3Client() {
-        AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
 
         S3ClientBuilder builder = S3Client.builder()
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(credentials));
+                .region(Region.of(region));
 
+        // 테스트 환경
         if (endpoint != null) {
-            builder.endpointOverride(endpoint)
+            AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
+
+            builder.credentialsProvider(StaticCredentialsProvider.create(credentials))
+                    .endpointOverride(endpoint)
                     .forcePathStyle(true);
         }
 
+        // 운영에서는 credentialsProvider를 지정하지 않음
         return builder.build();
     }
 
     private String generatePresignedUrl(String key, String contentType) {
-        AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
 
         S3Presigner.Builder builder = S3Presigner.builder()
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(credentials));
+                .region(Region.of(region));
 
         if (endpoint != null) {
-            builder.endpointOverride(endpoint)
+            AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
+
+            builder.credentialsProvider(StaticCredentialsProvider.create(credentials))
+                    .endpointOverride(endpoint)
                     .serviceConfiguration(
                             S3Configuration.builder()
                                     .pathStyleAccessEnabled(true)
