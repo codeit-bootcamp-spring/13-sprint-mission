@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.storage.s3;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -25,6 +26,7 @@ import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Disabled("실제 AWS S3 연동 확인용 테스트")
 public class AWSS3Test {
 
     private static final String TEST_KEY = "test/hello.txt";
