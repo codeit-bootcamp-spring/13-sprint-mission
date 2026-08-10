@@ -1,6 +1,9 @@
 name: Push to ECR Public
 
 on:
+  push:
+    branches:
+      - 박민재-sprint8
   workflow_dispatch:
 
 permissions:
