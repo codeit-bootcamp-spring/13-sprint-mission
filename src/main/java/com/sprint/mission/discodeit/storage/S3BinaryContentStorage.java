@@ -45,8 +45,6 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
 
     @Autowired
     public S3BinaryContentStorage(
-            @Value("${discodeit.storage.s3.access-key}") String accessKey,
-            @Value("${discodeit.storage.s3.secret-key}") String secretKey,
             @Value("${discodeit.storage.s3.region}") String region,
             @Value("${discodeit.storage.s3.bucket}") String bucket,
             @Value("${discodeit.storage.s3.presigned-url-expiration}") long presignedUrlExpiration
