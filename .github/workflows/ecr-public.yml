@@ -42,5 +42,6 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            public.ecr.aws/m1o5y6h5/discodeit:latest
-            public.ecr.aws/m1o5y6h5/discodeit:1.2-M8
+            public.ecr.aws/m1o5y6h5/discodeit:local-slim
+#            public.ecr.aws/m1o5y6h5/discodeit:latest
+#            public.ecr.aws/m1o5y6h5/discodeit:1.2-M8

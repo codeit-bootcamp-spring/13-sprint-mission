@@ -9,12 +9,15 @@ COPY gradlew settings.gradle build.gradle ./
 COPY gradle ./gradle
 RUN chmod +x gradlew
 
+# 의존성 레이어 캐시
+RUN ./gradlew dependencies --no-daemon
+
 # 소스 복사 후 실행 가능 jar 빌드 (테스트는 CI 에서, 이미지 빌드에선 제외)
 COPY src ./src
 RUN ./gradlew bootJar -x test --no-daemon
 
 # ---- ② run 스테이지 ----
-FROM amazoncorretto:17
+FROM eclipse-temurin:17-jre
 WORKDIR /app
 
 ENV PROJECT_NAME=discodeit PROJECT_VERSION=1.2-M8 JVM_OPTS="" SERVER_PORT=80
