@@ -21,16 +21,24 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Login to Amazon ECR Public
-        uses: aws-actions/amazon-ecr-login@v2
-        with:
-          registry-type: public
+        run: |
+          aws ecr-public get-login-password --region us-east-1 \
+            | docker login \
+              --username AWS \
+              --password-stdin public.ecr.aws
 
       - name: Build and push Docker image
         env:
-          IMAGE_URI: ${{ vars.ECR_REPOSITORY_URI }}:latest
+          ECR_REPOSITORY_URI: ${{ vars.ECR_REPOSITORY_URI }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t "$IMAGE_URI" .
-          docker push "$IMAGE_URI"
+          docker build \
+            -t "$ECR_REPOSITORY_URI:latest" \
+            -t "$ECR_REPOSITORY_URI:$IMAGE_TAG" \
+            .
+
+          docker push "$ECR_REPOSITORY_URI:latest"
+          docker push "$ECR_REPOSITORY_URI:$IMAGE_TAG"
 
       - name: Download current ECS task definition
         run: |
@@ -55,7 +63,7 @@ jobs:
         with:
           task-definition: task-definition.json
           container-name: discodeit-app
-          image: ${{ vars.ECR_REPOSITORY_URI }}:latest
+          image: ${{ vars.ECR_REPOSITORY_URI }}:${{ github.sha }}
 
       - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
