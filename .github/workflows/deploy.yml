@@ -25,7 +25,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-region: us-east-1
 
       # OIDC type
 #      - name: AWS 자격증명 (OIDC 역할 assume - 키 없음)
@@ -43,7 +43,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         with:
-          registry-type: private
+          registry-type: public
 
 
       # image build
@@ -63,12 +63,7 @@ jobs:
             --push .
 
 
-
-  # ECS service on
-  ecs_update:
-    needs: ecr_push
-    runs-on: ubuntu-latest
-    steps:
+      # reconfigure cert for create ecs ap-northeast-2 region
       - name: aws certification
         uses: aws-actions/configure-aws-credentials@v6
         with:
