@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+  push:
+    branches:
+      - hajung-sprint8
+
 jobs:
   test:
     runs-on: ubuntu-latest
