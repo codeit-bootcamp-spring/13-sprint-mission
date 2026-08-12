@@ -3,7 +3,7 @@ name: CI Test
 on:
   pull_request:
     branches:
-      - "유하정"
+      - main
 
 jobs:
   test:
