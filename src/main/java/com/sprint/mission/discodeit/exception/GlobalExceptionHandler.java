@@ -1,16 +1,22 @@
 package com.sprint.mission.discodeit.exception;
 
-import com.sprint.mission.discodeit.exception.binarycontent.*;
-import com.sprint.mission.discodeit.exception.channel.*;
-import com.sprint.mission.discodeit.exception.message.*;
-import com.sprint.mission.discodeit.exception.user.*;
-import lombok.extern.slf4j.*;
-import org.springframework.http.*;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.PrivateChannelUpdateException;
+import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import java.time.*;
-import java.util.*;
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
 
 @RestControllerAdvice
 @Slf4j
@@ -114,6 +120,33 @@ public class GlobalExceptionHandler {
         );
 
         log.warn("요청 값 검증에 실패했습니다. errors={}", validationErrors);
+
+        return ResponseEntity
+                .status(errorCode.getStatus())
+                .body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(
+            MethodArgumentTypeMismatchException exception
+    ) {
+        ErrorCode errorCode = ErrorCode.INVALID_REQUEST;
+
+        ErrorResponse response = new ErrorResponse(
+                Instant.now(),
+                errorCode.name(),
+                "요청 값의 형식이 올바르지 않습니다.",
+                Map.of(),
+                exception.getClass().getSimpleName(),
+                errorCode.getStatus().value()
+        );
+
+        log.warn(
+                "요청 값 타입 변환에 실패했습니다. name={}, value={}, requiredType={}",
+                exception.getName(),
+                exception.getValue(),
+                exception.getRequiredType()
+        );
 
         return ResponseEntity
                 .status(errorCode.getStatus())

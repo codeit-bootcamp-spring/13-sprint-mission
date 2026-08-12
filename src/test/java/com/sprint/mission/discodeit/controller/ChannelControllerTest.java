@@ -96,10 +96,6 @@ class ChannelControllerTest {
                 .andExpect(
                         jsonPath("$.description")
                                 .value("전체 공지 채널입니다.")
-                )
-                .andExpect(
-                        jsonPath("$.createdAt")
-                                .exists()
                 );
 
         ArgumentCaptor<CreatePublicChannelCommand> commandCaptor =

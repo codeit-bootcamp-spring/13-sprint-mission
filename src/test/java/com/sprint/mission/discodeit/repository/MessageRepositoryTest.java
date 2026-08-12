@@ -53,7 +53,7 @@ public class MessageRepositoryTest {
 
         saveMessage("일반 채널 메세지", otherChannel, author);
 
-        PageRequest pageable = PageRequest.of(0, 50,
+        PageRequest pageable = PageRequest.of(0, 2,
                 Sort.by(Sort.Direction.DESC, "createdAt"));
 
         // when
