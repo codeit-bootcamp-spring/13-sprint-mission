@@ -5,26 +5,44 @@ spring:
     multipart:
       maxFileSize: 10MB # 파일 하나의 최대 크기
       maxRequestSize: 30MB  # 한 번에 최대 업로드 가능 용량
-  profiles:
-    active: dev  # 기본값으로 dev 사용
+  datasource:
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      # validate: 앱 시작 시 Entity와 DB 테이블 구조가 맞는지 검사만 함 (변경 없음)
-      # create: 앱 시작 시 테이블 새로 생성 (기존 데이터 삭제됨, 개발 초기에만 사용)
-      # none: 아무것도 안 함 (운영 환경에서 사용)
       ddl-auto: validate
-    properties:
-      hibernate:
-        format_sql: true
-    #        default_batch_fetch_size: 100
     open-in-view: false
+  profiles:
+    active:
+      - dev
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      show-details: always
 
-logging:
-  level:
-    root: info
-    org.hibernate.SQL: debug
-    org.hibernate.orm.jdbc.bind: trace
+info:
+  name: Discodeit
+  version: 1.7.0
+  java:
+    version: 17
+  spring-boot:
+    version: 3.4.0
+  config:
+    datasource:
+      url: ${spring.datasource.url}
+      driver-class-name: ${spring.datasource.driver-class-name}
+    jpa:
+      ddl-auto: ${spring.jpa.hibernate.ddl-auto}
+    storage:
+      type: ${discodeit.storage.type}
+      path: ${discodeit.storage.local.root-path}
+    multipart:
+      max-file-size: ${spring.servlet.multipart.maxFileSize}
+      max-request-size: ${spring.servlet.multipart.maxRequestSize}
 
 discodeit:
   storage:
@@ -32,38 +50,6 @@ discodeit:
     local:
       root-path: .discodeit/storage
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health, info, metrics, loggers
-  endpoint:
-    health:
-      # always: 상세 정보 항상 표시 (DB 연결 상태 등)
-      show-details: always
-
-  info:
-    env:
-      enabled: true
-
-# 엔드포인트에 표시할 정보
-info:
-  app:
-    name: Discodeit
-    version: 1.7.0
-  java:
-    version: 17
-  spring-boot:
-    version: 3.4.0
-  config:
-    datasource:
-      url: jdbc:postgresql://localhost:5432/discodeit
-      driver-class-name: org.postgresql.Driver
-    jpa:
-      ddl-auto: validate
-    storage:
-      type: local
-      path: .discodeit/storage
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 30MB
+logging:
+  level:
+    root: info
