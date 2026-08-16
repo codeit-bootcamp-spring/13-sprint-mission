@@ -15,7 +15,7 @@ public class PageResponseMapper {
         nextCursor,
         slice.getSize(),//한 페이지당 데이터 개수 (50개가 요구사항임.)
         slice.hasNext(),//다음 페이지가 있는지 여부
-        null//전체 데이터 개수 (Slice는 모름)
+        0L//전체 데이터 개수 (Slice는 모름)
     );
   }
 
