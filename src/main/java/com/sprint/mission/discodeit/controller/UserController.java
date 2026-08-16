@@ -4,11 +4,14 @@ import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.exception.ErrorCode;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.service.UserStatusService;
 import jakarta.validation.Valid;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +50,8 @@ public class UserController {
             profile.getSize(), profile.getContentType(),
             profile.getBytes());
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        throw new DiscodeitException(ErrorCode.BINARY_CONTENT_READ_FAILED,
+            Map.of("originalFileName", profile.getOriginalFilename()));
       }
     }
 
@@ -98,7 +102,8 @@ public class UserController {
         content = binaryContentService.create(profile.getOriginalFilename(),
             profile.getSize(), profile.getContentType(), profile.getBytes());
       } catch (IOException e) {
-        throw new RuntimeException(e);//전역으로 처리할까 했지만 다음 미션 DB연동이라 생략.
+        throw new DiscodeitException(ErrorCode.BINARY_CONTENT_READ_FAILED,
+            Map.of("originalFileName", profile.getOriginalFilename()));
       }
     }
 

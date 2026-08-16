@@ -21,6 +21,7 @@ public enum ErrorCode {
   USER_STATUS_ALREADY_EXISTS("이미 존재하는 UserStatus입니다."),
 
   BINARY_CONTENT_NOT_FOUND("존재하지 않는 파일입니다."),
+  BINARY_CONTENT_READ_FAILED("파일을 읽는 중 오류가 발생했습니다."),
 
   INVALID_CREDENTIALS("아이디 또는 비밀번호가 올바르지 않습니다.");
 

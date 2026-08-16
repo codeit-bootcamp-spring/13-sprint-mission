@@ -2,9 +2,7 @@ package com.sprint.mission.discodeit.exception;
 
 import java.util.Map;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
 
-@Component
 public class ErrorCodeStatusMapper {
 
   private static final Map<ErrorCode, HttpStatus> STATUS_MAP = Map.ofEntries(
@@ -24,11 +22,16 @@ public class ErrorCodeStatusMapper {
       Map.entry(ErrorCode.USER_STATUS_ALREADY_EXISTS, HttpStatus.CONFLICT),
 
       Map.entry(ErrorCode.BINARY_CONTENT_NOT_FOUND, HttpStatus.NOT_FOUND),
+      Map.entry(ErrorCode.BINARY_CONTENT_READ_FAILED, HttpStatus.INTERNAL_SERVER_ERROR),
 
       Map.entry(ErrorCode.INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED)
   );
 
-  public HttpStatus resolve(ErrorCode errorCode) {
+  private ErrorCodeStatusMapper() {
+
+  }
+
+  public static HttpStatus resolve(ErrorCode errorCode) {
     return STATUS_MAP.getOrDefault(errorCode, HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }
