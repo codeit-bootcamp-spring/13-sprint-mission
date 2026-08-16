@@ -25,10 +25,13 @@ discodeit:
     type: file
     file-directory: .discodeit
   storage:
-    type: local  #← @ConditionalOnProperty가 이걸 보고 Bean 등록 여부 결정
+    type: ${STORAGE_TYPE:local}
     local:
-      root-path: .storage #← @Value가 이걸 가져와서 root 필드에 할당
-
+      root-path: ${STORAGE_LOCAL_ROOT_PATH:.discodeit/storage}
+    s3:
+      region: ${AWS_S3_REGION}
+      bucket: ${AWS_S3_BUCKET}
+      presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600}
 info:
   app:
     name: Discodeit

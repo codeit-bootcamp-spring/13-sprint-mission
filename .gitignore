@@ -39,4 +39,4 @@ out/
 
 .discodeit/
 .claude
-.env
+*.env

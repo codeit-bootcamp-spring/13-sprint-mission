@@ -1,0 +1,155 @@
+26-08-14 14:17:56.114 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.1.Final
+26-08-14 14:17:56.132 [Test worker] INFO  c.s.m.d.s.s.S3BinaryContentStorageTest - Starting S3BinaryContentStorageTest using Java 17.0.19 with PID 35027 (started by jangjunseo in /Users/jangjunseo/Desktop/codei_13th_develop/13-sprint-mission)
+26-08-14 14:17:56.132 [Test worker] INFO  c.s.m.d.s.s.S3BinaryContentStorageTest - The following 1 profile is active: "test"
+26-08-14 14:17:56.773 [Test worker] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+26-08-14 14:17:56.818 [Test worker] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 37 ms. Found 6 JPA repository interfaces.
+26-08-14 14:17:57.186 [Test worker] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+26-08-14 14:17:57.228 [Test worker] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.6.2.Final
+26-08-14 14:17:57.254 [Test worker] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+26-08-14 14:17:57.405 [Test worker] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+26-08-14 14:17:57.422 [Test worker] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+26-08-14 14:17:57.609 [Test worker] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:testdb user=SA
+26-08-14 14:17:57.610 [Test worker] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+26-08-14 14:17:57.655 [Test worker] INFO  o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+26-08-14 14:17:58.197 [Test worker] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+26-08-14 14:17:58.204 [Test worker] DEBUG org.hibernate.SQL - 
+    drop table if exists binary_contents cascade 
+26-08-14 14:17:58.206 [Test worker] DEBUG org.hibernate.SQL - 
+    drop table if exists channels cascade 
+26-08-14 14:17:58.206 [Test worker] DEBUG org.hibernate.SQL - 
+    drop table if exists message_attachments cascade 
+26-08-14 14:17:58.206 [Test worker] DEBUG org.hibernate.SQL - 
+    drop table if exists messages cascade 
+26-08-14 14:17:58.206 [Test worker] DEBUG org.hibernate.SQL - 
+    drop table if exists read_statuses cascade 
+26-08-14 14:17:58.206 [Test worker] DEBUG org.hibernate.SQL - 
+    drop table if exists user_statuses cascade 
+26-08-14 14:17:58.207 [Test worker] DEBUG org.hibernate.SQL - 
+    drop table if exists users cascade 
+26-08-14 14:17:58.210 [Test worker] DEBUG org.hibernate.SQL - 
+    create table binary_contents (
+        created_at timestamp(6) with time zone,
+        size bigint not null,
+        id uuid not null,
+        content_type varchar(255),
+        file_name varchar(255),
+        primary key (id)
+    )
+26-08-14 14:17:58.218 [Test worker] DEBUG org.hibernate.SQL - 
+    create table channels (
+        created_at timestamp(6) with time zone,
+        id uuid not null,
+        description varchar(255),
+        name varchar(255),
+        type enum ('PRIVATE','PUBLIC'),
+        primary key (id)
+    )
+26-08-14 14:17:58.219 [Test worker] DEBUG org.hibernate.SQL - 
+    create table message_attachments (
+        attachment_id uuid not null,
+        message_id uuid not null
+    )
+26-08-14 14:17:58.220 [Test worker] DEBUG org.hibernate.SQL - 
+    create table messages (
+        created_at timestamp(6) with time zone,
+        author_id uuid,
+        channel_id uuid,
+        id uuid not null,
+        content varchar(255),
+        primary key (id)
+    )
+26-08-14 14:17:58.221 [Test worker] DEBUG org.hibernate.SQL - 
+    create table read_statuses (
+        created_at timestamp(6) with time zone,
+        last_read_at timestamp(6) with time zone,
+        channel_id uuid,
+        id uuid not null,
+        user_id uuid,
+        primary key (id)
+    )
+26-08-14 14:17:58.225 [Test worker] DEBUG org.hibernate.SQL - 
+    create table user_statuses (
+        created_at timestamp(6) with time zone,
+        last_active_at timestamp(6) with time zone,
+        id uuid not null,
+        user_id uuid unique,
+        primary key (id)
+    )
+26-08-14 14:17:58.227 [Test worker] DEBUG org.hibernate.SQL - 
+    create table users (
+        created_at timestamp(6) with time zone,
+        id uuid not null,
+        profile_id uuid unique,
+        email varchar(255),
+        password varchar(255),
+        username varchar(255),
+        primary key (id)
+    )
+26-08-14 14:17:58.229 [Test worker] DEBUG org.hibernate.SQL - 
+    alter table if exists message_attachments 
+       add constraint FKsd1m8rb8jcpbcnb7rpdue7ctc 
+       foreign key (attachment_id) 
+       references binary_contents
+26-08-14 14:17:58.241 [Test worker] DEBUG org.hibernate.SQL - 
+    alter table if exists message_attachments 
+       add constraint FKj7twd218e2gqw9cmlhwvo1rth 
+       foreign key (message_id) 
+       references messages
+26-08-14 14:17:58.243 [Test worker] DEBUG org.hibernate.SQL - 
+    alter table if exists messages 
+       add constraint FKowtlim26svclkatusptbgi7u1 
+       foreign key (author_id) 
+       references users
+26-08-14 14:17:58.245 [Test worker] DEBUG org.hibernate.SQL - 
+    alter table if exists messages 
+       add constraint FK3u3ckbhwq9se1cmopk2pq05b2 
+       foreign key (channel_id) 
+       references channels
+26-08-14 14:17:58.246 [Test worker] DEBUG org.hibernate.SQL - 
+    alter table if exists read_statuses 
+       add constraint FKa38ri44ml4gfdpklx4ahqr8gd 
+       foreign key (channel_id) 
+       references channels
+26-08-14 14:17:58.248 [Test worker] DEBUG org.hibernate.SQL - 
+    alter table if exists read_statuses 
+       add constraint FKml3k4wr9sj5yxrmj6d0aoib2e 
+       foreign key (user_id) 
+       references users
+26-08-14 14:17:58.249 [Test worker] DEBUG org.hibernate.SQL - 
+    alter table if exists user_statuses 
+       add constraint FK4lfl3ei2ubchgcxrrpo3pw4mm 
+       foreign key (user_id) 
+       references users
+26-08-14 14:17:58.250 [Test worker] DEBUG org.hibernate.SQL - 
+    alter table if exists users 
+       add constraint FKtbudycgrip49xdptogmhfqnso 
+       foreign key (profile_id) 
+       references binary_contents
+26-08-14 14:17:58.255 [Test worker] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+26-08-14 14:17:58.813 [Test worker] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping - Adding welcome page: class path resource [static/index.html]
+26-08-14 14:17:59.287 [Test worker] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 4 endpoints beneath base path '/actuator'
+26-08-14 14:17:59.332 [Test worker] INFO  c.s.m.d.s.s.S3BinaryContentStorageTest - Started S3BinaryContentStorageTest in 3.405 seconds (process running for 3.953)
+26-08-14 14:18:00.808 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+26-08-14 14:18:00.811 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists binary_contents cascade 
+26-08-14 14:18:00.813 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists channels cascade 
+26-08-14 14:18:00.814 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists message_attachments cascade 
+26-08-14 14:18:00.815 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists messages cascade 
+26-08-14 14:18:00.816 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists read_statuses cascade 
+26-08-14 14:18:00.816 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists user_statuses cascade 
+26-08-14 14:18:00.817 [SpringApplicationShutdownHook] DEBUG org.hibernate.SQL - 
+    drop table if exists users cascade 
+26-08-14 14:18:00.820 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+26-08-14 14:18:00.823 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
