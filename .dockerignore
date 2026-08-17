@@ -1,0 +1,8 @@
+.gradle
+build
+.idea
+.git
+*.iml
+*.log
+.env
+.discodeit
