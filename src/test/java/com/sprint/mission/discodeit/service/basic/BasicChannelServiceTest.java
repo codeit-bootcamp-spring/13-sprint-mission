@@ -9,6 +9,7 @@ import static org.mockito.BDDMockito.isNull;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.sprint.mission.discodeit.dto.request.ChannelUpdateRequest;
@@ -343,12 +344,15 @@ class BasicChannelServiceTest {
         lastMessageAt
     );
 
+    given(channelRepository.findByType(ChannelType.PUBLIC))
+        .willReturn(List.of(channel));
+
     given(
-        channelRepository.findVisibleChannelsByUserId(
+        readStatusRepository.findByUser_IdAndChannel_Type(
             userId,
-            ChannelType.PUBLIC
+            ChannelType.PRIVATE
         )
-    ).willReturn(List.of(channel));
+    ).willReturn(List.of());
 
     given(channel.getId())
         .willReturn(channelId);
@@ -408,10 +412,13 @@ class BasicChannelServiceTest {
     // given
     UUID userId = UUID.randomUUID();
 
+    given(channelRepository.findByType(ChannelType.PUBLIC))
+        .willReturn(List.of());
+
     given(
-        channelRepository.findVisibleChannelsByUserId(
+        readStatusRepository.findByUser_IdAndChannel_Type(
             userId,
-            ChannelType.PUBLIC
+            ChannelType.PRIVATE
         )
     ).willReturn(List.of());
 
@@ -422,8 +429,16 @@ class BasicChannelServiceTest {
     // then
     assertThat(result).isEmpty();
 
+    verify(channelRepository)
+        .findByType(ChannelType.PUBLIC);
+
+    verify(readStatusRepository)
+        .findByUser_IdAndChannel_Type(
+            userId,
+            ChannelType.PRIVATE
+        );
+
     verifyNoInteractions(
-        readStatusRepository,
         messageRepository,
         channelMapper
     );

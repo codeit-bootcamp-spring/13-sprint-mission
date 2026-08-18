@@ -24,8 +24,10 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @ConditionalOnProperty(
-    name = "discodeit.storage.type",
-    havingValue = "local"
+    prefix = "discodeit.storage",
+    name = "type",
+    havingValue = "local",
+    matchIfMissing = true
 )
 public class LocalBinaryContentStorage implements BinaryContentStorage {
 

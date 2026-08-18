@@ -5,6 +5,12 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+.env
+.env.*
+!.env.example
+discodeit.env
+*.pem
+
 ### STS ###
 .apt_generated
 .classpath
@@ -40,8 +46,9 @@ out/
 .DS_Store
 
 # Local application data
-.discodeit/
-storage/
+/.discodeit/
+/storage/
 
 # Application logs
 .logs/
+/spy.log

@@ -6,10 +6,12 @@ import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoun
 import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,7 @@ public class BasicBinaryContentService implements BinaryContentService {
 
   private final BinaryContentRepository binaryContentRepository;
   private final BinaryContentMapper binaryContentMapper;
+  private final BinaryContentStorage binaryContentStorage;
 
   @Transactional(readOnly = true)
   @Override
@@ -59,5 +62,17 @@ public class BasicBinaryContentService implements BinaryContentService {
     return binaryContents;
   }
 
+  @Transactional(readOnly = true)
+  @Override
+  public ResponseEntity<?> download(UUID id) {
+    log.debug("파일 다운로드 처리 시작: binaryContentId={}", id);
 
+    BinaryContentDto binaryContentDto = find(id);
+
+    ResponseEntity<?> response = binaryContentStorage.download(binaryContentDto);
+
+    log.info("파일 다운로드 처리 완료: binaryContentId={}, status={}", id, response.getStatusCode());
+
+    return response;
+  }
 }

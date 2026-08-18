@@ -51,10 +51,7 @@ class ChannelRepositoryTest {
 
     // when
     List<Channel> result =
-        channelRepository.findVisibleChannelsByUserId(
-            user.getId(),
-            ChannelType.PUBLIC
-        );
+        channelRepository.findByType(ChannelType.PUBLIC);
 
     // then
     assertThat(result)
@@ -90,14 +87,15 @@ class ChannelRepositoryTest {
     readStatusRepository.save(readStatus);
 
     // when
-    List<Channel> result =
-        channelRepository.findVisibleChannelsByUserId(
+    List<ReadStatus> result =
+        readStatusRepository.findByUser_IdAndChannel_Type(
             user.getId(),
-            ChannelType.PUBLIC
+            ChannelType.PRIVATE
         );
 
     // then
     assertThat(result)
+        .extracting(ReadStatus::getChannel)
         .containsExactly(privateChannel);
   }
 
@@ -141,10 +139,7 @@ class ChannelRepositoryTest {
 
     // when
     List<Channel> result =
-        channelRepository.findVisibleChannelsByUserId(
-            otherUser.getId(),
-            ChannelType.PUBLIC
-        );
+        channelRepository.findByType(ChannelType.PUBLIC);
 
     // then
     assertThat(result).isEmpty();

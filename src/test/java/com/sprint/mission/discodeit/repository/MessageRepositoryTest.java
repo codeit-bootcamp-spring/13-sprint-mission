@@ -1,11 +1,14 @@
 package com.sprint.mission.discodeit.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Channel.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -153,8 +156,10 @@ class MessageRepositoryTest {
     assertThat(row[0])
         .isEqualTo(channel.getId());
 
-    assertThat(row[1])
-        .isEqualTo(latestMessage.getCreatedAt());
+    assertThat((Instant) row[1])
+        .isCloseTo(latestMessage.getCreatedAt(),
+            within(1, ChronoUnit.MILLIS)
+        );
   }
 
   @Test

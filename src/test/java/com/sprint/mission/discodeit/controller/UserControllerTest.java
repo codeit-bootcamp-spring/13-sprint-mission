@@ -13,14 +13,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.exception.ErrorCodeStatusMapper;
 import com.sprint.mission.discodeit.service.UserService;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
@@ -29,7 +27,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(UserController.class)
 @ActiveProfiles("test")
-@Import(ErrorCodeStatusMapper.class)
 class UserControllerTest {
 
   @Autowired
@@ -123,7 +120,7 @@ class UserControllerTest {
         )
         .andExpect(
             jsonPath("$.code")
-                .value("INVALID_REQUEST")
+                .value("C002")
         )
         .andExpect(
             jsonPath("$.status")

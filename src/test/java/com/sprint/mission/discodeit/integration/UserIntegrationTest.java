@@ -132,7 +132,7 @@ class UserIntegrationTest {
             get("/api/users/{userId}", userId)
         )
         .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$.code").value("USER_NOT_FOUND"))
+        .andExpect(jsonPath("$.code").value("U001"))
         .andExpect(jsonPath("$.status").value(404));
   }
 

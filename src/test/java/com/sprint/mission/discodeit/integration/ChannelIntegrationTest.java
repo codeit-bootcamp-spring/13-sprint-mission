@@ -115,7 +115,7 @@ class ChannelIntegrationTest {
         .andExpect(status().isNotFound())
         .andExpect(
             jsonPath("$.code")
-                .value("CHANNEL_NOT_FOUND")
+                .value("CH001")
         )
         .andExpect(
             jsonPath("$.status")

@@ -18,7 +18,7 @@ public record ErrorResponse(
   ) {
     return new ErrorResponse(
         exception.getTimestamp(),
-        exception.getErrorCode().name(),
+        exception.getErrorCode().getCode(),
         exception.getMessage(),
         exception.getDetails(),
         status,
