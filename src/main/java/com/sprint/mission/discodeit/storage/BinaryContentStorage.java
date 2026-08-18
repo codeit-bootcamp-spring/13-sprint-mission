@@ -11,4 +11,5 @@ public interface BinaryContentStorage {
     UUID put(UUID id, byte[] content);
     InputStream get(UUID id) throws IOException;
     ResponseEntity<?> download(BinaryContentDto binaryContentDto);
+    void delete(UUID id);
 }

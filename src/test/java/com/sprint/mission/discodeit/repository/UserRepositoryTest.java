@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,6 +22,7 @@ import static org.assertj.core.api.Assertions.*;
 @TestPropertySource(properties = {
         "spring.jpa.properties.hibernate.generate_statistics=true"
 })
+@ActiveProfiles("test")
 public class UserRepositoryTest {
 
     @Autowired

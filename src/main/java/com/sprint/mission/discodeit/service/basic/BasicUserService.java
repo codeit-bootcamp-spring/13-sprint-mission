@@ -1,8 +1,8 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreate;
-import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
-import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
@@ -45,16 +45,17 @@ public class BasicUserService implements UserService {
         return obcc.map(bcc -> {
             // add for Compatibility DB with localstorage.
             byte[] dummy = {0x40};
-
             BinaryContent bc = new BinaryContent(
                     bcc.filename(),
                     bcc.contentType(),
                     bcc.size(),
                     dummy
             );
+
             binaryContentRepository.save(bc);
+
             binaryContentStorage.put(bc.getId(),obcc.get().content());
-            log.info(bc.getId() + "file saved");
+            log.info("Storage - file saved - {}",bc.getId());
             return bc;
         }).orElse(null);
     }
@@ -62,7 +63,6 @@ public class BasicUserService implements UserService {
     @Override
     @Transactional
     public UserDto create(UserCreateRequest cui, Optional<BinaryContentCreate> obcc){
-
         nameCheck(cui.username());
         emailCheck(cui.email());
 
@@ -78,10 +78,10 @@ public class BasicUserService implements UserService {
         UserStatus ust = new UserStatus(user, Instant.now());
         user.setStatus(ust);
 
-        log.debug("user created - {}", user.toString());
-
         userRepository.save(user);
+
         log.info("user created - id: {}, username: {}", user.getId(), cui.username());
+
         return mapStructMapper.toDto(user,toBinaryDto(user),user.online());
     }
 
@@ -107,10 +107,9 @@ public class BasicUserService implements UserService {
         if (uui.newUsername() != null) user.setUsername(uui.newUsername());
         if (uui.newEmail() != null) user.setEmail(uui.newEmail());
         if (uui.newPassword() != null) user.setPassword(uui.newPassword());
-        if (profileIdFromOBCC(obcc) != null) {
+        if (obcc.isPresent()) {
             // db save check
-            BinaryContent bc = profileIdFromOBCC(obcc);
-            user.setProfile(bc);
+            user.setProfile(profileIdFromOBCC(obcc));
         }
 
         user = userRepository.save(user);
@@ -131,6 +130,9 @@ public class BasicUserService implements UserService {
         Optional<UserStatus> us = userStatusRepository.findByUserId(id).stream().findFirst();
 
         userRepository.delete(user);
+        if (user.getProfile() != null) {
+            binaryContentStorage.delete(user.getProfile().getId());
+        }
         us.ifPresent(userStatusRepository::delete);
 
         log.info("user with id - {} deleted", id);

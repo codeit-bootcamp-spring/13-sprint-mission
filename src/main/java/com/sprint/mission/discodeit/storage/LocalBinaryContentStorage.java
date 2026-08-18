@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.storage;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import jakarta.annotation.PostConstruct;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.InputStreamResource;
@@ -18,7 +19,8 @@ import java.util.UUID;
 
 @Component
 @NoArgsConstructor
-@ConditionalOnProperty(prefix = "discodeit.storage", name = "type", havingValue = "local")
+@ConditionalOnProperty(prefix = "discodeit.storage", name = "type", havingValue = "local", matchIfMissing = true)
+@Slf4j
 public class LocalBinaryContentStorage implements BinaryContentStorage {
 
     @Value(value = "${discodeit.storage.local.root-path}")
@@ -26,6 +28,9 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
 
     @PostConstruct
     void init(){
+
+        log.debug("local storage check - {}", Path.of(root.toString()));
+
         if (Files.notExists(root)){
             try {
                 Files.createDirectories(root);
@@ -41,7 +46,11 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
                 OutputStream out = Files.newOutputStream(resolvePath(id));
                 BufferedOutputStream but = new BufferedOutputStream(out)
                 ){
+
             but.write(content);
+
+            log.debug("file write on path - {}", resolvePath(id));
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -52,6 +61,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
         InputStream in = Files.newInputStream(resolvePath(id));
         return new BufferedInputStream(in);
     }
+
     @Override
     public ResponseEntity<Resource> download(BinaryContentDto binaryContentDto) {
         try{
@@ -61,6 +71,14 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
             );
         } catch (IOException e){
             throw new RuntimeException(e);
+        }
+    }
+
+    public void delete(UUID id){
+        try {
+            Files.delete(resolvePath(id));
+        } catch (IOException e) {
+            log.error("file delete exception- id : {}",id, e);
         }
     }
 

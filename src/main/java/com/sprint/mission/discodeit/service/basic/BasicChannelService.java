@@ -1,8 +1,9 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.request.PrivateChannelCreateRequest;
-import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
-import com.sprint.mission.discodeit.dto.request.PublicChannelUpdateRequest;
+import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.channel.PublicChannelUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
@@ -17,17 +18,16 @@ import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
+
 
 @Service
 @RequiredArgsConstructor
@@ -39,13 +39,14 @@ public class BasicChannelService implements ChannelService {
     private final MessageRepository messageRepository;
     private final MapperMethod mapperMethod;
     private final MapStructMapper mapStructMapper;
+    private final BinaryContentStorage binaryContentStorage;
 
     @Override
     @Transactional
     public ChannelDto createPublicChannel(PublicChannelCreateRequest cpb){
         Channel cnl = new Channel(cpb.name(), cpb.description(), ChannelType.PUBLIC);
 
-        log.info("public channel created - " + cnl.getName());
+        log.info("public channel created - {}", cnl.getName());
 
         return mapStructMapper.toDto(
                 channelRepository.save(cnl)
@@ -60,12 +61,13 @@ public class BasicChannelService implements ChannelService {
         Channel cnl = new Channel("", "", ChannelType.PRIVATE);
         channelRepository.save(cnl);
 
-        log.info("private channel created - " + cnl.getName());
+        log.info("private channel created - {}", cnl.getName());
 
         for (UUID pid : cpv.participantIds()){
             User user = getUserOrException(pid);
-            readStatusRepository.save(new ReadStatus(user,cnl,Instant.now()));
-            log.debug("User with id - " + pid + " is joined channel");
+            readStatusRepository.save(new ReadStatus(user,cnl, Instant.now()));
+
+            log.debug("User with id - {} is joined channel",pid);
         }
         return mapStructMapper.toDto(cnl,userDtoFromChannel(cnl),lastMessageAt(cnl));
     }
@@ -77,22 +79,18 @@ public class BasicChannelService implements ChannelService {
     @Transactional
     public List<ChannelDto> findAllByUserID(UUID userID) {
 
-        Stream<ChannelDto> pv = readStatusRepository.findWithDetailByUserId(userID)
-                .stream()
-                .map(rs -> mapStructMapper.toDto(
-                        rs.getChannel()
-                        , userDtoFromChannel(rs.getChannel())
-                        , lastMessageAt(rs.getChannel())
-                ));
-        Stream<ChannelDto> pb = readStatusRepository.findWithDetailByChannelType(ChannelType.PUBLIC)
-                .stream()
-                .map(rs -> mapStructMapper.toDto(
-                        rs.getChannel()
-                        , userDtoFromChannel(rs.getChannel())
-                        , lastMessageAt(rs.getChannel())
-                ));
+        List<Channel> visible =  channelRepository.findVisibleChannelByUserId(userID);
+        log.debug("visible channel query by userid - {}, channel count : {}", userID, visible.size());
 
-        return Stream.concat(pv,pb).toList();
+        return visible.stream()
+                .map(c -> mapStructMapper
+                        .toDto(
+                                c,
+                                userDtoFromChannel(c),
+                                lastMessageAt(c)
+                        )
+                )
+                .toList();
     }
 
     @Override
@@ -148,10 +146,9 @@ public class BasicChannelService implements ChannelService {
                 .map(
                         rs -> {
                             User user = rs.getUser();
-                            BinaryContent bc = user.getProfile();
                             return mapStructMapper.toDto(
                                     user
-                                    ,mapStructMapper.toDto(bc, mapperMethod.getByteFrom(bc))
+                                    ,getBinaryContentDtoByUser(user)
                                     ,user.online()
                             );
                         }
@@ -159,10 +156,16 @@ public class BasicChannelService implements ChannelService {
     }
 
 
+    private BinaryContentDto getBinaryContentDtoByUser(User user){
+        BinaryContent bc = user.getProfile();
+
+        if (bc == null) return null;
+        byte[] data = mapperMethod.getByteFrom(bc);
+        return mapStructMapper.toDto(bc,data);
+    }
 
     private Instant lastMessageAt(Channel channel) {
-        Pageable pageable = PageRequest.of(0, 1, Sort.by(Sort.Order.desc("createdAt")));
-        return messageRepository.findByChannelIdOrderByCreatedAtDesc(channel.getId(), pageable)
+        return messageRepository.findLastestMessageByChannel(channel.getId())
                 .stream()
                 .findFirst()
                 .map(Message::getCreatedAt)

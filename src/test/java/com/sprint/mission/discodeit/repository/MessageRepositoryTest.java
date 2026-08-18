@@ -15,8 +15,10 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -30,6 +32,7 @@ import static org.mockito.Mockito.mock;
 @TestPropertySource(properties = {
         "spring.jpa.properties.hibernate.generate_statistics=true"
 })
+@ActiveProfiles("test")
 @Slf4j
 public class MessageRepositoryTest {
 
@@ -43,11 +46,11 @@ public class MessageRepositoryTest {
     private MessageRepository messageRepository;
 
     private List<UUID> setup() {
-        Channel channel = getTestChannel("2026-08-02T09:00:00Z","1",ChannelType.PUBLIC);
+        Channel channel = getTestChannel();
+        User user = getTestUser();
         List<UUID> res = new ArrayList<>();
         res.add(channel.getId());
 
-        User user = getTestUser();
 
         Message message = new Message("message1",channel,user,null);
         Message message2 = new Message("message2",channel,user,null);
@@ -64,7 +67,7 @@ public class MessageRepositoryTest {
         em.persist(message2);
         em.persist(message3);
         em.persist(message4);
-        log.info("test message entity set");
+
         em.flush();
         em.clear();
         return res;
@@ -75,19 +78,20 @@ public class MessageRepositoryTest {
      *
      * createdAt 을 기준으로 정렬함으로 생성 시간도 조정한다.
      */
-    private Channel getTestChannel(String ctime, String name, ChannelType type) {
-        Channel channel = new Channel(name,"description",type);
-        ReflectionTestUtils.setField(channel,"createdAt",Instant.parse(ctime));
-
+    private Channel getTestChannel() {
+        String randomName = RandomStringUtils.randomAlphabetic(5);
+        Channel channel = new Channel(randomName,"dsc",ChannelType.PUBLIC);
         em.persist(channel);
+        em.flush();
+        em.clear();
         return channel;
     }
 
     private User getTestUser(){
         User user = new User("김숙희","ksk@email.com","password",null,null);
-        ReflectionTestUtils.setField(user,"createdAt",Instant.parse("2026-08-02T09:00:00Z"));
-
         em.persist(user);
+        em.flush();
+        em.clear();
         return user;
     }
 
@@ -173,6 +177,21 @@ public class MessageRepositoryTest {
         // if the worng channel id is whrown it will return empty list
         assertThat(messageRepository.findByChannelIdOrderByCreatedAtDesc(UUID.randomUUID(),page))
                 .isEmpty();
+
+    }
+
+    @Test
+    @DisplayName("query lastest message test")
+    void testLastestMessageQuery() {
+        // given
+        List<UUID> channelIds = setup();
+        // when
+        // then
+        List<Message> lastest = messageRepository.findLastestMessageByChannel(channelIds.get(0));
+
+        assertThat(lastest).hasSize(1);
+        assertThat(lastest.get(0).getCreatedAt()).isEqualTo("2026-08-02T09:00:00Z");
+
 
     }
 
