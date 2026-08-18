@@ -26,7 +26,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -371,7 +370,8 @@ class MessageApiIntegrationTest {
 
         @Test
         @DisplayName("nextCursor를 이용해 다음 메시지 페이지를 조회한다")
-        void nextCursorPage() throws Exception {
+        void should_ReturnNextMessagePage_when_NextCursorIsProvided()
+                throws Exception {
             // given
             String userId = createUser(
                     "nextCursorUser",
@@ -383,13 +383,33 @@ class MessageApiIntegrationTest {
                     "다음 커서 페이지 조회"
             );
 
-            createMessage("첫 번째 메시지", userId, channelId);
-            createMessage("두 번째 메시지", userId, channelId);
-            createMessage("세 번째 메시지", userId, channelId);
+            createMessage(
+                    "첫 번째 메시지",
+                    userId,
+                    channelId
+            );
 
-            MvcResult firstPage = mockMvc.perform(get("/api/messages")
-                            .param("channelId", channelId)
-                            .param("size", "2"))
+            waitForDifferentCreatedAt();
+
+            createMessage(
+                    "두 번째 메시지",
+                    userId,
+                    channelId
+            );
+
+            waitForDifferentCreatedAt();
+
+            createMessage(
+                    "세 번째 메시지",
+                    userId,
+                    channelId
+            );
+
+            MvcResult firstPage = mockMvc.perform(
+                            get("/api/messages")
+                                    .param("channelId", channelId)
+                                    .param("size", "2")
+                    )
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.content")
                             .isArray())
@@ -422,29 +442,38 @@ class MessageApiIntegrationTest {
                     .asText();
 
             // when
-            MvcResult nextPage = mockMvc.perform(get("/api/messages")
-                            .param("channelId", channelId)
-                            .param("cursor", nextCursor)
-                            .param("size", "2"))
+            MvcResult nextPage = mockMvc.perform(
+                            get("/api/messages")
+                                    .param("channelId", channelId)
+                                    .param("cursor", nextCursor)
+                                    .param("size", "2")
+                    )
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.content")
                             .isArray())
+                    .andExpect(jsonPath("$.content.length()")
+                            .value(1))
                     .andExpect(jsonPath("$.size")
                             .value(2))
+                    .andExpect(jsonPath("$.hasNext")
+                            .value(false))
                     .andReturn();
 
             JsonNode nextPageBody = objectMapper.readTree(
                     nextPage.getResponse().getContentAsString()
             );
 
-            JsonNode nextPageContent = nextPageBody.get("content");
+            JsonNode nextPageContent =
+                    nextPageBody.get("content");
 
             // then
             assertThat(nextPageContent).isNotNull();
             assertThat(nextPageContent.isArray()).isTrue();
+            assertThat(nextPageContent.size()).isEqualTo(1);
 
             for (JsonNode message : nextPageContent) {
-                String messageId = message.get("id").asText();
+                String messageId =
+                        message.get("id").asText();
 
                 assertThat(messageId)
                         .isNotEqualTo(firstPageFirstId)
@@ -822,6 +851,6 @@ class MessageApiIntegrationTest {
 
     private void waitForDifferentCreatedAt()
             throws InterruptedException {
-        Thread.sleep(100);
+        Thread.sleep(1000);
     }
 }

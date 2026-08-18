@@ -2,8 +2,13 @@ spring:
   application:
     name: discodeit
 
+  # 프로젝트 루트의 .env 파일을 properties 형식으로 불러옵니다.
+  # .env 파일이 없는 테스트·ECS 환경에서도 실행되도록 optional로 설정합니다.
+  config:
+    import: optional:file:.env[.properties]
+
   profiles:
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:dev}
 
   boot:
     admin:
@@ -31,14 +36,21 @@ logging:
 
 discodeit:
   repository:
-    type: jpa
+    type: ${REPOSITORY_TYPE:jpa}
 
   storage:
-    type: local
-    local:
-      root-path: data/binaryContents
+    # local 또는 s3로 저장소 구현체를 전환합니다.
+    type: ${STORAGE_TYPE:local}
 
-  file-directory: data
+    local:
+      root-path: ${STORAGE_LOCAL_ROOT_PATH:data/binaryContents}
+
+    s3:
+      region: ${AWS_S3_REGION:ap-northeast-2}
+      bucket: ${AWS_S3_BUCKET:discodeit-binary-content-storage-jhs}
+      presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600}
+
+  file-directory: ${FILE_DIRECTORY:data}
 
 management:
   endpoints:
@@ -61,7 +73,7 @@ management:
 info:
   application:
     name: Discodeit
-    version: 1.7.0
+    version: 1.2-M8
     java-version: 17
     spring-boot-version: 3.5.14
 
@@ -74,7 +86,10 @@ info:
 
   storage:
     type: ${discodeit.storage.type:local}
-    path: ${discodeit.storage.local.root-path:data/binaryContents}
+    local-path: ${discodeit.storage.local.root-path:data/binaryContents}
+    s3-region: ${discodeit.storage.s3.region:ap-northeast-2}
+    s3-bucket: ${discodeit.storage.s3.bucket:설정되지 않음}
+    presigned-url-expiration: ${discodeit.storage.s3.presigned-url-expiration:600}
 
   multipart:
     max-file-size: ${spring.servlet.multipart.max-file-size:10MB}

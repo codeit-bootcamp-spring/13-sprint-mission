@@ -1,0 +1,5 @@
+aws:
+  s3:
+    profile: ${AWS_PROFILE:discodeit}
+    region: ${AWS_S3_REGION:ap-northeast-2}
+    bucket: ${AWS_S3_BUCKET:discodeit-binary-content-storage-jhs}

@@ -5,10 +5,7 @@ import com.sprint.mission.discodeit.dto.BinaryContentResponse;
 import com.sprint.mission.discodeit.dto.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.UserResponse;
 import com.sprint.mission.discodeit.dto.UserUpdateRequest;
-import com.sprint.mission.discodeit.entity.BinaryContent;
-import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.ErrorCode;
 import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
@@ -87,11 +84,13 @@ public class BasicUserService implements UserService {
             BinaryContent profile =
                     saveProfileImage(request.getProfileImage());
 
-            User user = new User(
+            UserData userData = new UserData(
                     request.getUsername(),
                     request.getEmail(),
                     request.getPassword()
             );
+
+            User user = new User(userData);
 
             if (profile != null) {
                 user.updateProfile(profile);
@@ -225,11 +224,13 @@ public class BasicUserService implements UserService {
         }
 
         try {
-            user.update(
+            UserData userData = new UserData(
                     updateUsername,
                     updateEmail,
                     updatePassword
             );
+
+            user.update(userData);
 
             if (request.getProfileImage() != null) {
                 UUID oldProfileId = user.getProfileId();

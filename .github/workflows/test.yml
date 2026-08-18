@@ -1,0 +1,52 @@
+name: CI Test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 저장소 코드 Checkout
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # 2. Java 17 설정
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # 3. Gradle 설정 및 캐시
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      # 4. Gradle Wrapper 실행 권한 부여
+      - name: Grant execute permission for Gradle
+        run: chmod +x gradlew
+
+      # 5. 테스트 실행 + JaCoCo 리포트 생성
+      - name: Run tests
+        run: ./gradlew clean test jacocoTestReport
+
+      # 6. Codecov에 커버리지 결과 업로드
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          use_oidc: true
+          files: ./build/reports/jacoco/test/jacocoTestReport.xml
+          fail_ci_if_error: true
+          verbose: true

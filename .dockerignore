@@ -1,0 +1,40 @@
+# Gradle 빌드 결과
+build/
+admin/build/
+.gradle/
+
+# IDE 설정
+.idea/
+.vscode/
+*.iml
+out/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# 로그
+.logs/
+logs/
+*.log
+
+# 로컬 저장 데이터
+data/
+
+# 환경변수 및 인증정보
+.env
+.env.*
+.aws/
+*.pem
+*.key
+credentials
+config
+
+# 운영체제 파일
+.DS_Store
+Thumbs.db
+
+# 테스트 및 리포트
+test-results/
+reports/

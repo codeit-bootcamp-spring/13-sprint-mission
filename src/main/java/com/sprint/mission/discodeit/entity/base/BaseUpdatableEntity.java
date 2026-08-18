@@ -20,6 +20,6 @@ public abstract class BaseUpdatableEntity extends BaseEntity {
     }
 
     protected void markUpdated() {
-        this.updatedAt = Instant.now();
+        this.updatedAt = nowForDatabase();
     }
 }

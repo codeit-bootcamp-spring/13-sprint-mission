@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS user_statuses (
     updated_at TIMESTAMPTZ,
     user_id UUID NOT NULL UNIQUE,
     online BOOLEAN NOT NULL DEFAULT true,
-    last_active_at TIMESTAMPTZ NOT NULL,
+    last_active_at TIMESTAMP WITH TIME ZONE NOT NULL,
 
     CONSTRAINT fk_user_statuses_user
     FOREIGN KEY (user_id)
@@ -107,3 +107,18 @@ CREATE TABLE IF NOT EXISTS read_statuses (
     CONSTRAINT uk_read_statuses_user_channel
     UNIQUE (user_id, channel_id)
     );
+
+CREATE INDEX IF NOT EXISTS idx_messages_channel_created_at
+    ON messages (channel_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_messages_author_id
+    ON messages (author_id);
+
+CREATE INDEX IF NOT EXISTS idx_read_statuses_user_id
+    ON read_statuses (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_read_statuses_channel_id
+    ON read_statuses (channel_id);
+
+CREATE INDEX IF NOT EXISTS idx_message_attachments_attachment_id
+    ON message_attachments (attachment_id);

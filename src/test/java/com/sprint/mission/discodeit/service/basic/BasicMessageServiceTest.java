@@ -1,29 +1,31 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.MessageResponse;
+import com.sprint.mission.discodeit.dto.MessageUpdateRequest;
+import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.entity.ChannelType;
+import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.entity.UserData;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.service.basic.BasicMessageService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import com.sprint.mission.discodeit.dto.MessageCreateRequest;
-import com.sprint.mission.discodeit.dto.MessageResponse;
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.ChannelType;
-import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
-import com.sprint.mission.discodeit.dto.MessageUpdateRequest;
-import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import org.springframework.data.domain.Pageable;
-import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,14 +34,18 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
-import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("BasicMessageService 단위 테스트")
 class BasicMessageServiceTest {
+
+    private static final String USERNAME = "tester";
+    private static final String EMAIL = "tester@example.com";
+    private static final String PASSWORD = "password1234";
 
     @Mock
     private MessageRepository messageRepository;
@@ -68,19 +74,15 @@ class BasicMessageServiceTest {
 
         @Test
         @DisplayName("정상적인 요청이면 메시지를 생성한다")
-        void createSuccess() {
+        void should_CreateMessage_when_RequestIsValid() {
             // given
-            User author = new User(
-                    "tester",
-                    "tester@example.com",
-                    "password1234"
+            User author = createUser(
+                    USERNAME,
+                    EMAIL,
+                    PASSWORD
             );
 
-            Channel channel = new Channel(
-                    ChannelType.PUBLIC,
-                    "일반 채널",
-                    "테스트 채널"
-            );
+            Channel channel = createPublicChannel();
 
             UUID authorId = author.getId();
             UUID channelId = channel.getId();
@@ -101,7 +103,8 @@ class BasicMessageServiceTest {
                     .willAnswer(invocation -> invocation.getArgument(0));
 
             // when
-            MessageResponse response = messageService.create(request);
+            MessageResponse response =
+                    messageService.create(request);
 
             // then
             assertThat(response).isNotNull();
@@ -133,7 +136,7 @@ class BasicMessageServiceTest {
 
         @Test
         @DisplayName("존재하지 않는 작성자로 메시지를 생성하면 예외가 발생한다")
-        void createFailsWhenAuthorDoesNotExist() {
+        void should_ThrowUserNotFoundException_when_AuthorDoesNotExist() {
             // given
             UUID authorId = UUID.randomUUID();
             UUID channelId = UUID.randomUUID();
@@ -148,7 +151,9 @@ class BasicMessageServiceTest {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> messageService.create(request))
+            assertThatThrownBy(
+                    () -> messageService.create(request)
+            )
                     .isInstanceOf(UserNotFoundException.class);
 
             then(userRepository)
@@ -177,19 +182,15 @@ class BasicMessageServiceTest {
 
         @Test
         @DisplayName("존재하는 메시지의 내용을 정상적으로 수정한다")
-        void updateSuccess() {
+        void should_UpdateMessageContent_when_MessageExists() {
             // given
-            User author = new User(
-                    "tester",
-                    "tester@example.com",
-                    "password1234"
+            User author = createUser(
+                    USERNAME,
+                    EMAIL,
+                    PASSWORD
             );
 
-            Channel channel = new Channel(
-                    ChannelType.PUBLIC,
-                    "일반 채널",
-                    "테스트 채널"
-            );
+            Channel channel = createPublicChannel();
 
             Message message = new Message(
                     "기존 메시지",
@@ -211,7 +212,8 @@ class BasicMessageServiceTest {
                     .willAnswer(invocation -> invocation.getArgument(0));
 
             // when
-            MessageResponse response = messageService.update(request);
+            MessageResponse response =
+                    messageService.update(request);
 
             // then
             assertThat(response).isNotNull();
@@ -232,7 +234,7 @@ class BasicMessageServiceTest {
 
         @Test
         @DisplayName("존재하지 않는 메시지를 수정하면 예외가 발생한다")
-        void updateFailsWhenMessageDoesNotExist() {
+        void should_ThrowMessageNotFoundException_when_UpdatingUnknownMessage() {
             // given
             UUID messageId = UUID.randomUUID();
 
@@ -245,7 +247,9 @@ class BasicMessageServiceTest {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> messageService.update(request))
+            assertThatThrownBy(
+                    () -> messageService.update(request)
+            )
                     .isInstanceOf(MessageNotFoundException.class);
 
             then(messageRepository)
@@ -264,19 +268,15 @@ class BasicMessageServiceTest {
 
         @Test
         @DisplayName("존재하는 메시지를 정상적으로 삭제한다")
-        void deleteSuccess() {
+        void should_DeleteMessage_when_MessageExists() {
             // given
-            User author = new User(
-                    "tester",
-                    "tester@example.com",
-                    "password1234"
+            User author = createUser(
+                    USERNAME,
+                    EMAIL,
+                    PASSWORD
             );
 
-            Channel channel = new Channel(
-                    ChannelType.PUBLIC,
-                    "일반 채널",
-                    "테스트 채널"
-            );
+            Channel channel = createPublicChannel();
 
             Message message = new Message(
                     "삭제할 메시지",
@@ -307,7 +307,7 @@ class BasicMessageServiceTest {
 
         @Test
         @DisplayName("존재하지 않는 메시지를 삭제하면 예외가 발생한다")
-        void deleteFailsWhenMessageDoesNotExist() {
+        void should_ThrowMessageNotFoundException_when_DeletingUnknownMessage() {
             // given
             UUID messageId = UUID.randomUUID();
 
@@ -315,7 +315,9 @@ class BasicMessageServiceTest {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> messageService.delete(messageId))
+            assertThatThrownBy(
+                    () -> messageService.delete(messageId)
+            )
                     .isInstanceOf(MessageNotFoundException.class);
 
             then(messageRepository)
@@ -337,19 +339,15 @@ class BasicMessageServiceTest {
 
         @Test
         @DisplayName("존재하는 채널의 메시지 목록을 조회한다")
-        void findAllByChannelIdSuccess() {
+        void should_ReturnMessages_when_ChannelExists() {
             // given
-            User author = new User(
-                    "tester",
-                    "tester@example.com",
-                    "password1234"
+            User author = createUser(
+                    USERNAME,
+                    EMAIL,
+                    PASSWORD
             );
 
-            Channel channel = new Channel(
-                    ChannelType.PUBLIC,
-                    "일반 채널",
-                    "테스트 채널"
-            );
+            Channel channel = createPublicChannel();
 
             Message message1 = new Message(
                     "첫 번째 메시지",
@@ -368,10 +366,15 @@ class BasicMessageServiceTest {
             given(channelRepository.existsById(channelId))
                     .willReturn(true);
 
-            given(messageRepository.findByChannel_IdOrderByCreatedAtDesc(
-                    eq(channelId),
-                    any(Pageable.class)
-            )).willReturn(List.of(message2, message1));
+            given(messageRepository
+                    .findByChannel_IdOrderByCreatedAtDesc(
+                            eq(channelId),
+                            any(Pageable.class)
+                    ))
+                    .willReturn(List.of(
+                            message2,
+                            message1
+                    ));
 
             // when
             List<MessageResponse> responses =
@@ -401,7 +404,7 @@ class BasicMessageServiceTest {
 
         @Test
         @DisplayName("존재하지 않는 채널의 메시지를 조회하면 예외가 발생한다")
-        void findAllByChannelIdFailsWhenChannelDoesNotExist() {
+        void should_ThrowChannelNotFoundException_when_ChannelDoesNotExist() {
             // given
             UUID channelId = UUID.randomUUID();
 
@@ -426,4 +429,27 @@ class BasicMessageServiceTest {
                     );
         }
     }
+
+    private User createUser(
+            String username,
+            String email,
+            String password
+    ) {
+        return new User(
+                new UserData(
+                        username,
+                        email,
+                        password
+                )
+        );
+    }
+
+    private Channel createPublicChannel() {
+        return new Channel(
+                ChannelType.PUBLIC,
+                "일반 채널",
+                "테스트 채널"
+        );
+    }
 }
+

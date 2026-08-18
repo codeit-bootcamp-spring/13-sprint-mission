@@ -1,0 +1,167 @@
+name: Deploy Discodeit to ECS
+
+on:
+  push:
+    branches:
+      - release
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REPOSITORY_URI: ${{ vars.ECR_REPOSITORY_URI }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+  ECS_SERVICE: ${{ vars.ECS_SERVICE }}
+  ECS_TASK_DEFINITION: ${{ vars.ECS_TASK_DEFINITION }}
+  ECS_CONTAINER_NAME: discodeit-app
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. GitHub 저장소 코드 Checkout
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # 2. GitHub OIDC를 이용해 AWS IAM Role Assume
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::677339799231:role/github_aws_deploy_role
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 3. Assume한 AWS IAM Role 확인
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      # 4. Amazon ECR Public 로그인
+      # ECR Public 인증은 us-east-1을 사용
+      - name: Login to Amazon ECR Public
+        run: |
+          aws ecr-public get-login-password \
+            --region us-east-1 \
+          | docker login \
+            --username AWS \
+            --password-stdin public.ecr.aws
+
+      # 5. Docker 이미지 URI 설정
+      # Git Commit SHA + latest 두 태그 사용
+      - name: Set image URI
+        run: |
+          echo "IMAGE_SHA=${ECR_REPOSITORY_URI}:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_LATEST=${ECR_REPOSITORY_URI}:latest" >> "$GITHUB_ENV"
+
+      # 6. Docker 이미지 빌드
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t "${IMAGE_SHA}" \
+            -t "${IMAGE_LATEST}" \
+            .
+
+      # 7. Amazon ECR Public에 이미지 Push
+      - name: Push Docker image
+        run: |
+          docker push "${IMAGE_SHA}"
+          docker push "${IMAGE_LATEST}"
+
+      # 8. 현재 ECS Task Definition 가져오기
+      # 서비스를 내리기 전에 먼저 현재 Task Definition을 확보
+      - name: Download current ECS task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition "${ECS_TASK_DEFINITION}" \
+            --region "${AWS_REGION}" \
+            --query taskDefinition \
+            > task-definition.json
+
+      # 9. 새로운 SHA 이미지로 Task Definition 수정
+      - name: Create new ECS task definition
+        run: |
+          jq \
+            --arg IMAGE "${IMAGE_SHA}" \
+            --arg CONTAINER "${ECS_CONTAINER_NAME}" \
+            '
+            del(
+              .taskDefinitionArn,
+              .revision,
+              .status,
+              .requiresAttributes,
+              .compatibilities,
+              .registeredAt,
+              .registeredBy
+            )
+            |
+            .containerDefinitions |= map(
+              if .name == $CONTAINER
+              then .image = $IMAGE
+              else .
+              end
+            )
+            ' \
+            task-definition.json \
+            > new-task-definition.json
+
+      # 10. 새로운 Task Definition Revision 등록
+      - name: Register new task definition revision
+        run: |
+          TASK_DEFINITION_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://new-task-definition.json \
+            --region "${AWS_REGION}" \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          echo "TASK_DEFINITION_ARN=${TASK_DEFINITION_ARN}" >> "$GITHUB_ENV"
+
+          echo "Registered Task Definition:"
+          echo "${TASK_DEFINITION_ARN}"
+
+      # 11. 기존 ECS Service 중지
+      - name: Stop ECS service
+        run: |
+          aws ecs update-service \
+            --cluster "${ECS_CLUSTER}" \
+            --service "${ECS_SERVICE}" \
+            --desired-count 0 \
+            --region "${AWS_REGION}"
+
+      # 12. ECS Service 완전 중지까지 대기
+      - name: Wait for ECS service to stop
+        run: |
+          aws ecs wait services-stable \
+            --cluster "${ECS_CLUSTER}" \
+            --services "${ECS_SERVICE}" \
+            --region "${AWS_REGION}"
+
+      # 13. 새 Task Definition 적용 + Service 다시 시작
+      - name: Deploy to ECS service
+        run: |
+          aws ecs update-service \
+            --cluster "${ECS_CLUSTER}" \
+            --service "${ECS_SERVICE}" \
+            --task-definition "${TASK_DEFINITION_ARN}" \
+            --desired-count 1 \
+            --force-new-deployment \
+            --region "${AWS_REGION}"
+
+      # 14. ECS 배포 완료까지 대기
+      - name: Wait for ECS deployment
+        run: |
+          aws ecs wait services-stable \
+            --cluster "${ECS_CLUSTER}" \
+            --services "${ECS_SERVICE}" \
+            --region "${AWS_REGION}"
+
+      # 15. 최종 ECS Service 상태 확인
+      - name: Show deployment result
+        run: |
+          aws ecs describe-services \
+            --cluster "${ECS_CLUSTER}" \
+            --services "${ECS_SERVICE}" \
+            --region "${AWS_REGION}" \
+            --query 'services[0].{Status:status,Desired:desiredCount,Running:runningCount,TaskDefinition:taskDefinition}' \
+            --output table

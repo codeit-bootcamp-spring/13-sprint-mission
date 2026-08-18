@@ -66,7 +66,8 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("유효한 요청이면 PUBLIC 채널을 생성하고 201 Created를 반환한다")
-        void success() throws Exception {
+        void should_ReturnCreatedPublicChannel_when_RequestIsValid()
+                throws Exception {
             // given
             UUID channelId = UUID.randomUUID();
             Instant createdAt =
@@ -142,7 +143,8 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("채널 이름이 비어 있으면 400 Bad Request를 반환한다")
-        void blankName() throws Exception {
+        void should_ReturnBadRequest_when_PublicChannelNameIsBlank()
+                throws Exception {
             // given
             ChannelCreateRequest request =
                     new ChannelCreateRequest(
@@ -166,7 +168,8 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("채널 이름이 100자를 초과하면 400 Bad Request를 반환한다")
-        void nameTooLong() throws Exception {
+        void should_ReturnBadRequest_when_PublicChannelNameExceedsMaxLength()
+                throws Exception {
             // given
             ChannelCreateRequest request =
                     new ChannelCreateRequest(
@@ -195,7 +198,8 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("유효한 참여자 목록이면 PRIVATE 채널을 생성하고 201 Created를 반환한다")
-        void success() throws Exception {
+        void should_ReturnCreatedPrivateChannel_when_ParticipantsAreValid()
+                throws Exception {
             // given
             UUID channelId = UUID.randomUUID();
             UUID firstUserId = UUID.randomUUID();
@@ -259,7 +263,8 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("참여자 목록이 비어 있으면 400 Bad Request를 반환한다")
-        void emptyParticipants() throws Exception {
+        void should_ReturnBadRequest_when_ParticipantListIsEmpty()
+                throws Exception {
             // given
             PrivateChannelCreateRequest request =
                     new PrivateChannelCreateRequest(List.of());
@@ -279,7 +284,8 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("참여자 ID에 null이 포함되면 400 Bad Request를 반환한다")
-        void nullParticipant() throws Exception {
+        void should_ReturnBadRequest_when_ParticipantIdContainsNull()
+                throws Exception {
             // given
             String requestJson = """
                     {
@@ -307,7 +313,8 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("존재하는 채널을 조회하면 200 OK와 채널 정보를 반환한다")
-        void success() throws Exception {
+        void should_ReturnChannelResponse_when_ChannelExists()
+                throws Exception {
             // given
             UUID channelId = UUID.randomUUID();
 
@@ -357,7 +364,8 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("잘못된 UUID 형식으로 조회하면 400 Bad Request를 반환한다")
-        void invalidChannelId() throws Exception {
+        void should_ReturnBadRequest_when_ChannelIdFormatIsInvalid()
+                throws Exception {
             // when & then
             mockMvc.perform(get(
                             "/api/channels/{channelId}",
@@ -376,7 +384,8 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("사용자가 참여한 채널 목록을 JSON 배열로 반환한다")
-        void success() throws Exception {
+        void should_ReturnChannelList_when_UserParticipatesInChannels()
+                throws Exception {
             // given
             UUID userId = UUID.randomUUID();
             UUID publicChannelId = UUID.randomUUID();
@@ -445,7 +454,8 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("채널이 없으면 빈 JSON 배열을 반환한다")
-        void empty() throws Exception {
+        void should_ReturnEmptyArray_when_UserHasNoChannels()
+                throws Exception {
             // given
             UUID userId = UUID.randomUUID();
 
@@ -469,7 +479,8 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("userId 형식이 잘못되면 400 Bad Request를 반환한다")
-        void invalidUserId() throws Exception {
+        void should_ReturnBadRequest_when_UserIdFormatIsInvalid()
+                throws Exception {
             // when & then
             mockMvc.perform(get("/api/channels")
                             .param(
@@ -489,7 +500,8 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("경로의 채널 ID와 요청값으로 채널을 수정하고 200 OK를 반환한다")
-        void success() throws Exception {
+        void should_ReturnUpdatedChannel_when_UpdateRequestIsValid()
+                throws Exception {
             // given
             UUID channelId = UUID.randomUUID();
             Instant updatedAt =
@@ -564,7 +576,8 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("수정할 이름과 설명이 모두 없으면 400 Bad Request를 반환한다")
-        void noUpdateValue() throws Exception {
+        void should_ReturnBadRequest_when_UpdateValuesAreMissing()
+                throws Exception {
             // given
             UUID channelId = UUID.randomUUID();
 
@@ -588,7 +601,8 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("채널 이름이 공백으로만 구성되면 400 Bad Request를 반환한다")
-        void blankName() throws Exception {
+        void should_ReturnBadRequest_when_UpdateChannelNameContainsOnlyWhitespace()
+                throws Exception {
             // given
             UUID channelId = UUID.randomUUID();
 
@@ -619,7 +633,8 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("채널을 삭제하면 204 No Content를 반환한다")
-        void success() throws Exception {
+        void should_ReturnNoContent_when_ChannelIsDeleted()
+                throws Exception {
             // given
             UUID channelId = UUID.randomUUID();
 
@@ -638,7 +653,8 @@ class ChannelControllerTest {
 
         @Test
         @DisplayName("잘못된 UUID 형식으로 삭제하면 400 Bad Request를 반환한다")
-        void invalidChannelId() throws Exception {
+        void should_ReturnBadRequest_when_DeleteChannelIdFormatIsInvalid()
+                throws Exception {
             // when & then
             mockMvc.perform(delete(
                             "/api/channels/{channelId}",

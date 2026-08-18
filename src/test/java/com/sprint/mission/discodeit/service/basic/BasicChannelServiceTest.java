@@ -2,14 +2,22 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.ChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.ChannelResponse;
+import com.sprint.mission.discodeit.dto.ChannelUpdateRequest;
+import com.sprint.mission.discodeit.dto.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
+import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.entity.UserData;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.PrivateChannelUpdateException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.service.basic.BasicChannelService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -17,12 +25,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import com.sprint.mission.discodeit.dto.PrivateChannelCreateRequest;
-import com.sprint.mission.discodeit.entity.ReadStatus;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
-import com.sprint.mission.discodeit.dto.ChannelUpdateRequest;
-import com.sprint.mission.discodeit.exception.channel.PrivateChannelUpdateException;
 
 import java.util.List;
 import java.util.Optional;
@@ -64,7 +66,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("정상적인 요청이면 PUBLIC 채널을 생성한다")
-        void createPublicChannelSuccess() {
+        void should_CreatePublicChannel_when_RequestIsValid() {
             // given
             ChannelCreateRequest request = new ChannelCreateRequest(
                     ChannelType.PUBLIC,
@@ -84,8 +86,10 @@ class BasicChannelServiceTest {
 
             // then
             assertThat(response).isNotNull();
-            assertThat(response.getType()).isEqualTo(ChannelType.PUBLIC);
-            assertThat(response.getName()).isEqualTo("공지사항");
+            assertThat(response.getType())
+                    .isEqualTo(ChannelType.PUBLIC);
+            assertThat(response.getName())
+                    .isEqualTo("공지사항");
             assertThat(response.getDescription())
                     .isEqualTo("전체 공지 채널입니다.");
 
@@ -100,7 +104,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("PUBLIC 채널 생성 요청이 null이면 예외가 발생한다")
-        void createPublicChannelFailsWhenRequestIsNull() {
+        void should_ThrowIllegalArgumentException_when_RequestIsNull() {
             // when & then
             assertThatThrownBy(
                     () -> channelService.createPublicChannel(null)
@@ -124,15 +128,15 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("존재하는 참여자들로 PRIVATE 채널을 생성한다")
-        void createPrivateChannelSuccess() {
+        void should_CreatePrivateChannel_when_AllParticipantsExist() {
             // given
-            User user1 = new User(
+            User user1 = createUser(
                     "user1",
                     "user1@example.com",
                     "password1234"
             );
 
-            User user2 = new User(
+            User user2 = createUser(
                     "user2",
                     "user2@example.com",
                     "password1234"
@@ -204,7 +208,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("존재하지 않는 참여자가 있으면 PRIVATE 채널 생성에 실패한다")
-        void createPrivateChannelFailsWhenParticipantDoesNotExist() {
+        void should_ThrowUserNotFoundException_when_ParticipantDoesNotExist() {
             // given
             UUID existingUserId = UUID.randomUUID();
             UUID missingUserId = UUID.randomUUID();
@@ -242,7 +246,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("PUBLIC 채널 정보를 정상적으로 수정한다")
-        void updatePublicChannelSuccess() {
+        void should_UpdatePublicChannel_when_ChannelExists() {
             // given
             Channel channel = new Channel(
                     ChannelType.PUBLIC,
@@ -269,7 +273,8 @@ class BasicChannelServiceTest {
                     .willReturn(null);
 
             // when
-            ChannelResponse response = channelService.update(request);
+            ChannelResponse response =
+                    channelService.update(request);
 
             // then
             assertThat(response).isNotNull();
@@ -300,7 +305,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("PRIVATE 채널을 수정하면 예외가 발생한다")
-        void updatePrivateChannelFails() {
+        void should_ThrowPrivateChannelUpdateException_when_ChannelIsPrivate() {
             // given
             Channel channel = new Channel(
                     ChannelType.PRIVATE,
@@ -322,7 +327,9 @@ class BasicChannelServiceTest {
 
             // when & then
             assertThatThrownBy(() -> channelService.update(request))
-                    .isInstanceOf(PrivateChannelUpdateException.class);
+                    .isInstanceOf(
+                            PrivateChannelUpdateException.class
+                    );
 
             then(channelRepository)
                     .should()
@@ -344,7 +351,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("존재하는 채널을 정상적으로 삭제한다")
-        void deleteChannelSuccess() {
+        void should_DeleteChannel_when_ChannelExists() {
             // given
             Channel channel = new Channel(
                     ChannelType.PUBLIC,
@@ -391,7 +398,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("존재하지 않는 채널을 삭제하면 예외가 발생한다")
-        void deleteChannelFailsWhenChannelDoesNotExist() {
+        void should_ThrowChannelNotFoundException_when_DeletingUnknownChannel() {
             // given
             UUID channelId = UUID.randomUUID();
 
@@ -434,9 +441,9 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("사용자가 참여 가능한 PUBLIC 및 PRIVATE 채널을 조회한다")
-        void findAllByUserIdSuccess() {
+        void should_ReturnAccessibleChannels_when_UserExists() {
             // given
-            User user = new User(
+            User user = createUser(
                     "tester",
                     "tester@example.com",
                     "password1234"
@@ -473,7 +480,11 @@ class BasicChannelServiceTest {
                     ));
 
             given(readStatusRepository.findChannelIdsByUserId(userId))
-                    .willReturn(List.of(participatedPrivateChannel.getId()));
+                    .willReturn(
+                            List.of(
+                                    participatedPrivateChannel.getId()
+                            )
+                    );
 
             given(readStatusRepository.findUserIdsByChannelId(
                     participatedPrivateChannel.getId()
@@ -482,8 +493,9 @@ class BasicChannelServiceTest {
             given(userRepository.findById(userId))
                     .willReturn(Optional.of(user));
 
-            given(messageRepository.findLastMessageAtByChannelId(any(UUID.class)))
-                    .willReturn(null);
+            given(messageRepository.findLastMessageAtByChannelId(
+                    any(UUID.class)
+            )).willReturn(null);
 
             // when
             List<ChannelResponse> responses =
@@ -524,7 +536,7 @@ class BasicChannelServiceTest {
 
         @Test
         @DisplayName("존재하지 않는 사용자의 채널을 조회하면 예외가 발생한다")
-        void findAllByUserIdFailsWhenUserDoesNotExist() {
+        void should_ThrowUserNotFoundException_when_UserDoesNotExist() {
             // given
             UUID userId = UUID.randomUUID();
 
@@ -550,4 +562,19 @@ class BasicChannelServiceTest {
                     .findChannelIdsByUserId(any(UUID.class));
         }
     }
+
+    private User createUser(
+            String username,
+            String email,
+            String password
+    ) {
+        UserData userData = new UserData(
+                username,
+                email,
+                password
+        );
+
+        return new User(userData);
+    }
 }
+

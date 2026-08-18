@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.entity.UserData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -53,7 +54,7 @@ class MessageRepositoryTest {
     @BeforeEach
     void setUp() {
         author1 = userRepository.save(
-                new User(
+                createUser(
                         "author1",
                         "author1@test.com",
                         "password"
@@ -61,7 +62,7 @@ class MessageRepositoryTest {
         );
 
         author2 = userRepository.save(
-                new User(
+                createUser(
                         "author2",
                         "author2@test.com",
                         "password"
@@ -94,7 +95,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("특정 채널의 메시지만 조회한다")
-        void success() {
+        void should_ReturnOnlyMessagesFromRequestedChannel_when_ChannelHasMessages() {
             // given
             Message channel1Message1 =
                     createMessage(
@@ -153,7 +154,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("채널에 메시지가 없으면 빈 목록을 반환한다")
-        void empty() {
+        void should_ReturnEmptyList_when_ChannelHasNoMessages() {
             // given
             createAndSaveMessage(
                     "다른 채널 메시지",
@@ -179,7 +180,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("특정 작성자가 작성한 메시지만 조회한다")
-        void success() {
+        void should_ReturnOnlyMessagesFromRequestedAuthor_when_AuthorHasMessages() {
             // given
             createAndSaveMessage(
                     "작성자 1 메시지 1",
@@ -225,7 +226,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("작성한 메시지가 없으면 빈 목록을 반환한다")
-        void empty() {
+        void should_ReturnEmptyList_when_AuthorHasNoMessages() {
             // given
             createAndSaveMessage(
                     "작성자 2 메시지",
@@ -251,7 +252,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("채널 메시지를 생성일 기준 최신순으로 조회한다")
-        void success() {
+        void should_ReturnMessagesInDescendingCreatedAtOrder_when_QueryingFirstCursorPage() {
             // given
             createAndSaveMessage(
                     "첫 번째 메시지",
@@ -304,7 +305,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("요청한 페이지 크기만큼 메시지를 조회한다")
-        void paging() {
+        void should_ReturnRequestedNumberOfMessages_when_PageSizeIsSpecified() {
             // given
             createAndSaveMessage(
                     "첫 번째 메시지",
@@ -355,7 +356,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("커서보다 오래된 메시지만 최신순으로 조회한다")
-        void success() {
+        void should_ReturnOlderMessagesInDescendingOrder_when_CursorIsProvided() {
             // given
             createAndSaveMessage(
                     "첫 번째 메시지",
@@ -408,7 +409,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("커서보다 오래된 메시지가 없으면 빈 목록을 반환한다")
-        void empty() {
+        void should_ReturnEmptyList_when_NoMessagesExistBeforeCursor() {
             // given
             createAndSaveMessage(
                     "두 번째 메시지",
@@ -441,7 +442,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("다음 페이지에서도 요청한 크기만큼 조회한다")
-        void paging() {
+        void should_ReturnRequestedNumberOfMessages_when_QueryingNextCursorPage() {
             // given
             Instant fourthTime =
                     Instant.parse("2026-07-28T04:00:00Z");
@@ -503,7 +504,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("채널의 가장 최근 메시지 생성 시간을 반환한다")
-        void success() {
+        void should_ReturnLatestMessageCreatedAt_when_ChannelHasMessages() {
             // given
             createAndSaveMessage(
                     "첫 번째 메시지",
@@ -545,7 +546,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("채널에 메시지가 없으면 null을 반환한다")
-        void empty() {
+        void should_ReturnNull_when_ChannelHasNoMessages() {
             // given
             createAndSaveMessage(
                     "다른 채널 메시지",
@@ -571,7 +572,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("특정 채널의 모든 메시지를 삭제한다")
-        void success() {
+        void should_DeleteAllMessagesFromRequestedChannel_when_ChannelHasMessages() {
             // given
             createAndSaveMessage(
                     "채널 1 메시지 1",
@@ -616,7 +617,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("삭제할 채널 메시지가 없어도 예외가 발생하지 않는다")
-        void empty() {
+        void should_NotThrowException_when_ChannelHasNoMessagesToDelete() {
             // given
             createAndSaveMessage(
                     "채널 2 메시지",
@@ -640,7 +641,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("특정 작성자의 모든 메시지를 삭제한다")
-        void success() {
+        void should_DeleteAllMessagesFromRequestedAuthor_when_AuthorHasMessages() {
             // given
             createAndSaveMessage(
                     "작성자 1 메시지 1",
@@ -685,7 +686,7 @@ class MessageRepositoryTest {
 
         @Test
         @DisplayName("삭제할 작성자 메시지가 없어도 예외가 발생하지 않는다")
-        void empty() {
+        void should_NotThrowException_when_AuthorHasNoMessagesToDelete() {
             // given
             createAndSaveMessage(
                     "작성자 2 메시지",
@@ -703,6 +704,20 @@ class MessageRepositoryTest {
             // then
             assertThat(messageRepository.count()).isEqualTo(1);
         }
+    }
+
+    private User createUser(
+            String username,
+            String email,
+            String password
+    ) {
+        UserData userData = new UserData(
+                username,
+                email,
+                password
+        );
+
+        return new User(userData);
     }
 
     private Message createMessage(

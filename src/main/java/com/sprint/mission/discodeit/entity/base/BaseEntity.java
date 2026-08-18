@@ -7,6 +7,7 @@ import lombok.Getter;
 import org.springframework.data.annotation.CreatedDate;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Getter
@@ -23,6 +24,10 @@ public abstract class BaseEntity {
 
     protected BaseEntity() {
         this.id = UUID.randomUUID();
-        this.createdAt = Instant.now();
+        this.createdAt = nowForDatabase();
+    }
+
+    protected Instant nowForDatabase() {
+        return Instant.now().truncatedTo(ChronoUnit.MICROS);
     }
 }

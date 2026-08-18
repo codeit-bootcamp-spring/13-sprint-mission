@@ -1,0 +1,87 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: discodeit-postgres
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+    restart: unless-stopped
+
+  app:
+    container_name: discodeit-app
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    environment:
+      # Spring
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SERVER_PORT: 80
+
+      # PostgreSQL
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+      # Repository
+      REPOSITORY_TYPE: ${REPOSITORY_TYPE:-jpa}
+
+      # BinaryContentStorage
+      # local 또는 s3
+      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+
+      # local 저장소 사용 시 컨테이너 내부 저장 경로
+      STORAGE_LOCAL_ROOT_PATH: ${STORAGE_LOCAL_ROOT_PATH:-/app/data/binaryContents}
+
+      # AWS S3
+      # 실제 Access Key와 Secret Key는 전달하지 않습니다.
+      # 로컬 Compose에서는 아래 AWS_PROFILE과 .aws 볼륨을 사용합니다.
+      AWS_PROFILE: ${AWS_PROFILE:-discodeit}
+      AWS_S3_REGION: ${AWS_S3_REGION:-ap-northeast-2}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+      AWS_S3_PRESIGNED_URL_EXPIRATION: ${AWS_S3_PRESIGNED_URL_EXPIRATION:-600}
+
+      # 로컬 Docker Compose에서는 Spring Boot Admin 비활성화
+      SPRING_BOOT_ADMIN_CLIENT_ENABLED: "false"
+
+    ports:
+      - "${APP_PORT:-8081}:80"
+
+    volumes:
+      # local BinaryContentStorage 데이터 보존
+      - binary-content-data:/app/data/binaryContents
+
+      # 로컬 Docker 컨테이너에서 AWS CLI 프로필 사용
+      # ECS Fargate에서는 이 마운트를 사용하지 않고 Task Role을 사용합니다.
+      - "${USERPROFILE}/.aws:/root/.aws:ro"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  binary-content-data:

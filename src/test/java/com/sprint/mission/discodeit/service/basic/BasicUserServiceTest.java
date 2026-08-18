@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.UserResponse;
 import com.sprint.mission.discodeit.dto.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.entity.UserData;
 import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -13,6 +14,7 @@ import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.service.basic.BasicUserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -63,7 +65,7 @@ class BasicUserServiceTest {
 
         @Test
         @DisplayName("정상적인 요청이면 사용자를 생성한다")
-        void createSuccess() {
+        void should_CreateUser_when_RequestIsValid() {
             // given
             UserCreateRequest request = new UserCreateRequest(
                     "tester",
@@ -115,7 +117,7 @@ class BasicUserServiceTest {
 
         @Test
         @DisplayName("사용자 이름이 중복되면 사용자 생성에 실패한다")
-        void createFailsWhenUsernameDuplicated() {
+        void should_ThrowUserAlreadyExistsException_when_UsernameIsDuplicated() {
             // given
             UserCreateRequest request = new UserCreateRequest(
                     "tester",
@@ -155,9 +157,9 @@ class BasicUserServiceTest {
 
         @Test
         @DisplayName("존재하는 사용자의 정보를 정상적으로 수정한다")
-        void updateSuccess() {
+        void should_UpdateUser_when_UserExists() {
             // given
-            User user = new User(
+            User user = createUser(
                     "oldUsername",
                     "old@example.com",
                     "oldPassword"
@@ -220,7 +222,7 @@ class BasicUserServiceTest {
 
         @Test
         @DisplayName("존재하지 않는 사용자를 수정하면 예외가 발생한다")
-        void updateFailsWhenUserDoesNotExist() {
+        void should_ThrowUserNotFoundException_when_UpdatingUnknownUser() {
             // given
             UUID userId = UUID.randomUUID();
 
@@ -264,9 +266,9 @@ class BasicUserServiceTest {
 
         @Test
         @DisplayName("존재하는 사용자를 정상적으로 삭제한다")
-        void deleteSuccess() {
+        void should_DeleteUser_when_UserExists() {
             // given
-            User user = new User(
+            User user = createUser(
                     "tester",
                     "tester@example.com",
                     "password1234"
@@ -315,7 +317,7 @@ class BasicUserServiceTest {
 
         @Test
         @DisplayName("존재하지 않는 사용자를 삭제하면 예외가 발생한다")
-        void deleteFailsWhenUserDoesNotExist() {
+        void should_ThrowUserNotFoundException_when_DeletingUnknownUser() {
             // given
             UUID userId = UUID.randomUUID();
 
@@ -354,5 +356,19 @@ class BasicUserServiceTest {
                     .should(never())
                     .delete(any(UUID.class));
         }
+    }
+
+    private User createUser(
+            String username,
+            String email,
+            String password
+    ) {
+        UserData userData = new UserData(
+                username,
+                email,
+                password
+        );
+
+        return new User(userData);
     }
 }
