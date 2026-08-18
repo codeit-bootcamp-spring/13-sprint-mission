@@ -30,7 +30,7 @@ class ChannelRepositoryTest {
 
         @Test
         @DisplayName("지정한 타입의 채널만 조회")
-        void 채널_타입별_조회_성공() {
+        void get_success() {
             // given
             Channel firstPublicChannel = new Channel(
                     ChannelType.PUBLIC,
@@ -70,7 +70,7 @@ class ChannelRepositoryTest {
 
         @Test
         @DisplayName("지정한 타입의 채널이 없으면 빈 목록을 반환")
-        void 채널_타입별_조회_결과_없음() {
+        void get_fail() {
             // given
             Channel publicChannel = new Channel(
                     ChannelType.PUBLIC,

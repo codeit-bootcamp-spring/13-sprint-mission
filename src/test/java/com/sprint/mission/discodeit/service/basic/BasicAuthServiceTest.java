@@ -49,7 +49,7 @@ class BasicAuthServiceTest {
 
         @Test
         @DisplayName("사용자와 사용자 상태가 존재하면 로그인에 성공")
-        void 로그인_성공() {
+        void login_success() {
             // given
             LoginRequest request = new LoginRequest("user1", "password1");
 
@@ -99,7 +99,7 @@ class BasicAuthServiceTest {
 
         @Test
         @DisplayName("사용자가 존재하지 않으면 예외가 발생")
-        void 로그인_실패_사용자_없음() {
+        void login_fail_no_user() {
             // given
             LoginRequest request = new LoginRequest("unknown", "wrong-password");
 
@@ -121,7 +121,7 @@ class BasicAuthServiceTest {
 
         @Test
         @DisplayName("사용자 상태가 존재하지 않으면 예외가 발생")
-        void 로그인_실패_사용자_상태_없음() {
+        void login_fail_no_userStatus() {
             // given
             LoginRequest request = new LoginRequest("user1", "password1");
 

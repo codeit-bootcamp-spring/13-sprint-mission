@@ -60,7 +60,7 @@ class BasicUserServiceTest {
     class Create {
         @Test
         @DisplayName("중복된 이름, 이메일이 없으면 유저 생성")
-        void 생성_성공() {
+        void create_success() {
             //given
             UserCreateRequest request = new UserCreateRequest(
                     "테스트 이름",
@@ -107,7 +107,7 @@ class BasicUserServiceTest {
 
         @Test
         @DisplayName("중복된 이름이 존재하면 예외 발생")
-        void 생성_실패_이름_중복() {
+        void create_fail() {
             //given
             UserCreateRequest request = new UserCreateRequest(
                     "테스트 이름",
@@ -136,7 +136,7 @@ class BasicUserServiceTest {
     class Update {
         @Test
         @DisplayName("사용자가 존재하고 중복이 없으면 정보를 수정")
-        void 수정_성공() {
+        void update_success() {
             // given
             UUID randomId = UUID.randomUUID();
             User user = sample();
@@ -183,7 +183,7 @@ class BasicUserServiceTest {
 
         @Test
         @DisplayName("수정할 유저가 존재하지 않으면 예외 발생")
-        void 수정_실패_유저_없음() {
+        void update_fail() {
             // given
             UUID randomId = UUID.randomUUID();
 
@@ -212,7 +212,7 @@ class BasicUserServiceTest {
     class Delete {
         @Test
         @DisplayName("사용자가 존재하면 삭제")
-        void 삭제_성공() {
+        void delete_success() {
             // given
             UUID randomId = UUID.randomUUID();
             User user = sample();
@@ -236,7 +236,7 @@ class BasicUserServiceTest {
 
         @Test
         @DisplayName("삭제할 유저가 존재하지 않으면 예외 발생")
-        void 삭제_실패_유저_없음() {
+        void delete_fail() {
             // given
             UUID randomId = UUID.randomUUID();
 

@@ -31,7 +31,7 @@ class UserRepositoryTest {
 
         @Test
         @DisplayName("동일한 유저 이름이 존재하면 true를 반환")
-        void 사용자_이름_조회_성공() {
+        void get_success() {
             // given
             User user = new User(
                     "user1",
@@ -51,7 +51,7 @@ class UserRepositoryTest {
 
         @Test
         @DisplayName("동일한 사용자 이름이 없으면 false를 반환")
-        void 사용자_이름_조회_실패() {
+        void get_fail() {
             // when
             boolean result = userRepository.existsByUsername("unknown");
 
@@ -66,7 +66,7 @@ class UserRepositoryTest {
 
         @Test
         @DisplayName("동일한 이메일이 존재하면 true를 반환")
-        void 이메일_조회_성공() {
+        void get_success() {
             // given
             User user = new User(
                     "user1",
@@ -86,10 +86,9 @@ class UserRepositoryTest {
 
         @Test
         @DisplayName("동일한 이메일이 없으면 false를 반환한다")
-        void 이메일_조회_실패() {
+        void get_fail() {
             // when
-            boolean result =
-                    userRepository.existsByEmail("unknown@example.com");
+            boolean result = userRepository.existsByEmail("unknown@example.com");
 
             // then
             assertThat(result).isFalse();
@@ -102,7 +101,7 @@ class UserRepositoryTest {
 
         @Test
         @DisplayName("사용자 이름과 비밀번호가 모두 일치하면 사용자를 반환")
-        void 사용자_조회_성공() {
+        void get_success() {
             // given
             User user = new User(
                     "user1",
@@ -131,7 +130,7 @@ class UserRepositoryTest {
 
         @Test
         @DisplayName("비밀번호가 일치하지 않으면 빈 Optional을 반환")
-        void 사용자_조회_실패_비밀번호_불일치() {
+        void get_fail() {
             // given
             User user = new User(
                     "user1",
@@ -160,7 +159,7 @@ class UserRepositoryTest {
 
         @Test
         @DisplayName("저장된 모든 사용자를 조회")
-        void 전체_사용자_조회_성공() {
+        void get_success() {
             // given
             User firstUser = new User(
                     "user1",
@@ -193,7 +192,7 @@ class UserRepositoryTest {
 
         @Test
         @DisplayName("저장된 사용자가 없으면 빈 목록을 반환")
-        void 전체_사용자_조회_결과_없음() {
+        void get_fail() {
             // when
             List<User> result = userRepository.findAll();
 

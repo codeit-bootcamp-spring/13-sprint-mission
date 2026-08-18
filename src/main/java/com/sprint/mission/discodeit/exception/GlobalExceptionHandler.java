@@ -20,7 +20,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DiscodeitException.class)
     public ResponseEntity<ErrorResponse> handleDiscodeitException(DiscodeitException ex) {
 
-        ErrorResponse errorResponse = new ErrorResponse(
+        ErrorResponse errorResponse = ErrorResponse.of(
                 ex.getErrorCode(),
                 ex.getDetails(),
                 ex.getClass().getSimpleName()
@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
                 .getFieldErrors()
                 .forEach(fieldError -> details.put(fieldError.getField(), fieldError.getDefaultMessage()));
 
-        ErrorResponse errorResponse = new ErrorResponse(
+        ErrorResponse errorResponse = ErrorResponse.of(
                 errorCode,
                 details,
                 ex.getClass().getSimpleName()
@@ -59,7 +59,7 @@ public class GlobalExceptionHandler {
         details.put("parameter", ex.getParameterName());
         details.put("message", "필수 요청 파라미터가 누락되었습니다.");
 
-        ErrorResponse errorResponse = new ErrorResponse(
+        ErrorResponse errorResponse = ErrorResponse.of(
                 errorCode,
                 details,
                 ex.getClass().getSimpleName()
@@ -76,7 +76,7 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
         Map<String, Object> details = Map.of();
 
-        ErrorResponse errorResponse = new ErrorResponse(
+        ErrorResponse errorResponse = ErrorResponse.of(
                 errorCode,
                 details,
                 ex.getClass().getSimpleName()

@@ -51,7 +51,7 @@ class MessageControllerTest {
 
         @Test
         @DisplayName("메시지 생성 성공")
-        void 메시지_생성_성공() throws Exception {
+        void create_success() throws Exception {
             // given
             MessageCreateRequest request = new MessageCreateRequest(
                     "안녕하세요",
@@ -101,7 +101,7 @@ class MessageControllerTest {
 
         @Test
         @DisplayName("메시지 내용이 비어 있으면 400을 반환")
-        void 메시지_생성_실패_유효성_검증() throws Exception {
+        void create_fail() throws Exception {
             // given
             MessageCreateRequest request = new MessageCreateRequest(
                     "",
@@ -132,7 +132,7 @@ class MessageControllerTest {
 
         @Test
         @DisplayName("채널의 메시지 목록 조회 성공")
-        void 메시지_목록_조회_성공() throws Exception {
+        void get_success() throws Exception {
             // given
             MessageDto firstMessage = new MessageDto(
                     UUID.randomUUID(),
@@ -195,7 +195,7 @@ class MessageControllerTest {
 
         @Test
         @DisplayName("channelId가 없으면 400을 반환")
-        void 메시지_목록_조회_실패_channelId_없음() throws Exception {
+        void get_fail() throws Exception {
             // when & then
             mockMvc.perform(get("/api/messages")
                                     .param("page", "0")
@@ -212,7 +212,7 @@ class MessageControllerTest {
 
         @Test
         @DisplayName("메시지 수정 성공")
-        void 메시지_수정_성공() throws Exception {
+        void update_success() throws Exception {
             // given
             MessageUpdateRequest request = new MessageUpdateRequest("수정된 메시지");
 
@@ -251,7 +251,7 @@ class MessageControllerTest {
 
         @Test
         @DisplayName("수정할 메시지 내용이 비어 있으면 400을 반환")
-        void 메시지_수정_실패_유효성_검증() throws Exception {
+        void update_fail() throws Exception {
             // given
             MessageUpdateRequest request = new MessageUpdateRequest("");
 
@@ -271,7 +271,7 @@ class MessageControllerTest {
 
         @Test
         @DisplayName("메시지 삭제 성공")
-        void 메시지_삭제_성공() throws Exception {
+        void delete_success() throws Exception {
             // given
             willDoNothing()
                     .given(messageService)
@@ -287,7 +287,7 @@ class MessageControllerTest {
 
         @Test
         @DisplayName("존재하지 않는 메시지를 삭제하면 404를 반환")
-        void 메시지_삭제_실패_메시지_없음() throws Exception {
+        void delete_fail() throws Exception {
             // given
             willThrow(new MessageNotFoundException(messageId))
                     .given(messageService)

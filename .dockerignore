@@ -1,0 +1,14 @@
+# 빌드 컨텍스트에서 제외 — 빌드 빠르고 이미지 깔끔, 민감/불필요 파일 유출 방지
+.git
+.gitignore
+.idea
+*.iml
+build/
+.gradle/
+logs/
+*.log
+uploads/
+Dockerfile
+.dockerignore
+README*.md
+HELP.md

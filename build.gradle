@@ -19,6 +19,7 @@ jacocoTestReport {
 
 group = 'com.sprint.mission'
 version = '0.0.1-SNAPSHOT'
+version = '1.2-M8'
 
 java {
 	toolchain {
@@ -49,7 +50,10 @@ dependencies {
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
-	implementation 'de.codecentric:spring-boot-admin-starter-client:3.4.5'
+	implementation 'software.amazon.awssdk:s3:2.31.7'
+
+	// Adobe S3Mock - 로컬에서 진짜 S3 API 를 흉내내는 컨테이너.
+	testImplementation 'com.adobe.testing:s3mock-testcontainers:4.11.0'
 }
 
 tasks.named('test') {

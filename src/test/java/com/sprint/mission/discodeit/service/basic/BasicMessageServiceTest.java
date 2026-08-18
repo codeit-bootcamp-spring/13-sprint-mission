@@ -77,7 +77,7 @@ class BasicMessageServiceTest {
 
         @Test
         @DisplayName("사용자와 채널이 존재하면 메시지를 생성")
-        void 생성_성공() {
+        void create_success() {
             // given
             UUID authorId = UUID.randomUUID();
             UUID channelId = UUID.randomUUID();
@@ -140,7 +140,7 @@ class BasicMessageServiceTest {
 
         @Test
         @DisplayName("작성자가 존재하지 않으면 예외가 발생")
-        void 생성_실패_유저_없음() {
+        void create_fail() {
             // given
             UUID authorId = UUID.randomUUID();
             UUID channelId = UUID.randomUUID();
@@ -172,7 +172,7 @@ class BasicMessageServiceTest {
 
         @Test
         @DisplayName("메시지가 존재하면 내용을 수정한다")
-        void 수정_성공() {
+        void update_success() {
             // given
             UUID messageId = UUID.randomUUID();
 
@@ -205,7 +205,7 @@ class BasicMessageServiceTest {
 
         @Test
         @DisplayName("수정할 메시지가 존재하지 않으면 예외가 발생")
-        void 수정_실패_메시지_없음() {
+        void update_fail() {
             // given
             UUID messageId = UUID.randomUUID();
 
@@ -229,7 +229,7 @@ class BasicMessageServiceTest {
 
         @Test
         @DisplayName("메시지가 존재하면 삭제")
-        void 삭제_성공() {
+        void delete_success() {
             // given
             UUID messageId = UUID.randomUUID();
 
@@ -256,7 +256,7 @@ class BasicMessageServiceTest {
 
         @Test
         @DisplayName("삭제할 메시지가 존재하지 않으면 예외가 발생")
-        void 삭제_실패_메시지_없음() {
+        void delete_fail() {
             // given
             UUID messageId = UUID.randomUUID();
 
@@ -281,7 +281,7 @@ class BasicMessageServiceTest {
 
         @Test
         @DisplayName("커서가 없으면 첫 페이지를 조회")
-        void 조회_성공_커서_없음() {
+        void get_success() {
             // given
             UUID channelId = UUID.randomUUID();
             Pageable pageable = PageRequest.of(0, 20);
@@ -325,7 +325,7 @@ class BasicMessageServiceTest {
 
         @Test
         @DisplayName("채널이 존재하지 않으면 예외가 발생")
-        void 조회_실패_채널_없음() {
+        void get_fail() {
             // given
             UUID channelId = UUID.randomUUID();
             Pageable pageable = PageRequest.of(0, 20);

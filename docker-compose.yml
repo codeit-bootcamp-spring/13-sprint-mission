@@ -1,0 +1,55 @@
+
+services:
+
+  #PostgreSQL 데이터베이스 컨테이너
+  db:
+    image: postgres:16
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks:
+      - app-network
+
+  #앱 컨테이너
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8281:80"
+    environment:
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      - JPA_DDL_AUTO=${JPA_DDL_AUTO:-validate}
+      - SERVER_PORT=80
+
+      # BinaryContentStorage
+      - STORAGE_TYPE=${STORAGE_TYPE:-local}
+      - STORAGE_LOCAL_ROOT_PATH=${STORAGE_LOCAL_ROOT_PATH:-.discodeit/storage}
+    volumes:
+      - binary-storage:/app/storage
+    depends_on:
+      db:
+        condition: service_healthy  # db가 준비된 뒤에 앱 시작 (순서 지정)
+    networks:
+      - app-network
+
+volumes:
+  pgdata:
+    driver: local #볼륨 데이터를 호스트의 로컬에 저장하겠다.
+  binary-storage:
+
+
+networks:
+  app-network:
+    driver: bridge

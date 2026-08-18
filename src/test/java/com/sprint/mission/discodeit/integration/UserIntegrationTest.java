@@ -48,7 +48,7 @@ public class UserIntegrationTest {
 
         @Test
         @DisplayName("정상적인 요청이면 사용자를 생성하고 201을 반환")
-        void 사용자_생성_성공() throws Exception {
+        void create_success() throws Exception {
             // given
             UserCreateRequest request = new UserCreateRequest(
                     "user1",
@@ -79,7 +79,7 @@ public class UserIntegrationTest {
 
         @Test
         @DisplayName("중복된 이메일로 생성하면 409를 반환")
-        void 사용자_생성_실패_이메일_중복() throws Exception {
+        void create_fail() throws Exception {
             // given
             createUser(
                     "existing-user",
@@ -115,7 +115,7 @@ public class UserIntegrationTest {
 
         @Test
         @DisplayName("존재하는 사용자의 정보를 수정하고 200을 반환")
-        void 사용자_수정_성공() throws Exception {
+        void update_success() throws Exception {
             // given
             UUID userId = createUser(
                     "user1",
@@ -160,7 +160,7 @@ public class UserIntegrationTest {
 
         @Test
         @DisplayName("존재하지 않는 사용자를 수정하면 404를 반환")
-        void 사용자_수정_실패_사용자_없음() throws Exception {
+        void update_fail() throws Exception {
             // given
             UUID unknownUserId = UUID.randomUUID();
 
@@ -198,7 +198,7 @@ public class UserIntegrationTest {
 
         @Test
         @DisplayName("존재하는 사용자를 삭제하고 204를 반환")
-        void 사용자_삭제_성공() throws Exception {
+        void delete_success() throws Exception {
             // given
             UUID userId = createUser(
                     "user1",
@@ -216,7 +216,7 @@ public class UserIntegrationTest {
 
         @Test
         @DisplayName("존재하지 않는 사용자를 삭제하면 404를 반환")
-        void 사용자_삭제_실패_사용자_없음() throws Exception {
+        void delete_fail() throws Exception {
             // given
             UUID unknownUserId = UUID.randomUUID();
 
@@ -239,7 +239,7 @@ public class UserIntegrationTest {
 
         @Test
         @DisplayName("저장된 모든 사용자 목록을 반환")
-        void 사용자_목록_조회_성공() throws Exception {
+        void get_success() throws Exception {
             // given
             createUser(
                     "user1",
@@ -274,7 +274,7 @@ public class UserIntegrationTest {
 
         @Test
         @DisplayName("사용자가 없으면 빈 목록을 반환")
-        void 사용자_목록_조회_결과_없음() throws Exception {
+        void get_fail() throws Exception {
             // when & then
             mockMvc.perform(get("/api/users"))
                     .andExpect(status().isOk())
