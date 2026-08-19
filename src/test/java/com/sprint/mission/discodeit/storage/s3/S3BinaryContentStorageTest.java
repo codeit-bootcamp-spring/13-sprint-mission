@@ -13,6 +13,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.io.ByteArrayInputStream;
@@ -114,7 +115,8 @@ class S3BinaryContentStorageTest {
 
         PresignedGetObjectRequest presignedRequest = mock(PresignedGetObjectRequest.class);
         given(presignedRequest.url()).willReturn(new URL("https://test-bucket.s3.amazonaws.com/" + id));
-        given(s3Presigner.presignGetObject(any())).willReturn(presignedRequest);
+        given(s3Presigner.presignGetObject(any(GetObjectPresignRequest.class)))
+                .willReturn(presignedRequest);
 
         ResponseEntity<?> response = storage.download(dto);
 
