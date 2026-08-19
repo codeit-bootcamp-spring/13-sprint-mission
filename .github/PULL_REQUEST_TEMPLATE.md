@@ -1,5 +1,5 @@
 ## 요구사항
-
+[![codecov](https://codecov.io/gh/hj-log/13-sprint-mission/graph/badge.svg?token=4BW3EXVH82)](https://codecov.io/gh/hj-log/13-sprint-mission)
 ### 기본
 - [x] 기본 항목 1
 - [ ] 기본 항목 2
