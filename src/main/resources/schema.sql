@@ -1,12 +1,11 @@
 -- binary_contents
-CREATE TABLE binary_contents(
-id UUID NOT NULL,
-created_at TIMESTAMPTZ NOT NULL,
-file_name VARCHAR(255) NOT NULL,
-size BIGINT NOT NULL,
-content_type VARCHAR(100) NOT NULL,
-
-CONSTRAINT pk_binary_contents PRIMARY KEY (id)
+CREATE TABLE binary_contents (
+    id UUID NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    size BIGINT NOT NULL,
+    content_type VARCHAR(100) NOT NULL,
+    CONSTRAINT pk_binary_contents PRIMARY KEY (id)
 );
 
 -- users
@@ -29,19 +28,6 @@ CREATE TABLE users(
                                    ---profile_id를 NULL로 바꾼다.
 
 );
-
--- binary_contents
-CREATE TABLE binary_contents(
-id UUID NOT NULL,
-created_at TIMESTAMPTZ NOT NULL, 
-file_name VARCHAR(255) NOT NULL,
-size BIGINT NOT NULL , 
-content_type VARCHAR(100) NOT NULL,
-bytes BYTEA NOT NULL,            --여기까지가 테이블의 구조 
-
-CONSTRAINT pk_binary_contents PRIMARY KEY (id) --규칙 
-);
-
 
 -- user_statuses
 CREATE TABLE user_statuses (
