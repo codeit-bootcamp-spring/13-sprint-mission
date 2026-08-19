@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Gradle
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea
+*.iml
+.vscode
+.claude
+
+# 로컬 데이터/시크릿
+.env
+.discodeit/
+.storage/
+*.ser
+
+# 문서/기타
+HELP.md
+README.md
+*.sql
+
+# OS
+.DS_Store

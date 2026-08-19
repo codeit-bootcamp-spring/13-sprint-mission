@@ -1,0 +1,56 @@
+# docker-compose.yml
+#docker run 명령어 두개(spring Boot, DB)를 터미널에 직접 타이핑하지 않고
+#하나의 설정파일로 만들어 docker compose up 명령어 한줄로 설정 파일을 실행하도록한다.
+
+services:
+  postgres:
+    image: postgres:17 #도커허브에 공식 PostgreSQL17 이미지를 받아서 사용.
+    container_name: discodeit-postgres
+    environment: #따로 env에 정의한 환경 변수 사용
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      #컨테이너가 삭제되어도 DB가 날아기지 않게 데이터 저장 공간을 컨테이너 외부에 별도 공간인 볼륨에 동기화 시킨다.(영속성 보장)
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      #내 프로젝트의 schema.sql을 연결하여, DB 컨테이너 최초 생성 시 테이블을 자동으로 생성하도록 설정
+
+    ports:
+      - "5432:5432"
+      #컨태이너 외부(내 컴퓨터)에 5432포트로 요청이 오면 컨테이너 내부 5432포트에 접속하도록 길을 열어둠.
+    healthcheck: #DB 헬스체크가 끝날 때까지 app 실행 대기 DB가 정상적으로 동작하는 것을 보장
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: . #이미지를 빌드할 경로(위치)를 정함(. 은 햔제 디렉토리)
+      dockerfile: Dockerfile #사용할 도커 파일명 지정
+    container_name: discodeit-app #컨테이너 이름 지정
+    environment:
+      # .env 파일에 작성된 값들을 읽어와 스프링 부트 애플리케이션의 환경변수로 주입
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE} # 예: prod (운영 환경 설정 사용)
+      SERVER_PORT: ${SERVER_PORT}                       # 예: 80 (스프링 포트)
+      DB_URL: ${DB_URL}                                 # DB 접속 주소
+      DB_USERNAME: ${DB_USERNAME}                       # DB 계정명
+      DB_PASSWORD: ${DB_PASSWORD}                       # DB 비밀번호
+      STORAGE_TYPE: ${STORAGE_TYPE}                     # 파일 저장 방식 (local 등)
+      AWS_S3_REGION: ${AWS_S3_REGION}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+      AWS_S3_PRESIGNED_URL_EXPIRATION: ${AWS_S3_PRESIGNED_URL_EXPIRATION}
+    volumes:
+      #DB와 동일하게 업드한 파일의 영속성을 보장하기 위해 컨테이너 외부 볼륨과 컨테이너 내부를 연결
+      - app-storage:/app/.storage
+    ports:
+      - "8081:80"
+    depends_on:
+      - postgres
+
+# 상단 서비스들(postgres, app)에서 사용할 공유/영속 저장소(볼륨) 선언
+# 컨테이너가 중지되거나 삭제되어도 이 볼륨에 저장된 데이터는 데이터베이스 및 업로드 파일로서 안전하게 보존됨
+volumes:
+  postgres-data:
+  app-storage:
