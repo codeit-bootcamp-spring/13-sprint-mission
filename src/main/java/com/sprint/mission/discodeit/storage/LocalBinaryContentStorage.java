@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.storage;
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.ContentDisposition;
@@ -18,12 +19,17 @@ import java.nio.file.Path;
 import java.util.UUID;
 
 @Component
+@ConditionalOnProperty(
+        name = "discodeit.storage.type",
+        havingValue = "local",
+        matchIfMissing = true
+)
 public class LocalBinaryContentStorage implements BinaryContentStorage {
 
     private final Path rootPath;
 
     public LocalBinaryContentStorage(
-            @Value("${storage.local.root-path}") String rootPath
+            @Value("${discodeit.storage.local.root-path}") String rootPath
     ) {
         this.rootPath = Path.of(rootPath);
     }
