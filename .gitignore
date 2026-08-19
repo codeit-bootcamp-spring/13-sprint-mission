@@ -12,6 +12,7 @@ data/
 /.logs/
 .env
 .discodeit/
+discodeit.env
 
 
 # 에디터 기반 HTTP 클라이언트 요청
