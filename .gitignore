@@ -10,6 +10,9 @@ out/
 **/.DS_Store
 data/
 /.logs/
+.env
+.discodeit/
+
 
 # 에디터 기반 HTTP 클라이언트 요청
 /httpRequests/
