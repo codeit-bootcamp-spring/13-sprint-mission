@@ -1,0 +1,70 @@
+# Docker Compose 버전 지정
+version: '3.8'
+
+# 서비스 정의
+services:
+  # PostgreSQL 데이터베이스 서비스
+  postgres:
+    # PostgreSQL 공식 이미지 사용 (버전 16)
+    image: postgres:16-alpine
+    # 컨테이너 이름 지정
+    container_name: discodeit-postgres
+    # 환경 변수 설정 (.env 파일에서 로드)
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_INITDB_ARGS: "-c timezone=Asia/Seoul"
+    # 포트 매핑 (호스트:컨테이너)
+    ports:
+      - "5432:5432"
+    # 볼륨 설정 (데이터 영속성)
+    volumes:
+      # PostgreSQL 데이터를 postgres_data 볼륨에 저장
+      - postgres_data:/var/lib/postgresql/data
+      # schema.sql을 컨테이너 시작 시 자동으로 실행
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    # 헬스 체크 (서비스가 정상적으로 시작되었는지 확인)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Spring Boot 애플리케이션 서비스
+  app:
+    # 로컬 Dockerfile에서 이미지 빌드
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # 컨테이너 이름 지정
+    container_name: discodeit-app
+    # 환경 변수 설정 (.env 파일에서 로드)
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      STORAGE_TYPE: ${STORAGE_TYPE}
+      STORAGE_LOCAL_ROOT_PATH: ${STORAGE_LOCAL_ROOT_PATH}
+    # 포트 매핑 (호스트:컨테이너)
+    ports:
+      - "8081:80"
+    # 볼륨 설정 (데이터 영속성)
+    volumes:
+      # BinaryContentStorage 데이터를 app_storage 볼륨에 저장 (절대 경로 사용)
+      - app_storage:/app/.discodeit/storage
+    # 서비스 간 의존성 설정 (postgres가 먼저 시작되어야 함)
+    depends_on:
+      postgres:
+        # postgres 서비스가 헬스 체크를 통과할 때까지 대기
+        condition: service_healthy
+    # 재시작 정책 (컨테이너가 종료되면 자동 재시작)
+    restart: unless-stopped
+
+# 볼륨 정의
+volumes:
+  # PostgreSQL 데이터를 저장할 볼륨 (컨테이너 재시작 후에도 데이터 유지)
+  postgres_data:
+  # 애플리케이션 저장소 데이터를 저장할 볼륨 (컨테이너 재시작 후에도 데이터 유지)
+  app_storage:
