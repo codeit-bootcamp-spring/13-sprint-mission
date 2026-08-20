@@ -42,7 +42,7 @@ class MessageApiIntegrationTest {
     @Test
     @DisplayName("메시지 생성, 조회, 수정, 삭제 API가 동작한다")
     void messageApi_lifecycle_success() throws Exception {
-        String userId = createUser("tester", "tester@example.com", "password");
+        String userId = createUser("tester", "tester@example.com", "Password1!");
         String channelId = createPublicChannel("general", "general channel");
         String messageId = createMessage("hello", channelId, userId);
 

@@ -71,8 +71,8 @@ class ChannelApiIntegrationTest {
     @Test
     @DisplayName("PRIVATE 채널을 생성하고 사용자별 채널 목록에서 조회한다")
     void privateChannelApi_createAndFindByUser_success() throws Exception {
-        String userId1 = createUser("user1", "user1@example.com", "password");
-        String userId2 = createUser("user2", "user2@example.com", "password");
+        String userId1 = createUser("user1", "user1@example.com", "Password1!");
+        String userId2 = createUser("user2", "user2@example.com", "Password1!");
 
         PrivateChannelCreateRequest request = new PrivateChannelCreateRequest(
                 List.of(UUID.fromString(userId1), UUID.fromString(userId2))

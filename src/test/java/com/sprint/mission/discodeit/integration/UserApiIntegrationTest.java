@@ -37,7 +37,7 @@ class UserApiIntegrationTest {
     @Test
     @DisplayName("사용자 생성, 목록 조회, 수정, 삭제 API가 동작한다")
     void userApi_lifecycle_success() throws Exception {
-        String userId = createUser("tester", "tester@example.com", "password");
+        String userId = createUser("tester", "tester@example.com", "Password1!");
 
         mockMvc.perform(get("/api/users"))
                 .andExpect(status().isOk())
@@ -47,7 +47,7 @@ class UserApiIntegrationTest {
         UserUpdateRequest updateRequest = new UserUpdateRequest(
                 "updated",
                 "updated@example.com",
-                "newPassword",
+                "NewPassword1!",
                 null,
                 null,
                 null
