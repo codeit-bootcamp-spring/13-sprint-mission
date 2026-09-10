@@ -35,6 +35,13 @@ public enum ErrorCode {
             "사용자 요청이 올바르지 않습니다."
     ),
 
+    // Authentication
+    AUTHENTICATION_FAILED(
+            HttpStatus.UNAUTHORIZED,
+            "AUTH-001",
+            "아이디 또는 비밀번호가 올바르지 않습니다."
+    ),
+
     // Channel
     CHANNEL_NOT_FOUND(
             HttpStatus.NOT_FOUND,

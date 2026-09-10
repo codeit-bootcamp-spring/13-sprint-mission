@@ -19,6 +19,7 @@ import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +41,9 @@ public class BasicUserService implements UserService {
     private final UserStatusRepository userStatusRepository;
     private final MessageRepository messageRepository;
     private final ReadStatusRepository readStatusRepository;
+
+    // 추가: 비밀번호 암호화를 위한 PasswordEncoder
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public UserResponse create(UserCreateRequest request) {
@@ -84,10 +88,14 @@ public class BasicUserService implements UserService {
             BinaryContent profile =
                     saveProfileImage(request.getProfileImage());
 
+            // 추가: 회원가입 비밀번호를 BCrypt 해시로 변환
+            String encodedPassword =
+                    passwordEncoder.encode(request.getPassword());
+
             UserData userData = new UserData(
                     request.getUsername(),
                     request.getEmail(),
-                    request.getPassword()
+                    encodedPassword
             );
 
             User user = new User(userData);
@@ -187,9 +195,10 @@ public class BasicUserService implements UserService {
                 ? user.getEmail()
                 : request.getEmail();
 
+        // 수정: 비밀번호 변경 시에도 BCrypt 해시로 저장
         String updatePassword = isBlank(request.getPassword())
                 ? user.getPassword()
-                : request.getPassword();
+                : passwordEncoder.encode(request.getPassword());
 
         if (!user.getUsername().equals(updateUsername)
                 && userRepository.existsByUsername(updateUsername)) {

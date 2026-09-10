@@ -1,27 +1,28 @@
 package com.sprint.mission.discodeit.controller;
 
-import com.sprint.mission.discodeit.dto.LoginRequest;
-import com.sprint.mission.discodeit.dto.UserResponse;
-import com.sprint.mission.discodeit.service.AuthService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
-@RequiredArgsConstructor
+@Slf4j
 public class AuthController {
 
-    private final AuthService authService;
+    // CSRF 토큰 발급
+    @GetMapping("/csrf-token")
+    public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
 
-    // 로그인
-    @PostMapping("/login")
-    public ResponseEntity<UserResponse> login(
-            @Valid @RequestBody LoginRequest request
-    ) {
-        UserResponse response = authService.login(request);
+        String tokenValue = csrfToken.getToken();
 
-        return ResponseEntity.ok(response);
+        log.debug("CSRF 토큰 요청: {}", tokenValue);
+
+        return ResponseEntity
+                .status(HttpStatus.NON_AUTHORITATIVE_INFORMATION)
+                .build();
     }
 }

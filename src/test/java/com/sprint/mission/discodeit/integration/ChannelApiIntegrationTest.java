@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("채널 API 통합 테스트")
@@ -54,9 +54,11 @@ class ChannelApiIntegrationTest {
             );
 
             // when & then
-            MvcResult result = mockMvc.perform(post("/api/channels/public")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
+            MvcResult result = mockMvc.perform(
+                            post("/api/channels/public")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request))
+                    )
                     .andExpect(status().isCreated())
                     .andExpect(content().contentTypeCompatibleWith(
                             MediaType.APPLICATION_JSON
@@ -142,9 +144,11 @@ class ChannelApiIntegrationTest {
             );
 
             // when & then
-            MvcResult result = mockMvc.perform(post("/api/channels/private")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(requestJson))
+            MvcResult result = mockMvc.perform(
+                            post("/api/channels/private")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(requestJson)
+                    )
                     .andExpect(status().isCreated())
                     .andExpect(content().contentTypeCompatibleWith(
                             MediaType.APPLICATION_JSON
@@ -200,12 +204,14 @@ class ChannelApiIntegrationTest {
                     "user1@test.com"
             );
 
-            String unknownUserId = UUID.randomUUID().toString();
+            String unknownUserId =
+                    UUID.randomUUID().toString();
 
-            String requestJson = createPrivateChannelRequestJson(
-                    existingUserId,
-                    unknownUserId
-            );
+            String requestJson =
+                    createPrivateChannelRequestJson(
+                            existingUserId,
+                            unknownUserId
+                    );
 
             // when & then
             mockMvc.perform(post("/api/channels/private")
@@ -243,12 +249,14 @@ class ChannelApiIntegrationTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(requestJson))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.id").value(channelId))
+                    .andExpect(jsonPath("$.id")
+                            .value(channelId))
                     .andExpect(jsonPath("$.name")
                             .value("수정 후 채널"))
                     .andExpect(jsonPath("$.description")
                             .value("수정 후 설명"))
-                    .andExpect(jsonPath("$.updatedAt").isNotEmpty());
+                    .andExpect(jsonPath("$.updatedAt")
+                            .isNotEmpty());
 
             /*
              * 실제 H2 데이터베이스에 수정 내용이 반영됐는지
@@ -286,7 +294,9 @@ class ChannelApiIntegrationTest {
 
         @Test
         @DisplayName("PRIVATE 채널을 수정하면 클라이언트 오류를 반환한다")
-        void privateChannelCannotBeUpdated() throws Exception {
+        void privateChannelCannotBeUpdated()
+                throws Exception {
+
             // given
             String firstUserId = createUser(
                     "privateUser1",
@@ -328,7 +338,8 @@ class ChannelApiIntegrationTest {
                             channelId
                     ))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.type").value("PRIVATE"));
+                    .andExpect(jsonPath("$.type")
+                            .value("PRIVATE"));
         }
     }
 
@@ -365,7 +376,8 @@ class ChannelApiIntegrationTest {
         @DisplayName("존재하지 않는 채널을 삭제하면 404 Not Found를 반환한다")
         void channelNotFound() throws Exception {
             // given
-            UUID unknownChannelId = UUID.randomUUID();
+            UUID unknownChannelId =
+                    UUID.randomUUID();
 
             // when & then
             mockMvc.perform(delete(
@@ -394,17 +406,25 @@ class ChannelApiIntegrationTest {
             String username,
             String email
     ) throws Exception {
-        UserCreateRequest request = new UserCreateRequest(
-                username,
-                email,
-                "password",
-                null
-        );
 
-        MvcResult result = mockMvc.perform(post("/api/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
+        UserCreateRequest request =
+                new UserCreateRequest(
+                        username,
+                        email,
+                        "password",
+                        null
+                );
+
+        MvcResult result = mockMvc.perform(
+                        post("/api/users")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        objectMapper.writeValueAsString(
+                                                request
+                                        )
+                                )
+                )
+                .andExpect(status().isOk())
                 .andReturn();
 
         return extractId(result);
@@ -417,15 +437,23 @@ class ChannelApiIntegrationTest {
             String name,
             String description
     ) throws Exception {
-        ChannelCreateRequest request = new ChannelCreateRequest(
-                null,
-                name,
-                description
-        );
 
-        MvcResult result = mockMvc.perform(post("/api/channels/public")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        ChannelCreateRequest request =
+                new ChannelCreateRequest(
+                        null,
+                        name,
+                        description
+                );
+
+        MvcResult result = mockMvc.perform(
+                        post("/api/channels/public")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        objectMapper.writeValueAsString(
+                                                request
+                                        )
+                                )
+                )
                 .andExpect(status().isCreated())
                 .andReturn();
 
@@ -442,14 +470,18 @@ class ChannelApiIntegrationTest {
             String firstUserId,
             String secondUserId
     ) throws Exception {
-        String requestJson = createPrivateChannelRequestJson(
-                firstUserId,
-                secondUserId
-        );
 
-        MvcResult result = mockMvc.perform(post("/api/channels/private")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestJson))
+        String requestJson =
+                createPrivateChannelRequestJson(
+                        firstUserId,
+                        secondUserId
+                );
+
+        MvcResult result = mockMvc.perform(
+                        post("/api/channels/private")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(requestJson)
+                )
                 .andExpect(status().isCreated())
                 .andReturn();
 
@@ -463,6 +495,7 @@ class ChannelApiIntegrationTest {
             String firstUserId,
             String secondUserId
     ) throws Exception {
+
         return objectMapper.writeValueAsString(
                 java.util.Map.of(
                         "participantIds",
@@ -477,9 +510,15 @@ class ChannelApiIntegrationTest {
     /*
      * API 응답 JSON에서 id 값을 추출한다.
      */
-    private String extractId(MvcResult result) throws Exception {
+    private String extractId(
+            MvcResult result
+    ) throws Exception {
+
         return objectMapper
-                .readTree(result.getResponse().getContentAsString())
+                .readTree(
+                        result.getResponse()
+                                .getContentAsString()
+                )
                 .get("id")
                 .asText();
     }

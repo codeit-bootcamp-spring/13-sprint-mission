@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("사용자 API 통합 테스트")
@@ -43,7 +43,7 @@ class UserApiIntegrationTest {
     class Create {
 
         @Test
-        @DisplayName("유효한 요청이면 사용자를 생성하고 201 Created를 반환한다")
+        @DisplayName("유효한 요청이면 사용자를 생성하고 200 OK를 반환한다")
         void success() throws Exception {
             // given
             UserCreateRequest request = new UserCreateRequest(
@@ -54,17 +54,32 @@ class UserApiIntegrationTest {
             );
 
             // when & then
-            MvcResult result = mockMvc.perform(post("/api/users")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isCreated())
-                    .andExpect(content().contentTypeCompatibleWith(
-                            MediaType.APPLICATION_JSON
-                    ))
+            MvcResult result = mockMvc.perform(
+                            post("/api/users")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            objectMapper.writeValueAsString(request)
+                                    )
+                    )
+                    .andExpect(status().isOk())
+                    .andExpect(
+                            content().contentTypeCompatibleWith(
+                                    MediaType.APPLICATION_JSON
+                            )
+                    )
                     .andExpect(jsonPath("$.id").isNotEmpty())
-                    .andExpect(jsonPath("$.username").value("tester"))
-                    .andExpect(jsonPath("$.email").value("tester@test.com"))
-                    .andExpect(jsonPath("$.online").value(true))
+                    .andExpect(
+                            jsonPath("$.username")
+                                    .value("tester")
+                    )
+                    .andExpect(
+                            jsonPath("$.email")
+                                    .value("tester@test.com")
+                    )
+                    .andExpect(
+                            jsonPath("$.online")
+                                    .value(true)
+                    )
                     .andReturn();
 
             String responseBody =
@@ -75,21 +90,29 @@ class UserApiIntegrationTest {
                     .get("id")
                     .asText();
 
-            assertThat(UUID.fromString(userId)).isNotNull();
+            assertThat(UUID.fromString(userId))
+                    .isNotNull();
 
             /*
              * 실제 H2 데이터베이스에 저장됐는지
              * 단건 조회 API를 다시 호출하여 확인한다.
              */
-            mockMvc.perform(get("/api/users/{userId}", userId))
+            mockMvc.perform(
+                            get("/api/users/{userId}", userId)
+                    )
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.id").value(userId))
-                    .andExpect(jsonPath("$.username").value("tester"))
-                    .andExpect(jsonPath("$.email")
-                            .value("tester@test.com"));
-
-            assertThat(result.getResponse().getHeader("Location"))
-                    .isEqualTo("/api/users/" + userId);
+                    .andExpect(
+                            jsonPath("$.id")
+                                    .value(userId)
+                    )
+                    .andExpect(
+                            jsonPath("$.username")
+                                    .value("tester")
+                    )
+                    .andExpect(
+                            jsonPath("$.email")
+                                    .value("tester@test.com")
+                    );
         }
 
         @Test
@@ -104,9 +127,13 @@ class UserApiIntegrationTest {
             );
 
             // when & then
-            mockMvc.perform(post("/api/users")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
+            mockMvc.perform(
+                            post("/api/users")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            objectMapper.writeValueAsString(request)
+                                    )
+                    )
                     .andExpect(status().isBadRequest());
         }
 
@@ -122,9 +149,13 @@ class UserApiIntegrationTest {
             );
 
             // when & then
-            mockMvc.perform(post("/api/users")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
+            mockMvc.perform(
+                            post("/api/users")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            objectMapper.writeValueAsString(request)
+                                    )
+                    )
                     .andExpect(status().isBadRequest());
         }
 
@@ -146,19 +177,27 @@ class UserApiIntegrationTest {
                     null
             );
 
-            mockMvc.perform(post("/api/users")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(
-                                    firstRequest
-                            )))
-                    .andExpect(status().isCreated());
+            mockMvc.perform(
+                            post("/api/users")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            objectMapper.writeValueAsString(
+                                                    firstRequest
+                                            )
+                                    )
+                    )
+                    .andExpect(status().isOk());
 
             // when & then
-            mockMvc.perform(post("/api/users")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(
-                                    secondRequest
-                            )))
+            mockMvc.perform(
+                            post("/api/users")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            objectMapper.writeValueAsString(
+                                                    secondRequest
+                                            )
+                                    )
+                    )
                     .andExpect(status().is4xxClientError());
         }
     }
@@ -186,23 +225,42 @@ class UserApiIntegrationTest {
             // when & then
             mockMvc.perform(get("/api/users"))
                     .andExpect(status().isOk())
-                    .andExpect(content().contentTypeCompatibleWith(
-                            MediaType.APPLICATION_JSON
-                    ))
+                    .andExpect(
+                            content().contentTypeCompatibleWith(
+                                    MediaType.APPLICATION_JSON
+                            )
+                    )
                     .andExpect(jsonPath("$").isArray())
-                    .andExpect(jsonPath("$.length()").value(2))
-                    .andExpect(jsonPath("$[0].id").isNotEmpty())
-                    .andExpect(jsonPath("$[1].id").isNotEmpty())
-                    .andExpect(jsonPath("$[*].username")
-                            .value(org.hamcrest.Matchers.containsInAnyOrder(
-                                    "user1",
-                                    "user2"
-                            )))
-                    .andExpect(jsonPath("$[*].email")
-                            .value(org.hamcrest.Matchers.containsInAnyOrder(
-                                    "user1@test.com",
-                                    "user2@test.com"
-                            )));
+                    .andExpect(
+                            jsonPath("$.length()")
+                                    .value(2)
+                    )
+                    .andExpect(
+                            jsonPath("$[0].id")
+                                    .isNotEmpty()
+                    )
+                    .andExpect(
+                            jsonPath("$[1].id")
+                                    .isNotEmpty()
+                    )
+                    .andExpect(
+                            jsonPath("$[*].username")
+                                    .value(
+                                            org.hamcrest.Matchers.containsInAnyOrder(
+                                                    "user1",
+                                                    "user2"
+                                            )
+                                    )
+                    )
+                    .andExpect(
+                            jsonPath("$[*].email")
+                                    .value(
+                                            org.hamcrest.Matchers.containsInAnyOrder(
+                                                    "user1@test.com",
+                                                    "user2@test.com"
+                                            )
+                                    )
+                    );
         }
 
         @Test
@@ -243,27 +301,54 @@ class UserApiIntegrationTest {
                     """;
 
             // when & then
-            mockMvc.perform(patch("/api/users/{userId}", userId)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(requestJson))
+            mockMvc.perform(
+                            patch("/api/users/{userId}", userId)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(requestJson)
+                    )
                     .andExpect(status().isOk())
-                    .andExpect(content().contentTypeCompatibleWith(
-                            MediaType.APPLICATION_JSON
-                    ))
-                    .andExpect(jsonPath("$.id").value(userId))
-                    .andExpect(jsonPath("$.username").value("afterUser"))
-                    .andExpect(jsonPath("$.email").value("after@test.com"))
-                    .andExpect(jsonPath("$.updatedAt").isNotEmpty());
+                    .andExpect(
+                            content().contentTypeCompatibleWith(
+                                    MediaType.APPLICATION_JSON
+                            )
+                    )
+                    .andExpect(
+                            jsonPath("$.id")
+                                    .value(userId)
+                    )
+                    .andExpect(
+                            jsonPath("$.username")
+                                    .value("afterUser")
+                    )
+                    .andExpect(
+                            jsonPath("$.email")
+                                    .value("after@test.com")
+                    )
+                    .andExpect(
+                            jsonPath("$.updatedAt")
+                                    .isNotEmpty()
+                    );
 
             /*
              * 실제 데이터베이스에도 변경 내용이 반영됐는지
              * 단건 조회 API로 다시 확인한다.
              */
-            mockMvc.perform(get("/api/users/{userId}", userId))
+            mockMvc.perform(
+                            get("/api/users/{userId}", userId)
+                    )
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.id").value(userId))
-                    .andExpect(jsonPath("$.username").value("afterUser"))
-                    .andExpect(jsonPath("$.email").value("after@test.com"));
+                    .andExpect(
+                            jsonPath("$.id")
+                                    .value(userId)
+                    )
+                    .andExpect(
+                            jsonPath("$.username")
+                                    .value("afterUser")
+                    )
+                    .andExpect(
+                            jsonPath("$.email")
+                                    .value("after@test.com")
+                    );
         }
 
         @Test
@@ -285,19 +370,29 @@ class UserApiIntegrationTest {
                     """;
 
             // when & then
-            mockMvc.perform(patch("/api/users/{userId}", userId)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(requestJson))
+            mockMvc.perform(
+                            patch("/api/users/{userId}", userId)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(requestJson)
+                    )
                     .andExpect(status().isBadRequest());
 
             /*
              * 유효성 검증 실패 후 기존 사용자 정보가
              * 변경되지 않았는지 확인한다.
              */
-            mockMvc.perform(get("/api/users/{userId}", userId))
+            mockMvc.perform(
+                            get("/api/users/{userId}", userId)
+                    )
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.username").value("tester"))
-                    .andExpect(jsonPath("$.email").value("tester@test.com"));
+                    .andExpect(
+                            jsonPath("$.username")
+                                    .value("tester")
+                    )
+                    .andExpect(
+                            jsonPath("$.email")
+                                    .value("tester@test.com")
+                    );
         }
 
         @Test
@@ -319,18 +414,28 @@ class UserApiIntegrationTest {
                     """;
 
             // when & then
-            mockMvc.perform(patch("/api/users/{userId}", userId)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(requestJson))
+            mockMvc.perform(
+                            patch("/api/users/{userId}", userId)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(requestJson)
+                    )
                     .andExpect(status().isBadRequest());
 
             /*
              * 수정이 실패했으므로 기존 사용자 이름이 유지되어야 한다.
              */
-            mockMvc.perform(get("/api/users/{userId}", userId))
+            mockMvc.perform(
+                            get("/api/users/{userId}", userId)
+                    )
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.username").value("tester"))
-                    .andExpect(jsonPath("$.email").value("tester@test.com"));
+                    .andExpect(
+                            jsonPath("$.username")
+                                    .value("tester")
+                    )
+                    .andExpect(
+                            jsonPath("$.email")
+                                    .value("tester@test.com")
+                    );
         }
 
         @Test
@@ -352,15 +457,25 @@ class UserApiIntegrationTest {
                     """;
 
             // when & then
-            mockMvc.perform(patch("/api/users/{userId}", userId)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(requestJson))
+            mockMvc.perform(
+                            patch("/api/users/{userId}", userId)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(requestJson)
+                    )
                     .andExpect(status().isBadRequest());
 
-            mockMvc.perform(get("/api/users/{userId}", userId))
+            mockMvc.perform(
+                            get("/api/users/{userId}", userId)
+                    )
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.username").value("tester"))
-                    .andExpect(jsonPath("$.email").value("tester@test.com"));
+                    .andExpect(
+                            jsonPath("$.username")
+                                    .value("tester")
+                    )
+                    .andExpect(
+                            jsonPath("$.email")
+                                    .value("tester@test.com")
+                    );
         }
 
         @Test
@@ -376,12 +491,14 @@ class UserApiIntegrationTest {
                     """;
 
             // when & then
-            mockMvc.perform(patch(
-                            "/api/users/{userId}",
-                            "invalid-uuid"
+            mockMvc.perform(
+                            patch(
+                                    "/api/users/{userId}",
+                                    "invalid-uuid"
+                            )
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(requestJson)
                     )
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(requestJson))
                     .andExpect(status().isBadRequest());
         }
     }
@@ -401,7 +518,9 @@ class UserApiIntegrationTest {
             );
 
             // when & then
-            mockMvc.perform(delete("/api/users/{userId}", userId))
+            mockMvc.perform(
+                            delete("/api/users/{userId}", userId)
+                    )
                     .andExpect(status().isNoContent())
                     .andExpect(content().string(""));
 
@@ -419,10 +538,12 @@ class UserApiIntegrationTest {
         @DisplayName("잘못된 UUID 형식으로 삭제하면 400 Bad Request를 반환한다")
         void invalidUserId() throws Exception {
             // when & then
-            mockMvc.perform(delete(
-                            "/api/users/{userId}",
-                            "invalid-uuid"
-                    ))
+            mockMvc.perform(
+                            delete(
+                                    "/api/users/{userId}",
+                                    "invalid-uuid"
+                            )
+                    )
                     .andExpect(status().isBadRequest());
         }
 
@@ -433,10 +554,12 @@ class UserApiIntegrationTest {
             UUID unknownUserId = UUID.randomUUID();
 
             // when & then
-            mockMvc.perform(delete(
-                            "/api/users/{userId}",
-                            unknownUserId
-                    ))
+            mockMvc.perform(
+                            delete(
+                                    "/api/users/{userId}",
+                                    unknownUserId
+                            )
+                    )
                     .andExpect(status().isNotFound());
         }
     }
@@ -450,6 +573,7 @@ class UserApiIntegrationTest {
             String email,
             String password
     ) throws Exception {
+
         UserCreateRequest request = new UserCreateRequest(
                 username,
                 email,
@@ -457,14 +581,20 @@ class UserApiIntegrationTest {
                 null
         );
 
-        MvcResult result = mockMvc.perform(post("/api/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
+        MvcResult result = mockMvc.perform(
+                        post("/api/users")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        objectMapper.writeValueAsString(request)
+                                )
+                )
+                .andExpect(status().isOk())
                 .andReturn();
 
         return objectMapper
-                .readTree(result.getResponse().getContentAsString())
+                .readTree(
+                        result.getResponse().getContentAsString()
+                )
                 .get("id")
                 .asText();
     }

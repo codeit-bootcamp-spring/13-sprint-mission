@@ -14,7 +14,6 @@ import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
-import com.sprint.mission.discodeit.service.basic.BasicUserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -22,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +56,10 @@ class BasicUserServiceTest {
     @Mock
     private ReadStatusRepository readStatusRepository;
 
+    // 추가: BasicUserService에 주입되는 PasswordEncoder Mock
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private BasicUserService userService;
 
@@ -79,6 +83,10 @@ class BasicUserServiceTest {
 
             given(userRepository.existsByEmail("tester@example.com"))
                     .willReturn(false);
+
+            // 추가: 평문 비밀번호를 인코딩한 값으로 반환하도록 설정
+            given(passwordEncoder.encode("password1234"))
+                    .willReturn("$2a$10$encodedPassword");
 
             given(userRepository.save(any(User.class)))
                     .willAnswer(invocation -> invocation.getArgument(0));
@@ -105,6 +113,11 @@ class BasicUserServiceTest {
             then(userRepository)
                     .should()
                     .existsByEmail("tester@example.com");
+
+            // 추가: 비밀번호 인코딩 호출 검증
+            then(passwordEncoder)
+                    .should()
+                    .encode("password1234");
 
             then(userRepository)
                     .should()
@@ -140,6 +153,11 @@ class BasicUserServiceTest {
             then(userRepository)
                     .should(never())
                     .existsByEmail(any());
+
+            // 중복 사용자이므로 비밀번호 인코딩도 수행되지 않아야 함
+            then(passwordEncoder)
+                    .should(never())
+                    .encode(any());
 
             then(userRepository)
                     .should(never())
@@ -185,6 +203,10 @@ class BasicUserServiceTest {
             given(userRepository.existsByEmail("new@example.com"))
                     .willReturn(false);
 
+            // 추가: 수정 비밀번호도 인코딩된 값으로 반환
+            given(passwordEncoder.encode("newPassword"))
+                    .willReturn("$2a$10$encodedNewPassword");
+
             given(userRepository.save(any(User.class)))
                     .willAnswer(invocation -> invocation.getArgument(0));
 
@@ -201,7 +223,10 @@ class BasicUserServiceTest {
 
             assertThat(user.getUsername()).isEqualTo("newUsername");
             assertThat(user.getEmail()).isEqualTo("new@example.com");
-            assertThat(user.getPassword()).isEqualTo("newPassword");
+
+            // 수정: 평문이 아니라 인코딩된 비밀번호를 기대
+            assertThat(user.getPassword())
+                    .isEqualTo("$2a$10$encodedNewPassword");
 
             then(userRepository)
                     .should()
@@ -214,6 +239,11 @@ class BasicUserServiceTest {
             then(userRepository)
                     .should()
                     .existsByEmail("new@example.com");
+
+            // 추가: 비밀번호 인코딩 호출 검증
+            then(passwordEncoder)
+                    .should()
+                    .encode("newPassword");
 
             then(userRepository)
                     .should()
@@ -253,6 +283,11 @@ class BasicUserServiceTest {
             then(userRepository)
                     .should(never())
                     .existsByEmail(any());
+
+            // 사용자 자체가 없으므로 인코딩도 수행되지 않아야 함
+            then(passwordEncoder)
+                    .should(never())
+                    .encode(any());
 
             then(userRepository)
                     .should(never())

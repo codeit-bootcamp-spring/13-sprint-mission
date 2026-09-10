@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,7 +36,7 @@ public class UserController {
     ) {
         UserResponse response = userService.create(request);
 
-        return created(response);
+        return ResponseEntity.ok(response);
     }
 
     /*
@@ -66,7 +65,7 @@ public class UserController {
 
         UserResponse response = userService.create(request);
 
-        return created(response);
+        return ResponseEntity.ok(response);
     }
 
     /*
@@ -173,13 +172,5 @@ public class UserController {
         return ResponseEntity
                 .noContent()
                 .build();
-    }
-
-    private ResponseEntity<UserResponse> created(UserResponse response) {
-        URI location = URI.create("/api/users/" + response.getId());
-
-        return ResponseEntity
-                .created(location)
-                .body(response);
     }
 }
