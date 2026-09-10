@@ -12,11 +12,6 @@ spring:
         format_sql: true
     open-in-view: false
 
-  # .sql 파일을 이용하지 않고, hibernate 가 DDL 을 작성하도록 설정.
-  sql:
-    init:
-      mode: never
-
   # Spring admin 클라이언트 등록용 설정.
 #  boot:
 #    admin:
