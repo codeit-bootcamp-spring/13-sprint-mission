@@ -32,6 +32,7 @@ public class UserStatus extends BaseUpdatableEntity {
     }
 
 
+    // DB 에서 조회, 설정하게 바뀜.
     public boolean online(){
         // activation timeout ( 5min )
         int timeout = 5 * 60 * 1000;

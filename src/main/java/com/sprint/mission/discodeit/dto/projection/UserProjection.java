@@ -1,0 +1,18 @@
+package com.sprint.mission.discodeit.dto.projection;
+
+import java.util.UUID;
+
+public record UserProjection(
+        // user info
+        UUID id,
+        String username,
+        String email,
+        Boolean online,
+
+        // binaryContent info => user profile
+        UUID profileId,
+        String fileName,
+        Long size,
+        String contentType
+) {
+}

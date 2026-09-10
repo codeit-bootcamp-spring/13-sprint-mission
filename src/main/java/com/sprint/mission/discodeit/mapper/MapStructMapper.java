@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.mapper;
 
 
+import com.sprint.mission.discodeit.dto.projection.ChannelProjection;
+import com.sprint.mission.discodeit.dto.projection.UserProjection;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
 import org.mapstruct.Mapper;
@@ -11,16 +13,33 @@ import org.mapstruct.ReportingPolicy;
 import java.time.Instant;
 import java.util.List;
 
-@Mapper(componentModel = "spring",unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(
+        componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        imports = {
+                MapperMethod.class
+        }
+
+)
 public interface MapStructMapper {
 
-    @Mapping(source = "bytes",target = "bytes")
-    BinaryContentDto toDto(BinaryContent binaryContent,byte[] bytes);
+
+    @Mapping(source = "profileId", target = "id")
+    @Mapping(source = "fileName", target = "fileName")
+    @Mapping(source = "size", target = "size")
+    @Mapping(source = "contentType", target = "contentType")
+    @Mapping(target = "data", expression = "java(MapperMethod.getByteFeom(profileId))")
+    BinaryContentDto toDto(UserProjection userProjection);
 
 
-    @Mapping(source = "userDtoList",target = "participants")
-    @Mapping(source = "lastMessageAt",target = "lastMessageAt")
-    ChannelDto toDto(Channel channel, List<UserDto> userDtoList, Instant lastMessageAt);
+    @Mapping(source = "projection.id", target = "id")
+    @Mapping(source = "projection.type", target = "type")
+    @Mapping(source = "projection.name", target = "name")
+    @Mapping(source = "projection.description", target = "description")
+    @Mapping(source = "users", target = "participants")
+    @Mapping(source = "projection.lastMessageAt", target = "lastMessageAt")
+    ChannelDto toDto(ChannelProjection projection, List<UserDto> users);
+
 
     @Mapping(source = "user.id",target = "userId")
     @Mapping(source = "channel.id",target = "channelId")
@@ -29,10 +48,16 @@ public interface MapStructMapper {
     @Mapping(source = "user.id",target = "userId")
     UserStatusDto toDto(UserStatus userStatus);
 
-    @Mapping(source = "user.id",target = "id")
-    @Mapping(source = "binaryContentDto", target="profile")
-    @Mapping(source = "online", target = "online")
-    UserDto toDto(User user, BinaryContentDto binaryContentDto, boolean online);
+
+
+
+    @Mapping(source = "projection.id", target = "id")
+    @Mapping(source = "projection.username", target = "username")
+    @Mapping(source = "projection.email", target = "email")
+    @Mapping(source = "profile", target = "profile")
+    @Mapping(source = "projection.online", target = "online")
+    UserDto toDto(UserProjection projection, BinaryContentDto profile);
+
 
     @Mapping(source = "message.id",target = "id")
     @Mapping(source = "message.channel.id",target = "channelId")
@@ -40,5 +65,19 @@ public interface MapStructMapper {
     @Mapping(source = "attachments",target = "attachments")
     MessageDto toDto(Message message, UserDto userDto, List<BinaryContentDto> attachments);
 
+
+
+    // todo - userDto 매퍼 생성 후 삭제.
+    @Mapping(source = "user.id",target = "id")
+    @Mapping(source = "binaryContentDto", target="profile")
+    @Mapping(source = "online", target = "online")
+    UserDto toDto(User user, BinaryContentDto binaryContentDto, boolean online);
+    // todo - 매퍼 매서드 삭제 예정.
+    @Mapping(source = "userDtoList",target = "participants")
+    @Mapping(source = "lastMessageAt",target = "lastMessageAt")
+    ChannelDto toDto(Channel channel, List<UserDto> userDtoList, Instant lastMessageAt);
+    // todo - 아래 매퍼 매서드로 변경. 추후 삭제.
+    @Mapping(source = "bytes",target = "bytes")
+    BinaryContentDto toDto(BinaryContent binaryContent,byte[] bytes);
 
 }
