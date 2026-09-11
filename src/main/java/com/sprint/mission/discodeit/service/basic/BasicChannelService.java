@@ -12,6 +12,7 @@ import com.sprint.mission.discodeit.exception.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.ChannelTypeException;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
+import com.sprint.mission.discodeit.mapper.MapperMethod;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -37,6 +38,8 @@ public class BasicChannelService implements ChannelService {
     private final ReadStatusRepository readStatusRepository;
     private final UserRepository userRepository;
     private final MapStructMapper mapStructMapper;
+
+    private final MapperMethod mapperMethod;
 
     /**
      * public 채널 생성
@@ -161,7 +164,7 @@ public class BasicChannelService implements ChannelService {
                 userProjection ->
                         mapStructMapper.toDto(
                                 userProjection,
-                                mapStructMapper.toDto(userProjection)
+                                mapStructMapper.toDto(userProjection,mapperMethod) // 임시 사용. 추후 mapperMethod 분리
                         )
         ).toList();
     }

@@ -163,7 +163,7 @@ public class BasicUserService implements UserService {
     private BinaryContentDto toBinaryDto(User user){
         if (user.getProfile() == null) return null;
         BinaryContent bc = user.getProfile();
-        return mapStructMapper.toDto(bc, mapperMethod.getByteFrom(bc));
+        return mapStructMapper.toDto(bc, mapperMethod.getByteFrom(bc.getId()));
     }
 
 }

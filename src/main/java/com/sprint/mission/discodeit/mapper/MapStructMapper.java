@@ -5,31 +5,29 @@ import com.sprint.mission.discodeit.dto.projection.ChannelProjection;
 import com.sprint.mission.discodeit.dto.projection.UserProjection;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Mappings;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.*;
 
 import java.time.Instant;
 import java.util.List;
 
 @Mapper(
         componentModel = "spring",
-        unmappedTargetPolicy = ReportingPolicy.IGNORE,
-        imports = {
-                MapperMethod.class
-        }
+        unmappedTargetPolicy = ReportingPolicy.IGNORE
+//        imports = {
+//                MapperMethod.class
+//        }
 
 )
 public interface MapStructMapper {
 
 
+    // todo - 파일접근 매서드 어댑터화 ( 스태틱으로 파일에 자체 접근 할 수 있도록 변경.)
     @Mapping(source = "profileId", target = "id")
     @Mapping(source = "fileName", target = "fileName")
     @Mapping(source = "size", target = "size")
     @Mapping(source = "contentType", target = "contentType")
-    @Mapping(target = "data", expression = "java(MapperMethod.getByteFeom(profileId))")
-    BinaryContentDto toDto(UserProjection userProjection);
+    @Mapping(target = "bytes", expression = "java(mapperMethod.getByteFrom(userProjection.profileId()))")
+    BinaryContentDto toDto(UserProjection userProjection, @Context MapperMethod mapperMethod);
 
 
     @Mapping(source = "projection.id", target = "id")

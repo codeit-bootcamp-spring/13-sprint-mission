@@ -43,7 +43,7 @@ public class BasicAuthService implements AuthService {
     }
 
     private BinaryContentDto binaryContentDto(BinaryContent bc){
-        return mapStructMapper.toDto(bc, mapperMethod.getByteFrom(bc));
+        return mapStructMapper.toDto(bc, mapperMethod.getByteFrom(bc.getId()));
     }
 
     private User getUserOrExceptionByName(String name){
