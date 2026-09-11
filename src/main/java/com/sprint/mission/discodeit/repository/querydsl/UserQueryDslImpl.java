@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.repository.querydsl;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.group.GroupBy;
+import com.querydsl.core.types.ConstructorExpression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -14,6 +16,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -26,25 +29,30 @@ public class UserQueryDslImpl implements UserQueryDsl {
     private final QUserStatus userStatus = QUserStatus.userStatus;
 
     @Override
+    public Optional<UserProjection> getUserFromUsername(String username){
+        UserProjection result = jpaQueryFactory.select(userProjectionConstructor())
+                .from(user)
+                .join(user.profile, binaryContent)
+                .join(user.status, userStatus)
+                .where(
+                        getCondition(
+                                user.username.eq(username)
+                        )
+                ).fetchOne();
+
+        return Optional.ofNullable(result);
+    }
+
+    @Override
     public Collection<UserProjection> getUserInfoFromIds(UUID... id){
         Map<UUID, UserProjection> users = jpaQueryFactory.selectFrom(user)
                 .join(user.profile, binaryContent)
                 .join(user.status, userStatus)
                 .where(
-                        user.profile.eq(binaryContent)
+                        user.id.in(id)
                 ).transform(
                         GroupBy.groupBy(user.id).as(
-                                Projections.constructor(
-                                        UserProjection.class,
-                                        user.id,
-                                        user.username,
-                                        user.email,
-                                        getOnline(),
-                                        binaryContent.id,
-                                        binaryContent.fileName,
-                                        binaryContent.size,
-                                        binaryContent.contentType
-                                )
+                                userProjectionConstructor()
                         )
                 );
 
@@ -62,6 +70,30 @@ public class UserQueryDslImpl implements UserQueryDsl {
         return userStatus.lastActiveAt.loe(now.minus(5 * 60, ChronoUnit.SECONDS));
     }
 
+    private BooleanBuilder getCondition(BooleanExpression... expressions){
+        BooleanBuilder condition = new BooleanBuilder();
+
+        for (BooleanExpression exp : expressions){
+            condition.and(exp);
+        }
+        return condition;
+    }
+
+    // user data transfer object constructor for convert user dto.
+    private ConstructorExpression<UserProjection> userProjectionConstructor(){
+        return Projections.constructor(
+                UserProjection.class,
+                user.id,
+                user.username,
+                user.email,
+                user.password,
+                getOnline(),
+                binaryContent.id,
+                binaryContent.fileName,
+                binaryContent.size,
+                binaryContent.contentType
+        );
+    }
 
 
 

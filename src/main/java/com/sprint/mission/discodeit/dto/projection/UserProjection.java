@@ -7,6 +7,7 @@ public record UserProjection(
         UUID id,
         String username,
         String email,
+        String password,
         Boolean online,
 
         // binaryContent info => user profile

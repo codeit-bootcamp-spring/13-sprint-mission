@@ -22,8 +22,8 @@ public interface MapStructMapper {
 
 
     // todo - 파일접근 매서드 어댑터화 ( 스태틱으로 파일에 자체 접근 할 수 있도록 변경.)
+    // projection password 사용 안함
     @Mapping(source = "profileId", target = "id")
-    @Mapping(source = "fileName", target = "fileName")
     @Mapping(source = "size", target = "size")
     @Mapping(source = "contentType", target = "contentType")
     @Mapping(target = "bytes", expression = "java(mapperMethod.getByteFrom(userProjection.profileId()))")
