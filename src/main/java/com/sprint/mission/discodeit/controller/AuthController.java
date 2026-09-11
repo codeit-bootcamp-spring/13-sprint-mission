@@ -8,11 +8,10 @@ import com.sprint.mission.discodeit.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -27,6 +26,14 @@ public class AuthController implements AuthControllerDoc {
             @Valid @RequestBody LoginRequest loginRequest
     ){
         return ResponseEntity.ok(authService.login(loginRequest));
+    }
+
+    @GetMapping("csrf-token")
+    public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken){  // HandlerMethodArgumentResolver 를 통해 자동으로 주입
+        String tokenValue = csrfToken.getToken();
+        log.debug("토큰 요청됨 - {}",tokenValue);
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
 
