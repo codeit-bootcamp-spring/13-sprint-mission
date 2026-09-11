@@ -28,7 +28,7 @@ spring:
     open-in-view: false
 
   profiles:
-    active: prod
+    active: dev
 
   servlet:
     multipart:
