@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.config;
 
 
+import com.sprint.mission.discodeit.security.CsrfTokenHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -15,7 +16,7 @@ public class SecurityConfig {
         http
                 .csrf( csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler()
+                        .csrfTokenRequestHandler(new CsrfTokenHandler())
                 );
 
         return http.build();    // security 설정 적용(build)
