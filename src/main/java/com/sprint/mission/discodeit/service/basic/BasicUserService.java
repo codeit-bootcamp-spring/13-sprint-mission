@@ -14,6 +14,7 @@ import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,6 +36,7 @@ public class BasicUserService implements UserService {
     private final MessageRepository messageRepository;
     private final UserMapper userMapper;
     private final BinaryContentStorage binaryContentStorage;
+    private final PasswordEncoder passwordEncoder;
 
     //interface
     @Override
@@ -56,8 +58,11 @@ public class BasicUserService implements UserService {
             log.info("프로필 파일 업로드 완료");
         }
 
+        // 비밀번호 암호화
+        String encryptedPassword = passwordEncoder.encode(request.password());
+
         //유저 생성
-        User user = new User(request.username(), request.email(), request.password(), binaryContent);
+        User user = new User(request.username(), request.email(), encryptedPassword, binaryContent);
         log.info("유저: {}가 생성됨.", user.getUsername());
 
         //UserStatus 생성
