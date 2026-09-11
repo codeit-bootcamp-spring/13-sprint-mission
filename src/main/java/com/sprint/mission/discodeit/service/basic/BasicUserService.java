@@ -24,6 +24,7 @@ import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 
@@ -39,6 +40,7 @@ public class BasicUserService implements UserService {
     private final MapStructMapper mapStructMapper;
     private final MapperMethod mapperMethod;
 
+    private final PasswordEncoder passwordEncoder;
 
     private BinaryContent profileIdFromOBCC(Optional<BinaryContentCreate> obcc){
         // duble running?
@@ -62,25 +64,27 @@ public class BasicUserService implements UserService {
 
     @Override
     @Transactional
-    public UserDto create(UserCreateRequest cui, Optional<BinaryContentCreate> obcc){
-        nameCheck(cui.username());
-        emailCheck(cui.email());
-
+    public UserDto create(UserCreateRequest userCreateRequest, Optional<BinaryContentCreate> obcc){
+        String username = nameCheck(userCreateRequest.username());
+        String email = emailCheck(userCreateRequest.email());
+        String password = passwordEncoder.encode(userCreateRequest.password());
         BinaryContent bc = profileIdFromOBCC(obcc);
 
         User user = new User(
-                cui.username(),
-                cui.email(),
-                cui.password(),
+                username,
+                email,
+                password,   // password save at encoding data.
                 bc,
                 null
         );
+
+        log.debug("created User - username : {}, email : {}, password - {}", username, email, password);
+
+        // ? userStatus 저장이 되는가?
         UserStatus ust = new UserStatus(user, Instant.now());
         user.setStatus(ust);
 
         userRepository.save(user);
-
-        log.info("user created - id: {}, username: {}", user.getId(), cui.username());
 
         return mapStructMapper.toDto(user,toBinaryDto(user),user.online());
     }
@@ -101,8 +105,8 @@ public class BasicUserService implements UserService {
     public UserDto update(UUID id, UserUpdateRequest uui, Optional<BinaryContentCreate> obcc){
         User user = getUserOrException(id);
 
-        nameCheck(uui.newUsername());
-        emailCheck(uui.newEmail());
+        String newName = nameCheck(uui.newUsername());
+        String newEmail = emailCheck(uui.newEmail());
 
         if (uui.newUsername() != null) user.setUsername(uui.newUsername());
         if (uui.newEmail() != null) user.setEmail(uui.newEmail());
@@ -146,18 +150,20 @@ public class BasicUserService implements UserService {
 
     }
 
-    private void nameCheck(String username){
+    private String nameCheck(String username){
         Optional<User> sameNameChecker = userRepository.findByUsername(username).stream().findFirst();
         if(sameNameChecker.isPresent()){
             throw new UserDuplicatedException("User with name - {} already exists", username);
         }
+        return username;
     }
 
-    private void emailCheck(String email){
+    private String emailCheck(String email){
         Optional<User> sameEmailChecker = userRepository.findByEmail(email).stream().findFirst();
         if(sameEmailChecker.isPresent()){
             throw new UserDuplicatedException("User with email - {} already exists", email);
         }
+        return email;
     }
 
     private BinaryContentDto toBinaryDto(User user){
