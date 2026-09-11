@@ -21,6 +21,8 @@ spring:
 
 logging:
   level:
-    com.sprint.mission.discodeit: info
+    com.sprint.mission.discodeit: debug
+    com.sprint.mission.discodeit.config.SecurityConfig: trace # dev 프로파일에서 Security 로그 tace
     org.hiberate.SQL: INFO
+    org.hibernate.orm.connections.access: DEBUG # 접속 정보 확인
     org.hibernate.orm.jdbc.bind: INFO
