@@ -2,8 +2,8 @@ package com.sprint.mission.discodeit.config;
 
 
 import com.sprint.mission.discodeit.security.CsrfTokenHandler;
-import com.sprint.mission.discodeit.security.userdetail.LoginFailureHandler;
-import com.sprint.mission.discodeit.security.userdetail.LoginSuccessHandler;
+import com.sprint.mission.discodeit.security.LoginFailureHandler;
+import com.sprint.mission.discodeit.security.LoginSuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
