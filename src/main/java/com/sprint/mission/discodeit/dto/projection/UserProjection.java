@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.dto.projection;
 
+import com.sprint.mission.discodeit.security.role.Role;
+
 import java.util.UUID;
 
 public record UserProjection(
@@ -9,6 +11,7 @@ public record UserProjection(
         String email,
         String password,
         Boolean online,
+        Role role,
 
         // binaryContent info => user profile
         UUID profileId,

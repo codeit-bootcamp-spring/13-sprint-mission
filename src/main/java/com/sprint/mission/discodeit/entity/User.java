@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.sprint.mission.discodeit.security.role.Role;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -32,6 +33,10 @@ public class User extends BaseUpdatableEntity {
     @JsonIgnore
     private UserStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column
+    private Role role;
+
     public User (
             String username,
             String email,
@@ -50,14 +55,5 @@ public class User extends BaseUpdatableEntity {
         return this.status.online();
     }
 
-    @Override
-    public String toString() {
-        return "User{" +
-                "username='" + username + '\'' +
-                ", email='" + email + '\'' +
-                ", password='" + password + '\'' +
-                ", profile=" + profile +
-                ", status=" + status +
-                '}';
-    }
+    public void updateRole(Role role){ this.role = role; }
 }

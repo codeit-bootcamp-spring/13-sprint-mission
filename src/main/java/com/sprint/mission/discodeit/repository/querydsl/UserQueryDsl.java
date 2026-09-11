@@ -9,6 +9,13 @@ import java.util.UUID;
 public interface UserQueryDsl {
 
     /**
+     * 유저 id 를 기반으로 유저 정보 쿼리.
+     * @param id UUID
+     * @return UserProjection
+     */
+    Optional<UserProjection> getUserFromId(UUID id);
+
+    /**
      * 유저 이름을 기반으로 유저 정보 반환.
      * @param username String
      * @return UserProjection

@@ -15,6 +15,7 @@ import com.sprint.mission.discodeit.mapper.MapperMethod;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.UserService;
 
 import java.time.Instant;
@@ -77,6 +78,8 @@ public class BasicUserService implements UserService {
                 bc,
                 null
         );
+
+        user.updateRole(Role.USER); // tmp. 추후 생성자로 설정. -> notnull 하게.
 
         log.debug("created User - username : {}, email : {}, password - {}", username, email, password);
 

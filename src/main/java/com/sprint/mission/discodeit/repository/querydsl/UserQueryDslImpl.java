@@ -28,18 +28,14 @@ public class UserQueryDslImpl implements UserQueryDsl {
     private final QBinaryContent binaryContent = QBinaryContent.binaryContent;
     private final QUserStatus userStatus = QUserStatus.userStatus;
 
+    public Optional<UserProjection> getUserFromId(UUID id){
+        UserProjection result = singleQuery(user.id.eq(id));
+        return Optional.ofNullable(result);
+    }
+
     @Override
     public Optional<UserProjection> getUserFromUsername(String username){
-        UserProjection result = jpaQueryFactory.select(userProjectionConstructor())
-                .from(user)
-                .join(user.profile, binaryContent)
-                .join(user.status, userStatus)
-                .where(
-                        getCondition(
-                                user.username.eq(username)
-                        )
-                ).fetchOne();
-
+        UserProjection result = singleQuery(user.username.eq(username));
         return Optional.ofNullable(result);
     }
 
@@ -87,12 +83,25 @@ public class UserQueryDslImpl implements UserQueryDsl {
                 user.username,
                 user.email,
                 user.password,
+                user.role,
                 getOnline(),
                 binaryContent.id,
                 binaryContent.fileName,
                 binaryContent.size,
                 binaryContent.contentType
         );
+    }
+
+    private UserProjection singleQuery(BooleanExpression exp){
+        return jpaQueryFactory.select(userProjectionConstructor())
+                .from(user)
+                .join(user.profile, binaryContent)
+                .join(user.status, userStatus)
+                .where(
+                        getCondition(
+                                exp
+                        )
+                ).fetchOne();
     }
 
 

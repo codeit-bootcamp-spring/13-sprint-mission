@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.controller;
 
 
 import com.sprint.mission.discodeit.controller.docs.AuthControllerDoc;
+import com.sprint.mission.discodeit.dto.request.user.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.AuthService;
@@ -34,5 +35,14 @@ public class AuthController implements AuthControllerDoc {
             @AuthenticationPrincipal DiscodeitUserDetails userDetails   // 인증이 성공한다면, 자동으로 반환.
     ){
         return ResponseEntity.ok(userDetails.getUserDto());
+    }
+
+    @PutMapping("role")
+    public ResponseEntity<UserDto> changeRole(
+            @RequestBody UserRoleUpdateRequest request
+    ){
+        return ResponseEntity.ok(
+                authService.roleUpdate(request.userId(), request.newRole())
+        );
     }
 }
