@@ -15,6 +15,7 @@ import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -97,6 +98,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @PreAuthorize("#userId == authentication.principal.userDto.id")
     @Transactional
     public UserDto updateUser(UUID userId, UserUpdateRequest request, MultipartFile file) {
         log.debug("유저 수정 시작");
@@ -145,6 +147,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @PreAuthorize("#userId == authentication.principal.userDto.id")
     @Transactional
     public void deleteUser(UUID userId) {
         log.debug("유저 삭제 시작");
