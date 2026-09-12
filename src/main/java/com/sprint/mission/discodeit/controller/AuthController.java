@@ -1,8 +1,11 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.dto.request.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.service.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -18,6 +21,8 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Auth", description = "인증 API")
 public class AuthController {
 
+    private final AuthService authService;
+
     @GetMapping("csrf-token")
     public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
         String tokenValue = csrfToken.getToken();
@@ -31,6 +36,13 @@ public class AuthController {
     public ResponseEntity<UserDto> me(@AuthenticationPrincipal DiscodeitUserDetails userDetails) {
         return ResponseEntity.ok(userDetails.getUserDto());
 
+    }
+
+    @PutMapping("role")
+    public ResponseEntity<UserDto> updateRole(@Valid @RequestBody UserRoleUpdateRequest request) {
+        UserDto userDto = authService.updateRole(request);
+
+        return ResponseEntity.ok().body(userDto);
     }
 
 }

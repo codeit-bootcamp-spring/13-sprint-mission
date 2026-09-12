@@ -62,7 +62,7 @@ public class BasicUserService implements UserService {
         String encryptedPassword = passwordEncoder.encode(request.password());
 
         //유저 생성
-        User user = new User(request.username(), request.email(), encryptedPassword, binaryContent);
+        User user = new User(request.username(), request.email(), encryptedPassword, binaryContent, Role.USER);
         log.info("유저: {}가 생성됨.", user.getUsername());
 
         //UserStatus 생성
