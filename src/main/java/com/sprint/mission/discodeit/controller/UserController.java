@@ -1,14 +1,9 @@
 package com.sprint.mission.discodeit.controller;
 
-import com.sprint.mission.discodeit.dto.request.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
-import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.*;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.UserStatusService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -33,7 +28,6 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
-    private final UserStatusService userStatusService;
 
     //사용자 등록
     @Operation(summary = "User 등록")
@@ -76,18 +70,6 @@ public class UserController {
         log.debug("유저 수정 API 요청");
 
         UserDto response = userService.updateUser(userId, request, profile);
-
-        return ResponseEntity.ok().body(response);
-    }
-
-    //사용자의 온라인 상태 업데이트
-    @Operation(summary = "User 온라인 상태 업데이트")
-    @ApiResponse(responseCode = "200", description = "User 온라인 상태가 성공적으로 업데이트됨")
-    @RequestMapping(value = "/{userId}/userStatus", method = RequestMethod.PATCH)
-    public ResponseEntity<UserStatusDto> updateUserStatusByUserId(@Parameter(description = "상태를 변경할 User ID", required = true)
-                                                               @PathVariable UUID userId,
-                                                               @Valid @RequestBody UserStatusUpdateRequest request) {
-        UserStatusDto response = userStatusService.updateUserStatusByUserId(userId, request);
 
         return ResponseEntity.ok().body(response);
     }

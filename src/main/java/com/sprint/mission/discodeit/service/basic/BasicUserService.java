@@ -10,10 +10,12 @@ import com.sprint.mission.discodeit.exception.user.UserNameAlreadyExistsExceptio
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.*;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,12 +33,12 @@ public class BasicUserService implements UserService {
     //필드
     private final UserRepository userRepository;
     private final BinaryContentRepository binaryContentRepository;
-    private final UserStatusRepository userStatusRepository;
     private final ReadStatusRepository readStatusRepository;
     private final MessageRepository messageRepository;
     private final UserMapper userMapper;
     private final BinaryContentStorage binaryContentStorage;
     private final PasswordEncoder passwordEncoder;
+    private final SessionRegistry sessionRegistry;
 
     //interface
     @Override
@@ -65,16 +67,11 @@ public class BasicUserService implements UserService {
         User user = new User(request.username(), request.email(), encryptedPassword, binaryContent, Role.USER);
         log.info("유저: {}가 생성됨.", user.getUsername());
 
-        //UserStatus 생성
-        UserStatus userStatus = new UserStatus(user);
-//        userStatus = userStatusRepository.save(userStatus);
-
-        user.assignStatus(userStatus);
         user = userRepository.save(user);
 
         log.info("유저 생성 완료");
 
-        return userMapper.toDto(user);
+        return userMapper.toDto(user, false);
     }
 
     @Override
@@ -84,7 +81,8 @@ public class BasicUserService implements UserService {
         User userTemp = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
-        return userMapper.toDto(userTemp);
+        boolean online = isOnline(userId);
+        return userMapper.toDto(userTemp, online);
     }
 
     @Override
@@ -94,7 +92,7 @@ public class BasicUserService implements UserService {
         List<User> users = userRepository.findAll();
 
         return users.stream()
-                .map(userMapper::toDto)
+                .map(user -> userMapper.toDto(user, isOnline(user.getId())))
                 .toList();
     }
 
@@ -142,7 +140,8 @@ public class BasicUserService implements UserService {
 
         log.info("유저 수정 완료");
 
-        return userMapper.toDto(userTemp);
+        boolean online = isOnline(userId);
+        return userMapper.toDto(userTemp, online);
     }
 
     @Override
@@ -226,6 +225,19 @@ public class BasicUserService implements UserService {
         if (binaryContent != null && binaryContent.getId() != null) {
             binaryContentRepository.deleteById(binaryContent.getId());
         }
+    }
+
+    // 로그인 여부 판단 메서드
+    private boolean isOnline(UUID userId) {
+        for (Object principal : sessionRegistry.getAllPrincipals()) {
+            if (principal instanceof DiscodeitUserDetails details && userId.equals(details.getUserDto().id())) {
+                if (!sessionRegistry.getAllSessions(principal, false).isEmpty()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     // 들어온 이름 필드가 레포지터리에 존재하는지 검증하는 메서드

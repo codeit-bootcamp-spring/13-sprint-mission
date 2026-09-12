@@ -53,20 +53,6 @@ CREATE TABLE messages
             ON DELETE SET NULL
 );
 
-CREATE TABLE user_statuses
-(
-    id             UUID PRIMARY KEY,
-    created_at     TIMESTAMP WITH TIME ZONE NOT NULL,
-    updated_at     TIMESTAMP WITH TIME ZONE,
-    user_id        UUID                     NOT NULL UNIQUE,
-    last_active_at TIMESTAMP WITH TIME ZONE NOT NULL,
-
-    CONSTRAINT user_statuses_users
-        FOREIGN KEY (user_id)
-            REFERENCES users (id)
-            ON DELETE CASCADE
-);
-
 CREATE TABLE read_statuses
 (
     id           UUID PRIMARY KEY,
