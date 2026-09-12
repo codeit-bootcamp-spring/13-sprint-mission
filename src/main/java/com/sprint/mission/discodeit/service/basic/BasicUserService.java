@@ -135,8 +135,11 @@ public class BasicUserService implements UserService {
         log.info("유저: {}가 수정됨.", userTemp.getUsername());
         log.info("name: {}, email: {}\n-> name: {}, email: {}", userTemp.getUsername(), userTemp.getEmail(), request.newUsername(), request.newEmail());
 
+        // 비밀번호 암호화
+        String encryptedPassword = passwordEncoder.encode(request.newPassword());
+
         //유저 업데이트
-        userTemp.updateUser(request.newUsername(), request.newEmail(), request.newPassword(), binaryContent);
+        userTemp.updateUser(request.newUsername(), request.newEmail(), encryptedPassword, binaryContent);
         //dirty checking
         //userTemp = userRepository.save(userTemp);
 
