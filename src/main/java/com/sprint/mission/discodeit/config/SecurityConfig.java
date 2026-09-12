@@ -65,7 +65,7 @@ public class SecurityConfig {
                 .sessionManagement(management -> management
                         .sessionConcurrency(concurrency -> concurrency
                                 .maximumSessions(1)
-                                .maxSessionsPreventsLogin(true)
+                                .maxSessionsPreventsLogin(false)
                                 .sessionRegistry(sessionRegistry)
                         )
 
@@ -80,6 +80,7 @@ public class SecurityConfig {
                         .successHandler(loginSuccessHandler)
                         .failureHandler(loginFailureHandler)
                 )
+                .rememberMe(Customizer.withDefaults())
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
                         .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT))
