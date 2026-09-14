@@ -1,8 +1,11 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +25,13 @@ public class AuthController {
         return ResponseEntity
                 .status(HttpStatus.NON_AUTHORITATIVE_INFORMATION)
                 .build();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> getCurrentUser (
+            @AuthenticationPrincipal DiscodeitUserDetails userDetails
+            ) {
+        return ResponseEntity.ok(userDetails.getUserDto());
     }
 }
 
