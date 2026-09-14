@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <!-- MDC 값을 포함한 로그 패턴 설정 -->
+
     <property name="LOG_PATTERN" value="%d{yy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
     <property name="LOG_FILE_PATH" value=".logs"/>
     <property name="LOG_FILE_NAME" value="discodeit"/>
