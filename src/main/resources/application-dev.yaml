@@ -21,3 +21,4 @@ discodeit:
 logging:
   level:
     com.sprint.mission.discodeit: debug
+    org.springframework.security: trace
