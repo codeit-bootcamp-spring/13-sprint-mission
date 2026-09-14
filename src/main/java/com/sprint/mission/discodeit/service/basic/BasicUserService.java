@@ -1,20 +1,30 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.command.*;
-import com.sprint.mission.discodeit.dto.request.*;
-import com.sprint.mission.discodeit.dto.response.*;
-import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.exception.user.*;
-import com.sprint.mission.discodeit.mapper.*;
-import com.sprint.mission.discodeit.repository.*;
-import com.sprint.mission.discodeit.service.*;
-import com.sprint.mission.discodeit.storage.*;
-import lombok.*;
-import lombok.extern.slf4j.*;
-import org.springframework.stereotype.*;
-import org.springframework.transaction.annotation.*;
+import com.sprint.mission.discodeit.dto.command.CreateBinaryContentCommand;
+import com.sprint.mission.discodeit.dto.command.CreateUserCommand;
+import com.sprint.mission.discodeit.dto.command.UpdateUserCommand;
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import com.sprint.mission.discodeit.mapper.UserMapper;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -28,6 +38,7 @@ public class BasicUserService implements UserService {
     private final BinaryContentService binaryContentService;
     private final BinaryContentStorage binaryContentStorage;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -59,10 +70,12 @@ public class BasicUserService implements UserService {
 
         log.info("사용자 생성 요청");
 
+        String encodedPassword = passwordEncoder.encode(command.password());
+
         User user = new User(
                 command.username(),
                 command.email(),
-                command.password()
+                encodedPassword
         );
 
         if (profileImage != null) {
