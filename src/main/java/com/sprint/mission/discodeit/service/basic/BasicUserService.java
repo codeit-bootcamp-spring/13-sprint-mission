@@ -88,6 +88,7 @@ public class BasicUserService implements UserService {
 
 
     @Override
+    @Transactional(readOnly = true)
     public UserDto findByUserId(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
@@ -101,6 +102,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<UserDto> findAll() {
         List<User> users = repository.findAll();
         return userMapper.toDtoList(users);
