@@ -3,13 +3,12 @@ package com.sprint.mission.discodeit.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.ChannelType;
-import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,6 +25,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-public class MessageIntegrationTest {
+class MessageIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -77,28 +78,39 @@ public class MessageIntegrationTest {
                     author.getId()
             );
 
-            MockMultipartFile requestPart = createMessageRequestPart(request);
+            MockMultipartFile requestPart =
+                    createMessageRequestPart(request);
+
+            DiscodeitUserDetails principal =
+                    createPrincipal(author);
 
             // when & then
-            mockMvc.perform(multipart("/api/messages")
-                            .file(requestPart)
-                            .contentType(MediaType.MULTIPART_FORM_DATA)
+            mockMvc.perform(
+                            multipart("/api/messages")
+                                    .file(requestPart)
+                                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                                    .with(user(principal))
+                                    .with(csrf())
                     )
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.id").exists())
                     .andExpect(jsonPath("$.content")
                             .value("안녕하세요"));
 
-            List<Message> messages = messageRepository.findAll();
+            List<Message> messages =
+                    messageRepository.findAll();
 
-            assertThat(messages).hasSize(1);
+            assertThat(messages)
+                    .hasSize(1);
 
             Message savedMessage = messages.get(0);
 
             assertThat(savedMessage.getContent())
                     .isEqualTo("안녕하세요");
+
             assertThat(savedMessage.getChannel().getId())
                     .isEqualTo(channel.getId());
+
             assertThat(savedMessage.getAuthor().getId())
                     .isEqualTo(author.getId());
         }
@@ -121,12 +133,19 @@ public class MessageIntegrationTest {
                     author.getId()
             );
 
-            MockMultipartFile requestPart = createMessageRequestPart(request);
+            MockMultipartFile requestPart =
+                    createMessageRequestPart(request);
+
+            DiscodeitUserDetails principal =
+                    createPrincipal(author);
 
             // when & then
-            mockMvc.perform(multipart("/api/messages")
-                            .file(requestPart)
-                            .contentType(MediaType.MULTIPART_FORM_DATA)
+            mockMvc.perform(
+                            multipart("/api/messages")
+                                    .file(requestPart)
+                                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                                    .with(user(principal))
+                                    .with(csrf())
                     )
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code")
@@ -142,7 +161,7 @@ public class MessageIntegrationTest {
     class UpdateMessage {
 
         @Test
-        @DisplayName("존재하는 메시지의 내용을 수정하고 200을 반환")
+        @DisplayName("작성자가 자신의 메시지를 수정하면 200을 반환")
         void update_success() throws Exception {
             // given
             User author = saveUser(
@@ -162,14 +181,28 @@ public class MessageIntegrationTest {
                     author
             );
 
-            MessageUpdateRequest request = new MessageUpdateRequest(
-                    "수정된 메시지"
-            );
+            MessageUpdateRequest request =
+                    new MessageUpdateRequest(
+                            "수정된 메시지"
+                    );
+
+            DiscodeitUserDetails principal =
+                    createPrincipal(author);
 
             // when & then
-            mockMvc.perform(patch("/api/messages/{messageId}", savedMessage.getId())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request))
+            mockMvc.perform(
+                            patch(
+                                    "/api/messages/{messageId}",
+                                    savedMessage.getId()
+                            )
+                                    .with(user(principal))
+                                    .with(csrf())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            objectMapper.writeValueAsString(
+                                                    request
+                                            )
+                                    )
                     )
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id")
@@ -177,35 +210,118 @@ public class MessageIntegrationTest {
                     .andExpect(jsonPath("$.content")
                             .value("수정된 메시지"));
 
-            Message updatedMessage = messageRepository
-                    .findById(savedMessage.getId())
-                    .orElseThrow();
+            Message updatedMessage =
+                    messageRepository
+                            .findById(savedMessage.getId())
+                            .orElseThrow();
 
             assertThat(updatedMessage.getContent())
                     .isEqualTo("수정된 메시지");
         }
 
         @Test
+        @DisplayName("다른 사용자가 메시지를 수정하면 403을 반환")
+        void update_fail_not_author() throws Exception {
+            // given
+            User author = saveUser(
+                    "user1",
+                    "user1@test.com",
+                    "password1"
+            );
+
+            User otherUser = saveUser(
+                    "user2",
+                    "user2@test.com",
+                    "password2"
+            );
+
+            Channel channel = savePublicChannel(
+                    "공지",
+                    "전체 공지 채널"
+            );
+
+            Message savedMessage = saveMessage(
+                    "기존 메시지",
+                    channel,
+                    author
+            );
+
+            MessageUpdateRequest request =
+                    new MessageUpdateRequest(
+                            "수정된 메시지"
+                    );
+
+            DiscodeitUserDetails principal =
+                    createPrincipal(otherUser);
+
+            // when & then
+            mockMvc.perform(
+                            patch(
+                                    "/api/messages/{messageId}",
+                                    savedMessage.getId()
+                            )
+                                    .with(user(principal))
+                                    .with(csrf())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(
+                                            objectMapper.writeValueAsString(
+                                                    request
+                                            )
+                                    )
+                    )
+                    .andExpect(status().isForbidden());
+
+            Message unchangedMessage =
+                    messageRepository
+                            .findById(savedMessage.getId())
+                            .orElseThrow();
+
+            assertThat(unchangedMessage.getContent())
+                    .isEqualTo("기존 메시지");
+        }
+
+        @Test
         @DisplayName("존재하지 않는 메시지를 수정하면 404를 반환")
-        void update_fail() throws Exception {
+        void update_fail_not_found() throws Exception {
             // given
             UUID unknownMessageId = UUID.randomUUID();
 
-            MessageUpdateRequest request = new MessageUpdateRequest(
-                    "수정된 메시지"
-            );
+            MessageUpdateRequest request =
+                    new MessageUpdateRequest(
+                            "수정된 메시지"
+                    );
+
+            DiscodeitUserDetails principal =
+                    createPrincipal(
+                            UUID.randomUUID(),
+                            "user1",
+                            "user1@test.com"
+                    );
 
             // when & then
-            mockMvc.perform(patch("/api/messages/{messageId}", unknownMessageId)
+            mockMvc.perform(
+                            patch(
+                                    "/api/messages/{messageId}",
+                                    unknownMessageId
+                            )
+                                    .with(user(principal))
+                                    .with(csrf())
                                     .contentType(MediaType.APPLICATION_JSON)
-                                    .content(objectMapper.writeValueAsString(request))
+                                    .content(
+                                            objectMapper.writeValueAsString(
+                                                    request
+                                            )
+                                    )
                     )
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code")
                             .value("MESSAGE_NOT_FOUND"));
 
-            assertThat(messageRepository.findById(unknownMessageId))
-                    .isEmpty();
+            assertThat(
+                    messageRepository.findById(
+                            unknownMessageId
+                    )
+            ).isEmpty();
         }
     }
 
@@ -214,7 +330,7 @@ public class MessageIntegrationTest {
     class DeleteMessage {
 
         @Test
-        @DisplayName("존재하는 메시지를 삭제하고 204를 반환")
+        @DisplayName("작성자가 자신의 메시지를 삭제하면 204를 반환")
         void delete_success() throws Exception {
             // given
             User author = saveUser(
@@ -234,30 +350,108 @@ public class MessageIntegrationTest {
                     author
             );
 
-            UUID messageId = savedMessage.getId();
+            UUID messageId =
+                    savedMessage.getId();
+
+            DiscodeitUserDetails principal =
+                    createPrincipal(author);
 
             // when & then
-            mockMvc.perform(delete("/api/messages/{messageId}", messageId))
+            mockMvc.perform(
+                            delete(
+                                    "/api/messages/{messageId}",
+                                    messageId
+                            )
+                                    .with(user(principal))
+                                    .with(csrf())
+                    )
                     .andExpect(status().isNoContent());
 
-            assertThat(messageRepository.findById(messageId))
-                    .isEmpty();
+            assertThat(
+                    messageRepository.findById(messageId)
+            ).isEmpty();
+        }
+
+        @Test
+        @DisplayName("다른 사용자가 메시지를 삭제하면 403을 반환")
+        void delete_fail_not_author() throws Exception {
+            // given
+            User author = saveUser(
+                    "user1",
+                    "user1@test.com",
+                    "password1"
+            );
+
+            User otherUser = saveUser(
+                    "user2",
+                    "user2@test.com",
+                    "password2"
+            );
+
+            Channel channel = savePublicChannel(
+                    "공지",
+                    "전체 공지 채널"
+            );
+
+            Message savedMessage = saveMessage(
+                    "삭제할 메시지",
+                    channel,
+                    author
+            );
+
+            DiscodeitUserDetails principal =
+                    createPrincipal(otherUser);
+
+            // when & then
+            mockMvc.perform(
+                            delete(
+                                    "/api/messages/{messageId}",
+                                    savedMessage.getId()
+                            )
+                                    .with(user(principal))
+                                    .with(csrf())
+                    )
+                    .andExpect(status().isForbidden());
+
+            assertThat(
+                    messageRepository.findById(
+                            savedMessage.getId()
+                    )
+            ).isPresent();
         }
 
         @Test
         @DisplayName("존재하지 않는 메시지를 삭제하면 404를 반환")
-        void delete_fail() throws Exception {
+        void delete_fail_not_found() throws Exception {
             // given
-            UUID unknownMessageId = UUID.randomUUID();
+            UUID unknownMessageId =
+                    UUID.randomUUID();
+
+            DiscodeitUserDetails principal =
+                    createPrincipal(
+                            UUID.randomUUID(),
+                            "user1",
+                            "user1@test.com"
+                    );
 
             // when & then
-            mockMvc.perform(delete("/api/messages/{messageId}", unknownMessageId))
+            mockMvc.perform(
+                            delete(
+                                    "/api/messages/{messageId}",
+                                    unknownMessageId
+                            )
+                                    .with(user(principal))
+                                    .with(csrf())
+                    )
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code")
                             .value("MESSAGE_NOT_FOUND"));
 
-            assertThat(messageRepository.findById(unknownMessageId))
-                    .isEmpty();
+            assertThat(
+                    messageRepository.findById(
+                            unknownMessageId
+                    )
+            ).isEmpty();
         }
     }
 
@@ -266,7 +460,7 @@ public class MessageIntegrationTest {
     class FindMessagesByChannel {
 
         @Test
-        @DisplayName("해당 채널의 메시지 목록을 반환")
+        @DisplayName("인증된 사용자는 해당 채널의 메시지 목록을 조회")
         void get_success() throws Exception {
             // given
             User author = saveUser(
@@ -303,11 +497,18 @@ public class MessageIntegrationTest {
                     author
             );
 
+            DiscodeitUserDetails principal =
+                    createPrincipal(author);
+
             // when & then
-            mockMvc.perform(get("/api/messages")
+            mockMvc.perform(
+                            get("/api/messages")
+                                    .with(user(principal))
                                     .param(
                                             "channelId",
-                                            targetChannel.getId().toString()
+                                            targetChannel
+                                                    .getId()
+                                                    .toString()
                                     )
                                     .param("page", "0")
                                     .param("size", "10")
@@ -334,16 +535,27 @@ public class MessageIntegrationTest {
         }
 
         @Test
-        @DisplayName("채널에 메시지가 없으면 빈 목록을 반환")
-        void get_fail() throws Exception {
+        @DisplayName("인증된 사용자가 조회하고 메시지가 없으면 빈 목록을 반환")
+        void get_empty() throws Exception {
             // given
+            User user = saveUser(
+                    "user1",
+                    "user1@test.com",
+                    "password1"
+            );
+
             Channel channel = savePublicChannel(
                     "공지",
                     "전체 공지 채널"
             );
 
+            DiscodeitUserDetails principal =
+                    createPrincipal(user);
+
             // when & then
-            mockMvc.perform(get("/api/messages")
+            mockMvc.perform(
+                            get("/api/messages")
+                                    .with(user(principal))
                                     .param(
                                             "channelId",
                                             channel.getId().toString()
@@ -367,23 +579,56 @@ public class MessageIntegrationTest {
                     .andExpect(jsonPath("$.totalElements")
                             .isEmpty());
 
-            assertThat(messageRepository.findAllByChannelId(channel.getId()))
-                    .isEmpty();
+            assertThat(
+                    messageRepository.findAllByChannelId(
+                            channel.getId()
+                    )
+            ).isEmpty();
+        }
+
+        @Test
+        @DisplayName("인증되지 않은 사용자가 메시지를 조회하면 401을 반환")
+        void get_fail_unauthenticated() throws Exception {
+            // given
+            Channel channel = savePublicChannel(
+                    "공지",
+                    "전체 공지 채널"
+            );
+
+            // when & then
+            mockMvc.perform(
+                            get("/api/messages")
+                                    .param(
+                                            "channelId",
+                                            channel.getId().toString()
+                                    )
+                                    .param("page", "0")
+                                    .param("size", "10")
+                    )
+                    .andExpect(status().isUnauthorized());
         }
     }
 
-    private User saveUser(String username, String email, String password) {
+    private User saveUser(
+            String username,
+            String email,
+            String password
+    ) {
         User user = new User(
                 username,
                 email,
                 password,
-                null
+                null,
+                Role.USER
         );
 
         return userRepository.saveAndFlush(user);
     }
 
-    private Channel savePublicChannel(String name, String description) {
+    private Channel savePublicChannel(
+            String name,
+            String description
+    ) {
         Channel channel = new Channel(
                 ChannelType.PUBLIC,
                 name,
@@ -393,7 +638,11 @@ public class MessageIntegrationTest {
         return channelRepository.saveAndFlush(channel);
     }
 
-    private Message saveMessage(String content, Channel channel, User author) {
+    private Message saveMessage(
+            String content,
+            Channel channel,
+            User author
+    ) {
         Message message = new Message(
                 content,
                 channel,
@@ -404,7 +653,37 @@ public class MessageIntegrationTest {
         return messageRepository.saveAndFlush(message);
     }
 
-    private MockMultipartFile createMessageRequestPart(MessageCreateRequest request) throws Exception {
+    private DiscodeitUserDetails createPrincipal(User user) {
+        return createPrincipal(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail()
+        );
+    }
+
+    private DiscodeitUserDetails createPrincipal(
+            UUID userId,
+            String username,
+            String email
+    ) {
+        UserDto userDto = new UserDto(
+                userId,
+                username,
+                email,
+                null,
+                true,
+                Role.USER
+        );
+
+        return new DiscodeitUserDetails(
+                userDto,
+                "encoded-password"
+        );
+    }
+
+    private MockMultipartFile createMessageRequestPart(
+            MessageCreateRequest request
+    ) throws Exception {
         return new MockMultipartFile(
                 "messageCreateRequest",
                 "",
@@ -412,5 +691,4 @@ public class MessageIntegrationTest {
                 objectMapper.writeValueAsBytes(request)
         );
     }
-
 }
