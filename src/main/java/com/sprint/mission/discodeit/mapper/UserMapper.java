@@ -18,8 +18,6 @@ public interface UserMapper {
     @Mapping(target = "online", expression = "java(userStatus != null && userStatus.isOnline())")
     UserDto toDto(User user, UserStatus userStatus);
 
-    LoginResponse toLoginResponse(User user);
-
     List<UserDto> toDtoList(List<User> users);
 
 }
