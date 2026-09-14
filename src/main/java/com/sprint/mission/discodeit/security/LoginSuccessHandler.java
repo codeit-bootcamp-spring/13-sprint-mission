@@ -18,7 +18,6 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class LoginSuccessHandler implements AuthenticationSuccessHandler {
 
-    private final UserMapper userMapper;
     private final ObjectMapper objectMapper;
 
     @Override
