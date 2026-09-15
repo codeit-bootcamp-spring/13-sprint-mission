@@ -2,9 +2,16 @@ package com.sprint.mission.discodeit.config;
 
 import com.sprint.mission.discodeit.security.LoginFailureHandler;
 import com.sprint.mission.discodeit.security.LoginSuccessHandler;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -15,11 +22,18 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, LoginSuccessHandler loginSuccessHandler, LoginFailureHandler loginFailureHandler) throws Exception {
-        http.csrf(csrf -> csrf
+    public SecurityFilterChain filterChain(
+            HttpSecurity http,
+            LoginSuccessHandler loginSuccessHandler,
+            LoginFailureHandler loginFailureHandler
+    ) throws Exception {
+
+        http
+                .csrf(csrf -> csrf
                         .csrfTokenRepository(
                                 CookieCsrfTokenRepository.withHttpOnlyFalse()
                         )
@@ -27,16 +41,62 @@ public class SecurityConfig {
                                 new SpaCsrfTokenRequestHandler()
                         )
                 )
+
+                .authorizeHttpRequests(auth -> auth
+                        // 인증 없이 접근 가능
+                        .requestMatchers(
+                                "/api/auth/csrf-token",
+                                "/api/auth/login",
+                                "/api/auth/logout"
+                        ).permitAll()
+
+                        // 회원가입만 인증 없이 접근 가능
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/users"
+                        ).permitAll()
+
+                        // Swagger, Actuator 등
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/actuator/**",
+                                "/error"
+                        ).permitAll()
+
+                        // 나머지는 로그인 필수
+                        .anyRequest().authenticated()
+                )
+
                 .formLogin(login -> login
                         .loginProcessingUrl("/api/auth/login")
                         .successHandler(loginSuccessHandler)
                         .failureHandler(loginFailureHandler)
+                        .permitAll()
                 )
+
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
                         .logoutSuccessHandler(
                                 new HttpStatusReturningLogoutSuccessHandler(
                                         HttpStatus.NO_CONTENT
+                                )
+                        )
+                        .permitAll()
+                )
+
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, exception1) ->
+                                response.sendError(
+                                        HttpServletResponse.SC_UNAUTHORIZED,
+                                        "인증이 필요합니다."
+                                )
+                        )
+                        .accessDeniedHandler((request, response, exception1) ->
+                                response.sendError(
+                                        HttpServletResponse.SC_FORBIDDEN,
+                                        "접근 권한이 없습니다."
                                 )
                         )
                 );
@@ -49,4 +109,22 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    @Bean
+    public RoleHierarchy roleHierarchy() {
+        return RoleHierarchyImpl.fromHierarchy("""
+                ROLE_ADMIN > ROLE_CHANNEL_MANAGER
+                ROLE_CHANNEL_MANAGER > ROLE_USER""");
+    }
+
+    @Bean
+    static MethodSecurityExpressionHandler methodSecurityExpressionHandler(
+            RoleHierarchy roleHierarchy
+    ) {
+        DefaultMethodSecurityExpressionHandler handler =
+                new DefaultMethodSecurityExpressionHandler();
+
+        handler.setRoleHierarchy(roleHierarchy);
+
+        return handler;
+    }
 }

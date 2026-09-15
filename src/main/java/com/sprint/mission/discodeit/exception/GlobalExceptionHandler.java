@@ -7,7 +7,9 @@ import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -153,6 +155,25 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+            AccessDeniedException exception
+    ) {
+        ErrorResponse response = new ErrorResponse(
+                Instant.now(),
+                "ACCESS_DENIED",
+                "접근 권한이 없습니다.",
+                Map.of(),
+                exception.getClass().getSimpleName(),
+                HttpStatus.FORBIDDEN.value()
+        );
+
+        log.warn("접근 권한이 없습니다. message={}", exception.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(response);
+    }
 
 
 
