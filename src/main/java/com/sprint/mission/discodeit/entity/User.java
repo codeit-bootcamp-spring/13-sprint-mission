@@ -50,6 +50,7 @@ public class User extends BaseUpdatableEntity {
       this.email = newEmail;
 
     }
+
     if (newPassword != null && !newPassword.equals(this.password)) {
       this.password = newPassword;
     }

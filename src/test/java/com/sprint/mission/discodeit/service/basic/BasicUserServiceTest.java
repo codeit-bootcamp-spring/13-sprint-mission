@@ -24,6 +24,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 
 @ExtendWith(MockitoExtension.class)
 class BasicUserServiceTest {
@@ -36,9 +39,14 @@ class BasicUserServiceTest {
   private BinaryContentRepository binaryContentRepository;
   @Mock
   private UserMapper userMapper;
+  @Mock
+  private PasswordEncoder passwordEncoder;
 
   @InjectMocks
   private BasicUserService basicUserService;
+
+  @Captor
+  private ArgumentCaptor<User> userCaptor;
 
   @Test
   @DisplayName("유저 생성 성공 - username, email 모두 중복 없으면 생성된다")
@@ -48,6 +56,7 @@ class BasicUserServiceTest {
     String email = "test@example.com";
     String password = "password1234!";
 
+    given(passwordEncoder.encode(password)).willReturn("encodedPassword123");
     given(userRepository.findByUserName(username)).willReturn(Optional.empty());
     given(userRepository.findByEmail(email)).willReturn(Optional.empty());
     given(userMapper.toDto(org.mockito.ArgumentMatchers.any(User.class)))
@@ -59,7 +68,10 @@ class BasicUserServiceTest {
     // then
     assertThat(result.username()).isEqualTo(username);
     assertThat(result.email()).isEqualTo(email);
-    verify(userRepository).save(org.mockito.ArgumentMatchers.any(User.class));
+    verify(passwordEncoder).encode(password);
+    verify(userRepository).save(userCaptor.capture());
+    User savedUser = userCaptor.getValue();
+    assertThat(savedUser.getPassword()).isEqualTo("encodedPassword123");
   }
 
   @Test
@@ -87,6 +99,7 @@ class BasicUserServiceTest {
     UUID userId = UUID.randomUUID();
     User existingUser = new User("oldName", "oldPw", "old@example.com");
 
+    given(passwordEncoder.encode("newPw1234!")).willReturn("encodedPassword123");
     given(userRepository.findById(userId)).willReturn(Optional.of(existingUser));
     given(userMapper.toDto(existingUser))
         .willReturn(new UserDto(userId, "newName", "new@example.com", null, false));
@@ -98,6 +111,7 @@ class BasicUserServiceTest {
     // then
     assertThat(result.username()).isEqualTo("newName");
     assertThat(result.email()).isEqualTo("new@example.com");
+    verify(passwordEncoder).encode("newPw1234!");
   }
 
   @Test
@@ -111,6 +125,25 @@ class BasicUserServiceTest {
     assertThatThrownBy(() ->
         basicUserService.update(userId, "newName", "new@example.com", "newPw1234!", null))
         .isInstanceOf(UserNotFoundException.class);
+  }
+
+  @Test
+  @DisplayName("유저 수정 성공 - newPassword가 null이면 비밀번호를 인코딩하지 않는다")
+  void update_success_withNullPassword() {
+    // given
+    UUID userId = UUID.randomUUID();
+    User existingUser = new User("oldName", "oldPw", "old@example.com");
+
+    given(userRepository.findById(userId)).willReturn(Optional.of(existingUser));
+    given(userMapper.toDto(existingUser))
+        .willReturn(new UserDto(userId, "newName", "new@example.com", null, false));
+
+    // when
+    UserDto result = basicUserService.update(userId, "newName", "new@example.com", null, null);
+
+    // then
+    assertThat(result.username()).isEqualTo("newName");
+    verify(passwordEncoder, never()).encode(any());
   }
 
   @Test

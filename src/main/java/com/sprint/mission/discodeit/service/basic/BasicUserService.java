@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,11 +29,14 @@ public class BasicUserService implements UserService {
   private final UserStatusRepository userStatusRepository;
   private final BinaryContentRepository binaryContentRepository;
   private final UserMapper userMapper;
+  private final PasswordEncoder passwordEncoder;
 
   @Override
   @Transactional
   public UserDto create(String username, String email, String password, UUID profileId) {
     log.info("유저 생성 요청 - username: {}, email: {}", username, email);
+
+    String encodedPassword = passwordEncoder.encode(password);
 
     if (userRepository.findByUserName(username).isPresent()) {
       throw new DuplicateUsernameException(username);
@@ -41,7 +45,7 @@ public class BasicUserService implements UserService {
       throw new DuplicateEmailException(email);
     }
 
-    User user = new User(username, password, email);
+    User user = new User(username, encodedPassword, email);
     if (profileId != null) {
       user.updateProfileId(binaryContentRepository.getReferenceById(profileId));
     }
@@ -87,10 +91,12 @@ public class BasicUserService implements UserService {
       UUID newProfileId) {
     log.info("유저 수정 요청 - userId: {}", userId);
 
+    String encodedPasswoerd = newPassword != null ? passwordEncoder.encode(newPassword) : null;
+
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new UserNotFoundException(userId));
 
-    user.update(newUsername, newEmail, newPassword);
+    user.update(newUsername, newEmail, encodedPasswoerd);
     if (newProfileId != null) {
       user.updateProfileId(binaryContentRepository.getReferenceById(newProfileId));
     }
