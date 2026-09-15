@@ -28,6 +28,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     testImplementation 'com.h2database:h2'
     implementation 'software.amazon.awssdk:s3:2.31.7'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

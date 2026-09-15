@@ -67,3 +67,4 @@ management:
 logging:
   level:
     root: info # 기본 로깅 레벨
+    org.springframework.security: trace
