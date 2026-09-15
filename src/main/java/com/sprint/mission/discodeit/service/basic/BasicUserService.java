@@ -1,10 +1,12 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.auth.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.command.binarycontent.BinaryContentCreateCommand;
 import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
 import com.sprint.mission.discodeit.dto.command.user.UserUpdateCommand;
 import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
@@ -66,7 +68,7 @@ public class BasicUserService implements UserService {
             binaryContentStorage.put(profile.getId(), profileRequest.bytes());
         }
         String encodedPassword = passwordEncoder.encode(command.password());
-        User user = new User(command.username(), command.email(), encodedPassword, profile, null);
+        User user = new User(command.username(), command.email(), encodedPassword, Role.USER, profile, null);
         userRepository.save(user);
 
         UserStatus userStatus = new UserStatus(user);
@@ -166,4 +168,19 @@ public class BasicUserService implements UserService {
         userRepository.deleteById(userId);
         log.info("유저 삭제 - name: {}, userId: {}", user.getUsername(), user.getId());
     }
+
+    @Override
+    public UserDto updateRole(UUID userId, Role newRole) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> UserNotFoundException.withId(userId));
+        user.updateRole(newRole);
+        userRepository.save(user);
+
+        UserStatus userStatus = userStatusRepository.findByUserId(userId)
+                .orElse(null);
+        log.info("권한 수정 완료 - userId: {}, newRole: {}", user.getId(), newRole);
+
+        return userMapper.toDto(user, userStatus);
+    }
+
 }

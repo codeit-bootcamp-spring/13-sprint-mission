@@ -11,6 +11,7 @@ public interface UserMapper {
 
     @Mapping(target = "id", source = "user.id")
     @Mapping(target = "profile", source = "user.profile")
+    @Mapping(target = "role", source = "user.role")
     @Mapping(target = "online", expression = "java(userStatus != null && userStatus.isOnline())")
     UserDto toDto(User user, UserStatus userStatus);
 }
