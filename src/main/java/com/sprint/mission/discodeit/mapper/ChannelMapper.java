@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.mapper;
 import com.sprint.mission.discodeit.dto.response.*;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.*;
+import com.sprint.mission.discodeit.service.AuthService;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.data.domain.*;
@@ -20,10 +21,10 @@ public abstract class ChannelMapper {
     protected ReadStatusRepository readStatusRepository;
 
     @Autowired
-    protected UserStatusRepository userStatusRepository;
+    protected UserMapper userMapper;
 
     @Autowired
-    protected UserMapper userMapper;
+    protected AuthService authService;
 
     @Mapping(target = "participants", source = ".")
     @Mapping(target = "lastMessageAt", source = ".")
@@ -38,7 +39,8 @@ public abstract class ChannelMapper {
                 .stream()
                 .map(readStatus -> {
                     User user = readStatus.getUser();
-                    return userMapper.toDto(user, user.getUserStatus());
+                    boolean online = authService.isOnline(user.getId());
+                    return userMapper.toDto(user, online);
                 })
                 .toList();
     }

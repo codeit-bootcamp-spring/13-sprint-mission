@@ -29,7 +29,7 @@ public class DiscodeitUserDetailsService implements UserDetailsService {
                 ));
 
         return new DiscodeitUserDetails(
-                userMapper.toDto(user),
+                userMapper.toDto(user, true),
                 user.getPassword()
         );
     }

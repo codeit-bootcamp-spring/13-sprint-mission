@@ -14,11 +14,14 @@ import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 @Configuration
 @EnableWebSecurity
@@ -29,7 +32,8 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(
             HttpSecurity http,
             LoginSuccessHandler loginSuccessHandler,
-            LoginFailureHandler loginFailureHandler
+            LoginFailureHandler loginFailureHandler,
+            SessionRegistry sessionRegistry
     ) throws Exception {
 
         http
@@ -42,21 +46,25 @@ public class SecurityConfig {
                         )
                 )
 
+                .sessionManagement(session -> session
+                        .sessionConcurrency(concurrency -> concurrency
+                                .maximumSessions(1)
+                                .maxSessionsPreventsLogin(true)
+                                .sessionRegistry(sessionRegistry)
+                        )
+                )
                 .authorizeHttpRequests(auth -> auth
-                        // 인증 없이 접근 가능
                         .requestMatchers(
                                 "/api/auth/csrf-token",
                                 "/api/auth/login",
                                 "/api/auth/logout"
                         ).permitAll()
 
-                        // 회원가입만 인증 없이 접근 가능
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/users"
                         ).permitAll()
 
-                        // Swagger, Actuator 등
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
@@ -65,7 +73,6 @@ public class SecurityConfig {
                                 "/error"
                         ).permitAll()
 
-                        // 나머지는 로그인 필수
                         .anyRequest().authenticated()
                 )
 
@@ -126,5 +133,15 @@ public class SecurityConfig {
         handler.setRoleHierarchy(roleHierarchy);
 
         return handler;
+    }
+
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+
+    @Bean
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
     }
 }
