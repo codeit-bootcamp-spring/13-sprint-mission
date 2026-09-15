@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.command.UpdateUserCommand;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
@@ -172,7 +173,10 @@ public class BasicUserService implements UserService {
                 throw new IllegalArgumentException("비밀번호는 공백일 수 없습니다.");
             }
 
-            user.updatePassword(command.password());
+            String encodedPassword =
+                    passwordEncoder.encode(command.password());
+
+            user.updatePassword(encodedPassword);
         }
 
         if (profileImage != null) {
@@ -224,4 +228,23 @@ public class BasicUserService implements UserService {
         repository.delete(user);
         log.info("사용자 삭제 완료. id={}", id);
     }
+
+    @Override
+    public UserDto updateRole(UUID userId, Role newRole) {
+        if(userId == null) {
+            throw new IllegalArgumentException("사용자 ID는 필수입니다.");
+        }
+
+        if(newRole == null) {
+            throw new IllegalArgumentException("변경할 권한은 필수입니다.");
+        }
+
+        User user = repository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        user.updateRole(newRole);
+
+        return userMapper.toDto(user);
+    }
+
 }
