@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -32,4 +34,12 @@ public class AuthController {
     return ResponseEntity.status(HttpStatus.OK).body(useLogin);
   }                                              //└>RequestMethod.POST 지만
   // 새 리소스가 생긴게 아니라 200 OK 상태 메세지
+
+  @GetMapping("/csrf-token")
+  public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
+    csrfToken.getToken();
+    return ResponseEntity.status(HttpStatus.NON_AUTHORITATIVE_INFORMATION).build();
+
+  }
+
 }
