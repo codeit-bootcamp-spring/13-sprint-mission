@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -30,6 +31,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -37,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(MessageController.class)
 @Import(GlobalExceptionHandler.class)
+@WithMockUser(roles = "USER")
 class MessageControllerTest {
 
     @Autowired
@@ -242,6 +245,7 @@ class MessageControllerTest {
                                 "/api/messages/{messageId}",
                                 messageId
                         )
+                                .with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         objectMapper.writeValueAsString(request)
@@ -301,6 +305,7 @@ class MessageControllerTest {
                                 "/api/messages/{messageId}",
                                 messageId
                         )
+                                .with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         objectMapper.writeValueAsString(request)
@@ -339,6 +344,7 @@ class MessageControllerTest {
                                 "/api/messages/{messageId}",
                                 messageId
                         )
+                                .with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         objectMapper.writeValueAsString(request)
@@ -386,6 +392,7 @@ class MessageControllerTest {
                                 "/api/messages/{messageId}",
                                 messageId
                         )
+                                .with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         objectMapper.writeValueAsString(request)
@@ -428,6 +435,7 @@ class MessageControllerTest {
                                 "/api/messages/{messageId}",
                                 "invalid-message-id"
                         )
+                                .with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         objectMapper.writeValueAsString(request)

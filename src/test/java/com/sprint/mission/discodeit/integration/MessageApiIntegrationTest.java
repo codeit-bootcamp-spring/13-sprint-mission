@@ -19,6 +19,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -38,6 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
+@WithMockUser(roles = "USER")
 class MessageApiIntegrationTest {
 
     @Autowired
@@ -88,6 +91,7 @@ class MessageApiIntegrationTest {
         mockMvc.perform(
                         multipart("/api/messages")
                                 .file(requestPart)
+                                .with(csrf())
                 )
                 .andExpect(status().isCreated())
                 .andExpect(
@@ -170,6 +174,7 @@ class MessageApiIntegrationTest {
                                 "/api/messages/{messageId}",
                                 messageId
                         )
+                                .with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         objectMapper.writeValueAsString(request)
@@ -230,6 +235,7 @@ class MessageApiIntegrationTest {
                                 "/api/messages/{messageId}",
                                 messageId
                         )
+                                .with(csrf())
                 )
                 .andExpect(status().isNoContent());
 
@@ -351,7 +357,8 @@ class MessageApiIntegrationTest {
         mockMvc.perform(
                         multipart("/api/messages")
                                 .file(requestPart)
-                )
+                                .with(csrf())
+                        )
                 .andExpect(status().isBadRequest())
                 .andExpect(
                         jsonPath("$.code")
@@ -390,6 +397,7 @@ class MessageApiIntegrationTest {
                                 "/api/messages/{messageId}",
                                 unknownMessageId
                         )
+                                .with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         objectMapper.writeValueAsString(request)
@@ -440,6 +448,7 @@ class MessageApiIntegrationTest {
         mockMvc.perform(
                         multipart("/api/messages")
                                 .file(requestPart)
+                                .with(csrf())
                 )
                 .andExpect(status().isNotFound())
                 .andExpect(
@@ -511,6 +520,7 @@ class MessageApiIntegrationTest {
         MvcResult result = mockMvc.perform(
                         multipart("/api/messages")
                                 .file(requestPart)
+                                .with(csrf())
                 )
                 .andExpect(status().isCreated())
                 .andReturn();
