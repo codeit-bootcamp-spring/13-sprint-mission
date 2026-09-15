@@ -20,21 +20,5 @@ public class BasicAuthService implements AuthService {
   private final UserRepository userRepository;
   private final UserMapper userMapper;
 
-  @Override
-  @Transactional
-  public UserDto login(String username, String password) { //validation으로 유효성 검증 완.
-    log.info("로그인 요청 - username: {}", username);
-
-    User user = userRepository.findByUserName(username)
-        .orElseThrow(() -> new InvalidCredentialsException(username));
-
-    if (!user.getPassword().equals(password)) {
-      throw new InvalidCredentialsException(username);
-    }
-
-    user.getUserStatus().updateLastActiveAt(Instant.now());
-
-    log.info("로그인 성공 - username: {}", username);
-    return userMapper.toDto(user);
-  }
+ 
 }
