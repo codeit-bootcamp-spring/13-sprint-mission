@@ -11,11 +11,13 @@ import com.sprint.mission.discodeit.exception.channel.PrivateChannelUpdateExcept
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,9 +34,11 @@ public class BasicChannelService implements ChannelService {
     private final ReadStatusRepository readStatusRepository;
     private final UserRepository userRepository;
     private final ChannelMapper channelMapper;
+    private final MessageRepository messageRepository;
 
     //PUBLIC 채널 생성
     @Override
+    @PreAuthorize("hasRole('CHANNEL_MANAGER')")
     public ChannelDto createPublicChannel(PublicChannelCommand command) {
         if (channelRepository.existsByName(command.name())){
             log.warn("채널 생성 실패 - 중복된 채널명 : {}", command.name());
@@ -100,6 +104,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
+    @PreAuthorize("hasRole('CHANNEL_MANAGER')")
     public ChannelDto updateChannel(UUID ChannelId, ChannelUpdateCommand command) {
         Channel channel = channelRepository.findById(ChannelId)
                 .orElseThrow(() -> ChannelNotFoundException.withId(ChannelId));
@@ -118,9 +123,13 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
+    @PreAuthorize("hasRole('CHANNEL_MANAGER')")
     public void deleteChannel(UUID ChannelId) {
         Channel channel = channelRepository.findById(ChannelId)
                 .orElseThrow(() -> ChannelNotFoundException.withId(ChannelId));
+
+        messageRepository.deleteByChannelId((channel.getId()));
+        readStatusRepository.deleteByChannelId(channel.getId());
 
         channelRepository.deleteById(channel.getId());
         log.info("채널 삭제 완료 - 채널id: {}, 채널명: {}", channel.getId(), channel.getName());
