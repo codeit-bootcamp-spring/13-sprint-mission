@@ -7,7 +7,6 @@ import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.exception.GlobalExceptionHandler;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.UserStatusService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -41,9 +40,6 @@ public class UserControllerTest {
 
     @MockitoBean
     private UserService userService;
-
-    @MockitoBean
-    private UserStatusService userStatusService;
 
     @Test
     @DisplayName("사용자 생성에 성공하면 201과 생성된 사용자를 반환한다.")
@@ -149,10 +145,7 @@ public class UserControllerTest {
         then(userService)
                 .shouldHaveNoInteractions();
 
-        then(userStatusService)
-                .shouldHaveNoInteractions();
     }
-
     @Test
     @DisplayName("이메일이 공백이면 400을 반환한다")
     void create_fail_emailBlank() throws Exception {
@@ -181,8 +174,6 @@ public class UserControllerTest {
         then(userService)
                 .shouldHaveNoInteractions();
 
-        then(userStatusService)
-                .shouldHaveNoInteractions();
     }
 
     @Test
@@ -213,8 +204,6 @@ public class UserControllerTest {
         then(userService)
                 .shouldHaveNoInteractions();
 
-        then(userStatusService)
-                .shouldHaveNoInteractions();
     }
 
     @Test
@@ -243,9 +232,6 @@ public class UserControllerTest {
                 );
 
         then(userService)
-                .shouldHaveNoInteractions();
-
-        then(userStatusService)
                 .shouldHaveNoInteractions();
     }
 

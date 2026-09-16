@@ -22,7 +22,6 @@ import java.util.*;
 public class UserController {
 
     private final UserService userService;
-    private final UserStatusService userStatusService;
 
    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserDto> create(
@@ -75,14 +74,6 @@ public class UserController {
         return ResponseEntity.ok(dto);
     }
 
-    @PatchMapping(value = "/{userId}/status")
-    public ResponseEntity<UserStatusDto> updateStatus(
-            @PathVariable UUID userId,
-            @Valid @RequestBody UpdateUserStatusRequest request
-    ) {
-        UserStatusDto statusDto = userStatusService.updateByUserId(userId, request.toCommand());
-        return ResponseEntity.ok(statusDto);
-    }
 }
 
 

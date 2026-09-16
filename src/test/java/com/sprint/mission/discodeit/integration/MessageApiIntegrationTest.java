@@ -61,6 +61,7 @@ class MessageApiIntegrationTest {
     @Autowired
     private EntityManager entityManager;
 
+
     @Test
     @DisplayName("메시지를 생성하면 DB에 저장되고 201을 반환한다")
     void createMessage_success() throws Exception {

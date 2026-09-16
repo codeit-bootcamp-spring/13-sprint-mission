@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.command.CreateMessageCommand;
 import com.sprint.mission.discodeit.dto.command.UpdateMessageCommand;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
@@ -11,10 +12,12 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.service.AuthService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +38,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
@@ -64,6 +68,12 @@ public class BasicMessageServiceTest {
     @Mock
     private BinaryContentRepository binaryContentRepository;
 
+    @Mock
+    private UserMapper userMapper;
+
+    @Mock
+    private AuthService authService;
+
     @Test
     @DisplayName("메시지 생성 성공")
     void create_success() {
@@ -88,6 +98,7 @@ public class BasicMessageServiceTest {
         );
 
         MessageDto expected = mock(MessageDto.class);
+        UserDto authorDto = mock(UserDto.class);
 
         given(channelRepository.findById(channelId))
                 .willReturn(Optional.of(channel));
@@ -98,8 +109,13 @@ public class BasicMessageServiceTest {
         given(messageRepository.save(any(Message.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
 
-        given(messageMapper.toDto(any(Message.class)))
-                .willReturn(expected);
+        given(authService.isOnline(author.getId()))
+                .willReturn(true);
+
+        given(userMapper.toDto(author, true))
+                .willReturn(authorDto);
+        given(messageMapper.toDto(any(Message.class), eq(authorDto)))
+        .willReturn(expected);
 
         // when
         MessageDto result =
@@ -138,9 +154,15 @@ public class BasicMessageServiceTest {
         assertThat(savedMessage.getAttachments())
                 .isEmpty();
 
+        then(authService)
+                .should()
+                .isOnline(author.getId());
+        then(userMapper)
+                .should()
+                .toDto(author, true);
         then(messageMapper)
                 .should()
-                .toDto(savedMessage);
+                .toDto(savedMessage, authorDto);
     }
 
     @Test
@@ -205,11 +227,16 @@ public class BasicMessageServiceTest {
                 new UpdateMessageCommand("반갑습니다");
 
         MessageDto expected = mock(MessageDto.class);
+        UserDto authorDto = mock(UserDto.class);
 
         given(messageRepository.findById(messageId))
                 .willReturn(Optional.of(message));
 
-        given(messageMapper.toDto(message))
+        given(authService.isOnline(author.getId()))
+                .willReturn(true);
+        given(userMapper.toDto(author, true))
+                .willReturn(authorDto);
+        given(messageMapper.toDto(message, authorDto))
                 .willReturn(expected);
 
         // when
@@ -226,9 +253,15 @@ public class BasicMessageServiceTest {
                 .should()
                 .findById(messageId);
 
+        then(authService)
+                .should()
+                .isOnline(author.getId());
+        then(userMapper)
+                .should()
+                .toDto(author, true);
         then(messageMapper)
                 .should()
-                .toDto(message);
+                .toDto(message, authorDto);
     }
 
     @Test
@@ -346,6 +379,7 @@ public class BasicMessageServiceTest {
 
         MessageDto firstDto = mock(MessageDto.class);
         MessageDto secondDto = mock(MessageDto.class);
+        UserDto authorDto = mock(UserDto.class);
 
         Pageable pageable = PageRequest.of(0, 50);
 
@@ -360,10 +394,15 @@ public class BasicMessageServiceTest {
                 pageable
         )).willReturn(messageSlice);
 
-        given(messageMapper.toDto(firstMessage))
-                .willReturn(firstDto);
+        given(authService.isOnline(author.getId()))
+                .willReturn(true);
 
-        given(messageMapper.toDto(secondMessage))
+        given(userMapper.toDto(author, true))
+                .willReturn(authorDto);
+
+        given(messageMapper.toDto(firstMessage, authorDto))
+                .willReturn(firstDto);
+        given(messageMapper.toDto(secondMessage, authorDto))
                 .willReturn(secondDto);
 
         // when
