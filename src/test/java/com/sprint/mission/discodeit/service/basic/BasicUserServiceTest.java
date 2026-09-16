@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.any;
 
 import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.user.DuplicateUsernameException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -60,7 +61,7 @@ class BasicUserServiceTest {
     given(userRepository.findByUserName(username)).willReturn(Optional.empty());
     given(userRepository.findByEmail(email)).willReturn(Optional.empty());
     given(userMapper.toDto(org.mockito.ArgumentMatchers.any(User.class)))
-        .willReturn(new UserDto(UUID.randomUUID(), username, email, null, false));
+        .willReturn(new UserDto(UUID.randomUUID(), username, email, null, false, Role.USER));
 
     // when
     UserDto result = basicUserService.create(username, email, password, null);
@@ -82,7 +83,7 @@ class BasicUserServiceTest {
     String email = "test@example.com";
 
     given(userRepository.findByUserName(username))
-        .willReturn(Optional.of(new User(username, "pw", email)));
+        .willReturn(Optional.of(new User(username, "pw", email, Role.USER)));
 
     // when & then
     assertThatThrownBy(() ->
@@ -97,12 +98,12 @@ class BasicUserServiceTest {
   void update_success() {
     // given
     UUID userId = UUID.randomUUID();
-    User existingUser = new User("oldName", "oldPw", "old@example.com");
+    User existingUser = new User("oldName", "oldPw", "old@example.com", Role.USER);
 
     given(passwordEncoder.encode("newPw1234!")).willReturn("encodedPassword123");
     given(userRepository.findById(userId)).willReturn(Optional.of(existingUser));
     given(userMapper.toDto(existingUser))
-        .willReturn(new UserDto(userId, "newName", "new@example.com", null, false));
+        .willReturn(new UserDto(userId, "newName", "new@example.com", null, false, Role.USER));
 
     // when
     UserDto result = basicUserService.update(userId, "newName", "new@example.com", "newPw1234!",
@@ -132,11 +133,11 @@ class BasicUserServiceTest {
   void update_success_withNullPassword() {
     // given
     UUID userId = UUID.randomUUID();
-    User existingUser = new User("oldName", "oldPw", "old@example.com");
+    User existingUser = new User("oldName", "oldPw", "old@example.com", Role.USER);
 
     given(userRepository.findById(userId)).willReturn(Optional.of(existingUser));
     given(userMapper.toDto(existingUser))
-        .willReturn(new UserDto(userId, "newName", "new@example.com", null, false));
+        .willReturn(new UserDto(userId, "newName", "new@example.com", null, false, Role.USER));
 
     // when
     UserDto result = basicUserService.update(userId, "newName", "new@example.com", null, null);
@@ -151,7 +152,7 @@ class BasicUserServiceTest {
   void delete_success() {
     // given
     UUID userId = UUID.randomUUID();
-    User existingUser = new User("name", "pw", "email@example.com");
+    User existingUser = new User("name", "pw", "email@example.com", Role.USER);
 
     given(userRepository.findById(userId)).willReturn(Optional.of(existingUser));
 

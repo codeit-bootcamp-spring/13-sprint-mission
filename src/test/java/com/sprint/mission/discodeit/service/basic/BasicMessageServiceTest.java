@@ -14,6 +14,7 @@ import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
@@ -62,7 +63,7 @@ class BasicMessageServiceTest {
     // given
     UUID authorId = UUID.randomUUID();
     UUID channelId = UUID.randomUUID();
-    User author = new User("writer", "pw", "writer@example.com");
+    User author = new User("writer", "pw", "writer@example.com", Role.USER);
     Channel channel = new Channel(ChannelType.PUBLIC, "공지", "설명");
     MessageCreateRequest request = new MessageCreateRequest("안녕하세요", channelId, authorId,
         List.of());
@@ -90,7 +91,7 @@ class BasicMessageServiceTest {
     // given
     UUID authorId = UUID.randomUUID();
     UUID channelId = UUID.randomUUID();
-    User author = new User("writer", "pw", "writer@example.com");
+    User author = new User("writer", "pw", "writer@example.com", Role.USER);
     MessageCreateRequest request = new MessageCreateRequest("안녕하세요", channelId, authorId,
         List.of());
 
@@ -107,7 +108,7 @@ class BasicMessageServiceTest {
   void update_success() {
     // given
     UUID messageId = UUID.randomUUID();
-    User author = new User("writer", "pw", "writer@example.com");
+    User author = new User("writer", "pw", "writer@example.com", Role.USER);
     Channel channel = new Channel(ChannelType.PUBLIC, "공지", "설명");
     Message message = new Message("기존내용", author, channel);
     MessageUpdateRequest request = new MessageUpdateRequest("수정된내용");
@@ -142,7 +143,7 @@ class BasicMessageServiceTest {
   void delete_success() {
     // given
     UUID messageId = UUID.randomUUID();
-    User author = new User("writer", "pw", "writer@example.com");
+    User author = new User("writer", "pw", "writer@example.com", Role.USER);
     Channel channel = new Channel(ChannelType.PUBLIC, "공지", "설명");
     Message message = new Message("내용", author, channel);
 

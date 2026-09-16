@@ -1,0 +1,1 @@
+TRUNCATE TABLE message_attachments, messages, read_statuses, user_statuses, channels, users, binary_contents CASCADE;

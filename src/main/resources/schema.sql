@@ -17,6 +17,7 @@ CREATE TABLE users
     email      VARCHAR(100) NOT NULL UNIQUE,
     PASSWORD   VARCHAR(60)  NOT NULL,
     profile_id UUID UNIQUE,
+    role       varchar(20)  NOT NULL,
 
     CONSTRAINT fk_profile FOREIGN KEY (profile_id)--제냑조건 이름 fk_profile/
         --users(이 테이)의 profile_id컬럼을 외레키로 지정.

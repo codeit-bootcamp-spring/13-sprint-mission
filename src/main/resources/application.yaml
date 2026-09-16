@@ -21,6 +21,9 @@ spring:
       max-request-size: 10MB
 
 discodeit:
+  admin:
+    email: ${ADMIN_EMAIL}
+    password: ${ADMIN_PASSWORD}
   repository:
     type: file
     file-directory: .discodeit

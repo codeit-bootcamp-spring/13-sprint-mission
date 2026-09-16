@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.user.DuplicateEmailException;
@@ -45,7 +46,7 @@ public class BasicUserService implements UserService {
       throw new DuplicateEmailException(email);
     }
 
-    User user = new User(username, encodedPassword, email);
+    User user = new User(username, encodedPassword, email, Role.USER);
     if (profileId != null) {
       user.updateProfileId(binaryContentRepository.getReferenceById(profileId));
     }

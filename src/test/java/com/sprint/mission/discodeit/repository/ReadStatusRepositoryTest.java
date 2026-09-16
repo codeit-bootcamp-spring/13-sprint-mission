@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import java.time.Instant;
 import java.util.List;
@@ -32,7 +33,7 @@ class ReadStatusRepositoryTest {
   @DisplayName("existsByUser_IdAndChannel_Id 성공 - 존재하면 true를 반환한다")
   void existsByUserIdAndChannelId_success() {
     // given
-    User user = new User("reader", "pw123456789!", "reader@example.com");
+    User user = new User("reader", "pw123456789!", "reader@example.com", Role.USER);
     entityManager.persist(user);
     Channel channel = new Channel(ChannelType.PUBLIC, "공지", "설명");
     entityManager.persist(channel);
@@ -63,7 +64,7 @@ class ReadStatusRepositoryTest {
   @DisplayName("findAllByUser_Id(sort, limit) 성공 - 정렬과 limit이 적용되어 조회된다")
   void findAllByUserIdWithSortAndLimit_success() {
     // given
-    User user = new User("reader2", "pw123456789!", "reader2@example.com");
+    User user = new User("reader2", "pw123456789!", "reader2@example.com", Role.USER);
     entityManager.persist(user);
 
     for (int i = 0; i < 5; i++) {

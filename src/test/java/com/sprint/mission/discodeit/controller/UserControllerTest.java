@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.exception.ErrorCodeStatusMapper;
 import com.sprint.mission.discodeit.exception.user.DuplicateUsernameException;
 import com.sprint.mission.discodeit.service.BinaryContentService;
@@ -48,7 +49,8 @@ class UserControllerTest {
     UserCreateRequest request = new UserCreateRequest("duplicateUser", "test@example.com",
         "password1234!", null);
     UUID userId = UUID.randomUUID();
-    UserDto responseDto = new UserDto(userId, "testuser", "test@example.com", null, false);
+    UserDto responseDto = new UserDto(userId, "testuser", "test@example.com", null, false,
+        Role.USER);
 
     given(userService.create(anyString(), anyString(), anyString(), any()))
         .willReturn(responseDto);
