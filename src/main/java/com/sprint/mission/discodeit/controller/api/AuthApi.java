@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.csrf.CsrfToken;
 
 @Tag(name = "Auth", description = "인증 API")
 public interface AuthApi {
@@ -33,4 +34,13 @@ public interface AuthApi {
   ResponseEntity<UserDto> login(
       @Parameter(description = "로그인 정보") LoginRequest loginRequest
   );
+    @Operation(summary = "CSRF 토큰 발급")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "203", description = "CSRF 토큰 발급 성공 (XSRF-TOKEN 쿠키로 전달)"
+            )
+    })
+    ResponseEntity<Void> getCsrfToken(
+            @Parameter(hidden = true) CsrfToken csrfToken
+    );
 } 
