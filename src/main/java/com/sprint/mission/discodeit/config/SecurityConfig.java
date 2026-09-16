@@ -16,6 +16,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -33,7 +34,8 @@ public class SecurityConfig {
             HttpSecurity http,
             LoginSuccessHandler loginSuccessHandler,
             LoginFailureHandler loginFailureHandler,
-            SessionRegistry sessionRegistry
+            SessionRegistry sessionRegistry,
+            UserDetailsService userDetailsService
     ) throws Exception {
 
         http
@@ -49,7 +51,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionConcurrency(concurrency -> concurrency
                                 .maximumSessions(1)
-                                .maxSessionsPreventsLogin(true)
+                                .maxSessionsPreventsLogin(false)
                                 .sessionRegistry(sessionRegistry)
                         )
                 )
@@ -83,8 +85,19 @@ public class SecurityConfig {
                         .permitAll()
                 )
 
+                .rememberMe(remember -> remember
+                        .userDetailsService((userDetailsService))
+                        .rememberMeParameter("remember-me")
+                        .rememberMeCookieName("remember-me")
+                        .tokenValiditySeconds(7 * 24 * 60 * 60)
+                        .key("discodeit-remember-me-key")
+                )
+
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .deleteCookies("JSESSIONID", "remember-me")
                         .logoutSuccessHandler(
                                 new HttpStatusReturningLogoutSuccessHandler(
                                         HttpStatus.NO_CONTENT
