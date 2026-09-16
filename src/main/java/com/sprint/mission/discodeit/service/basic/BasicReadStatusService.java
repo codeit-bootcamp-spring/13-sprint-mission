@@ -42,18 +42,20 @@ public class BasicReadStatusService implements ReadStatusService {
     UUID channelId = request.channelId();
 
     User user = userRepository.findById(userId)
-        .orElseThrow(() -> UserNotFoundException.withId(userId));
+            .orElseThrow(() -> UserNotFoundException.withId(userId));
     Channel channel = channelRepository.findById(channelId)
-        .orElseThrow(() -> ChannelNotFoundException.withId(channelId));
+            .orElseThrow(() -> ChannelNotFoundException.withId(channelId));
 
-    ReadStatus readStatus = readStatusRepository.findByUserIdAndChannelId(user.getId(), channel.getId())
-        .orElseGet(() -> {
-          Instant lastReadAt = request.lastReadAt();
-          return readStatusRepository.save(new ReadStatus(user, channel, lastReadAt));
-        });
+    readStatusRepository.findByUserIdAndChannelId(user.getId(), channel.getId())
+            .ifPresent(existing -> {
+              throw DuplicateReadStatusException.withUserIdAndChannelId(userId, channelId);
+            });
+
+    Instant lastReadAt = request.lastReadAt();
+    ReadStatus readStatus = readStatusRepository.save(new ReadStatus(user, channel, lastReadAt));
 
     log.info("읽음 상태 생성 완료: id={}, userId={}, channelId={}",
-        readStatus.getId(), userId, channelId);
+            readStatus.getId(), userId, channelId);
     return readStatusMapper.toDto(readStatus);
   }
 
