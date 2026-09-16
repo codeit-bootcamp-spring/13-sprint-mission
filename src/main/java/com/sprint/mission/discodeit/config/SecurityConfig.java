@@ -50,16 +50,16 @@ public class SecurityConfig {
         )
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(
-                "api/auth/csrf-token",
-                "api/auth/login",
-                "api/auth/logout"
+                "/api/auth/csrf-token",
+                "/api/auth/login",
+                "/api/auth/logout"
             ).permitAll()
             .requestMatchers(
                 HttpMethod.POST,
-                "api/users"
+                "/api/users"
             ).permitAll()
             .requestMatchers("/api/**").authenticated()
-            .anyRequest().permitAll()
+            .anyRequest().authenticated()
         )
         .sessionManagement(session -> session
             .sessionConcurrency(concurrency -> concurrency
