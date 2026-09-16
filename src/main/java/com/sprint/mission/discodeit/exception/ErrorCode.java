@@ -34,7 +34,9 @@ public enum ErrorCode {
   // Common
   ENDPOINT_NOT_FOUND(HttpStatus.NOT_FOUND, "C001", "요청한 API를 찾을 수 없습니다."),
   INVALID_REQUEST(HttpStatus.BAD_REQUEST, "C002", "잘못된 요청입니다."),
-  INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C003", "서버 내부 오류가 발생했습니다.");
+  INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C003", "서버 내부 오류가 발생했습니다."),
+  ACCESS_DENIED(HttpStatus.FORBIDDEN, "C004", "접근 권한이 없습니다."),
+  AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "C005", "인증이 필요합니다.");
 
   private final HttpStatus status;
   private final String code;
