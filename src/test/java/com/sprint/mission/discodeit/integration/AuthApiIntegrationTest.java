@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.request.LoginRequest;
@@ -60,7 +61,8 @@ class AuthApiIntegrationTest {
         // When & Then
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
+                .content(requestBody)
+                .with(csrf()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id", notNullValue()))
             .andExpect(jsonPath("$.username", is("loginuser")))
@@ -81,7 +83,8 @@ class AuthApiIntegrationTest {
         // When & Then
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
+                .content(requestBody)
+                .with(csrf()))
             .andExpect(status().isNotFound());
     }
 
@@ -109,7 +112,8 @@ class AuthApiIntegrationTest {
         // When & Then
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
+                .content(requestBody)
+                .with(csrf()))
             .andExpect(status().isUnauthorized());
     }
 
@@ -127,7 +131,8 @@ class AuthApiIntegrationTest {
         // When & Then
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
+                .content(requestBody)
+                .with(csrf()))
             .andExpect(status().isBadRequest());
     }
 } 

@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.data.UserDto;
@@ -74,7 +75,8 @@ class UserApiIntegrationTest {
     mockMvc.perform(multipart("/api/users")
             .file(userCreateRequestPart)
             .file(profilePart)
-            .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+            .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
+            .with(csrf()))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id", notNullValue()))
         .andExpect(jsonPath("$.username", is("testuser")))
@@ -103,7 +105,8 @@ class UserApiIntegrationTest {
     // When & Then
     mockMvc.perform(multipart("/api/users")
             .file(userCreateRequestPart)
-            .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+            .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
+            .with(csrf()))
         .andExpect(status().isBadRequest());
   }
 
@@ -180,7 +183,8 @@ class UserApiIntegrationTest {
             .with(request -> {
               request.setMethod("PATCH");
               return request;
-            }))
+            })
+            .with(csrf()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id", is(userId.toString())))
         .andExpect(jsonPath("$.username", is("updateduser")))
@@ -213,7 +217,8 @@ class UserApiIntegrationTest {
             .with(request -> {
               request.setMethod("PATCH");
               return request;
-            }))
+            })
+            .with(csrf()))
         .andExpect(status().isNotFound());
   }
 
@@ -232,7 +237,8 @@ class UserApiIntegrationTest {
     UUID userId = createdUser.id();
 
     // When & Then
-    mockMvc.perform(delete("/api/users/{userId}", userId))
+    mockMvc.perform(delete("/api/users/{userId}", userId)
+        .with(csrf()))
         .andExpect(status().isNoContent());
 
     // 삭제 확인
@@ -248,7 +254,8 @@ class UserApiIntegrationTest {
     UUID nonExistentUserId = UUID.randomUUID();
 
     // When & Then
-    mockMvc.perform(delete("/api/users/{userId}", nonExistentUserId))
+    mockMvc.perform(delete("/api/users/{userId}", nonExistentUserId)
+        .with(csrf()))
         .andExpect(status().isNotFound());
   }
 
@@ -275,7 +282,8 @@ class UserApiIntegrationTest {
     // When & Then
     mockMvc.perform(patch("/api/users/{userId}/userStatus", userId)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(requestBody))
+            .content(requestBody)
+            .with(csrf()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.lastActiveAt", is(newLastActiveAt.toString())));
   }
@@ -293,7 +301,8 @@ class UserApiIntegrationTest {
     // When & Then
     mockMvc.perform(patch("/api/users/{userId}/userStatus", nonExistentUserId)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(requestBody))
+            .content(requestBody)
+            .with(csrf()))
         .andExpect(status().isNotFound());
   }
 } 
