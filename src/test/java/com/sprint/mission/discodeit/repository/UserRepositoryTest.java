@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -27,7 +28,8 @@ class UserRepositoryTest {
         "testUser",
         "test@test.com",
         "password",
-        null
+        null,
+        Role.USER
     );
 
     userRepository.save(user);
@@ -63,7 +65,8 @@ class UserRepositoryTest {
         "testUser",
         "test@test.com",
         "password",
-        null
+        null,
+        Role.USER
     );
 
     userRepository.save(user);

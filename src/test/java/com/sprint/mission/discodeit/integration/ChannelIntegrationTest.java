@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.integration;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -49,6 +51,8 @@ class ChannelIntegrationTest {
     // when & then
     mockMvc.perform(
             post("/api/channels/public")
+                .with(csrf())
+                .with(user("manager").roles("CHANNEL_MANAGER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody)
         )
@@ -78,6 +82,8 @@ class ChannelIntegrationTest {
     // when & then
     mockMvc.perform(
             patch("/api/channels/{channelId}", channelId)
+                .with(csrf())
+                .with(user("manager").roles("CHANNEL_MANAGER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody)
         )
@@ -105,12 +111,15 @@ class ChannelIntegrationTest {
     // when
     mockMvc.perform(
             delete("/api/channels/{channelId}", channelId)
+                .with(csrf())
+                .with(user("manager").roles("CHANNEL_MANAGER"))
         )
         .andExpect(status().isNoContent());
 
     // then
     mockMvc.perform(
             get("/api/channels/{channelId}", channelId)
+                .with(user("user").roles("USER"))
         )
         .andExpect(status().isNotFound())
         .andExpect(
@@ -133,6 +142,8 @@ class ChannelIntegrationTest {
 
     MvcResult result = mockMvc.perform(
             post("/api/channels/public")
+                .with(csrf())
+                .with(user("manager").roles("CHANNEL_MANAGER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody)
         )
