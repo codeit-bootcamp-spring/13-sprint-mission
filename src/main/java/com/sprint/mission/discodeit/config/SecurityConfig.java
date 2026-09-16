@@ -50,6 +50,13 @@ public class SecurityConfig {
         )
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(
+                "/",
+                "/index.html",
+                "/assets/**",
+                "/favicon.ico",
+                "/default-avatar.png"
+            ).permitAll()
+            .requestMatchers(
                 "/api/auth/csrf-token",
                 "/api/auth/login",
                 "/api/auth/logout"
