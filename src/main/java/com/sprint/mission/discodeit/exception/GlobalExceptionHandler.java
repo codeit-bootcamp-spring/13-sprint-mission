@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -58,6 +59,23 @@ public class GlobalExceptionHandler {
         Map<String, Object> details = new HashMap<>();
         details.put("parameter", ex.getParameterName());
         details.put("message", "필수 요청 파라미터가 누락되었습니다.");
+
+        ErrorResponse errorResponse = ErrorResponse.of(
+                errorCode,
+                details,
+                ex.getClass().getSimpleName()
+        );
+
+        return ResponseEntity
+                .status(errorCode.getHttpStatus())
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex) {
+
+        ErrorCode errorCode = ErrorCode.ACCESS_DENIED;
+        Map<String, Object> details = Map.of();
 
         ErrorResponse errorResponse = ErrorResponse.of(
                 errorCode,

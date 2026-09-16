@@ -1,10 +1,7 @@
 package com.sprint.mission.discodeit.repository;
 
 import com.sprint.mission.discodeit.config.JpaAuditingConfig;
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.ChannelType;
-import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.entity.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -48,7 +45,8 @@ class MessageRepositoryTest {
                     "user1",
                     "user1@test.com",
                     "password1",
-                    null
+                    null,
+                    Role.USER
             );
             userRepository.saveAndFlush(user);
 
@@ -156,13 +154,15 @@ class MessageRepositoryTest {
                     "user1",
                     "user1@test.com",
                     "password1",
-                    null
+                    null,
+                    Role.USER
             );
             User otherUser = new User(
                     "user2",
                     "user2@test.com",
                     "password2",
-                    null
+                    null,
+                    Role.USER
             );
             userRepository.saveAllAndFlush(
                     List.of(
@@ -232,7 +232,8 @@ class MessageRepositoryTest {
                     "user1",
                     "user1@test.com",
                     "password1",
-                    null
+                    null,
+                    Role.USER
             );
             userRepository.saveAndFlush(user);
 

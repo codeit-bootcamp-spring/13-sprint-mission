@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -118,6 +119,7 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
+    @PreAuthorize("@messageSecurity.isAuthor(#messageId, authentication.principal.userDto.id)")
     @Transactional
     public MessageDto updateMessage(UUID messageId, MessageUpdateRequest request) {
         log.debug("메시지 수정 시작");
@@ -140,6 +142,7 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
+    @PreAuthorize("@messageSecurity.isAuthor(#messageId, authentication.principal.userDto.id)")
     @Transactional
     public void deleteMessage(UUID messageId) {
         log.debug("메시지 삭제 시작");
