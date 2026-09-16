@@ -12,14 +12,14 @@ import org.springframework.data.repository.query.Param;
 
 public interface MessageRepository extends JpaRepository<Message, UUID> {
 
-  List<Message> findByChannel_Id(UUID channelId);
+  List<Message> findByChannelId(UUID channelId);
 
-  Slice<Message> findByChannel_Id(
+  Slice<Message> findByChannelId(
       UUID channelId,
       Pageable pageable
   );
 
-  Optional<Message> findTopByChannel_IdOrderByCreatedAtDesc(
+  Optional<Message> findTopByChannelIdOrderByCreatedAtDesc(
       UUID channelId
   );
 
@@ -33,5 +33,5 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
       @Param("channelIds") List<UUID> channelIds
   );
 
-  void deleteByChannel_Id(UUID channelId);
+  void deleteByChannelId(UUID channelId);
 }

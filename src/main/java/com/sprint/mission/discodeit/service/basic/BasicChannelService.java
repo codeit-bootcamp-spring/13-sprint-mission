@@ -132,7 +132,7 @@ public class BasicChannelService implements ChannelService {
     );
 
     List<ReadStatus> privateReadStatuses =
-        readStatusRepository.findByUser_IdAndChannel_Type(userId, ChannelType.PRIVATE);
+        readStatusRepository.findByUserIdAndChannelType(userId, ChannelType.PRIVATE);
 
     channels.addAll(privateReadStatuses.stream()
         .map(ReadStatus::getChannel)
@@ -141,7 +141,7 @@ public class BasicChannelService implements ChannelService {
 
     if (channels.isEmpty()) {
       log.debug("사용자별 채널 목록 조회 완료: userId={}, count=0", userId);
-    
+
       return List.of();
     }
 
@@ -150,7 +150,7 @@ public class BasicChannelService implements ChannelService {
         .toList();
 
     Map<UUID, List<User>> participantsByChannelId =
-        readStatusRepository.findByChannel_IdIn(channelIds).stream()
+        readStatusRepository.findByChannelIdIn(channelIds).stream()
             .collect(Collectors.groupingBy(
                 readStatus -> readStatus.getChannel().getId(),
                 Collectors.mapping(
@@ -234,7 +234,7 @@ public class BasicChannelService implements ChannelService {
           return new ChannelNotFoundException(id);
         });
 
-    List<Message> messages = messageRepository.findByChannel_Id(id);
+    List<Message> messages = messageRepository.findByChannelId(id);
 
     log.debug(
         "채널 관련 메시지 삭제 시작: channelId={}, messageCount={}",
@@ -255,7 +255,7 @@ public class BasicChannelService implements ChannelService {
       messageRepository.delete(message);
     }
 
-    readStatusRepository.deleteByChannel_Id(id);
+    readStatusRepository.deleteByChannelId(id);
     channelRepository.delete(channel);
 
     log.info("채널 삭제 완료: channelId={}", id);
@@ -263,13 +263,13 @@ public class BasicChannelService implements ChannelService {
 
   private ChannelDto toDto(Channel channel) {
     List<User> participants =
-        readStatusRepository.findByChannel_Id(channel.getId()).stream()
+        readStatusRepository.findByChannelId(channel.getId()).stream()
             .map(ReadStatus::getUser)
             .toList();
 
     Instant lastMessageAt =
         messageRepository
-            .findTopByChannel_IdOrderByCreatedAtDesc(channel.getId())
+            .findTopByChannelIdOrderByCreatedAtDesc(channel.getId())
             .map(Message::getCreatedAt)
             .orElse(null);
 

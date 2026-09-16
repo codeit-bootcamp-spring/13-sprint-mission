@@ -21,6 +21,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Channel.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.PrivateChannelUnmodifiableException;
@@ -127,7 +128,8 @@ class BasicChannelServiceTest {
         "participant",
         "participant@test.com",
         "password",
-        null
+        null,
+        Role.USER
     );
 
     ChannelDto expected = new ChannelDto(
@@ -255,12 +257,12 @@ class BasicChannelServiceTest {
     given(channel.getId())
         .willReturn(channelId);
 
-    given(readStatusRepository.findByChannel_Id(channelId))
+    given(readStatusRepository.findByChannelId(channelId))
         .willReturn(List.of());
 
     given(
         messageRepository
-            .findTopByChannel_IdOrderByCreatedAtDesc(channelId)
+            .findTopByChannelIdOrderByCreatedAtDesc(channelId)
     ).willReturn(Optional.empty());
 
     given(
@@ -348,7 +350,7 @@ class BasicChannelServiceTest {
         .willReturn(List.of(channel));
 
     given(
-        readStatusRepository.findByUser_IdAndChannel_Type(
+        readStatusRepository.findByUserIdAndChannelType(
             userId,
             ChannelType.PRIVATE
         )
@@ -358,7 +360,7 @@ class BasicChannelServiceTest {
         .willReturn(channelId);
 
     given(
-        readStatusRepository.findByChannel_IdIn(
+        readStatusRepository.findByChannelIdIn(
             List.of(channelId)
         )
     ).willReturn(List.of(readStatus));
@@ -416,7 +418,7 @@ class BasicChannelServiceTest {
         .willReturn(List.of());
 
     given(
-        readStatusRepository.findByUser_IdAndChannel_Type(
+        readStatusRepository.findByUserIdAndChannelType(
             userId,
             ChannelType.PRIVATE
         )
@@ -433,7 +435,7 @@ class BasicChannelServiceTest {
         .findByType(ChannelType.PUBLIC);
 
     verify(readStatusRepository)
-        .findByUser_IdAndChannel_Type(
+        .findByUserIdAndChannelType(
             userId,
             ChannelType.PRIVATE
         );
@@ -458,7 +460,7 @@ class BasicChannelServiceTest {
     given(channelRepository.findById(channelId))
         .willReturn(Optional.of(channel));
 
-    given(messageRepository.findByChannel_Id(channelId))
+    given(messageRepository.findByChannelId(channelId))
         .willReturn(List.of(message));
 
     given(message.getAttachments())
@@ -475,7 +477,7 @@ class BasicChannelServiceTest {
         .findById(channelId);
 
     then(messageRepository).should()
-        .findByChannel_Id(channelId);
+        .findByChannelId(channelId);
 
     InOrder inOrder = inOrder(
         binaryContentStorage,
@@ -495,7 +497,7 @@ class BasicChannelServiceTest {
         .delete(message);
 
     inOrder.verify(readStatusRepository)
-        .deleteByChannel_Id(channelId);
+        .deleteByChannelId(channelId);
 
     inOrder.verify(channelRepository)
         .delete(channel);

@@ -188,7 +188,7 @@ public class BasicMessageService implements MessageService {
     );
 
     Slice<Message> slice =
-        messageRepository.findByChannel_Id(channelId, fixedPageable);
+        messageRepository.findByChannelId(channelId, fixedPageable);
 
     List<MessageDto> messageDtos = slice.getContent().stream()
         .map(messageMapper::toDto)

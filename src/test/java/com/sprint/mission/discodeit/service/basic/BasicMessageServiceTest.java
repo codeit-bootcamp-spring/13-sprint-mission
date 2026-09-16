@@ -18,6 +18,7 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Channel.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
@@ -83,7 +84,8 @@ class BasicMessageServiceTest {
         "testUser",
         "test@test.com",
         "password",
-        null
+        null,
+        Role.USER
     );
 
     Channel channel = new Channel(
@@ -126,7 +128,7 @@ class BasicMessageServiceTest {
         mock(PageResponse.class);
 
     given(
-        messageRepository.findByChannel_Id(
+        messageRepository.findByChannelId(
             eq(channelId),
             any(Pageable.class)
         )
@@ -152,7 +154,7 @@ class BasicMessageServiceTest {
         ArgumentCaptor.forClass(Pageable.class);
 
     then(messageRepository).should()
-        .findByChannel_Id(
+        .findByChannelId(
             eq(channelId),
             pageableCaptor.capture()
         );
@@ -195,7 +197,7 @@ class BasicMessageServiceTest {
         mock(PageResponse.class);
 
     given(
-        messageRepository.findByChannel_Id(
+        messageRepository.findByChannelId(
             eq(channelId),
             any(Pageable.class)
         )
@@ -237,7 +239,8 @@ class BasicMessageServiceTest {
         "testUser",
         "test@test.com",
         "password",
-        null
+        null,
+        Role.USER
     );
 
     Channel channel = new Channel(
@@ -329,7 +332,8 @@ class BasicMessageServiceTest {
         "testUser",
         "test@test.com",
         "password",
-        null
+        null,
+        Role.USER
     );
 
     given(userRepository.findById(authorId))
@@ -361,7 +365,8 @@ class BasicMessageServiceTest {
         "testUser",
         "test@test.com",
         "password",
-        null
+        null,
+        Role.USER
     );
 
     Channel channel = new Channel(
@@ -441,7 +446,8 @@ class BasicMessageServiceTest {
         "testUser",
         "test@test.com",
         "password",
-        null
+        null,
+        Role.USER
     );
 
     Channel channel = new Channel(

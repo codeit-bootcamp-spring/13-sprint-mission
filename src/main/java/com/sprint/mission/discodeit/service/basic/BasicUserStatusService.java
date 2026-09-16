@@ -30,7 +30,7 @@ public class BasicUserStatusService implements UserStatusService {
   ) {
     log.debug("사용자 상태 수정 시작: userId={}", userId);
 
-    UserStatus userStatus = userStatusRepository.findByUser_Id(userId)
+    UserStatus userStatus = userStatusRepository.findByUserId(userId)
         .orElseThrow(() -> {
           log.warn(
               "사용자 상태 수정 실패: userId={}의 상태를 찾을 수 없음",
@@ -51,7 +51,7 @@ public class BasicUserStatusService implements UserStatusService {
   public UserStatusDto findByUserId(UUID userId) {
     log.debug("사용자 상태 조회 시작: userId={}", userId);
 
-    UserStatus userStatus = userStatusRepository.findByUser_Id(userId)
+    UserStatus userStatus = userStatusRepository.findByUserId(userId)
         .orElseThrow(() -> {
           log.warn(
               "사용자 상태 조회 실패: userId={}의 상태를 찾을 수 없음",
