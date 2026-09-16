@@ -12,7 +12,6 @@ public enum ErrorCode {
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "사용자를 찾을 수 없습니다."),
   DUPLICATE_USER(HttpStatus.CONFLICT, "U002", "이미 존재하는 사용자입니다."),
   WRONG_PASSWORD(HttpStatus.UNAUTHORIZED, "U003", "아이디 또는 비밀번호가 올바르지 않습니다."),
-  USER_STATUS_NOT_FOUND(HttpStatus.NOT_FOUND, "U004", "사용자 상태를 찾을 수 없습니다."),
 
   // Channel
   CHANNEL_NOT_FOUND(HttpStatus.NOT_FOUND, "CH001", "채널을 찾을 수 없습니다."),
