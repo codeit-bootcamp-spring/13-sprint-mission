@@ -2,9 +2,11 @@ package com.sprint.mission.discodeit.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,6 +17,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
@@ -23,6 +26,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -144,6 +148,7 @@ class UserApiIntegrationTest {
                                     request.setMethod("PATCH");
                                     return request;
                                 })
+                                .with(authenticatedAs(userId))
                                 .with(csrf())
                                 .param("username", "홍감자")
                 )
@@ -187,6 +192,7 @@ class UserApiIntegrationTest {
         // when & then
         mockMvc.perform(
                         delete("/api/users/{userId}", userId)
+                                .with(authenticatedAs(userId))
                                 .with(csrf())
                 )
                 .andExpect(status().isNoContent());
@@ -210,6 +216,7 @@ class UserApiIntegrationTest {
                                 "/api/users/{userId}",
                                 unknownUserId
                         )
+                                .with(authenticatedAs(unknownUserId))
                                 .with(csrf())
                 )
                 .andExpect(status().isNotFound())
@@ -315,6 +322,85 @@ class UserApiIntegrationTest {
         assertThat(
                 userRepository.findByEmail("hong12@test.com")
         ).isEmpty();
+    }
+
+    private RequestPostProcessor authenticatedAs(UUID userId) {
+        UserDto userDto = new UserDto(
+                userId,
+                "test-user",
+                "test-user@test.com",
+                null,
+                true,
+                Role.USER
+        );
+
+        DiscodeitUserDetails userDetails =
+                new DiscodeitUserDetails(
+                        userDto,
+                        "12345"
+                );
+        return user(userDetails);
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 정보는 수정할 수 없다.")
+    void updateUser_fail_notOwner() throws Exception {
+        // given
+        UUID targetUserId = createUserThroughApi(
+                "수정대상",
+        "target@teat.com",
+        "12345"
+        );
+
+        UUID loginUserId = UUID.randomUUID();
+
+        // when & then
+        mockMvc.perform(
+                        multipart(
+                                "/api/users/{userId}",
+                                targetUserId
+                        )
+                        .with(request -> {
+                            request.setMethod("PATCH");
+                            return request;
+                        })
+                        .with(authenticatedAs(loginUserId))
+                        .with(csrf())
+                        .param("username", "권한없는수정")
+                )
+                .andExpect(status().isForbidden());
+
+                User targetUser = userRepository.findById(targetUserId)
+                        .orElseThrow();
+                assertThat(targetUser.getUsername())
+                        .isEqualTo("수정대상");
+    }
+
+    @Test
+    @DisplayName("다른 사용자는 삭제할 수 없다.")
+    void deleteUser_fail_notOwner() throws Exception {
+        // given
+        UUID targetUserId = createUserThroughApi(
+                "삭제대상",
+                "delete_target@test.com",
+                "12345"
+        );
+
+        // when & then
+        mockMvc.perform(
+                delete(
+                        "/api/users/{userId}",
+                        targetUserId
+                )
+                        .with(authenticatedAs(UUID.randomUUID()))
+                        .with(csrf())
+
+                )
+                .andExpect(status().isForbidden());
+
+        assertThat(userRepository.findById(targetUserId))
+                .isPresent();
+
     }
 
     private UUID createUserThroughApi(

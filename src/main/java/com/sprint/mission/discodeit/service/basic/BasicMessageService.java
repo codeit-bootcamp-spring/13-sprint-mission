@@ -1,25 +1,41 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.command.*;
-import com.sprint.mission.discodeit.dto.request.*;
-import com.sprint.mission.discodeit.dto.response.*;
-import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.exception.binarycontent.*;
-import com.sprint.mission.discodeit.exception.channel.*;
-import com.sprint.mission.discodeit.exception.message.*;
-import com.sprint.mission.discodeit.exception.user.*;
-import com.sprint.mission.discodeit.mapper.*;
-import com.sprint.mission.discodeit.repository.*;
-import com.sprint.mission.discodeit.service.*;
-import lombok.*;
-import lombok.extern.slf4j.*;
-import org.springframework.core.io.*;
-import org.springframework.data.domain.*;
-import org.springframework.stereotype.*;
-import org.springframework.transaction.annotation.*;
+import com.sprint.mission.discodeit.dto.command.CreateBinaryContentCommand;
+import com.sprint.mission.discodeit.dto.command.CreateMessageCommand;
+import com.sprint.mission.discodeit.dto.command.UpdateMessageCommand;
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.dto.response.MessageDto;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
+import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import com.sprint.mission.discodeit.mapper.MessageMapper;
+import com.sprint.mission.discodeit.mapper.PageResponseMapper;
+import com.sprint.mission.discodeit.mapper.UserMapper;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
+import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.service.AuthService;
+import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.service.MessageService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.*;
-import java.util.*;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -104,6 +120,7 @@ public class BasicMessageService implements MessageService {
 
     @Override
     @Transactional
+    @PreAuthorize("@messageSecurity.isAuthor(#id, authentication)")
     public MessageDto update(UUID id, UpdateMessageCommand command) {
         if (id == null) {
             throw new IllegalArgumentException("메시지 ID는 필수입니다.");
@@ -126,6 +143,7 @@ public class BasicMessageService implements MessageService {
 
     @Override
     @Transactional
+    @PreAuthorize("@messageSecurity.isAuthor(#id, authentication)")
     public void delete(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("메세지 ID는 필수입니다.");

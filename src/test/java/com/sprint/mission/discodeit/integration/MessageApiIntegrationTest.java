@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.request.CreateMessageRequest;
 import com.sprint.mission.discodeit.dto.request.UpdateMessageRequest;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
@@ -11,6 +12,7 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,12 +25,14 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -60,7 +64,6 @@ class MessageApiIntegrationTest {
 
     @Autowired
     private EntityManager entityManager;
-
 
     @Test
     @DisplayName("메시지를 생성하면 DB에 저장되고 201을 반환한다")
@@ -175,6 +178,7 @@ class MessageApiIntegrationTest {
                                 "/api/messages/{messageId}",
                                 messageId
                         )
+                                .with(authenticatedAs(author))
                                 .with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
@@ -236,6 +240,7 @@ class MessageApiIntegrationTest {
                                 "/api/messages/{messageId}",
                                 messageId
                         )
+                                .with(authenticatedAs(author))
                                 .with(csrf())
                 )
                 .andExpect(status().isNoContent());
@@ -359,7 +364,7 @@ class MessageApiIntegrationTest {
                         multipart("/api/messages")
                                 .file(requestPart)
                                 .with(csrf())
-                        )
+                )
                 .andExpect(status().isBadRequest())
                 .andExpect(
                         jsonPath("$.code")
@@ -389,6 +394,11 @@ class MessageApiIntegrationTest {
                         "반갑습니다."
                 );
 
+        User loginUser = saveUser(
+                "없는메시지검증",
+                "missing-message@test.com"
+        );
+
         long countBefore =
                 messageRepository.count();
 
@@ -398,6 +408,7 @@ class MessageApiIntegrationTest {
                                 "/api/messages/{messageId}",
                                 unknownMessageId
                         )
+                                .with(authenticatedAs(loginUser))
                                 .with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
@@ -468,6 +479,103 @@ class MessageApiIntegrationTest {
                 .isEqualTo(countBefore);
     }
 
+    @Test
+    @DisplayName("다른 작성자의 메세저는 수정할 수 없다.")
+    void updateMessage_fail_notAuthor() throws Exception {
+        // given
+        User author = saveUser(
+                "메서지작성자",
+                "message_author@test.com"
+        );
+
+        User otherUser = saveUser(
+                "다른사용자",
+                "other-user@test.com"
+        );
+
+        Channel channel = saveChannel("권한테스트 채널");
+
+        UUID messageId = createMessageThroughApi(
+                author.getId(),
+                channel.getId(),
+                "원래 메시지"
+        );
+
+        UpdateMessageRequest request = new UpdateMessageRequest("권한 없는 수정");
+
+        // when & then
+        mockMvc.perform(
+                    patch("/api/messages/{messageId}", messageId)
+                            .with(authenticatedAs(otherUser))
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request))
+                )
+                .andExpect(status().isForbidden());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow();
+
+        assertThat(message.getContent())
+                .isEqualTo("원래 메시지");
+    }
+
+    @Test
+    @DisplayName("다른 작성자이 메세지는 삭제할 수 없다.")
+    void deleteMessage_fail_notAuthor() throws Exception {
+        // given
+        User author = saveUser(
+                "삭제메세지작성자",
+                "delete-author@test.com"
+        );
+
+        User oherUser = saveUser(
+                "삭제시도사용자",
+                "delete-other@test.com"
+        );
+
+        Channel channel = saveChannel("메세지 삭제 권한 채널");
+
+        UUID messageId = createMessageThroughApi(
+               author.getId(), channel.getId(), "삭제되면 안 되는 메세지");
+
+        // when & then
+        mockMvc.perform(
+                    delete("/api/messages/{messageId}", messageId)
+                            .with(authenticatedAs(oherUser))
+                            .with(csrf())
+                )
+                .andExpect(status().isForbidden());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(messageRepository.findById(messageId))
+                .isPresent();
+    }
+
+    private RequestPostProcessor authenticatedAs(User userEntity) {
+        UserDto userDto = new UserDto(
+                userEntity.getId(),
+                userEntity.getUsername(),
+                userEntity.getEmail(),
+                null,
+                true,
+                userEntity.getRole()
+        );
+
+        DiscodeitUserDetails userDetails =
+                new DiscodeitUserDetails(
+                        userDto,
+                        userEntity.getPassword()
+                );
+
+        return user(userDetails);
+    }
+
     private User saveUser(
             String username,
             String email
@@ -480,6 +588,7 @@ class MessageApiIntegrationTest {
 
         return userRepository.saveAndFlush(user);
     }
+
     private Channel saveChannel(
             String name
     ) {
@@ -528,6 +637,7 @@ class MessageApiIntegrationTest {
 
         return extractId(result);
     }
+
     private UUID extractId(
             MvcResult result
     ) throws Exception {
