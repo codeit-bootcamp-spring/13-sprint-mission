@@ -13,12 +13,17 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.ChannelService;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +39,7 @@ public class BasicChannelService implements ChannelService {
   private final UserRepository userRepository;
 
   @Override
+  @PreAuthorize("hasRole('CHANNEL_MANAGER')")
   @Transactional
   public ChannelDto createPublic(String name, String description) {
     log.info("PUBLIC 채널 생성 요청 - name: {}", name);
@@ -98,6 +104,7 @@ public class BasicChannelService implements ChannelService {
   }
 
   @Override
+  @PreAuthorize("hasRole('CHANNEL_MANAGER')")
   @Transactional
   public ChannelDto update(UUID channelId, String newName, String newDescription) {
     log.info("채널 수정 요청 - channelId: {}", channelId);
@@ -117,10 +124,29 @@ public class BasicChannelService implements ChannelService {
   @Override
   @Transactional
   public void delete(UUID channelId) {
-    log.info("채널 삭제 요청 - channelId: {}", channelId)
-    ;
-    if (!channelRepository.existsById(channelId)) {
-      throw new ChannelNotFoundException(channelId);
+    log.info("채널 삭제 요청 - channelId: {}", channelId);
+
+    Channel channel = channelRepository.findById(channelId)
+        .orElseThrow(() -> new ChannelNotFoundException(channelId));
+
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    DiscodeitUserDetails userDetails = (DiscodeitUserDetails) authentication.getPrincipal();
+    UUID currentUserId = userDetails.getUserDto().id();
+
+    if (channel.getType() == ChannelType.PUBLIC) {
+      boolean isManager = authentication.getAuthorities().stream()
+          .anyMatch(a -> a.getAuthority()
+              .equals("ROLE_CHANNEL_MANAGER") || a.getAuthority().equals("ROLE_ADMIN"));
+
+      if (!isManager) {
+        throw new AccessDeniedException("채널 관리자만 삭제 할 수 있습니다.");
+      }
+    } else {
+      boolean isParticipant = readStatusRepository.existsByUser_IdAndChannel_Id(currentUserId,
+          channelId);
+      if (!isParticipant) {
+        throw new AccessDeniedException("본인이 참여한 채널만 삭제할 수 있습니다.");
+      }
     }
     channelRepository.deleteById(channelId);
 
