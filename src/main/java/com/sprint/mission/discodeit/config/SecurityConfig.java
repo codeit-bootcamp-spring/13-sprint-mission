@@ -77,6 +77,9 @@ public class SecurityConfig {
             .successHandler(loginSuccessHandler)
             .failureHandler(loginFailureHandler)
         )
+        .rememberMe(remember -> remember
+            .alwaysRemember(true)
+        )
         .logout(logout -> logout
             .logoutUrl("/api/auth/logout")
             .logoutSuccessHandler(
