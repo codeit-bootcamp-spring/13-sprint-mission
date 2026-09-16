@@ -41,7 +41,9 @@ public class AuthController {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    return ResponseEntity.ok(userDetails.getUserDto());
+    UserDto response = userService.findById(userDetails.getUserDto().id());
+
+    return ResponseEntity.ok(response);
   }
 
   @PutMapping("/role")
