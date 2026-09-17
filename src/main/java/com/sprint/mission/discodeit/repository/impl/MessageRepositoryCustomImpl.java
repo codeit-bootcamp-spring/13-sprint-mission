@@ -35,7 +35,6 @@ public class MessageRepositoryCustomImpl implements MessageRepositoryCustom {
                 .join(message.channel, channel).fetchJoin()
                 .leftJoin(message.author, user).fetchJoin()
                 .leftJoin(user.profile).fetchJoin()
-                .leftJoin(user.userStatus).fetchJoin()
                 .where(
                         channel.id.eq(condition.channelId()),
                         filterByCursor(condition)

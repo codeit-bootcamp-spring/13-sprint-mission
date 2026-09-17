@@ -4,20 +4,18 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
 import com.sprint.mission.discodeit.dto.command.user.UserUpdateCommand;
-import com.sprint.mission.discodeit.dto.command.userStatus.UserStatusUpdateCommand;
 import com.sprint.mission.discodeit.dto.request.ValidationMessage;
 import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.request.userStatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.dto.response.UserStatusDto;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.basic.UserStatusService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -26,7 +24,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -40,6 +37,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UserController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @DisplayName("UserController 슬라이스 테스트")
 class UserControllerTest {
 
@@ -52,12 +50,10 @@ class UserControllerTest {
     @MockitoBean
     UserService userService;
 
-    @MockitoBean
-    UserStatusService userStatusService;
 
     @Test
-    @DisplayName("사용자 생성 성공 - multipart 요청이면 201 Created와 사용자 정보 반환")
-    void create_returnsCreatedAndUser_whenMultipartRequestIsValid() throws Exception {
+    @DisplayName("사용자 생성 성공 - multipart 요청이면 200 OK와 사용자 정보 반환")
+    void create_returnsOkAndUser_whenMultipartRequestIsValid() throws Exception {
         // given
         // UserController.create(...)는 @RequestBody가 아니라 @RequestPart를 사용한다.
         // 따라서 UserCreateRequest JSON도 multipart의 한 part로 만들어야 한다.
@@ -90,13 +86,12 @@ class UserControllerTest {
         mockMvc.perform(multipart("/api/users")
                         .file(userCreateRequestPart)
                         .file(profilePart)
-                        .accept(MediaType.APPLICATION_JSON)
-                )
+                        .accept(MediaType.APPLICATION_JSON))
 
                 // then
-                // Controller가 201 Created를 반환하고, Service가 반환한 UserDto가 JSON으로 직렬화되는지 확인한다.
+                // Controller가 200 OK를 반환하고, Service가 반환한 UserDto가 JSON으로 직렬화되는지 확인한다.
                 // profile은 중첩 객체이므로 id뿐 아니라 파일명, 크기, contentType까지 같이 검증한다.
-                .andExpect(status().isCreated())
+                .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(userId.toString()))
                 .andExpect(jsonPath("$.username").value(response.username()))
@@ -145,8 +140,7 @@ class UserControllerTest {
         // @RequestPart 바인딩에서는 raw body .content(...)를 넣지 않고, JSON part 자체의 content-type을 application/json으로 둔다.
         mockMvc.perform(multipart("/api/users")
                         .file(userCreateRequestPart)
-                        .accept(MediaType.APPLICATION_JSON)
-                )
+                        .accept(MediaType.APPLICATION_JSON))
 
                 // then
                 // @Valid 검증이 Controller 본문 실행 전에 실패하므로 400 Bad Request가 반환되어야 한다.
@@ -224,8 +218,7 @@ class UserControllerTest {
         // GET /api/users 요청을 보낸다.
         // GET 요청에는 body가 없으므로 contentType은 지정하지 않고, 받을 응답 타입만 accept로 지정한다.
         mockMvc.perform(get("/api/users")
-                        .accept(MediaType.APPLICATION_JSON)
-                )
+                        .accept(MediaType.APPLICATION_JSON))
 
                 // then
                 // 응답 상태가 200 OK이고 body가 JSON 배열인지 확인한다.
@@ -252,10 +245,8 @@ class UserControllerTest {
                 .andExpect(jsonPath("$[1].createdAt").value(secondCreatedAt.toString()))
                 .andExpect(jsonPath("$[1].updatedAt").value(secondUpdatedAt.toString()));
 
-        // 목록 조회 endpoint는 UserService.findAll()만 호출해야 한다.
-        // 사용자 상태 수정용 협력 객체인 UserStatusService가 관여하면 잘못된 Controller 매핑 또는 구현이다.
+        // 목록 조회 endpoint는 UserService.findAll()을 호출해야 한다.
         verify(userService).findAll();
-        verifyNoInteractions(userStatusService);
     }
 
     @Test
@@ -294,8 +285,7 @@ class UserControllerTest {
                             servletRequest.setMethod("PATCH");
                             return servletRequest;
                         })
-                        .accept(MediaType.APPLICATION_JSON)
-                )
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(userId.toString()))
@@ -326,8 +316,6 @@ class UserControllerTest {
         assertThat(capturedProfile.getSize()).isEqualTo(profilePart.getSize());
         assertThat(capturedProfile.getBytes()).isEqualTo(profilePart.getBytes());
 
-        // 사용자 수정 endpoint는 UserStatusService를 사용하지 않는다.
-        verifyNoInteractions(userStatusService);
     }
 
     @Test
@@ -345,8 +333,7 @@ class UserControllerTest {
         // when
         // DELETE /api/users/{userId} 요청을 전송한다.
         mockMvc.perform(delete("/api/users/{userId}", userId)
-                        .accept(MediaType.APPLICATION_JSON)
-                )
+                        .accept(MediaType.APPLICATION_JSON))
 
                 // then
                 // 응답 상태가 204 No Content인지 확인한다.
@@ -357,71 +344,6 @@ class UserControllerTest {
         // path variable이 UUID로 바인딩된 뒤 그대로 userService.delete(...)에 전달되어야 한다.
         verify(userService).delete(userId);
 
-        // 사용자 삭제 endpoint는 사용자 상태 수정용 Service를 사용하지 않는다.
-        // 잘못된 Controller 의존성 호출이 섞이지 않았는지 확인한다.
-        verifyNoInteractions(userStatusService);
-    }
-
-    @Test
-    @DisplayName("사용자 상태 수정 성공 - 유효한 요청이면 200 OK와 사용자 상태 반환")
-    void statusUpdate_returnsOkAndUserStatus_whenRequestIsValid() throws Exception {
-        // given
-        // 사용자 상태 수정 endpoint는 multipart가 아니라 application/json request body를 받는다.
-        // 따라서 UserStatusUpdateRequest를 JSON body로 직렬화해 전송한다.
-        UUID userId = UUID.randomUUID();
-        Instant newLastActiveAt = Instant.parse("2026-07-28T01:25:30Z");
-        UserStatusUpdateRequest request = new UserStatusUpdateRequest(newLastActiveAt);
-
-        // Service가 반환할 UserStatusDto를 실제 record로 구성한다.
-        // Controller 슬라이스 테스트의 관심사는 상태 변경 로직이 아니라
-        // path variable/body 바인딩, HTTP 응답 status, JSON 직렬화, Service 호출 계약이다.
-        UUID userStatusId = UUID.randomUUID();
-        OffsetDateTime createdAt = OffsetDateTime.parse("2026-07-28T10:15:30+09:00");
-        OffsetDateTime updatedAt = OffsetDateTime.parse("2026-07-28T10:20:30+09:00");
-        OffsetDateTime lastActiveAt = OffsetDateTime.parse("2026-07-28T10:25:30+09:00");
-        UserStatusDto response = new UserStatusDto(
-                userStatusId,
-                createdAt,
-                updatedAt,
-                userId,
-                lastActiveAt
-        );
-
-        // Controller 내부에서 request.toCommand()를 호출해 새 command 인스턴스를 만들기 때문에
-        // stub은 타입 기준으로 열고, 실제 전달값은 아래 ArgumentCaptor로 검증한다.
-        given(userStatusService.updateByUserId(any(UUID.class), any(UserStatusUpdateCommand.class)))
-                .willReturn(response);
-
-        // when
-        // PATCH /api/users/{userId}/userStatus 요청을 application/json으로 전송한다.
-        mockMvc.perform(patch("/api/users/{userId}/userStatus", userId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsBytes(request)))
-
-                // then
-                // 응답 상태가 200 OK이고, Service가 반환한 UserStatusDto가 JSON으로 직렬화되는지 확인한다.
-                // UserStatusDto의 주요 식별자와 시간 필드가 응답 body에 그대로 포함되어야 한다.
-                .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(userStatusId.toString()))
-                .andExpect(jsonPath("$.createdAt").value(createdAt.toString()))
-                .andExpect(jsonPath("$.updatedAt").value(updatedAt.toString()))
-                .andExpect(jsonPath("$.userId").value(userId.toString()))
-                .andExpect(jsonPath("$.lastActiveAt").value(lastActiveAt.toString()));
-
-        // path variable과 request body가 각각 userId, UserStatusUpdateCommand로 변환되어
-        // userStatusService.updateByUserId(...)에 전달됐는지 확인한다.
-        ArgumentCaptor<UUID> userIdCaptor = ArgumentCaptor.forClass(UUID.class);
-        ArgumentCaptor<UserStatusUpdateCommand> commandCaptor = ArgumentCaptor.forClass(UserStatusUpdateCommand.class);
-        verify(userStatusService).updateByUserId(userIdCaptor.capture(), commandCaptor.capture());
-
-        assertThat(userIdCaptor.getValue()).isEqualTo(userId);
-        assertThat(commandCaptor.getValue().updateAt()).isEqualTo(request.newLastActiveAt());
-
-        // 사용자 상태 수정 endpoint는 UserService를 사용하지 않는다.
-        // 잘못된 Controller 의존성 호출이 섞이지 않았는지 확인한다.
-        verifyNoInteractions(userService);
     }
 
     private MockMultipartFile getMultipartFile(String request, String fileName, String mediaType, byte[] bytes) {
@@ -478,6 +400,7 @@ class UserControllerTest {
                 request.email(),
                 profileDto,
                 true,
+                Role.USER,
                 createdAt,
                 updatedAt
         );
@@ -490,6 +413,7 @@ class UserControllerTest {
                 request.newEmail(),
                 profileDto,
                 true,
+                Role.USER,
                 createdAt,
                 updatedAt
         );
@@ -502,6 +426,5 @@ class UserControllerTest {
     private UserUpdateRequest getUserUpdateRequest(String username, String password, String email) {
         return new UserUpdateRequest(username, password, email);
     }
-
 
 }

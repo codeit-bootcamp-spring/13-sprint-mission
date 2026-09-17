@@ -9,6 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
@@ -32,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(BinaryContentController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @DisplayName("BinaryContentController 슬라이스 테스트")
 class BinaryContentControllerTest {
 
@@ -193,7 +195,6 @@ class BinaryContentControllerTest {
         // when
         // GET /api/binaryContents/{binaryContentId}/download 요청을 전송한다.
         mockMvc.perform(get("/api/binaryContents/{binaryContentId}/download", binaryContentId))
-
                 // then
                 // contentType이 null이어도 다운로드 응답은 성공해야 한다.
                 // Content-Type은 application/octet-stream이고, attachment header와 body는 유지되어야 한다.
@@ -210,4 +211,5 @@ class BinaryContentControllerTest {
 
         assertThat(binaryContentIdCaptor.getValue()).isEqualTo(binaryContentId);
     }
+
 }

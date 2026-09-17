@@ -31,6 +31,6 @@ COPY --from=builder /workspace/build/libs/${PROJECT_NAME}-${PROJECT_VERSION}.jar
 EXPOSE 80
 
 HEALTHCHECK --interval=15s --timeout=3s --start-period=60s --retries=5 \
-  CMD curl -fsS http://localhost/actuator/health || exit 1
+  CMD curl -fsS http://localhost/ || exit 1
 
 ENTRYPOINT ["sh", "-c", "exec java $JVM_OPTS -jar $PROJECT_NAME-$PROJECT_VERSION.jar"]

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -30,6 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ReadStatusController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @DisplayName("ReadStatusController 슬라이스 테스트")
 class ReadStatusControllerTest {
 
@@ -205,8 +207,7 @@ class ReadStatusControllerTest {
         // GET /api/readStatuses?userId={userId} 요청을 전송한다.
         mockMvc.perform(get("/api/readStatuses")
                         .param("userId", userId.toString())
-                        .accept(MediaType.APPLICATION_JSON)
-                )
+                        .accept(MediaType.APPLICATION_JSON))
 
                 // then
                 // 응답 상태가 200 OK이고 body가 JSON 배열인지 확인한다.
@@ -296,4 +297,5 @@ class ReadStatusControllerTest {
         assertThat(readStatusIdArgumentCaptor.getValue()).isEqualTo(readStatusId);
         assertThat(readStatusUpdateCommandArgumentCaptor.getValue().readAt()).isEqualTo(lastReadAt);
     }
+
 }

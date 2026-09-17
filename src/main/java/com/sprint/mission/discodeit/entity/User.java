@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.entity;
 
 import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
+import com.sprint.mission.discodeit.dto.command.user.UserRoleUpdateCommand;
 import com.sprint.mission.discodeit.dto.command.user.UserUpdateCommand;
 import com.sprint.mission.discodeit.entity.base.UpdatableEntity;
 import jakarta.persistence.*;
@@ -16,7 +17,7 @@ import java.util.UUID;
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users")
-@ToString(exclude = {"password", "userStatus", "profile"}, callSuper = true)
+@ToString(exclude = {"password", "profile"}, callSuper = true)
 public class User extends UpdatableEntity {
 
     @Column(unique = true, nullable = false, length = 50)
@@ -32,14 +33,16 @@ public class User extends UpdatableEntity {
     @JoinColumn(name = "profile_id")
     private BinaryContent profile;
 
-    @OneToOne(fetch = FetchType.LAZY, mappedBy = "user")
-    private UserStatus userStatus;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Role role;
 
     public User(UserCreateCommand command, BinaryContent profile) {
         this.username = command.username();
         this.password = command.password();
         this.email = command.email();
         this.profile = profile;
+        this.role = Role.USER;
     }
 
     public void updateInfo(
@@ -73,17 +76,7 @@ public class User extends UpdatableEntity {
         return profile.getId();
     }
 
-    public boolean isOnline() {
-        if (userStatus == null) return false;
-        return userStatus.isOnline();
-    }
-
-    public UUID getStatusId() {
-        if (userStatus == null) return null;
-        return userStatus.getId();
-    }
-
-    public void detachUserStatus() {
-        this.userStatus = null;
+    public void updateRole(UserRoleUpdateCommand command) {
+        this.role = command.newRole();
     }
 }

@@ -3,9 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.aspect.LogAction;
 import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
 import com.sprint.mission.discodeit.dto.command.user.UserUpdateCommand;
-import com.sprint.mission.discodeit.dto.command.userStatus.UserStatusCreateCommand;
 import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.user.UserEmailDuplicatedException;
@@ -17,11 +15,13 @@ import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,10 +32,10 @@ import java.util.UUID;
 public class BasicUserService implements UserService {
     private final UserRepository userRepository;
     private final BinaryContentService binaryContentService;
-    private final UserStatusService userStatusService;
     private final ReadStatusService readStatusService;
     private final MessageService messageService;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @LogAction(value = "사용자 생성")
     @Override
@@ -44,11 +44,9 @@ public class BasicUserService implements UserService {
 
         BinaryContent profile = binaryContentService.create(file).orElse(null);
 
-        User savedUser = userRepository.save(new User(command, profile));
+        User savedUser = userRepository.save(new User(withEncodedPassword(command), profile));
 
-        UserStatusDto userStatusDto = userStatusService.create(savedUser, new UserStatusCreateCommand(Instant.now()));
-
-        return userMapper.toDto(savedUser, userStatusDto.isOnline());
+        return userMapper.toDto(savedUser);
     }
 
     @Transactional(readOnly = true)
@@ -70,6 +68,7 @@ public class BasicUserService implements UserService {
 
     @LogAction(value = "사용자 수정")
     @Override
+    @PreAuthorize("#userId == authentication.principal.userDto.id")
     public UserDto update(UUID userId, UserUpdateCommand command, MultipartFile file) {
         User user = getUserRequireThrow(userId);
 
@@ -78,7 +77,7 @@ public class BasicUserService implements UserService {
         BinaryContent oldImage = user.getProfile();
         BinaryContent newImage = binaryContentService.create(file).orElse(oldImage);
 
-        user.updateInfo(command, newImage);
+        user.updateInfo(withEncodedPassword(command), newImage);
 
         User updatedUser = userRepository.save(user);
 
@@ -91,16 +90,12 @@ public class BasicUserService implements UserService {
 
     @LogAction(value = "사용자 삭제", idName = "userId", idParamIndex = 0)
     @Override
+    @PreAuthorize("#userId == authentication.principal.userDto.id")
     public void delete(UUID userId) {
         User user = getUserRequireThrow(userId);
-        UUID userStatusId = user.getStatusId();
-        user.detachUserStatus();
 
         readStatusService.deleteByUserId(userId);
         messageService.detachByAuthorId(userId);
-        if (userStatusId != null) {
-            userStatusService.delete(userStatusId, userId);
-        }
 
         userRepository.deleteById(user.getId());
 
@@ -137,4 +132,23 @@ public class BasicUserService implements UserService {
         }
     }
 
+    private UserCreateCommand withEncodedPassword(UserCreateCommand command) {
+        return new UserCreateCommand(
+                command.username(),
+                passwordEncoder.encode(command.password()),
+                command.email()
+        );
+    }
+
+    private UserUpdateCommand withEncodedPassword(UserUpdateCommand command) {
+        if (!StringUtils.hasText(command.password())) {
+            return command;
+        }
+
+        return new UserUpdateCommand(
+                command.username(),
+                passwordEncoder.encode(command.password()),
+                command.email()
+        );
+    }
 }

@@ -13,7 +13,7 @@ import java.util.UUID;
 public interface MessageRepository extends JpaRepository<Message, UUID> , MessageRepositoryCustom{
 
     @Override
-    @EntityGraph(attributePaths = {"author", "channel", "author.userStatus", "author.profile"})
+    @EntityGraph(attributePaths = {"author", "channel", "author.profile"})
     Optional<Message> findById(UUID id);
 
     Optional<Message> findTop1ByChannel_IdOrderByCreatedAtDesc(UUID channelId);
@@ -34,4 +34,8 @@ public interface MessageRepository extends JpaRepository<Message, UUID> , Messag
     void detachAuthorByAuthorId(@Param("authorId") UUID authorId);
 
     boolean existsByAuthor_Id(UUID authorId);
+
+    @EntityGraph(attributePaths = {"author"})
+    @Query("SELECT m FROM Message m WHERE m.id = :messageId")
+    Optional<Message> findWithAuthor(@Param("messageId") UUID messageId);
 }

@@ -6,7 +6,6 @@ import com.sprint.mission.discodeit.config.QuerydslTestConfig;
 import com.sprint.mission.discodeit.dto.command.channel.ChannelCreatePublicCommand;
 import com.sprint.mission.discodeit.dto.command.readStatus.ReadStatusCreateCommand;
 import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
-import com.sprint.mission.discodeit.dto.command.userStatus.UserStatusCreateCommand;
 import com.sprint.mission.discodeit.entity.*;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceUnitUtil;
@@ -42,8 +41,6 @@ class ReadStatusRepositoryTest {
     @Autowired
     UserRepository userRepository;
 
-    @Autowired
-    UserStatusRepository userStatusRepository;
 
     @Autowired
     ChannelRepository channelRepository;
@@ -59,7 +56,6 @@ class ReadStatusRepositoryTest {
     void findByUserId_fetchesUserAndChannel_whenUserHasReadStatuses() {
         // given
         // 이 테스트의 대상은 ReadStatusRepository.findByUserId(...) 쿼리다.
-        // Repository 슬라이스 테스트이므로 Mock을 쓰지 않고 실제 User, UserStatus, Channel, ReadStatus 엔티티를
         // H2 테스트 DB에 저장한 뒤 Repository가 실제 SQL로 어떤 row와 연관 객체를 조회하는지 검증한다.
         UserCreateCommand userCreateCommand = userCreateCommand();
         ChannelCreatePublicCommand channelCreatePublicCommand = channelCreatePublicCommand();
@@ -70,20 +66,14 @@ class ReadStatusRepositoryTest {
         User savedUser = saveUser(userCreateCommand);
         Channel savedChannel = saveChannel(channelCreatePublicCommand);
 
-        // findByUserId(...)의 EntityGraph에는 user.userStatus도 포함되어 있다.
-        // UserStatus가 없는 사용자만 저장하면 "중첩 그래프가 실제로 함께 조회되는지" 검증하기 어렵다.
-        // 그래서 UserStatus row를 함께 저장해, User -> UserStatus 연관 로딩 여부까지 확인할 수 있게 한다.
-        UserStatus savedUserStatus = saveUserStatus(savedUser);
 
         ReadStatus savedReadStatus = saveReadStatus(savedChannel, savedUser, readAt);
 
         UUID savedUserId = savedUser.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
         UUID savedChannelId = savedChannel.getId();
         UUID savedReadStatusId = savedReadStatus.getId();
 
         assertThat(savedUserId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
         assertThat(savedChannelId).isNotNull();
         assertThat(savedReadStatusId).isNotNull();
 
@@ -96,8 +86,6 @@ class ReadStatusRepositoryTest {
         // when
         // 사용자 id로 ReadStatus 목록을 조회한다.
         // 현재 Repository 메서드는 @Query로 rs.user.id 조건을 명시하고,
-        // @EntityGraph(attributePaths = {"user", "channel", "user.userStatus"})로
-        // ReadStatus와 함께 User, Channel, UserStatus를 로딩하도록 선언되어 있다.
         List<ReadStatus> readStatuses = readStatusRepository.findByUserId(savedUserId);
 
         // then
@@ -116,11 +104,7 @@ class ReadStatusRepositoryTest {
         User foundUser = foundReadStatus.getUser();
         Channel foundChannel = foundReadStatus.getChannel();
 
-        // User.userStatus는 ReadStatus의 직접 연관이 아니라 User 아래에 있는 중첩 연관이다.
-        // 이전에 UserStatus 관련 추가 SELECT가 반복적으로 발생했다면 이 지점이 회귀 방지 포인트다.
         // 실제 SQL 개수를 세는 테스트는 아니지만, getter 접근 전에 이미 로딩되어 있음을 확인하므로
-        // findByUserId(...)가 user.userStatus를 EntityGraph에서 누락하는 변경은 잡아낼 수 있다.
-        assertThat(persistenceUnitUtil.isLoaded(foundUser, "userStatus")).isTrue();
 
         // ReadStatus 자체 필드와 외래키 accessor가 저장한 row를 기준으로 일치하는지 확인한다.
         assertThat(foundReadStatus.getUserId()).isEqualTo(savedUserId);
@@ -131,13 +115,10 @@ class ReadStatusRepositoryTest {
         assertThat(Duration.between(readAt, foundReadStatus.getLastReadAt()).abs())
                 .isLessThanOrEqualTo(Duration.ofNanos(1_000));
 
-        // 함께 로딩된 User, UserStatus, Channel이 단순히 null이 아닌 수준을 넘어,
         // given에서 저장한 실제 row와 연결되어 있는지 주요 필드와 id로 검증한다.
         assertThat(foundUser.getId()).isEqualTo(savedUserId);
         assertThat(foundUser.getUsername()).isEqualTo(userCreateCommand.username());
         assertThat(foundUser.getEmail()).isEqualTo(userCreateCommand.email());
-        assertThat(foundUser.getUserStatus()).isNotNull();
-        assertThat(foundUser.getUserStatus().getId()).isEqualTo(savedUserStatusId);
 
         assertThat(foundChannel.getId()).isEqualTo(savedChannelId);
         assertThat(foundChannel.getName()).isEqualTo(channelCreatePublicCommand.channelName());
@@ -165,10 +146,7 @@ class ReadStatusRepositoryTest {
         Instant otherUserReadAt = Instant.now();
 
         // 조회 대상 사용자다.
-        // 이 사용자의 UserStatus는 만들지만 ReadStatus는 일부러 만들지 않는다.
-        // UserStatus가 있어도 ReadStatus가 없으면 findByUserId(...) 결과는 빈 목록이어야 한다.
         User savedUserWithoutReadStatus = saveUser(userCreateCommand);
-        UserStatus savedUserStatus = saveUserStatus(savedUserWithoutReadStatus);
 
         // 대조군 사용자다.
         // 같은 채널에 대해 이 사용자에게만 ReadStatus를 만들어 두면,
@@ -178,7 +156,6 @@ class ReadStatusRepositoryTest {
         ReadStatus savedOtherReadStatus = saveReadStatus(savedChannel, savedOtherUser, otherUserReadAt);
 
         UUID savedUserId = savedUserWithoutReadStatus.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
         UUID savedOtherUserId = savedOtherUser.getId();
         UUID savedChannelId = savedChannel.getId();
         UUID savedOtherReadStatusId = savedOtherReadStatus.getId();
@@ -187,7 +164,6 @@ class ReadStatusRepositoryTest {
         // 특히 savedOtherReadStatusId가 null이 아니어야 read_statuses 테이블에 대조군 row가 있는 상태에서
         // 빈 목록을 검증한다는 테스트 의도가 성립한다.
         assertThat(savedUserId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
         assertThat(savedOtherUserId).isNotNull();
         assertThat(savedChannelId).isNotNull();
         assertThat(savedOtherReadStatusId).isNotNull();
@@ -243,8 +219,6 @@ class ReadStatusRepositoryTest {
         User savedUser = saveUser(userCreateCommand);
         User savedOtherUser = saveUser(otherUserCreateCommand);
 
-        UserStatus savedUserStatus = saveUserStatus(savedUser);
-        UserStatus savedOtherUserStatus = saveUserStatus(savedOtherUser);
 
         Channel savedTargetChannel = saveChannel(targetChannelCreateCommand);
         Channel savedOtherChannel = saveChannel(otherChannelCreateCommand);
@@ -255,8 +229,6 @@ class ReadStatusRepositoryTest {
 
         UUID savedUserId = savedUser.getId();
         UUID savedOtherUserId = savedOtherUser.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
-        UUID savedOtherUserStatusId = savedOtherUserStatus.getId();
         UUID savedTargetChannelId = savedTargetChannel.getId();
         UUID savedOtherChannelId = savedOtherChannel.getId();
         UUID savedTargetReadStatusId = savedTargetReadStatus.getId();
@@ -267,8 +239,6 @@ class ReadStatusRepositoryTest {
         // 여기서 id가 null이면 이후 삭제 검증이 Repository 동작 실패인지, given 구성 실패인지 구분하기 어렵다.
         assertThat(savedUserId).isNotNull();
         assertThat(savedOtherUserId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
-        assertThat(savedOtherUserStatusId).isNotNull();
         assertThat(savedTargetChannelId).isNotNull();
         assertThat(savedOtherChannelId).isNotNull();
         assertThat(savedTargetReadStatusId).isNotNull();
@@ -400,12 +370,8 @@ class ReadStatusRepositoryTest {
         Instant otherChannelReadAt = targetReadAt.plusSeconds(2);
 
         // 조회 대상 사용자와 대조군 사용자를 각각 저장한다.
-        // existsByChannel_IdAndUser_Id(...)는 UserStatus를 직접 사용하지 않지만,
-        // 실제 사용자 생성 흐름에서는 UserStatus가 함께 만들어지므로 실제 엔티티 row를 구성해 둔다.
         User savedUser = saveUser(userCreateCommand);
         User savedOtherUser = saveUser(otherUserCreateCommand);
-        UserStatus savedUserStatus = saveUserStatus(savedUser);
-        UserStatus savedOtherUserStatus = saveUserStatus(savedOtherUser);
 
         // 조회 대상 채널과 대조군 채널을 각각 저장한다.
         // 같은 사용자라도 다른 채널의 ReadStatus는 조회 대상 조합이 아니어야 하고,
@@ -426,8 +392,6 @@ class ReadStatusRepositoryTest {
 
         UUID savedUserId = savedUser.getId();
         UUID savedOtherUserId = savedOtherUser.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
-        UUID savedOtherUserStatusId = savedOtherUserStatus.getId();
         UUID savedTargetChannelId = savedTargetChannel.getId();
         UUID savedOtherChannelId = savedOtherChannel.getId();
         UUID savedTargetReadStatusId = savedTargetReadStatus.getId();
@@ -439,8 +403,6 @@ class ReadStatusRepositoryTest {
         // 이후 exists 결과가 Repository 문제인지 fixture 구성 문제인지 구분하기 쉬워진다.
         assertThat(savedUserId).isNotNull();
         assertThat(savedOtherUserId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
-        assertThat(savedOtherUserStatusId).isNotNull();
         assertThat(savedTargetChannelId).isNotNull();
         assertThat(savedOtherChannelId).isNotNull();
         assertThat(savedTargetReadStatusId).isNotNull();
@@ -510,8 +472,6 @@ class ReadStatusRepositoryTest {
         // targetChannel에 대한 ReadStatus는 일부러 만들지 않는다.
         User savedUser = saveUser(userCreateCommand);
         User savedOtherUser = saveUser(otherUserCreateCommand);
-        UserStatus savedUserStatus = saveUserStatus(savedUser);
-        UserStatus savedOtherUserStatus = saveUserStatus(savedOtherUser);
 
         // targetChannel은 조회 대상 채널이고, otherChannel은 대조군 채널이다.
         // savedOtherUser에게는 otherChannel의 ReadStatus만 부여해
@@ -529,8 +489,6 @@ class ReadStatusRepositoryTest {
 
         UUID savedUserId = savedUser.getId();
         UUID savedOtherUserId = savedOtherUser.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
-        UUID savedOtherUserStatusId = savedOtherUserStatus.getId();
         UUID savedTargetChannelId = savedTargetChannel.getId();
         UUID savedOtherChannelId = savedOtherChannel.getId();
         UUID savedTargetReadStatusId = savedTargetReadStatus.getId();
@@ -541,8 +499,6 @@ class ReadStatusRepositoryTest {
         // false 결과가 "존재하지 않는 id라서 false"가 아니라 "조합이 없어서 false"라는 의미를 가진다.
         assertThat(savedUserId).isNotNull();
         assertThat(savedOtherUserId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
-        assertThat(savedOtherUserStatusId).isNotNull();
         assertThat(savedTargetChannelId).isNotNull();
         assertThat(savedOtherChannelId).isNotNull();
         assertThat(savedTargetReadStatusId).isNotNull();
@@ -607,11 +563,7 @@ class ReadStatusRepositoryTest {
         User savedOtherUser = saveUser(otherUserCreateCommand);
         User savedExcludedUser = saveUser(excludedUserCreateCommand);
 
-        // UserStatus는 burkInsert(...) SQL의 직접 조건은 아니지만,
         // 실제 사용자 생성 흐름에서는 User와 함께 존재하는 데이터이므로 실제 row로 구성한다.
-        UserStatus savedUserStatus = saveUserStatus(savedUser);
-        UserStatus savedOtherUserStatus = saveUserStatus(savedOtherUser);
-        UserStatus savedExcludedUserStatus = saveUserStatus(savedExcludedUser);
 
         // targetChannel은 bulk insert 대상 채널이고, otherChannel은 대조군 채널이다.
         // burkInsert(...)에 targetChannelId만 전달했으므로 otherChannel에는 ReadStatus가 생성되면 안 된다.
@@ -621,9 +573,6 @@ class ReadStatusRepositoryTest {
         UUID savedUserId = savedUser.getId();
         UUID savedOtherUserId = savedOtherUser.getId();
         UUID savedExcludedUserId = savedExcludedUser.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
-        UUID savedOtherUserStatusId = savedOtherUserStatus.getId();
-        UUID savedExcludedUserStatusId = savedExcludedUserStatus.getId();
         UUID savedTargetChannelId = savedTargetChannel.getId();
         UUID savedOtherChannelId = savedOtherChannel.getId();
         List<UUID> userIdsToInsert = List.of(savedUserId, savedOtherUserId);
@@ -633,9 +582,6 @@ class ReadStatusRepositoryTest {
         assertThat(savedUserId).isNotNull();
         assertThat(savedOtherUserId).isNotNull();
         assertThat(savedExcludedUserId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
-        assertThat(savedOtherUserStatusId).isNotNull();
-        assertThat(savedExcludedUserStatusId).isNotNull();
         assertThat(savedTargetChannelId).isNotNull();
         assertThat(savedOtherChannelId).isNotNull();
         assertThat(savedOtherUserId).isNotEqualTo(savedUserId);
@@ -730,12 +676,8 @@ class ReadStatusRepositoryTest {
         User savedOtherUser = saveUser(otherUserCreateCommand);
         User savedExcludedUser = saveUser(excludedUserCreateCommand);
 
-        // UserStatus는 burkInsert(...)의 where 조건에는 직접 사용되지 않는다.
         // 다만 실제 사용자 데이터 구조를 유지하고,
         // 이후 findByUserId(...), findByChannelId(...)의 EntityGraph 조회가 깨지지 않도록 함께 구성한다.
-        UserStatus savedUserStatus = saveUserStatus(savedUser);
-        UserStatus savedOtherUserStatus = saveUserStatus(savedOtherUser);
-        UserStatus savedExcludedUserStatus = saveUserStatus(savedExcludedUser);
 
         // targetChannel은 bulk insert 대상 채널이고, otherChannel은 비대상 채널이다.
         // userId 필터링뿐 아니라 channelId 조건도 의도대로 적용되는지 함께 확인한다.
@@ -745,9 +687,6 @@ class ReadStatusRepositoryTest {
         UUID savedUserId = savedUser.getId();
         UUID savedOtherUserId = savedOtherUser.getId();
         UUID savedExcludedUserId = savedExcludedUser.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
-        UUID savedOtherUserStatusId = savedOtherUserStatus.getId();
-        UUID savedExcludedUserStatusId = savedExcludedUserStatus.getId();
         UUID savedTargetChannelId = savedTargetChannel.getId();
         UUID savedOtherChannelId = savedOtherChannel.getId();
 
@@ -763,9 +702,6 @@ class ReadStatusRepositoryTest {
         assertThat(savedUserId).isNotNull();
         assertThat(savedOtherUserId).isNotNull();
         assertThat(savedExcludedUserId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
-        assertThat(savedOtherUserStatusId).isNotNull();
-        assertThat(savedExcludedUserStatusId).isNotNull();
         assertThat(savedTargetChannelId).isNotNull();
         assertThat(savedOtherChannelId).isNotNull();
         assertThat(savedOtherUserId).isNotEqualTo(savedUserId);
@@ -837,12 +773,10 @@ class ReadStatusRepositoryTest {
 
     @Test
     @DisplayName("채널별 읽음 상태 목록 조회 성공 - User, 프로필, Channel을 함께 조회")
-    void findByChannelId_fetchesUserProfileUserStatusAndChannel_whenChannelHasReadStatuses() {
+    void findByChannelId_fetchesUserProfileAndChannel_whenChannelHasReadStatuses() {
         // given
         // 이 테스트의 대상은 ReadStatusRepository.findByChannelId(...) 쿼리다.
         // findByChannelId(...)는 특정 channelId에 연결된 ReadStatus 목록을 조회하면서
-        // EntityGraph로 user, user.profile, user.userStatus, channel을 함께 조회해야 한다.
-        // 따라서 사용자 프로필과 UserStatus를 실제 row로 저장한 뒤,
         // 조회 결과에서 연관 객체가 초기화되어 있는지 PersistenceUnitUtil로 확인한다.
         UserCreateCommand userCreateCommand = userCreateCommand();
         UserCreateCommand otherUserCreateCommand = userCreateCommand(
@@ -871,11 +805,6 @@ class ReadStatusRepositoryTest {
         User savedOtherUser = saveUserWithProfile(otherUserCreateCommand, "originFile2");
         User savedThirdUser = saveUserWithProfile(thirdUserCreateCommand, "originFile3");
 
-        // user.userStatus EntityGraph를 검증하기 위해 각 사용자에게 UserStatus를 연결한다.
-        // UserStatus가 없는 상태로만 테스트하면 user.userStatus 그래프 누락을 잡기 어렵다.
-        UserStatus savedUserStatus = saveUserStatus(savedUser);
-        UserStatus savedOtherUserStatus = saveUserStatus(savedOtherUser);
-        UserStatus savedThirdUserStatus = saveUserStatus(savedThirdUser);
 
         // targetChannel은 조회 대상 채널이고, otherChannel은 channelId 필터링을 검증하기 위한 대조군이다.
         // 두 채널 모두 ReadStatus를 갖게 만들어야 findByChannelId(...)가 대상 채널 row만 반환하는지 확인할 수 있다.
@@ -885,9 +814,6 @@ class ReadStatusRepositoryTest {
         UUID savedUserId = savedUser.getId();
         UUID savedOtherUserId = savedOtherUser.getId();
         UUID savedThirdUserId = savedThirdUser.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
-        UUID savedOtherUserStatusId = savedOtherUserStatus.getId();
-        UUID savedThirdUserStatusId = savedThirdUserStatus.getId();
         UUID savedTargetChannelId = savedTargetChannel.getId();
         UUID savedOtherChannelId = savedOtherChannel.getId();
         UUID savedUserBinaryContentId = savedUser.getProfileId();
@@ -901,9 +827,6 @@ class ReadStatusRepositoryTest {
         assertThat(savedUserId).isNotNull();
         assertThat(savedOtherUserId).isNotNull();
         assertThat(savedThirdUserId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
-        assertThat(savedOtherUserStatusId).isNotNull();
-        assertThat(savedThirdUserStatusId).isNotNull();
         assertThat(savedTargetChannelId).isNotNull();
         assertThat(savedOtherChannelId).isNotNull();
         assertThat(savedUserBinaryContentId).isNotNull();
@@ -934,17 +857,14 @@ class ReadStatusRepositoryTest {
 
         // then
         // findByChannelId(...)의 EntityGraph가 유지되면 ReadStatus.user, ReadStatus.channel뿐 아니라
-        // User.profile과 User.userStatus도 이미 로딩된 상태여야 한다.
         // 중첩 경로 문자열("user.profile")을 ReadStatus에 직접 검사하지 않고,
-        // 실제로 로딩된 User 객체를 기준으로 profile/userStatus 로딩 여부를 확인한다.
         readStatuses.forEach(readStatus -> {
             assertThat(persistenceUnitUtil.isLoaded(readStatus, "user")).isTrue();
             assertThat(persistenceUnitUtil.isLoaded(readStatus, "channel")).isTrue();
 
             User loadedUser = readStatus.getUser();
             assertThat(persistenceUnitUtil.isLoaded(loadedUser, "profile")).isTrue();
-            assertThat(persistenceUnitUtil.isLoaded(loadedUser, "userStatus")).isTrue();
-        });
+            });
 
         // targetChannel에는 사용자 3명의 ReadStatus가 모두 조회되어야 한다.
         // 순서는 Repository 계약이 아니므로 channelId, userId, profileId 조합을 순서와 무관하게 검증한다.
@@ -1021,11 +941,8 @@ class ReadStatusRepositoryTest {
         User savedUser = saveUser(userCreateCommand);
         User savedOtherUser = saveUser(otherUserCreateCommand);
 
-        // UserStatus는 findByChannelId(...)의 빈 결과 자체에는 직접 필요하지 않다.
         // 다만 실제 사용자 생성 흐름과 유사한 fixture를 유지하고,
         // 다른 채널의 ReadStatus 조회가 EntityGraph 때문에 깨지지 않도록 실제 row로 구성한다.
-        UserStatus savedUserStatus = saveUserStatus(savedUser);
-        UserStatus savedOtherUserStatus = saveUserStatus(savedOtherUser);
 
         // emptyChannel은 조회 대상이지만 ReadStatus가 없는 채널이다.
         // channelWithReadStatuses는 대조군으로, 같은 테스트 DB 안에 ReadStatus가 실제로 존재함을 보여준다.
@@ -1034,8 +951,6 @@ class ReadStatusRepositoryTest {
 
         UUID savedUserId = savedUser.getId();
         UUID savedOtherUserId = savedOtherUser.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
-        UUID savedOtherUserStatusId = savedOtherUserStatus.getId();
         UUID savedEmptyChannelId = savedEmptyChannel.getId();
         UUID savedChannelWithReadStatusesId = savedChannelWithReadStatuses.getId();
 
@@ -1045,8 +960,6 @@ class ReadStatusRepositoryTest {
         // 여기서 id가 null이거나 두 채널 id가 같으면, 빈 결과가 Repository 조건 때문인지 given 오류 때문인지 구분하기 어렵다.
         assertThat(savedUserId).isNotNull();
         assertThat(savedOtherUserId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
-        assertThat(savedOtherUserStatusId).isNotNull();
         assertThat(savedEmptyChannelId).isNotNull();
         assertThat(savedChannelWithReadStatusesId).isNotNull();
         assertThat(savedOtherUserId).isNotEqualTo(savedUserId);
@@ -1121,10 +1034,6 @@ class ReadStatusRepositoryTest {
         User savedUser = saveUser(userCreateCommand);
         User savedOtherUser = saveUser(otherUserCreateCommand);
 
-        // UserStatus는 findByChannelIdIn(...)의 channelId 필터링 조건에는 직접 쓰이지 않는다.
-        // 다만 Repository의 EntityGraph가 user.userStatus를 포함하므로 실제 연관 row를 함께 구성한다.
-        UserStatus savedUserStatus = saveUserStatus(savedUser);
-        UserStatus savedOtherUserStatus = saveUserStatus(savedOtherUser);
 
         // firstIncludedChannel, secondIncludedChannel은 조회 목록에 포함할 채널이다.
         // excludedChannel은 ReadStatus가 존재하지만 조회 목록에는 넣지 않을 대조군 채널이다.
@@ -1134,8 +1043,6 @@ class ReadStatusRepositoryTest {
 
         UUID savedUserId = savedUser.getId();
         UUID savedOtherUserId = savedOtherUser.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
-        UUID savedOtherUserStatusId = savedOtherUserStatus.getId();
         UUID savedFirstIncludedChannelId = savedFirstIncludedChannel.getId();
         UUID savedSecondIncludedChannelId = savedSecondIncludedChannel.getId();
         UUID savedExcludedChannelId = savedExcludedChannel.getId();
@@ -1147,8 +1054,6 @@ class ReadStatusRepositoryTest {
         // 사용자와 채널 id가 null이거나 서로 구분되지 않으면 IN 조건 검증이 의미 없어질 수 있다.
         assertThat(savedUserId).isNotNull();
         assertThat(savedOtherUserId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
-        assertThat(savedOtherUserStatusId).isNotNull();
         assertThat(savedFirstIncludedChannelId).isNotNull();
         assertThat(savedSecondIncludedChannelId).isNotNull();
         assertThat(savedExcludedChannelId).isNotNull();
@@ -1241,11 +1146,8 @@ class ReadStatusRepositoryTest {
         User savedUser = saveUser(userCreateCommand);
         User savedOtherUser = saveUser(otherUserCreateCommand);
 
-        // UserStatus는 existsByChannel_Id(...) 조건에는 직접 쓰이지 않는다.
         // 다만 실제 사용자 생성 흐름과 유사한 fixture를 유지하고,
         // ReadStatus 조회를 통한 사전 검증 시 EntityGraph가 깨지지 않도록 실제 row로 구성한다.
-        UserStatus savedUserStatus = saveUserStatus(savedUser);
-        UserStatus savedOtherUserStatus = saveUserStatus(savedOtherUser);
 
         // targetChannel에는 ReadStatus를 생성하고, emptyChannel에는 생성하지 않는다.
         // 이렇게 해야 existsByChannel_Id(...)가 Channel 존재 여부가 아니라 ReadStatus 존재 여부를 기준으로 판단하는지 확인할 수 있다.
@@ -1254,8 +1156,6 @@ class ReadStatusRepositoryTest {
 
         UUID savedUserId = savedUser.getId();
         UUID savedOtherUserId = savedOtherUser.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
-        UUID savedOtherUserStatusId = savedOtherUserStatus.getId();
         UUID savedTargetChannelId = savedTargetChannel.getId();
         UUID savedEmptyChannelId = savedEmptyChannel.getId();
 
@@ -1265,8 +1165,6 @@ class ReadStatusRepositoryTest {
         // id가 null이거나 두 채널이 구분되지 않으면 exists 결과의 원인을 명확히 판단하기 어렵다.
         assertThat(savedUserId).isNotNull();
         assertThat(savedOtherUserId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
-        assertThat(savedOtherUserStatusId).isNotNull();
         assertThat(savedTargetChannelId).isNotNull();
         assertThat(savedEmptyChannelId).isNotNull();
         assertThat(savedOtherUserId).isNotEqualTo(savedUserId);
@@ -1337,11 +1235,7 @@ class ReadStatusRepositoryTest {
         User savedUser = saveUser(userCreateCommand);
         User savedOtherUser = saveUser(otherUserCreateCommand);
 
-        // UserStatus는 existsByChannel_Id(...) 조건에는 직접 쓰이지 않는다.
         // 다만 실제 사용자 생성 흐름과 유사한 fixture를 유지하고,
-        // ReadStatus 사전 조회 시 EntityGraph가 user.userStatus를 함께 조회해도 문제가 없도록 실제 row로 구성한다.
-        UserStatus savedUserStatus = saveUserStatus(savedUser);
-        UserStatus savedOtherUserStatus = saveUserStatus(savedOtherUser);
 
         // targetChannel은 ReadStatus가 존재하는 대조군 채널이다.
         // emptyChannel은 조회 대상이지만 ReadStatus가 없는 채널이다.
@@ -1350,8 +1244,6 @@ class ReadStatusRepositoryTest {
 
         UUID savedUserId = savedUser.getId();
         UUID savedOtherUserId = savedOtherUser.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
-        UUID savedOtherUserStatusId = savedOtherUserStatus.getId();
         UUID savedTargetChannelId = savedTargetChannel.getId();
         UUID savedEmptyChannelId = savedEmptyChannel.getId();
 
@@ -1361,8 +1253,6 @@ class ReadStatusRepositoryTest {
         // id가 null이거나 두 채널이 같은 값이면 false 결과가 Repository 조건 때문인지 given 구성 오류인지 구분하기 어렵다.
         assertThat(savedUserId).isNotNull();
         assertThat(savedOtherUserId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
-        assertThat(savedOtherUserStatusId).isNotNull();
         assertThat(savedTargetChannelId).isNotNull();
         assertThat(savedEmptyChannelId).isNotNull();
         assertThat(savedOtherUserId).isNotEqualTo(savedUserId);
@@ -1432,10 +1322,7 @@ class ReadStatusRepositoryTest {
         User savedUser = saveUser(userCreateCommand);
         User savedOtherUser = saveUser(otherUserCreateCommand);
 
-        // UserStatus는 findById(...)의 EntityGraph 대상은 아니다.
         // 다만 실제 사용자 생성 흐름과 유사한 fixture를 유지하기 위해 실제 row로 저장한다.
-        UserStatus savedUserStatus = saveUserStatus(savedUser);
-        UserStatus savedOtherUserStatus = saveUserStatus(savedOtherUser);
 
         Channel savedTargetChannel = saveChannel(targetChannelCreateCommand);
         Channel savedOtherChannel = saveChannel(otherChannelCreateCommand);
@@ -1452,8 +1339,6 @@ class ReadStatusRepositoryTest {
 
         UUID savedUserId = savedUser.getId();
         UUID savedOtherUserId = savedOtherUser.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
-        UUID savedOtherUserStatusId = savedOtherUserStatus.getId();
         UUID savedTargetChannelId = savedTargetChannel.getId();
         UUID savedOtherChannelId = savedOtherChannel.getId();
         UUID savedReadStatusId = savedReadStatus.getId();
@@ -1464,8 +1349,6 @@ class ReadStatusRepositoryTest {
         // findById(...) 결과가 정확한 row인지 판단하기 어렵다.
         assertThat(savedUserId).isNotNull();
         assertThat(savedOtherUserId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
-        assertThat(savedOtherUserStatusId).isNotNull();
         assertThat(savedTargetChannelId).isNotNull();
         assertThat(savedOtherChannelId).isNotNull();
         assertThat(savedReadStatusId).isNotNull();
@@ -1544,10 +1427,7 @@ class ReadStatusRepositoryTest {
         User savedUser = saveUser(userCreateCommand);
         User savedOtherUser = saveUser(otherUserCreateCommand);
 
-        // UserStatus는 findById(...)의 empty 결과 자체에는 직접 필요하지 않다.
         // 다만 실제 사용자 생성 흐름과 유사한 fixture를 유지하기 위해 실제 row로 구성한다.
-        UserStatus savedUserStatus = saveUserStatus(savedUser);
-        UserStatus savedOtherUserStatus = saveUserStatus(savedOtherUser);
 
         // 서로 다른 채널 2개를 저장해, 기존 ReadStatus row들이 서로 다른 user/channel 조합을 갖도록 한다.
         // 이렇게 하면 notSavedReadStatusId가 기존 어떤 row와도 매칭되지 않는다는 점이 더 명확해진다.
@@ -1562,8 +1442,6 @@ class ReadStatusRepositoryTest {
 
         UUID savedUserId = savedUser.getId();
         UUID savedOtherUserId = savedOtherUser.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
-        UUID savedOtherUserStatusId = savedOtherUserStatus.getId();
         UUID savedTargetChannelId = savedTargetChannel.getId();
         UUID savedOtherChannelId = savedOtherChannel.getId();
         UUID savedReadStatusId = savedReadStatus.getId();
@@ -1578,8 +1456,6 @@ class ReadStatusRepositoryTest {
         // Optional.empty 검증이 올바른 부재 조회 검증이 아니게 된다.
         assertThat(savedUserId).isNotNull();
         assertThat(savedOtherUserId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
-        assertThat(savedOtherUserStatusId).isNotNull();
         assertThat(savedTargetChannelId).isNotNull();
         assertThat(savedOtherChannelId).isNotNull();
         assertThat(savedReadStatusId).isNotNull();
@@ -1643,11 +1519,7 @@ class ReadStatusRepositoryTest {
         User savedUser = saveUser(userCreateCommand);
         User savedOtherUser = saveUser(otherUserCreateCommand);
 
-        // UserStatus는 existsByUser_Id(...) 조건에는 직접 쓰이지 않는다.
         // 다만 실제 사용자 생성 흐름과 유사한 fixture를 유지하고,
-        // ReadStatus 사전 조회 시 EntityGraph가 user.userStatus를 함께 조회해도 문제가 없도록 실제 row로 구성한다.
-        UserStatus savedUserStatus = saveUserStatus(savedUser);
-        UserStatus savedOtherUserStatus = saveUserStatus(savedOtherUser);
 
         // 서로 다른 채널을 저장해 두 사용자 각각의 ReadStatus가 서로 다른 row임을 명확히 한다.
         Channel savedTargetChannel = saveChannel(targetChannelCreateCommand);
@@ -1664,8 +1536,6 @@ class ReadStatusRepositoryTest {
 
         UUID savedUserId = savedUser.getId();
         UUID savedOtherUserId = savedOtherUser.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
-        UUID savedOtherUserStatusId = savedOtherUserStatus.getId();
         UUID savedTargetChannelId = savedTargetChannel.getId();
         UUID savedOtherChannelId = savedOtherChannel.getId();
         UUID savedReadStatusId = savedReadStatus.getId();
@@ -1675,8 +1545,6 @@ class ReadStatusRepositoryTest {
         // id가 null이거나 대상/대조군 row가 서로 구분되지 않으면 exists 결과의 원인을 명확히 판단하기 어렵다.
         assertThat(savedUserId).isNotNull();
         assertThat(savedOtherUserId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
-        assertThat(savedOtherUserStatusId).isNotNull();
         assertThat(savedTargetChannelId).isNotNull();
         assertThat(savedOtherChannelId).isNotNull();
         assertThat(savedReadStatusId).isNotNull();
@@ -1760,12 +1628,7 @@ class ReadStatusRepositoryTest {
         User savedOtherUser = saveUser(otherUserCreateCommand);
         User savedUserWithoutReadStatus = saveUser(userWithoutReadStatusCreateCommand);
 
-        // UserStatus는 existsByUser_Id(...) 조건에는 직접 쓰이지 않는다.
         // 다만 실제 사용자 생성 흐름과 유사한 fixture를 유지하고,
-        // findByUserId(...) 사전 조회 시 EntityGraph가 user.userStatus를 함께 조회해도 문제가 없도록 실제 row로 구성한다.
-        UserStatus savedUserStatus = saveUserStatus(savedUser);
-        UserStatus savedOtherUserStatus = saveUserStatus(savedOtherUser);
-        UserStatus savedUserWithoutReadStatusStatus = saveUserStatus(savedUserWithoutReadStatus);
 
         // ReadStatus를 저장할 서로 다른 채널 2개를 준비한다.
         // 조회 대상 사용자(savedUserWithoutReadStatus)에는 어떤 채널의 ReadStatus도 연결하지 않는다.
@@ -1782,9 +1645,6 @@ class ReadStatusRepositoryTest {
         UUID savedUserId = savedUser.getId();
         UUID savedOtherUserId = savedOtherUser.getId();
         UUID savedUserWithoutReadStatusId = savedUserWithoutReadStatus.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
-        UUID savedOtherUserStatusId = savedOtherUserStatus.getId();
-        UUID savedUserWithoutReadStatusStatusId = savedUserWithoutReadStatusStatus.getId();
         UUID savedTargetChannelId = savedTargetChannel.getId();
         UUID savedOtherChannelId = savedOtherChannel.getId();
         UUID savedReadStatusId = savedReadStatus.getId();
@@ -1796,9 +1656,6 @@ class ReadStatusRepositoryTest {
         assertThat(savedUserId).isNotNull();
         assertThat(savedOtherUserId).isNotNull();
         assertThat(savedUserWithoutReadStatusId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
-        assertThat(savedOtherUserStatusId).isNotNull();
-        assertThat(savedUserWithoutReadStatusStatusId).isNotNull();
         assertThat(savedTargetChannelId).isNotNull();
         assertThat(savedOtherChannelId).isNotNull();
         assertThat(savedReadStatusId).isNotNull();
@@ -1882,10 +1739,7 @@ class ReadStatusRepositoryTest {
         User savedUser = saveUser(userWithReadStatusCreateCommand);
         User savedOtherUser = saveUser(otherUserCreateCommand);
 
-        // UserStatus는 deleteByUser_Id(...)의 삭제 조건에는 직접 쓰이지 않는다.
         // 다만 실제 사용자 생성 흐름과 유사한 fixture를 유지하기 위해 실제 row로 구성한다.
-        UserStatus savedUserStatus = saveUserStatus(savedUser);
-        UserStatus savedOtherUserStatus = saveUserStatus(savedOtherUser);
 
         // 삭제 대상 사용자의 ReadStatus를 여러 채널에 만들기 위해 채널 2개를 저장한다.
         // 대조군 사용자도 targetChannel에 ReadStatus를 갖게 해서, 같은 channel_id라도 user_id가 다르면 삭제되지 않아야 함을 확인한다.
@@ -1905,8 +1759,6 @@ class ReadStatusRepositoryTest {
 
         UUID savedUserId = savedUser.getId();
         UUID savedOtherUserId = savedOtherUser.getId();
-        UUID savedUserStatusId = savedUserStatus.getId();
-        UUID savedOtherUserStatusId = savedOtherUserStatus.getId();
         UUID savedTargetChannelId = savedTargetChannel.getId();
         UUID savedOtherChannelId = savedOtherChannel.getId();
         UUID savedTargetReadStatusId = savedTargetReadStatus.getId();
@@ -1917,8 +1769,6 @@ class ReadStatusRepositoryTest {
         // id가 null이거나 사용자/채널/readStatus가 서로 구분되지 않으면 삭제 조건 검증이 의미 없어질 수 있다.
         assertThat(savedUserId).isNotNull();
         assertThat(savedOtherUserId).isNotNull();
-        assertThat(savedUserStatusId).isNotNull();
-        assertThat(savedOtherUserStatusId).isNotNull();
         assertThat(savedTargetChannelId).isNotNull();
         assertThat(savedOtherChannelId).isNotNull();
         assertThat(savedTargetReadStatusId).isNotNull();
@@ -2007,10 +1857,6 @@ class ReadStatusRepositoryTest {
         return new UserCreateCommand(username, password, email);
     }
 
-    private UserStatusCreateCommand userStatusCreateCommand() {
-        return new UserStatusCreateCommand(Instant.now());
-    }
-
     private ChannelCreatePublicCommand channelCreatePublicCommand() {
         return channelCreatePublicCommand(
                 "testChannel",
@@ -2044,10 +1890,6 @@ class ReadStatusRepositoryTest {
         );
 
         return userRepository.saveAndFlush(new User(command, savedProfile));
-    }
-
-    private UserStatus saveUserStatus(User user) {
-        return userStatusRepository.saveAndFlush(new UserStatus(user, userStatusCreateCommand()));
     }
 
     private Channel saveChannel(ChannelCreatePublicCommand command) {

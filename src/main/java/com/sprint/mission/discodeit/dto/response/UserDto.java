@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.dto.response;
 
 import com.sprint.mission.discodeit.aspect.LoggableResult;
+import com.sprint.mission.discodeit.entity.Role;
 
 import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
@@ -13,6 +14,7 @@ public record UserDto(
         String email,
         BinaryContentDto profile,
         boolean online,
+        Role role,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) implements LoggableResult {
