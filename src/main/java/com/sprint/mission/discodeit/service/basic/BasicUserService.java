@@ -7,24 +7,23 @@ import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.UserDuplicatedException;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.mapper.MapperMethod;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.UserService;
 
-import java.time.Instant;
 import java.util.*;
 
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -35,13 +34,14 @@ import org.springframework.stereotype.Service;
 public class BasicUserService implements UserService {
 
     private final UserRepository userRepository;
-    private final UserStatusRepository userStatusRepository;
     private final BinaryContentRepository binaryContentRepository;
     private final BinaryContentStorage binaryContentStorage;
     private final MapStructMapper mapStructMapper;
     private final MapperMethod mapperMethod;
 
     private final PasswordEncoder passwordEncoder;
+
+    private final SessionRegistry sessionRegistry;
 
     private BinaryContent profileIdFromOBCC(Optional<BinaryContentCreate> obcc){
         // duble running?
@@ -76,20 +76,15 @@ public class BasicUserService implements UserService {
                 email,
                 password,   // password save at encoding data.
                 bc,
-                null
+                Role.USER
         );
-
-        user.updateRole(Role.USER); // tmp. 추후 생성자로 설정. -> notnull 하게.
 
         log.debug("created User - username : {}, email : {}, password - {}", username, email, password);
 
-        // 삭제 예정
-        UserStatus ust = new UserStatus(user, Instant.now());
-        user.setStatus(ust);
-
         userRepository.save(user);
 
-        return mapStructMapper.toDto(user,toBinaryDto(user),user.online());
+        // online 정보 설정.
+        return mapStructMapper.toDto(user,toBinaryDto(user),userOnline(user.getUsername()));
     }
 
     @Override
@@ -97,7 +92,7 @@ public class BasicUserService implements UserService {
     public List<UserDto> getUserList(){
         return userRepository.findAllWithProfile()
                 .stream()
-                .map(u -> mapStructMapper.toDto(u,toBinaryDto(u),u.online()))
+                .map(u -> mapStructMapper.toDto(u,toBinaryDto(u),userOnline(u.getUsername())))
                 .toList();
     }
 
@@ -124,7 +119,7 @@ public class BasicUserService implements UserService {
         return mapStructMapper.toDto(
                 user
                 , toBinaryDto(user)
-                , user.online()
+                , userOnline(user.getUsername())
         );
     }
 
@@ -133,14 +128,11 @@ public class BasicUserService implements UserService {
     @Transactional
     public void delete(UUID id){
         User user =  getUserOrException(id);
-        Optional<UserStatus> us = userStatusRepository.findByUserId(id).stream().findFirst();
 
         userRepository.delete(user);
         if (user.getProfile() != null) {
             binaryContentStorage.delete(user.getProfile().getId());
         }
-
-        us.ifPresent(userStatusRepository::delete);
 
         log.info("user with id - {} deleted", id);
 
@@ -173,6 +165,19 @@ public class BasicUserService implements UserService {
         if (user.getProfile() == null) return null;
         BinaryContent bc = user.getProfile();
         return mapStructMapper.toDto(bc, mapperMethod.getByteFrom(bc.getId()));
+    }
+
+
+    private Boolean userOnline(String username){
+        for (Object principal : sessionRegistry.getAllPrincipals()) {
+            if (
+                    principal instanceof DiscodeitUserDetails details
+                            && details.getUsername().equals(username)
+            ){
+                return true;
+            }
+        }
+        return false;
     }
 
 }

@@ -9,11 +9,8 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sprint.mission.discodeit.dto.projection.UserProjection;
 import com.sprint.mission.discodeit.entity.QBinaryContent;
 import com.sprint.mission.discodeit.entity.QUser;
-import com.sprint.mission.discodeit.entity.QUserStatus;
 import lombok.RequiredArgsConstructor;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -26,7 +23,6 @@ public class UserQueryDslImpl implements UserQueryDsl {
 
     private final QUser user = QUser.user;
     private final QBinaryContent binaryContent = QBinaryContent.binaryContent;
-    private final QUserStatus userStatus = QUserStatus.userStatus;
 
     public Optional<UserProjection> getUserFromId(UUID id){
         UserProjection result = singleQuery(user.id.eq(id));
@@ -43,7 +39,6 @@ public class UserQueryDslImpl implements UserQueryDsl {
     public Collection<UserProjection> getUserInfoFromIds(UUID... id){
         Map<UUID, UserProjection> users = jpaQueryFactory.selectFrom(user)
                 .join(user.profile, binaryContent)
-                .join(user.status, userStatus)
                 .where(
                         user.id.in(id)
                 ).transform(
@@ -55,16 +50,6 @@ public class UserQueryDslImpl implements UserQueryDsl {
         return users.values();
     }
 
-
-    // check activation time elapse 5 minutes.
-    // if over 5, return offline.
-    private BooleanExpression getOnline(){
-        // half of micro second.
-        long HALF_NANOS = ChronoUnit.MICROS.getDuration().toNanos() / 2;
-        // round micro sec format time
-        Instant now = Instant.now().plusNanos(HALF_NANOS).truncatedTo(ChronoUnit.MICROS);
-        return userStatus.lastActiveAt.loe(now.minus(5 * 60, ChronoUnit.SECONDS));
-    }
 
     private BooleanBuilder getCondition(BooleanExpression... expressions){
         BooleanBuilder condition = new BooleanBuilder();
@@ -84,7 +69,6 @@ public class UserQueryDslImpl implements UserQueryDsl {
                 user.email,
                 user.password,
                 user.role,
-                getOnline(),
                 binaryContent.id,
                 binaryContent.fileName,
                 binaryContent.size,
@@ -96,7 +80,6 @@ public class UserQueryDslImpl implements UserQueryDsl {
         return jpaQueryFactory.select(userProjectionConstructor())
                 .from(user)
                 .join(user.profile, binaryContent)
-                .join(user.status, userStatus)
                 .where(
                         getCondition(
                                 exp

@@ -16,6 +16,7 @@ import com.sprint.mission.discodeit.mapper.MapperMethod;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.ChannelService;
 
 import jakarta.transaction.Transactional;
@@ -25,6 +26,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -46,6 +48,8 @@ public class BasicChannelService implements ChannelService {
     private final MapperMethod mapperMethod;
 
     private final RoleHierarchy roleHierarchy;
+
+    private final SessionRegistry sessionRegistry;
 
 
     /**
@@ -181,7 +185,8 @@ public class BasicChannelService implements ChannelService {
                 userProjection ->
                         mapStructMapper.toDto(
                                 userProjection,
-                                mapStructMapper.toDto(userProjection,mapperMethod) // 임시 사용. 추후 mapperMethod 분리
+                                mapStructMapper.toDto(userProjection,mapperMethod), // 임시 사용. 추후 mapperMethod 분리
+                                userOnline(userProjection.username())
                         )
         ).toList();
     }
@@ -195,6 +200,18 @@ public class BasicChannelService implements ChannelService {
                 .anyMatch(g -> g.equals("CHANNEL_MANAGER"));
 
         if (!has) throw new AccessDeniedException("");
+    }
+
+    private Boolean userOnline(String username){
+        for (Object principal : sessionRegistry.getAllPrincipals()) {
+            if (
+                    principal instanceof DiscodeitUserDetails details
+                            && details.getUsername().equals(username)
+            ){
+                return true;
+            }
+        }
+        return false;
     }
 
 }

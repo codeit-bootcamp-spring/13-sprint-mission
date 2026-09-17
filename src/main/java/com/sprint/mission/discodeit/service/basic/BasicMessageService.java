@@ -20,6 +20,7 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import jakarta.transaction.Transactional;
@@ -27,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.stereotype.Service;
 
 
@@ -48,6 +50,8 @@ public class BasicMessageService implements MessageService {
     private final BinaryContentStorage binaryContentStorage;
     private final PageResponseMapper pageResponseMapper;
     private final MapStructMapper mapStructMapper;
+
+    private final SessionRegistry sessionRegistry;
 
     private User getUserOrException(UUID id){
         return userRepository.findById(id).orElseThrow(
@@ -176,7 +180,7 @@ public class BasicMessageService implements MessageService {
     private UserDto userDto(Message msg){
         User user = msg.getAuthor();
         BinaryContent profile = user.getProfile();
-        return mapStructMapper.toDto(user,binaryContentDto(profile),user.online());
+        return mapStructMapper.toDto(user,binaryContentDto(profile),userOnline(user.getUsername()));
     }
 
     private BinaryContentDto binaryContentDto(BinaryContent bc){
@@ -192,4 +196,17 @@ public class BasicMessageService implements MessageService {
             return null;
         }
     }
+
+    private Boolean userOnline(String username){
+        for (Object principal : sessionRegistry.getAllPrincipals()) {
+            if (
+                    principal instanceof DiscodeitUserDetails details
+                            && details.getUsername().equals(username)
+            ){
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

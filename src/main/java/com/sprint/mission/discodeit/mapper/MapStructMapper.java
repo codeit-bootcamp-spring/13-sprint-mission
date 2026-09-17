@@ -44,18 +44,13 @@ public interface MapStructMapper {
     @Mapping(source = "channel.id",target = "channelId")
     ReadStatusDto toDto(ReadStatus readStatus);
 
-    @Mapping(source = "user.id",target = "userId")
-    UserStatusDto toDto(UserStatus userStatus);
-
-
-
 
     @Mapping(source = "projection.id", target = "id")
     @Mapping(source = "projection.username", target = "username")
     @Mapping(source = "projection.email", target = "email")
     @Mapping(source = "profile", target = "profile")
-    @Mapping(source = "projection.online", target = "online")
-    UserDto toDto(UserProjection projection, BinaryContentDto profile);
+    @Mapping(source = "online", target = "online")
+    UserDto toDto(UserProjection projection, BinaryContentDto profile,Boolean online);
 
 
     @Mapping(source = "message.id",target = "id")

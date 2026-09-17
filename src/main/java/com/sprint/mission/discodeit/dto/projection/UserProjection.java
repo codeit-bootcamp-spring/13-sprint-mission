@@ -10,7 +10,6 @@ public record UserProjection(
         String username,
         String email,
         String password,
-        Boolean online,
         Role role,
 
         // binaryContent info => user profile
