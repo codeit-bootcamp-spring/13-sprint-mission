@@ -83,7 +83,7 @@ public class BasicUserService implements UserService {
 
         log.debug("created User - username : {}, email : {}, password - {}", username, email, password);
 
-        // ? userStatus 저장이 되는가?
+        // 삭제 예정
         UserStatus ust = new UserStatus(user, Instant.now());
         user.setStatus(ust);
 
@@ -102,7 +102,6 @@ public class BasicUserService implements UserService {
     }
 
 
-    // Todo - Profile create 2 times. why????
     @Override
     @Transactional
     public UserDto update(UUID id, UserUpdateRequest uui, Optional<BinaryContentCreate> obcc){
@@ -140,6 +139,7 @@ public class BasicUserService implements UserService {
         if (user.getProfile() != null) {
             binaryContentStorage.delete(user.getProfile().getId());
         }
+
         us.ifPresent(userStatusRepository::delete);
 
         log.info("user with id - {} deleted", id);

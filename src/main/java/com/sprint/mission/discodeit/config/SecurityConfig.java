@@ -17,6 +17,9 @@ import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -24,6 +27,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 import java.io.IOException;
 
@@ -38,7 +42,8 @@ public class SecurityConfig {
             AuthenticationEntryPoint authenticationEntryPoint,
             AccessDeniedHandler accessDeniedHandler,
             LoginSuccessHandler loginSuccessHandler,
-            LoginFailureHandler loginFailureHandler
+            LoginFailureHandler loginFailureHandler,
+            SessionRegistry sessionRegistry
 
     ) throws Exception {
         http
@@ -60,6 +65,21 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        .invalidSessionUrl("/logout.html?expired")
+                        // 세션 갱신
+                        .sessionFixation(fix -> fix.changeSessionId())
+                        // 동시 세션 관리
+                        .sessionConcurrency(concur -> concur
+                                .maximumSessions(1)
+                                .maxSessionsPreventsLogin(false)
+                                .expiredUrl("/logout.html?expired")
+                                .sessionRegistry(sessionRegistry)
+                        )
+                )
+
+                // 에러 핸들러
                 .exceptionHandling( e -> e
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler)
@@ -86,6 +106,10 @@ public class SecurityConfig {
      */
     @Bean
     public PasswordEncoder passwordEncoder(){ return new BCryptPasswordEncoder(); }
+
+
+    @Bean
+    public SessionRegistry sessionRegistry(){ return new SessionRegistryImpl(); }
 
     @Bean
     public RoleHierarchy roleHierarchy(){
@@ -118,5 +142,9 @@ public class SecurityConfig {
         response.setCharacterEncoding("UTF-8");
         objectMapper.writeValue(response.getWriter(), pd);
     }
+
+    @Bean
+    HttpSessionEventPublisher httpSessionEventPublisher() { return new HttpSessionEventPublisher(); }
+
 
 }

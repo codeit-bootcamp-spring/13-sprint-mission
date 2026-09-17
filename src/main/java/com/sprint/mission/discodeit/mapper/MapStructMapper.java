@@ -34,7 +34,7 @@ public interface MapStructMapper {
     @Mapping(source = "projection.type", target = "type")
     @Mapping(source = "projection.name", target = "name")
     @Mapping(source = "projection.description", target = "description")
-    @Mapping(source = "projection.role", target= "role")
+//    @Mapping(source = "projection.role", target= "role")
     @Mapping(source = "users", target = "participants")
     @Mapping(source = "projection.lastMessageAt", target = "lastMessageAt")
     ChannelDto toDto(ChannelProjection projection, List<UserDto> users);
