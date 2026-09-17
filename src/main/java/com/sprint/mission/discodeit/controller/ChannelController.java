@@ -7,7 +7,6 @@ import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateReque
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.service.ChannelService;
-import jakarta.persistence.PostRemove;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
