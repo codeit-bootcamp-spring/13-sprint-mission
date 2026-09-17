@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.request.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.security.CustomUserDetails;
 import com.sprint.mission.discodeit.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -49,7 +50,7 @@ public class AuthController {
   @PutMapping("/role")
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<UserDto> updateRole(
-      @RequestBody UserRoleUpdateRequest request
+      @Valid @RequestBody UserRoleUpdateRequest request
   ) {
     UserDto response = userService.updateRole(request);
 

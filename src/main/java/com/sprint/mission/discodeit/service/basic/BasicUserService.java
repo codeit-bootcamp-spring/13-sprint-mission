@@ -229,7 +229,7 @@ public class BasicUserService implements UserService {
     User user = userRepository.findById(request.userId())
         .orElseThrow(() -> new UserNotFoundException(request.userId()));
 
-    user.updateRole(request.role());
+    user.updateRole(request.newRole());
 
     expireSession(request.userId());
 
