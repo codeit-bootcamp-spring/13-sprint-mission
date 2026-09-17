@@ -85,7 +85,7 @@ public class SecurityConfig {
             .failureHandler(loginFailureHandler)
         )
         .rememberMe(remember -> remember
-            .alwaysRemember(true)
+            .rememberMeParameter("remember-me")
         )
         .logout(logout -> logout
             .logoutUrl("/api/auth/logout")
