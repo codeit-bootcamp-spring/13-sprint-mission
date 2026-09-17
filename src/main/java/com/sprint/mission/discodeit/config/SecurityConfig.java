@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.security.CsrfTokenHandler;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
 import com.sprint.mission.discodeit.security.LoginFailureHandler;
 import com.sprint.mission.discodeit.security.LoginSuccessHandler;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,12 +21,15 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
@@ -41,6 +45,8 @@ public class SecurityConfig {
             HttpSecurity http,
             AuthenticationEntryPoint authenticationEntryPoint,
             AccessDeniedHandler accessDeniedHandler,
+//            PersistentTokenRepository tokenRepository,
+            UserDetailsService userDetailsService,
             LoginSuccessHandler loginSuccessHandler,
             LoginFailureHandler loginFailureHandler,
             SessionRegistry sessionRegistry
@@ -90,6 +96,16 @@ public class SecurityConfig {
                         .loginProcessingUrl("/api/auth/login")
                         .successHandler(loginSuccessHandler)
                         .failureHandler(loginFailureHandler)
+                )
+
+
+                .rememberMe(
+                        r -> r
+                                .key("discodeit-remember-me")
+                                .rememberMeParameter("remember-me")
+                                .tokenValiditySeconds(60*60*24*365)
+                                .tokenRepository(new JdbcTokenRepositoryImpl()) // 영구적용시, TokenRepository 상속 클래스 생성 후 작성.
+                                .userDetailsService(userDetailsService)
                 )
 
                 // 로그아웃 설정
