@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
@@ -38,6 +39,7 @@ public class AuthController implements AuthControllerDoc {
     }
 
     @PutMapping("role")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDto> changeRole(
             @RequestBody UserRoleUpdateRequest request
     ){

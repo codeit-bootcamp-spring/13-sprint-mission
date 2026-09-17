@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequ
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
+import org.springframework.security.core.Authentication;
 
 
 import java.util.List;
@@ -13,6 +14,6 @@ public interface ChannelService {
     ChannelDto createPublicChannel(PublicChannelCreateRequest cnp);
     ChannelDto createPrivateChannel(PrivateChannelCreateRequest cnp);
     List<ChannelDto> findAllByUserID(UUID userID);
-    ChannelDto update(UUID id, PublicChannelUpdateRequest uci);
-    void deleteChannel(UUID id);
+    ChannelDto update(UUID id, PublicChannelUpdateRequest uci, Authentication auth);
+    void deleteChannel(UUID id,Authentication authentication);
 }

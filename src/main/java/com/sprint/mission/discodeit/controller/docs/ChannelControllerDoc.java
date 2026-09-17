@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,7 +42,8 @@ public interface ChannelControllerDoc {
     })
     @RequestMapping(value = "/{channelId}",method = RequestMethod.DELETE)
     ResponseEntity<Void> delete(
-            @PathVariable UUID channelId
+            @PathVariable UUID channelId,
+            Authentication authentication
     );
 
     @Operation(summary = "채널 업데이트", description = "(공개된)채널 정보 업데이트")
@@ -67,7 +69,8 @@ public interface ChannelControllerDoc {
     @RequestMapping(value = "/{channelId}",method = RequestMethod.PATCH)
     ResponseEntity<ChannelDto> update(
             @PathVariable UUID channelId,
-            @RequestBody PublicChannelUpdateRequest pcur
+            @RequestBody PublicChannelUpdateRequest pcur,
+            Authentication authentication
     );
 
 

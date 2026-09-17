@@ -7,11 +7,14 @@ import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateReque
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.service.ChannelService;
+import jakarta.persistence.PostRemove;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,20 +35,24 @@ public class ChannelController implements ChannelControllerDoc {
         return ResponseEntity.ok(channelService.findAllByUserID(userId));
     }
 
+    // todo - 권한 + 정보 command 레이어로 취합
     @RequestMapping(value = "/{channelId}",method = RequestMethod.DELETE)
     public ResponseEntity<Void> delete(
-            @PathVariable UUID channelId
+            @PathVariable UUID channelId,
+            Authentication authentication
     ){
-        channelService.deleteChannel(channelId);
+        channelService.deleteChannel(channelId,authentication);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
+    // todo - 권한 + 정보 command 레이어로 취합
     @RequestMapping(value = "/{channelId}",method = RequestMethod.PATCH)
     public ResponseEntity<ChannelDto> update(
             @PathVariable UUID channelId,
-            @Valid @RequestBody PublicChannelUpdateRequest pcur
+            @Valid @RequestBody PublicChannelUpdateRequest pcur,
+            Authentication authentication
     ){
-        ChannelDto res = channelService.update(channelId, pcur);
+        ChannelDto res = channelService.update(channelId, pcur,authentication);
         return ResponseEntity.ok(res);
     }
 
@@ -59,10 +66,16 @@ public class ChannelController implements ChannelControllerDoc {
     }
 
     @RequestMapping(value = "/public",method = RequestMethod.POST)
+    @PreAuthorize("hasRole('CHANNEL_MANAGER')")
     public ResponseEntity<ChannelDto> createPublic(
             @Valid @RequestBody PublicChannelCreateRequest cpi
     ){
         ChannelDto res = channelService.createPublicChannel(cpi);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
+
+    private void getAuth(Authentication authentication){
+        authentication.getAuthorities();
+    }
+
 }

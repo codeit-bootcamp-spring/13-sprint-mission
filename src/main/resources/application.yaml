@@ -42,9 +42,10 @@ discodeit:
 
 
 
-#springdoc:
+springdoc:
 #  packages-to-scan: com.sprint.mission.discodeit.controller.docs
-
+  api-docs:
+    path: /swagger-doc
 
 ### Actuator 관련 설정. ###
 

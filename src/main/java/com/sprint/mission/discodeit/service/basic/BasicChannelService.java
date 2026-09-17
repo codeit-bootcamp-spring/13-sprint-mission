@@ -10,17 +10,24 @@ import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.ChannelTypeException;
+import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.mapper.MapperMethod;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.ChannelService;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -40,6 +47,9 @@ public class BasicChannelService implements ChannelService {
     private final MapStructMapper mapStructMapper;
 
     private final MapperMethod mapperMethod;
+
+    private final RoleHierarchy roleHierarchy;
+
 
     /**
      * public 채널 생성
@@ -102,8 +112,13 @@ public class BasicChannelService implements ChannelService {
      */
     @Override
     @Transactional
-    public ChannelDto update(UUID id, PublicChannelUpdateRequest uci) {
+    public ChannelDto update(UUID id, PublicChannelUpdateRequest uci, Authentication authentication) {
+
+
         Channel channel = getChannelOrException(id);
+
+        // 권한검사
+        if (channel.getType().equals(ChannelType.PUBLIC))checkAuth(authentication);
 
         checkPrivateChannel(channel);
 
@@ -115,8 +130,13 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     @Transactional
-    public void deleteChannel(UUID id) {
-        getChannelOrException(id);
+    public void deleteChannel(UUID id,Authentication authentication) {
+
+        Channel channel = getChannelOrException(id);
+
+        // 권한검사
+        if(channel.getType().equals(ChannelType.PUBLIC)) checkAuth(authentication);
+
         channelRepository.deleteById(id);
     }
 
@@ -168,4 +188,16 @@ public class BasicChannelService implements ChannelService {
                         )
         ).toList();
     }
+
+
+    private void checkAuth(Authentication auth){
+        Collection<? extends GrantedAuthority> res = roleHierarchy.getReachableGrantedAuthorities(auth.getAuthorities());
+
+        boolean has = res.stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(g -> g.equals("CHANNEL_MANAGER"));
+
+        if (!has) throw new AccessDeniedException("");
+    }
+
 }
