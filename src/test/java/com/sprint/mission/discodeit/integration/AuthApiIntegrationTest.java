@@ -2,15 +2,13 @@ package com.sprint.mission.discodeit.integration;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sprint.mission.discodeit.dto.request.LoginRequest;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.service.UserService;
 import java.util.Optional;
@@ -35,9 +33,6 @@ class AuthApiIntegrationTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
     private UserService userService;
 
     @Test
@@ -55,98 +50,69 @@ class AuthApiIntegrationTest {
     @DisplayName("로그인 API 통합 테스트 - 성공")
     void login_Success() throws Exception {
         // Given
-        // 테스트 사용자 생성
         UserCreateRequest userRequest = new UserCreateRequest(
-            "loginuser",
-            "login@example.com",
-            "Password1!"
+                "loginuser",
+                "login@example.com",
+                "Password1!"
         );
-        
         userService.create(userRequest, Optional.empty());
-        
-        // 로그인 요청
-        LoginRequest loginRequest = new LoginRequest(
-            "loginuser",
-            "Password1!"
-        );
-        
-        String requestBody = objectMapper.writeValueAsString(loginRequest);
 
         // When & Then
         mockMvc.perform(post("/api/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody)
-                .with(csrf()))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id", notNullValue()))
-            .andExpect(jsonPath("$.username", is("loginuser")))
-            .andExpect(jsonPath("$.email", is("login@example.com")));
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("username", "loginuser")
+                        .param("password", "Password1!")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", notNullValue()))
+                .andExpect(jsonPath("$.username", is("loginuser")))
+                .andExpect(jsonPath("$.email", is("login@example.com")));
     }
 
     @Test
     @DisplayName("로그인 API 통합 테스트 - 실패 (존재하지 않는 사용자)")
     void login_Failure_UserNotFound() throws Exception {
-        // Given
-        LoginRequest loginRequest = new LoginRequest(
-            "nonexistentuser",
-            "Password1!"
-        );
-        
-        String requestBody = objectMapper.writeValueAsString(loginRequest);
-
         // When & Then
+        // 사용자 존재 여부를 노출하지 않기 위해 404가 아닌 401로 응답한다
         mockMvc.perform(post("/api/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody)
-                .with(csrf()))
-            .andExpect(status().isNotFound());
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("username", "nonexistentuser")
+                        .param("password", "Password1!")
+                        .with(csrf()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status", is(401)));
     }
 
     @Test
     @DisplayName("로그인 API 통합 테스트 - 실패 (잘못된 비밀번호)")
     void login_Failure_InvalidCredentials() throws Exception {
         // Given
-        // 테스트 사용자 생성
         UserCreateRequest userRequest = new UserCreateRequest(
-            "loginuser2",
-            "login2@example.com",
-            "Password1!"
+                "loginuser2",
+                "login2@example.com",
+                "Password1!"
         );
-        
         userService.create(userRequest, Optional.empty());
-        
-        // 잘못된 비밀번호로 로그인 시도
-        LoginRequest loginRequest = new LoginRequest(
-            "loginuser2",
-            "WrongPassword1!"
-        );
-        
-        String requestBody = objectMapper.writeValueAsString(loginRequest);
 
         // When & Then
         mockMvc.perform(post("/api/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody)
-                .with(csrf()))
-            .andExpect(status().isUnauthorized());
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("username", "loginuser2")
+                        .param("password", "WrongPassword1!")
+                        .with(csrf()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status", is(401)));
     }
 
     @Test
-    @DisplayName("로그인 API 통합 테스트 - 실패 (유효하지 않은 요청)")
-    void login_Failure_InvalidRequest() throws Exception {
-        // Given
-        LoginRequest invalidRequest = new LoginRequest(
-            "", // 사용자 이름 비어있음 (NotBlank 위반)
-            ""  // 비밀번호 비어있음 (NotBlank 위반)
-        );
-        
-        String requestBody = objectMapper.writeValueAsString(invalidRequest);
-
+    @DisplayName("로그인 API 통합 테스트 - 실패 (자격 증명 누락)")
+    void login_Failure_EmptyCredentials() throws Exception {
         // When & Then
         mockMvc.perform(post("/api/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody)
-                .with(csrf()))
-            .andExpect(status().isBadRequest());
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("username", "")
+                        .param("password", "")
+                        .with(csrf()))
+                .andExpect(status().isUnauthorized());
     }
-} 
+}
