@@ -15,7 +15,13 @@ server:
 logging:
   level:
     com.sprint.mission.discodeit: debug
-
-
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
+    org.springframework.security: trace
+
+discodeit:
+  storage:
+    type: local
+
+    local:
+      root-path: ${STORAGE_LOCAL_ROOT_PATH:./storage}

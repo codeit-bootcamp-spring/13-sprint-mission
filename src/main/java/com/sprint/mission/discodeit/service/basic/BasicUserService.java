@@ -1,25 +1,29 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.request.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentUploadException;
 import com.sprint.mission.discodeit.exception.user.DuplicateUserException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.security.CustomUserDetails;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.session.SessionInformation;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,6 +38,8 @@ public class BasicUserService implements UserService {
   private final BinaryContentRepository binaryContentRepository;
   private final UserMapper userMapper;
   private final BinaryContentStorage binaryContentStorage;
+  private final PasswordEncoder passwordEncoder;
+  private final SessionRegistry sessionRegistry;
 
 
   @Override
@@ -75,15 +81,15 @@ public class BasicUserService implements UserService {
       profileContent = content;
     }
 
+    String encodedPassword = passwordEncoder.encode(request.password());
+
     User user = new User(
         request.username(),
         request.email(),
-        request.password(),
-        profileContent
+        encodedPassword,
+        profileContent,
+        Role.USER
     );
-
-    UserStatus userStatus = new UserStatus(user, Instant.now());
-    user.updateStatus(userStatus);
 
     userRepository.save(user);
 
@@ -182,7 +188,10 @@ public class BasicUserService implements UserService {
       log.debug("새 프로필 파일 업로드 완료: userId={}, binaryContentId={}", id, newProfile.getId());
     }
 
-    user.update(request.newUsername(), request.newEmail(), request.newPassword(), currentProfile);
+    String encodedPassword =
+        request.newPassword() != null ? passwordEncoder.encode(request.newPassword()) : null;
+
+    user.update(request.newUsername(), request.newEmail(), encodedPassword, currentProfile);
 
     log.info("사용자 수정 완료: userId={}", id);
 
@@ -212,5 +221,30 @@ public class BasicUserService implements UserService {
     userRepository.delete(user);
 
     log.info("사용자 삭제 완료: userId={}", userId);
+  }
+
+  @Override
+  public UserDto updateRole(UserRoleUpdateRequest request) {
+
+    User user = userRepository.findById(request.userId())
+        .orElseThrow(() -> new UserNotFoundException(request.userId()));
+
+    user.updateRole(request.newRole());
+
+    expireSession(request.userId());
+
+    return userMapper.toDto(user);
+  }
+
+  private void expireSession(UUID userId) {
+    sessionRegistry.getAllPrincipals().stream()
+        .filter(CustomUserDetails.class::isInstance)
+        .map(CustomUserDetails.class::cast)
+        .filter(UserDetails -> UserDetails.getUserDto().id().equals(userId)
+        )
+        .forEach(UserDetails ->
+            sessionRegistry
+                .getAllSessions(UserDetails, false)
+                .forEach(SessionInformation::expireNow));
   }
 }

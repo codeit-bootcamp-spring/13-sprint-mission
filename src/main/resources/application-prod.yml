@@ -15,3 +15,12 @@ server:
 logging:
   level:
     com.sprint.mission.discodeit: info
+
+discodeit:
+  storage:
+    type: s3
+
+    s3:
+      region: ${AWS_S3_REGION:ap-northeast-2}
+      bucket: ${AWS_S3_BUCKET}
+      presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600}

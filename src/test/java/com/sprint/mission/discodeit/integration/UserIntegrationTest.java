@@ -1,5 +1,8 @@
 package com.sprint.mission.discodeit.integration;
 
+import static org.hamcrest.Matchers.hasItem;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -8,6 +11,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.Role;
+import com.sprint.mission.discodeit.security.CustomUserDetails;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -50,8 +56,9 @@ class UserIntegrationTest {
     mockMvc.perform(
             multipart("/api/users")
                 .file(requestPart)
+                .with(csrf())
         )
-        .andExpect(status().isCreated())
+        .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").exists())
         .andExpect(jsonPath("$.username").value("testUser"))
         .andExpect(jsonPath("$.email").value("test@test.com"));
@@ -67,12 +74,28 @@ class UserIntegrationTest {
     );
 
     // when & then
-    mockMvc.perform(get("/api/users"))
+    mockMvc.perform(
+            get("/api/users")
+                .with(user(authenticatedUser(
+                    userId,
+                    "testUser",
+                    "test@test.com"
+                )))
+        )
         .andExpect(status().isOk())
         .andExpect(jsonPath("$").isArray())
-        .andExpect(jsonPath("$[0].id").value(userId.toString()))
-        .andExpect(jsonPath("$[0].username").value("testUser"))
-        .andExpect(jsonPath("$[0].email").value("test@test.com"));
+        .andExpect(
+            jsonPath("$[*].id")
+                .value(hasItem(userId.toString()))
+        )
+        .andExpect(
+            jsonPath("$[*].username")
+                .value(hasItem("testUser"))
+        )
+        .andExpect(
+            jsonPath("$[*].email")
+                .value(hasItem("test@test.com"))
+        );
   }
 
   @Test
@@ -101,6 +124,12 @@ class UserIntegrationTest {
     mockMvc.perform(
             multipart("/api/users/{userId}", userId)
                 .file(requestPart)
+                .with(csrf())
+                .with(user(authenticatedUser(
+                    userId,
+                    "testUser",
+                    "test@test.com"
+                )))
                 .with(request -> {
                   request.setMethod("PATCH");
                   return request;
@@ -124,12 +153,23 @@ class UserIntegrationTest {
     // when
     mockMvc.perform(
             delete("/api/users/{userId}", userId)
+                .with(csrf())
+                .with(user(authenticatedUser(
+                    userId,
+                    "testUser",
+                    "test@test.com"
+                )))
         )
         .andExpect(status().isNoContent());
 
     // then
     mockMvc.perform(
             get("/api/users/{userId}", userId)
+                .with(user(authenticatedUser(
+                    userId,
+                    "testUser",
+                    "test@test.com"
+                )))
         )
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("U001"))
@@ -149,8 +189,9 @@ class UserIntegrationTest {
     MvcResult result = mockMvc.perform(
             multipart("/api/users")
                 .file(requestPart)
+                .with(csrf())
         )
-        .andExpect(status().isCreated())
+        .andExpect(status().isOk())
         .andReturn();
 
     JsonNode responseBody = objectMapper.readTree(
@@ -185,5 +226,12 @@ class UserIntegrationTest {
         MediaType.APPLICATION_JSON_VALUE,
         requestBody.getBytes(StandardCharsets.UTF_8)
     );
+  }
+
+  private CustomUserDetails authenticatedUser(UUID userId, String username, String email) {
+
+    UserDto userDto = new UserDto(userId, username, email, null, null, Role.USER);
+
+    return new CustomUserDetails(userDto, "password");
   }
 }

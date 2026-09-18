@@ -16,6 +16,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -56,6 +57,7 @@ public class MessageController {
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
+  @PreAuthorize("@messageSecurity.isAuthor(#id, principal.getUserDto().id())")
   @PatchMapping("/{messageId}")
   public ResponseEntity<MessageDto> update(
       @PathVariable("messageId") UUID id,
@@ -68,6 +70,7 @@ public class MessageController {
     return ResponseEntity.ok(response);
   }
 
+  @PreAuthorize("@messageSecurity.isAuthor(#id, principal.getUserDto().id())")
   @DeleteMapping("/{messageId}")
   public ResponseEntity<Void> delete(
       @PathVariable("messageId") UUID id

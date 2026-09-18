@@ -5,16 +5,6 @@ spring:
   profiles:
     active: dev
 
-discodeit:
-  storage:
-    type: ${STORAGE_TYPE:local}
-    local:
-      root-path: ${STORAGE_LOCAL_ROOT_PATH:./storage}
-    s3:
-      region: ${AWS_S3_REGION:ap-northeast-2}
-      bucket: ${AWS_S3_BUCKET:}
-      presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600}
-
 logging:
   level:
     root: info
@@ -61,7 +51,6 @@ info:
 
     storage:
       type: ${discodeit.storage.type}
-      root-path: ${discodeit.storage.local.root-path}
 
     multipart:
       max-file-size: ${spring.servlet.multipart.max-file-size:10MB}

@@ -14,15 +14,8 @@ CREATE TABLE "users" (
 	"username"	varchar(50)		NOT NULL,
 	"email"	varchar(100)		NOT NULL,
 	"password"	varchar(60)		NOT NULL,
+    "role"      varchar(20)     NOT NULL,
 	"profile_id"	uuid		NULL
-);
-
-CREATE TABLE "user_statuses" (
-	"id"	uuid		NOT NULL,
-	"created_at"	timestamptz		NOT NULL,
-	"updated_at"	timestamptz		NULL,
-	"user_id"	uuid		NOT NULL,
-	"last_active_at"	timestamptz		NOT NULL
 );
 
 CREATE TABLE "messages" (
@@ -64,10 +57,6 @@ ALTER TABLE "users"
 ADD CONSTRAINT "PK_USERS"
 PRIMARY KEY ("id");
 
-ALTER TABLE "user_statuses"
-ADD CONSTRAINT "PK_USER_STATUSES"
-PRIMARY KEY ("id");
-
 ALTER TABLE "messages"
 ADD CONSTRAINT "PK_MESSAGES"
 PRIMARY KEY ("id");
@@ -101,13 +90,6 @@ ADD CONSTRAINT "FK_binary_contents_TO_users_1"
 FOREIGN KEY ("profile_id")
 REFERENCES "binary_contents" ("id")
 ON DELETE SET NULL;
-
-
-ALTER TABLE "user_statuses"
-ADD CONSTRAINT "FK_users_TO_user_statuses_1"
-FOREIGN KEY ("user_id")
-REFERENCES "users" ("id")
-ON DELETE CASCADE;
 
 ALTER TABLE "messages"
 ADD CONSTRAINT "FK_channels_TO_messages_1"
@@ -144,10 +126,6 @@ UNIQUE ("email");
 ALTER TABLE "users"
 ADD CONSTRAINT "UK_USERS_PROFILE_ID"
 UNIQUE ("profile_id");
-
-ALTER TABLE "user_statuses"
-ADD CONSTRAINT "UK_USER_STATUSES_USER_ID"
-UNIQUE ("user_id");
 
 ALTER TABLE "read_statuses"
 ADD CONSTRAINT "UK_READ_STATUSES_USER_CHANNEL"
