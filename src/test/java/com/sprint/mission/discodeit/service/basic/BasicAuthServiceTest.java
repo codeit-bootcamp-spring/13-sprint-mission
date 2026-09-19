@@ -7,7 +7,7 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.security.JwtRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,10 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.session.SessionInformation;
-import org.springframework.security.core.session.SessionRegistry;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -39,7 +36,7 @@ class BasicAuthServiceTest {
     private UserMapper userMapper;
 
     @Mock
-    private SessionRegistry sessionRegistry;
+    private JwtRegistry jwtRegistry;
 
     @InjectMocks
     private BasicAuthService authService;
@@ -49,7 +46,7 @@ class BasicAuthServiceTest {
     class UpdateRole {
 
         @Test
-        @DisplayName("사용자가 존재하면 권한을 수정하고 활성 세션을 만료")
+        @DisplayName("사용자가 존재하면 권한을 수정하고 JWT 정보를 무효화")
         void update_success() {
             // given
             UUID userId = UUID.randomUUID();
@@ -60,24 +57,6 @@ class BasicAuthServiceTest {
             );
 
             User user = mock(User.class);
-
-            UserDto principalUserDto = new UserDto(
-                    userId,
-                    "user1",
-                    "user1@test.com",
-                    null,
-                    true,
-                    Role.USER
-            );
-
-            DiscodeitUserDetails principal =
-                    new DiscodeitUserDetails(
-                            principalUserDto,
-                            "encoded-password"
-                    );
-
-            SessionInformation sessionInformation =
-                    mock(SessionInformation.class);
 
             UserDto expectedResponse = new UserDto(
                     userId,
@@ -93,12 +72,6 @@ class BasicAuthServiceTest {
 
             given(user.getId())
                     .willReturn(userId);
-
-            given(sessionRegistry.getAllPrincipals())
-                    .willReturn(List.of(principal));
-
-            given(sessionRegistry.getAllSessions(principal, false))
-                    .willReturn(List.of(sessionInformation));
 
             given(userMapper.toDto(user, false))
                     .willReturn(expectedResponse);
@@ -122,65 +95,8 @@ class BasicAuthServiceTest {
             then(user).should()
                     .updateRole(Role.CHANNEL_MANAGER);
 
-            then(sessionRegistry).should()
-                    .getAllPrincipals();
-
-            then(sessionRegistry).should()
-                    .getAllSessions(principal, false);
-
-            then(sessionInformation).should()
-                    .expireNow();
-
-            then(userMapper).should()
-                    .toDto(user, false);
-        }
-
-        @Test
-        @DisplayName("로그인 중이지 않은 사용자도 권한을 정상적으로 수정")
-        void update_success_no_session() {
-            // given
-            UUID userId = UUID.randomUUID();
-
-            UserRoleUpdateRequest request = new UserRoleUpdateRequest(
-                    userId,
-                    Role.CHANNEL_MANAGER
-            );
-
-            User user = mock(User.class);
-
-            UserDto expectedResponse = new UserDto(
-                    userId,
-                    "user1",
-                    "user1@test.com",
-                    null,
-                    false,
-                    Role.CHANNEL_MANAGER
-            );
-
-            given(userRepository.findById(userId))
-                    .willReturn(Optional.of(user));
-
-            given(user.getId())
-                    .willReturn(userId);
-
-            given(sessionRegistry.getAllPrincipals())
-                    .willReturn(List.of());
-
-            given(userMapper.toDto(user, false))
-                    .willReturn(expectedResponse);
-
-            // when
-            UserDto result = authService.updateRole(request);
-
-            // then
-            assertThat(result)
-                    .isEqualTo(expectedResponse);
-
-            then(user).should()
-                    .updateRole(Role.CHANNEL_MANAGER);
-
-            then(sessionRegistry).should()
-                    .getAllPrincipals();
+            then(jwtRegistry).should()
+                    .invalidateJwtInformationByUserId(userId);
 
             then(userMapper).should()
                     .toDto(user, false);
@@ -207,7 +123,7 @@ class BasicAuthServiceTest {
             then(userRepository).should()
                     .findById(userId);
 
-            then(sessionRegistry).shouldHaveNoInteractions();
+            then(jwtRegistry).shouldHaveNoInteractions();
 
             then(userMapper).should(never())
                     .toDto(
