@@ -11,13 +11,13 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: create
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
         highlight_sql: true
   profiles:
-    active: prod
+    active: dev
   servlet:
     multipart:
       enabled: true

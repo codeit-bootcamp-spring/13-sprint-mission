@@ -12,6 +12,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MessageRepository extends JpaRepository<Message, UUID> {
 
+  boolean existsByIdAndAuthorId(UUID messageId, UUID authorId);
+
   List<Message> findAllByChannelId(UUID channelId);
 
   @EntityGraph(attributePaths = {"author", "author.profile"})
