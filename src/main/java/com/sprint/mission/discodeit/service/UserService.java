@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.service;
 
 import com.sprint.mission.discodeit.dto.FileUploadDto;
 import com.sprint.mission.discodeit.dto.UserDto;
+import com.sprint.mission.discodeit.entity.Role;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,4 +20,6 @@ public interface UserService {
   void delete(UUID id);
 
   List<UserDto> findAllUsers();
+
+  UserDto updateRole(UUID userId, Role newRole);
 }

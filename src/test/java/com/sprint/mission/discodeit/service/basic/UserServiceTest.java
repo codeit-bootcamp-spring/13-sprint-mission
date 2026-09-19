@@ -23,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,6 +40,8 @@ class UserServiceTest {
   private BinaryContentStorage binaryContentStorage;
   @Mock
   private UserMapper userMapper;
+  @Mock
+  private PasswordEncoder passwordEncoder;
 
   @Test
   @DisplayName("create - 성공: 새로운 유저를 정상적으로 생성")
@@ -50,6 +53,7 @@ class UserServiceTest {
 
     given(userRepository.existsByUsername(username)).willReturn(false);
     given(userRepository.existsByEmail(email)).willReturn(false);
+    given(passwordEncoder.encode(password)).willReturn("encodedPassword");
 
     User mockUser = new User(email, username, password);
 

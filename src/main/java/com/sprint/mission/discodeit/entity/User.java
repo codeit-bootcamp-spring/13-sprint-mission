@@ -28,6 +28,10 @@ public class User extends BaseUpdatableEntity {
   @Transient
   private String statusMessage;
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private Role role;
+
   protected User() {
   }
 
@@ -36,6 +40,7 @@ public class User extends BaseUpdatableEntity {
     this.username = username;
     this.password = password;
     this.statusMessage = "";
+    this.role = Role.USER;
   }
 
   public void update(String email, String username, String password, String statusMessage) {
@@ -47,5 +52,9 @@ public class User extends BaseUpdatableEntity {
 
   public void updateProfile(BinaryContent profile) {
     this.profile = profile;
+  }
+
+  public void updateRole(Role role) {
+    this.role = role;
   }
 }

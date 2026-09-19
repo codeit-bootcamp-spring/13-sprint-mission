@@ -83,7 +83,7 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
 
   private S3Client getS3Client() {
     AwsCredentialsProvider credentialsProvider;
-    if (accessKey != null && !accessKey.isBlank() && secretKey != null && !secretKey.isBlank()) {
+    if (hasValidStaticCredentials()) {
       credentialsProvider = StaticCredentialsProvider.create(
           AwsBasicCredentials.create(accessKey, secretKey));
     } else {
@@ -98,7 +98,7 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
 
   private String generatePresignedUrl(String key, String contentType) {
     AwsCredentialsProvider credentialsProvider;
-    if (accessKey != null && !accessKey.isBlank() && secretKey != null && !secretKey.isBlank()) {
+    if (hasValidStaticCredentials()) {
       credentialsProvider = StaticCredentialsProvider.create(
           AwsBasicCredentials.create(accessKey, secretKey));
     } else {
@@ -125,5 +125,12 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
           presignRequest);
       return presignedGetObjectRequest.url().toString();
     }
+  }
+
+  private boolean hasValidStaticCredentials() {
+    return accessKey != null
+        && !accessKey.isBlank()
+        && secretKey != null
+        && !secretKey.isBlank();
   }
 }

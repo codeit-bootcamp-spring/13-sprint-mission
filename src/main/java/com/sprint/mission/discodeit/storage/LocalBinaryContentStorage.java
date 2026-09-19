@@ -23,6 +23,18 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @ConditionalOnProperty(name = "discodeit.storage.type", havingValue = "local")
 public class LocalBinaryContentStorage implements BinaryContentStorage {
 
+  private static final String STORAGE_INIT_ERROR_MESSAGE =
+      "로컬 저장소 디렉토리를 생성할 수 없습니다.";
+
+  private static final String FILE_SAVE_ERROR_MESSAGE =
+      "파일 저장 실패: ";
+
+  private static final String FILE_READ_ERROR_MESSAGE =
+      "파일 읽기 실패: ";
+
+  private static final String FILE_DOWNLOAD_ERROR_MESSAGE =
+      "파일 데이터를 불러올 수 없습니다: ";
+
   private final Path root;
 
   public LocalBinaryContentStorage(@Value("${discodeit.storage.local.root-path}") String rootPath) {
@@ -36,7 +48,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
         Files.createDirectories(root);
       }
     } catch (IOException e) {
-      throw new RuntimeException("로컬 저장소 디렉토리를 생성할 수 없습니다.", e);
+      throw new RuntimeException(STORAGE_INIT_ERROR_MESSAGE, e);
     }
   }
 
@@ -52,7 +64,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
       log.info("파일 로컬 저장 성공 - fileId: {}, path: {}", id, filePath);
     } catch (IOException e) {
       log.error("파일 저장 실패 - fileId: {}", id, e);
-      throw new RuntimeException("파일 저장 실패: " + id, e);
+      throw new RuntimeException(FILE_SAVE_ERROR_MESSAGE + id, e);
     }
 
     if (TransactionSynchronizationManager.isSynchronizationActive()) {
@@ -80,7 +92,8 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
       Path filePath = resolvePath(id);
       return Files.newInputStream(filePath);
     } catch (IOException e) {
-      throw new RuntimeException("파일 읽기 실패: " + id, e);
+      log.error("파일 읽기 실패 - fileId: {}", id, e);
+      throw new RuntimeException(FILE_READ_ERROR_MESSAGE + id, e);
     }
   }
 
@@ -102,7 +115,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
           .body(resource);
 
     } catch (Exception e) {
-      throw new RuntimeException("파일 데이터를 불러올 수 없습니다: " + dto.id(), e);
+      throw new RuntimeException(FILE_DOWNLOAD_ERROR_MESSAGE + dto.id(), e);
     }
   }
 }

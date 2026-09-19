@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.FileUploadDto;
 import com.sprint.mission.discodeit.dto.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.ErrorCode;
@@ -18,6 +19,8 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +34,7 @@ public class BasicUserService implements UserService {
   private final UserStatusRepository userStatusRepository;
   private final BinaryContentStorage binaryContentStorage;
   private final UserMapper userMapper;
+  private final PasswordEncoder passwordEncoder;
 
   @Override
   @Transactional
@@ -47,7 +51,9 @@ public class BasicUserService implements UserService {
       throw new UserAlreadyExistsException(ErrorCode.DUPLICATE_EMAIL, Map.of("email", email));
     }
 
-    User user = new User(email, username, password);
+    String encodedPassword = passwordEncoder.encode(password);
+
+    User user = new User(email, username, encodedPassword);
     saveProfileImage(user, profile);
     userRepository.save(user);
 
@@ -127,6 +133,24 @@ public class BasicUserService implements UserService {
     userStatusRepository.deleteByUserId(user.getId());
     userRepository.delete(user);
     log.info("User 삭제 완료 - userId: {}", id);
+  }
+
+  @Override
+  @Transactional
+  @PreAuthorize("hasRole('ADMIN')")
+  public UserDto updateRole(UUID userId, Role newRole) {
+    log.debug("User 권한 수정 요청 - userId: {}, role: {}", userId, newRole);
+
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new UserNotFoundException(
+            Map.of("userId", userId)
+        ));
+
+    user.updateRole(newRole);
+
+    log.info("User 권한 수정 완료 - userId: {}, role: {}", userId, newRole);
+
+    return userMapper.toDto(user);
   }
 
   private void saveProfileImage(User user, FileUploadDto profile) {

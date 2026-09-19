@@ -17,7 +17,6 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -67,7 +66,7 @@ public class UserController {
         request.password(),
         convertToFileUploadDto(profile)
     );
-    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    return ResponseEntity.ok(response);
   }
 
   @Operation(summary = "User 정보 수정")
