@@ -172,6 +172,8 @@ class MessageApiIntegrationTest {
     );
 
     messageService.create(messageRequest1, new ArrayList<>());
+    // createdAt DESC 정렬을 검증하므로 두 메시지의 생성 시각이 겹치지 않도록 간격을 둔다
+    Thread.sleep(10);
     messageService.create(messageRequest2, new ArrayList<>());
 
     // When & Then
