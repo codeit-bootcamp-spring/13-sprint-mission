@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.security.JwtRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -21,10 +22,14 @@ public class MessageMapper {
 
     public MessageDto toDto(Message message) {
 
-        UserDto author = userMapper.toDto(
-                message.getAuthor(),
-                isOnline(message.getAuthor().getId())
-        );
+        User authorEntity = message.getAuthor();
+
+        UserDto author = authorEntity != null
+                ? userMapper.toDto(
+                authorEntity,
+                isOnline(authorEntity.getId())
+        )
+                : null;
 
         List<BinaryContentDto> attachments = message.getAttachments().stream()
                 .map(binaryContentMapper::toDto)
