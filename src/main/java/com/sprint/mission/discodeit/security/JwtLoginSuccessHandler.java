@@ -42,10 +42,9 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
         String accessToken = jwtTokenProvider.createAccessToken(username, role);
         String refreshToken = jwtTokenProvider.createRefreshToken(username, role);
 
-        ResponseCookie refreshCookie = ResponseCookie
-                .from("REFRESH_TOKEN", refreshToken)
+        ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refreshToken)
                 .httpOnly(true)
-                .secure(true)
+                .secure(false)
                 .path("/")
                 .maxAge(refreshTokenValidity)
                 .build();
