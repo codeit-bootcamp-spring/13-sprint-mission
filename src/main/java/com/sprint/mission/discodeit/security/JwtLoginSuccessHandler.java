@@ -24,6 +24,7 @@ import java.time.Duration;
 public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final JwtRegistry jwtRegistry;
     private final ObjectMapper objectMapper;
 
     @Value("${discodeit.jwt.refresh-token-validity}")
@@ -41,6 +42,10 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
 
         String accessToken = jwtTokenProvider.createAccessToken(username, role);
         String refreshToken = jwtTokenProvider.createRefreshToken(username, role);
+
+        // 생성한 access, refresh 토큰으로 jwtInformation 생성 및 registry에 등록(로그인 성공 시 JWT 정보 등록)
+        JwtInformation jwtInformation = new JwtInformation(userDetails.getUserDto(), accessToken, refreshToken);
+        jwtRegistry.registerJwtInformation(jwtInformation);
 
         ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refreshToken)
                 .httpOnly(true)

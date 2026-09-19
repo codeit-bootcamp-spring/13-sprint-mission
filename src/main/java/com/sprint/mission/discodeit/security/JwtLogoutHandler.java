@@ -18,6 +18,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class JwtLogoutHandler implements LogoutHandler {
 
+    private final JwtRegistry jwtRegistry;
+
     @Override
     public void logout(HttpServletRequest request,
                        HttpServletResponse response,
@@ -29,7 +31,7 @@ public class JwtLogoutHandler implements LogoutHandler {
                 .findFirst()
                 .ifPresent(cookie -> {
                     // 서버 쪽에서 무효화
-//                    jwtRegistry.invalidateByRefreshToken(cookie.getValue());
+                    jwtRegistry.invalidateJwtInformationByRefreshToken(cookie.getValue());
 
                     response.addHeader(
                             HttpHeaders.SET_COOKIE,

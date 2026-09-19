@@ -36,8 +36,7 @@ public class SecurityConfig {
                                                    LoginFailureHandler loginFailureHandler,
                                                    AuthenticationEntryPoint authenticationEntryPoint,
                                                    AccessDeniedHandler accessDeniedHandler,
-                                                   JwtLogoutHandler jwtLogoutHandler,
-                                                   SessionRegistry sessionRegistry) throws Exception {
+                                                   JwtLogoutHandler jwtLogoutHandler) throws Exception {
 
         http
                 .csrf(csrf -> csrf

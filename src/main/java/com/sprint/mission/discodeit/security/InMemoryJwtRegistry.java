@@ -46,6 +46,20 @@ public class InMemoryJwtRegistry implements JwtRegistry {
     }
 
     @Override
+    public void invalidateJwtInformationByRefreshToken(String refreshToken) {
+        origin.forEach((userId, queue) -> {
+            // 전달받은 Refresh Token과 일치하는 JwtInformation 제거
+            queue.removeIf(jwtInformation ->
+                    jwtInformation.getRefreshToken().equals(refreshToken));
+
+            // JWT 정보가 남아있지 않으면 해당 사용자 행도 제거
+            if (queue.isEmpty()) {
+                origin.remove(userId, queue);
+            }
+        });
+    }
+
+    @Override
     public boolean hasActiveJwtInformationByUserId(UUID userId) {
         // 해당 사용자의 활성 JWT 정보가 존재하는지 확인
         Queue<JwtInformation> queue = origin.get(userId);
