@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.request.UserRoleUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.JwtDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.AuthService;
@@ -23,7 +24,7 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @GetMapping("csrf-token")
+    @GetMapping("/csrf-token")
     public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
         String tokenValue = csrfToken.getToken();
 
@@ -32,17 +33,18 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.NON_AUTHORITATIVE_INFORMATION).build();
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<UserDto> me(@AuthenticationPrincipal DiscodeitUserDetails userDetails) {
-        return ResponseEntity.ok(userDetails.getUserDto());
-
-    }
-
-    @PutMapping("role")
+    @PutMapping("/role")
     public ResponseEntity<UserDto> updateRole(@Valid @RequestBody UserRoleUpdateRequest request) {
         UserDto userDto = authService.updateRole(request);
 
         return ResponseEntity.ok().body(userDto);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<JwtDto> refresh(@CookieValue(name = "REFRESH_TOKEN") String refreshToken) {
+        JwtDto jwtDto = authService.refresh(refreshToken);
+
+        return ResponseEntity.ok().body(jwtDto);
     }
 
 }
