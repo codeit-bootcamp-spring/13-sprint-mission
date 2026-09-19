@@ -43,7 +43,7 @@ class BasicUserServiceTest {
 
   @Test
   @DisplayName("사용자를 정상적으로 생성한다")
-  void 사용자_생성() {
+  void createUser() {
     UserCreateRequest request =
         new UserCreateRequest("password", "김김김", "asdf@test.com", null, Role.USER);
     UserResponse response =
@@ -58,7 +58,7 @@ class BasicUserServiceTest {
 
   @Test
   @DisplayName("이메일이 중복되면 사용자 생성에 실패한다")
-  void 이메일_중복사용자_생성에_실패() {
+  void rejectDuplicateEmail() {
     UserCreateRequest request =
         new UserCreateRequest("password", "김김김", "asdf@test.com", null, Role.USER);
     given(repository.existsByEmail("asdf@test.com")).willReturn(true);

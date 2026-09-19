@@ -29,8 +29,8 @@ class UserRepositoryTest {
   TestEntityManager entityManager;
 
   @BeforeEach
-  void 유저_데이터_저장() {
-    entityManager.persist(사용자_생성("김김김", "asdf@test.com", "010-1111-1111"));
+  void setUp() {
+    entityManager.persist(createUser("김김김", "asdf@test.com", "010-1111-1111"));
     entityManager.flush();
     entityManager.clear();
   }
@@ -41,20 +41,20 @@ class UserRepositoryTest {
 
     @Test
     @DisplayName("등록된 이메일, 사용자명, 전화번호는 true를 반환한다")
-    void 등록된_사용자_정보는_존재한다고_반환한다() {
+    void findExistingUser() {
       assertThat(repository.existsByEmail("asdf@test.com")).isTrue();
       assertThat(repository.existsByUsername("김김김")).isTrue();
     }
 
     @Test
     @DisplayName("등록되지 않은 값은 false를 반환한다")
-    void 등록되지_않은_사용자_정보는_false() {
+    void rejectUnknownUser() {
       assertThat(repository.existsByEmail("not@test.com")).isFalse();
       assertThat(repository.existsByUsername("김없음")).isFalse();
     }
   }
 
-  private User 사용자_생성(String username, String email, String phoneNumber) {
+  private User createUser(String username, String email, String phoneNumber) {
     return User.builder()
         .username(username)
         .email(email)

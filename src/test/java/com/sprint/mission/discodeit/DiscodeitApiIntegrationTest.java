@@ -35,8 +35,8 @@ class DiscodeitApiIntegrationTest {
 
   @Test
   @DisplayName("사용자, 채널, 메시지와 Actuator API가 정상 동작한다")
-  void 주요_API가_정상적으로_동작() throws Exception {
-    UUID userId = 사용자_생성();
+  void runMainApis() throws Exception {
+    UUID userId = createUser();
 
     MvcResult channelResult = mvc.perform(post("/api/channels/public")
             .contentType(MediaType.APPLICATION_JSON)
@@ -45,12 +45,12 @@ class DiscodeitApiIntegrationTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.type").value("PUBLIC"))
         .andReturn();
-    UUID channelId = 응답_식별자_추출(channelResult);
+    UUID channelId = extractId(channelResult);
 
     MessageCreateRequest messageRequest =
         new MessageCreateRequest("안녕하세요", userId, channelId);
     mvc.perform(multipart("/api/messages")
-            .file(제이슨_파트_생성("messageCreateRequest", messageRequest)))
+            .file(jsonPart("messageCreateRequest", messageRequest)))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.content").value("안녕하세요"));
 
@@ -64,11 +64,11 @@ class DiscodeitApiIntegrationTest {
 
   @Test
   @DisplayName("잘못된 사용자, 채널, 메시지 요청은 400을 반환한다")
-  void 잘못된_API_요청은_400을_반환() throws Exception {
+  void rejectInvalidRequests() throws Exception {
     UserCreateRequest invalidUser =
         new UserCreateRequest("", "", "invalid", null, Role.USER);
     mvc.perform(multipart("/api/users")
-            .file(제이슨_파트_생성("userCreateRequest", invalidUser)))
+            .file(jsonPart("userCreateRequest", invalidUser)))
         .andExpect(status().isBadRequest());
 
     mvc.perform(post("/api/channels/public")
@@ -80,26 +80,26 @@ class DiscodeitApiIntegrationTest {
     MessageCreateRequest invalidMessage =
         new MessageCreateRequest("", UUID.randomUUID(), UUID.randomUUID());
     mvc.perform(multipart("/api/messages")
-            .file(제이슨_파트_생성("messageCreateRequest", invalidMessage)))
+            .file(jsonPart("messageCreateRequest", invalidMessage)))
         .andExpect(status().isBadRequest());
   }
 
-  private UUID 사용자_생성() throws Exception {
+  private UUID createUser() throws Exception {
     UserCreateRequest request = new UserCreateRequest(
         "password", "김김김", "asdf@test.com", null, Role.USER);
     MvcResult result = mvc.perform(multipart("/api/users")
-            .file(제이슨_파트_생성("userCreateRequest", request)))
+            .file(jsonPart("userCreateRequest", request)))
         .andExpect(status().isCreated())
         .andReturn();
-    return 응답_식별자_추출(result);
+    return extractId(result);
   }
 
-  private MockMultipartFile 제이슨_파트_생성(String name, Object value) throws Exception {
+  private MockMultipartFile jsonPart(String name, Object value) throws Exception {
     return new MockMultipartFile(
         name, "", MediaType.APPLICATION_JSON_VALUE, objectMapper.writeValueAsBytes(value));
   }
 
-  private UUID 응답_식별자_추출(MvcResult result) throws Exception {
+  private UUID extractId(MvcResult result) throws Exception {
     return UUID.fromString(objectMapper.readTree(result.getResponse().getContentAsByteArray())
         .get("id")
         .asText());
