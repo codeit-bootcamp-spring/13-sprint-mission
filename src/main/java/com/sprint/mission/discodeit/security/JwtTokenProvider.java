@@ -22,6 +22,7 @@ import java.util.Date;
 import java.text.ParseException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 
 @Component
 @Slf4j
@@ -62,6 +63,7 @@ public class JwtTokenProvider {
                     .issuer(issuer)
                     .issueTime(Date.from(now))
                     .expirationTime(Date.from(now.plus(validity)))
+                    .jwtID(UUID.randomUUID().toString())
                     .build();
 
             SignedJWT jwt = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claims);
