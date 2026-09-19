@@ -3,7 +3,7 @@ package com.sprint.mission.discodeit.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserType;
+import com.sprint.mission.discodeit.entity.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -60,7 +60,7 @@ class UserRepositoryTest {
         .email(email)
         .phoneNumber(phoneNumber)
         .password("password")
-        .userType(UserType.GENERAL)
+        .role(Role.USER)
         .build();
   }
 }

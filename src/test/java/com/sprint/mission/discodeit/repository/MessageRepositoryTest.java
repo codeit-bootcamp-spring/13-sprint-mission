@@ -7,7 +7,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserType;
+import com.sprint.mission.discodeit.entity.Role;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +43,7 @@ class MessageRepositoryTest {
         .username("neo")
         .email("neo@test.com")
         .password("password")
-        .userType(UserType.GENERAL)
+        .role(Role.USER)
         .build();
     channel = Channel.publicChannelBuilder()
         .type(ChannelType.PUBLIC)

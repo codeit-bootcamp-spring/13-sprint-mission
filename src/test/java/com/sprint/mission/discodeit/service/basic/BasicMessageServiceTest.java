@@ -12,7 +12,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserType;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
@@ -62,7 +62,7 @@ class BasicMessageServiceTest {
         .username("김김김")
         .email("asdf@test.com")
         .password("password")
-        .userType(UserType.GENERAL)
+        .role(Role.USER)
         .build();
     MessageCreateRequest request =
         new MessageCreateRequest("안녕하세요", author.getId(), channel.getId());

@@ -6,8 +6,7 @@ CREATE TABLE users (
     username VARCHAR(50) NOT NULL UNIQUE,
     email VARCHAR(100) NOT NULL UNIQUE,
     phone_number VARCHAR(30) UNIQUE,
-    user_type VARCHAR(255),
-    is_online BOOLEAN NOT NULL DEFAULT FALSE
+    user_type VARCHAR(255)
 );
 
 CREATE TABLE channel (
@@ -45,17 +44,6 @@ CREATE TABLE binary_content (
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     CONSTRAINT fk_binary_content_message
         FOREIGN KEY (message_id) REFERENCES message (id) ON DELETE CASCADE
-);
-
-CREATE TABLE user_status (
-    id UUID PRIMARY KEY,
-    created_at TIMESTAMP(6) WITH TIME ZONE NOT NULL,
-    updated_at TIMESTAMP(6) WITH TIME ZONE,
-    user_id UUID NOT NULL UNIQUE,
-    last_active_at TIMESTAMP(6) WITH TIME ZONE NOT NULL,
-    user_status VARCHAR(255),
-    CONSTRAINT fk_user_status_user
-        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE read_status (
