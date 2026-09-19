@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.service.UserService;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -114,5 +116,36 @@ class AuthApiIntegrationTest {
                         .param("password", "")
                         .with(csrf()))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("로그아웃 API 통합 테스트")
+    void logout_Success() throws Exception {
+        // Given
+        UserCreateRequest userRequest = new UserCreateRequest(
+                "logoutuser",
+                "logout@example.com",
+                "Password1!"
+        );
+        userService.create(userRequest, Optional.empty());
+
+        MockHttpSession session = (MockHttpSession) mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("username", "logoutuser")
+                        .param("password", "Password1!")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getRequest()
+                .getSession(false);
+
+        // When & Then
+        mockMvc.perform(post("/api/auth/logout")
+                        .session(session)
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
+
+        // 세션이 무효화되었는지 확인
+        assertThat(session.isInvalid()).isTrue();
     }
 }
