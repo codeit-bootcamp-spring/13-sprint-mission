@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.security.SpaCsrfTokenRequestHandler;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import org.springframework.context.annotation.Bean;
@@ -47,6 +48,7 @@ public class SecurityConfig {
     http
         .csrf(csrf -> csrf
             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+            .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
         )
 
         .formLogin(form -> form
@@ -71,7 +73,7 @@ public class SecurityConfig {
         .authorizeHttpRequests(auth -> auth
             // ── 공개(permitAll) — 로그인 전에도 되어야 하는 것들 ──
             .requestMatchers(HttpMethod.GET, "/api/auth/csrf-token").permitAll()  // CSRF 토큰 발급
-            .requestMatchers(HttpMethod.POST, "/api/auth/").permitAll()           // 회원가입
+            .requestMatchers(HttpMethod.POST, "/api/users").permitAll()          // 회원가입
             .requestMatchers("/api/auth/login", "/api/auth/logout")
             .permitAll()                        // 로그인·로그아웃 처리
             .requestMatchers("/", "/login.html", "/index.html", "/favicon.svg", "/assets/**")
@@ -118,7 +120,7 @@ public class SecurityConfig {
   @Bean
   public RoleHierarchy roleHierarchy() {
     return RoleHierarchyImpl.withDefaultRolePrefix()
-        .role("ADMIN").implies("CHAANNEL_MANAGER", "USER")
+        .role("ADMIN").implies("CHANNEL_MANAGER", "USER")
         .role("CHANNEL_MANAGER").implies("USER")
         .build();
   }

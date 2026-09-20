@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -97,12 +96,6 @@ public class GlobalExceptionHandler {
     log.error("서버 오류", e);
     return buildProblemDetail(HttpStatus.INTERNAL_SERVER_ERROR,
         ErrorCode.INTERNAL_ERROR.getMessage());
-  }
-
-  @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ProblemDetail handleValidationExceptions(MethodArgumentNotValidException ex) {
-    log.error("Validation failed: {}", ex.getMessage());
-    return buildProblemDetail(HttpStatus.FORBIDDEN, ex.getMessage());
   }
 
   private ProblemDetail buildProblemDetail(HttpStatus status, String detail) {
