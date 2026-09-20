@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -60,6 +61,7 @@ class DiscodeitIntegrationTest {
 
         mockMvc.perform(multipart("/api/users/{userId}", userId)
                         .file(updatePart)
+                        .with(csrf())
                         .with(request -> {
                             request.setMethod("PATCH");
                             return request;
@@ -69,7 +71,8 @@ class DiscodeitIntegrationTest {
                 .andExpect(jsonPath("$.username").value("updated"))
                 .andExpect(jsonPath("$.email").value("updated@example.com"));
 
-        mockMvc.perform(delete("/api/users/{userId}", userId))
+        mockMvc.perform(delete("/api/users/{userId}", userId)
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/api/users"))
@@ -86,7 +89,9 @@ class DiscodeitIntegrationTest {
         MockMultipartFile requestPart =
                 jsonPart("userCreateRequest", duplicateRequest);
 
-        mockMvc.perform(multipart("/api/users").file(requestPart))
+        mockMvc.perform(multipart("/api/users")
+                        .file(requestPart)
+                        .with(csrf()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.code").value("USER_ALREADY_EXISTS"))
@@ -102,6 +107,7 @@ class DiscodeitIntegrationTest {
                 new ChannelPublicRequest("announcement", "공지 채널입니다.");
 
         mockMvc.perform(patch("/api/channels/{channelId}", channelId)
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(updateRequest)))
                 .andExpect(status().isOk())
@@ -110,7 +116,8 @@ class DiscodeitIntegrationTest {
                 .andExpect(jsonPath("$.description").value("공지 채널입니다."))
                 .andExpect(jsonPath("$.type").value("PUBLIC"));
 
-        mockMvc.perform(delete("/api/channels/{channelId}", channelId))
+        mockMvc.perform(delete("/api/channels/{channelId}", channelId)
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/api/channels")
@@ -127,6 +134,7 @@ class DiscodeitIntegrationTest {
                 new ChannelPublicRequest("general", "일반 채널입니다.");
 
         mockMvc.perform(patch("/api/channels/{channelId}", channelId)
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(request)))
                 .andExpect(status().isNotFound())
@@ -155,7 +163,9 @@ class DiscodeitIntegrationTest {
                 jsonPart("messageCreateRequest", createRequest);
 
         MvcResult createResult = mockMvc.perform(
-                        multipart("/api/messages").file(createPart)
+                        multipart("/api/messages")
+                                .file(createPart)
+                                .with(csrf())
                 )
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.channelId").value(channelId.toString()))
@@ -177,13 +187,15 @@ class DiscodeitIntegrationTest {
                 new MessageUpdateRequest("수정된 메시지입니다.");
 
         mockMvc.perform(patch("/api/messages/{messageId}", messageId)
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(updateRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(messageId.toString()))
                 .andExpect(jsonPath("$.content").value("수정된 메시지입니다."));
 
-        mockMvc.perform(delete("/api/messages/{messageId}", messageId))
+        mockMvc.perform(delete("/api/messages/{messageId}", messageId)
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/api/messages")
@@ -211,7 +223,9 @@ class DiscodeitIntegrationTest {
         MockMultipartFile requestPart =
                 jsonPart("messageCreateRequest", request);
 
-        mockMvc.perform(multipart("/api/messages").file(requestPart))
+        mockMvc.perform(multipart("/api/messages")
+                        .file(requestPart)
+                        .with(csrf()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.code").value("CHANNEL_NOT_FOUND"))
@@ -228,7 +242,9 @@ class DiscodeitIntegrationTest {
                 jsonPart("userCreateRequest", request);
 
         MvcResult result = mockMvc.perform(
-                        multipart("/api/users").file(requestPart)
+                        multipart("/api/users")
+                                .file(requestPart)
+                                .with(csrf())
                 )
                 .andExpect(status().isCreated())
                 .andReturn();
@@ -244,6 +260,7 @@ class DiscodeitIntegrationTest {
                 new ChannelPublicRequest(name, description);
 
         MvcResult result = mockMvc.perform(post("/api/channels/public")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(request)))
                 .andExpect(status().isCreated())

@@ -16,6 +16,7 @@ import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,31 +35,63 @@ public class BasicUserService implements UserService {
     private final BinaryContentRepository binaryContentRepository;
     private final UserMapper userMapper;
     private final BinaryContentStorage binaryContentStorage;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
-    public UserResponse create(UserRequest dto, BinaryContentRequest profileDto) {
-        log.debug("사용자 생성 시작: username={}, profileIncluded={}",
-                dto.username(), profileDto != null);
+    public UserResponse create(
+            UserRequest dto,
+            BinaryContentRequest profileDto
+    ) {
+        log.debug(
+                "사용자 생성 시작: username={}, profileIncluded={}",
+                dto.username(),
+                profileDto != null
+        );
+
         if (userRepository.existsByUsername(dto.username())) {
-            log.warn("사용자 생성 실패 - 중복 username: {}", dto.username());
-            throw new UserAlreadyExistException("username", dto.username());
+            log.warn(
+                    "사용자 생성 실패 - 중복 username: {}",
+                    dto.username()
+            );
+            throw new UserAlreadyExistException(
+                    "username",
+                    dto.username()
+            );
         }
+
         if (userRepository.existsByEmail(dto.email())) {
-            log.warn("사용자 생성 실패 - 중복 email: {}", dto.email());
-            throw new UserAlreadyExistException("email", dto.email());
+            log.warn(
+                    "사용자 생성 실패 - 중복 email: {}",
+                    dto.email()
+            );
+            throw new UserAlreadyExistException(
+                    "email",
+                    dto.email()
+            );
         }
 
-        User user = new User(dto.username(), dto.email(), dto.password());
+        String encodedPassword = passwordEncoder.encode(dto.password());
 
-        if (profileDto != null && profileDto.fileName() != null && !profileDto.fileName().isBlank()) {
+        User user = new User(
+                dto.username(),
+                dto.email(),
+                encodedPassword
+        );
+
+        if (hasProfile(profileDto)) {
             BinaryContent binaryContent = new BinaryContent(
                     profileDto.fileName(),
                     profileDto.size(),
                     profileDto.contentType()
             );
-            BinaryContent savedProfile = binaryContentRepository.save(binaryContent);
 
-            binaryContentStorage.put(savedProfile.getId(), profileDto.bytes());
+            BinaryContent savedProfile =
+                    binaryContentRepository.save(binaryContent);
+
+            binaryContentStorage.put(
+                    savedProfile.getId(),
+                    profileDto.bytes()
+            );
 
             user.updateProfile(savedProfile);
         }
@@ -70,6 +103,7 @@ public class BasicUserService implements UserService {
         userStatusRepository.save(userStatus);
 
         log.info("사용자 생성 완료: userId={}", savedUser.getId());
+
         return userMapper.toDto(savedUser);
     }
 
@@ -83,41 +117,89 @@ public class BasicUserService implements UserService {
     @Override
     @Transactional(readOnly = true)
     public List<UserResponse> findAll() {
-        return userRepository.findAll().stream()
+        return userRepository.findAll()
+                .stream()
                 .map(userMapper::toDto)
                 .toList();
     }
 
     @Override
-    public UserResponse update(UUID id, UserRequest dto, BinaryContentRequest profileDto) {
-        log.debug("사용자 수정 시작: userId={}, profileIncluded={}", id, profileDto != null);
+    public UserResponse update(
+            UUID id,
+            UserRequest dto,
+            BinaryContentRequest profileDto
+    ) {
+        log.debug(
+                "사용자 수정 시작: userId={}, profileIncluded={}",
+                id,
+                profileDto != null
+        );
+
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
-        user.update(dto.username(), dto.password(), dto.email());
+        String encodedPassword = encodePasswordIfPresent(dto.password());
 
-        if (profileDto != null && profileDto.fileName() != null && !profileDto.fileName().isBlank()) {
-            BinaryContent newProfile = new BinaryContent(profileDto.fileName(), profileDto.size(), profileDto.contentType());
-            BinaryContent savedProfile = binaryContentRepository.save(newProfile);
-            binaryContentStorage.put(savedProfile.getId(), profileDto.bytes());
+        user.update(
+                dto.username(),
+                encodedPassword,
+                dto.email()
+        );
+
+        if (hasProfile(profileDto)) {
+            BinaryContent newProfile = new BinaryContent(
+                    profileDto.fileName(),
+                    profileDto.size(),
+                    profileDto.contentType()
+            );
+
+            BinaryContent savedProfile =
+                    binaryContentRepository.save(newProfile);
+
+            binaryContentStorage.put(
+                    savedProfile.getId(),
+                    profileDto.bytes()
+            );
+
             user.updateProfile(savedProfile);
         }
+
         log.info("사용자 수정 완료: userId={}", id);
+
         return userMapper.toDto(user);
     }
 
     @Override
     public void delete(UUID id) {
         log.debug("사용자 삭제 시작: userId={}", id);
+
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
         userStatusRepository.deleteById(id);
+
         if (user.getProfile() != null) {
-            binaryContentRepository.deleteById(user.getProfile().getId());
+            binaryContentRepository.deleteById(
+                    user.getProfile().getId()
+            );
         }
 
         userRepository.delete(user);
+
         log.info("사용자 삭제 완료: userId={}", id);
+    }
+
+    private String encodePasswordIfPresent(String password) {
+        if (password == null || password.isBlank()) {
+            return null;
+        }
+
+        return passwordEncoder.encode(password);
+    }
+
+    private boolean hasProfile(BinaryContentRequest profileDto) {
+        return profileDto != null
+                && profileDto.fileName() != null
+                && !profileDto.fileName().isBlank();
     }
 }
