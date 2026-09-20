@@ -12,7 +12,10 @@ import java.util.List;
 
 @Mapper(
         componentModel = "spring",
-        unmappedTargetPolicy = ReportingPolicy.IGNORE
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,  // nll 필드 덮어씌우기 안함 (patch)
+        nullValueIterableMappingStrategy = NullValueMappingStrategy.RETURN_NULL,    // list 가 비어있으면 null 반환.
+        nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS  // null 필드 생성 안함 (put)
 //        imports = {
 //                MapperMethod.class
 //        }
@@ -34,7 +37,6 @@ public interface MapStructMapper {
     @Mapping(source = "projection.type", target = "type")
     @Mapping(source = "projection.name", target = "name")
     @Mapping(source = "projection.description", target = "description")
-//    @Mapping(source = "projection.role", target= "role")
     @Mapping(source = "users", target = "participants")
     @Mapping(source = "projection.lastMessageAt", target = "lastMessageAt")
     ChannelDto toDto(ChannelProjection projection, List<UserDto> users);

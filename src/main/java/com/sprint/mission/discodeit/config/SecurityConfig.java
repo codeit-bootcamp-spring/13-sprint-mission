@@ -62,7 +62,7 @@ public class SecurityConfig {
                         // 특정 경로 인증 안함.
                         .requestMatchers(HttpMethod.GET,"/api/auth/csrf-token").permitAll() // csrf 토큰 발급
                         .requestMatchers(HttpMethod.POST,"/api/users").permitAll() // 유저 생성 (회원가입)
-                        .requestMatchers("/api/auth/login","/api/auth/logout").permitAll() //csrf 토큰 발급
+                        .requestMatchers("/api/auth/login","/api/auth/logout","/api/auth/me").permitAll() //csrf 토큰 발급
                         .requestMatchers("/", "/login.html", "/index.html", "/favicon.ico", "/assets/**").permitAll() // 정적 리소스
                         .requestMatchers("/h2-console/**", "/swagger-doc").permitAll() // h2 인메모리 데이터베이스, swagger
                         // 권한 기반 페이지 인가
@@ -73,14 +73,14 @@ public class SecurityConfig {
 
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                        .invalidSessionUrl("/logout.html?expired")
+                        .invalidSessionUrl("/")
                         // 세션 갱신
                         .sessionFixation(fix -> fix.changeSessionId())
                         // 동시 세션 관리
                         .sessionConcurrency(concur -> concur
                                 .maximumSessions(1)
                                 .maxSessionsPreventsLogin(false)
-                                .expiredUrl("/logout.html?expired")
+                                .expiredUrl("/")
                                 .sessionRegistry(sessionRegistry)
                         )
                 )
@@ -104,7 +104,7 @@ public class SecurityConfig {
                                 .key("discodeit-remember-me")
                                 .rememberMeParameter("remember-me")
                                 .tokenValiditySeconds(60*60*24*365)
-                                .tokenRepository(new JdbcTokenRepositoryImpl()) // 영구적용시, TokenRepository 상속 클래스 생성 후 작성.
+                                .tokenRepository(null) // 영구적용시, TokenRepository 상속 클래스 생성 후 작성.
                                 .userDetailsService(userDetailsService)
                 )
 

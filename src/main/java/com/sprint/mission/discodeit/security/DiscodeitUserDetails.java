@@ -38,11 +38,6 @@ public class DiscodeitUserDetails implements UserDetails {
         return UserDetails.super.isEnabled();
     }
 
-    /*
-    권한, username(식별자) password 와 같은 유저 정보 반환 매서드.
-    todo - email or username 어떤게 로그인에 사용되는지 까먹음. 나중에 수정
-     */
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // 접두어 "ROLE_" 은 관례적으로 붙임.
@@ -56,9 +51,10 @@ public class DiscodeitUserDetails implements UserDetails {
         return password;
     }
 
+    // email 을 반환. username 은 변경 가능한 값이기 때문.
     @Override
     public String getUsername() {
-        return userDto.username();
+        return userDto.email();
     }
 
 

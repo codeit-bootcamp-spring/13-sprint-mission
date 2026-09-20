@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.projection.UserProjection;
 import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
@@ -187,8 +188,10 @@ public class BasicChannelService implements ChannelService {
 
     private List<UserDto> getUserDtoFromId(UUID... userId){
 
+        log.debug("ChannelService - 채널 유저 인수 : {},{}", userId.length, userId[0]);
+
         // public 이라면 user == empty Array
-        if (userId == null) return List.of();
+        if (userId.length == 1 && userId[0] == null) return List.of();
 
         Collection<UserProjection> users = userRepository.getUserInfoFromIds(userId);
 
@@ -196,7 +199,9 @@ public class BasicChannelService implements ChannelService {
                 userProjection ->
                         mapStructMapper.toDto(
                                 userProjection,
-                                mapStructMapper.toDto(userProjection,mapperMethod), // 임시 사용. 추후 mapperMethod 분리
+                                userProjection.profileId() != null ?
+                                        mapStructMapper.toDto(userProjection,mapperMethod)
+                                        : new BinaryContentDto(null,null,null,null,null), // 임시 사용. 추후 mapperMethod 분리
                                 userOnline(userProjection.username())
                         )
         ).toList();

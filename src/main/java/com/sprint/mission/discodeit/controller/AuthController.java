@@ -32,11 +32,22 @@ public class AuthController implements AuthControllerDoc {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
+    /**
+     * 쿠키에 저장된 세션ID 를 통한 사용자 정보 조회 API.
+     * @param userDetails 유저 인증 정보 객체.
+     * @return 200 응답
+     */
     @GetMapping("me")
     public ResponseEntity<UserDto> me(
             @AuthenticationPrincipal DiscodeitUserDetails userDetails   // 인증이 성공한다면, 자동으로 반환.
     ){
-        return ResponseEntity.ok(userDetails.getUserDto());
+        log.debug("AuthControl - me : {}",userDetails);
+
+        UserDto dto = null;
+
+        if (userDetails != null) dto = userDetails.getUserDto();
+
+        return ResponseEntity.ok(dto);
     }
 
     @PutMapping("role")

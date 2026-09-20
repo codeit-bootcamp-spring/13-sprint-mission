@@ -36,7 +36,7 @@ public class DiscodeitUserDetailsService implements UserDetailsService {
 
         UserProjection projection = userRepository.getUserFromUsername(username)
                 .orElseThrow(() -> {
-                    log.warn("UserDetails - 유저 조회 오류");
+                    log.warn("UserDetails - 유저 조회 오류 : {}",username);
                     return new DiscodeitException(ExceptionCode.AUTH_FAILURE,"인증 오류");
                 });
 
