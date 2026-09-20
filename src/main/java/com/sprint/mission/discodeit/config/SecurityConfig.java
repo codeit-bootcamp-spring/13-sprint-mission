@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.security.LoginFailureHandler;
 import com.sprint.mission.discodeit.security.LoginSuccessHandler;
 import com.sprint.mission.discodeit.security.RestAccessDeniedHandler;
 import com.sprint.mission.discodeit.security.RestAuthenticationEntryPoint;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,6 +17,7 @@ import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +30,12 @@ import org.springframework.security.web.session.HttpSessionEventPublisher;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+  @Value("${discodeit.remember-me.key}")
+  private String rememberMeKey;
+
+  @Value("${discodeit.remember-me.token-validity-seconds}")
+  private int rememberMeTokenValiditySeconds;
+
   @Bean
   public SecurityFilterChain filterChain(
           HttpSecurity http,
@@ -35,7 +43,8 @@ public class SecurityConfig {
           LoginFailureHandler loginFailureHandler,
           RestAuthenticationEntryPoint authenticationEntryPoint,
           RestAccessDeniedHandler accessDeniedHandler,
-          SessionRegistry sessionRegistry
+          SessionRegistry sessionRegistry,
+          UserDetailsService userDetailsService
   ) throws Exception {
     return http
             .csrf(csrf -> csrf
@@ -51,6 +60,11 @@ public class SecurityConfig {
                     .logoutUrl("/api/auth/logout")
                     .logoutSuccessHandler(
                             new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT))
+            )
+            .rememberMe(rememberMe -> rememberMe
+                    .key(rememberMeKey)
+                    .tokenValiditySeconds(rememberMeTokenValiditySeconds)
+                    .userDetailsService(userDetailsService)
             )
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers(HttpMethod.GET, "/api/auth/csrf-token").permitAll()

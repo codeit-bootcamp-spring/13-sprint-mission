@@ -57,6 +57,9 @@ discodeit:
       region: ${AWS_S3_REGION}
       bucket: ${AWS_S3_BUCKET}
       presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600} # (기본값: 10분)
+  remember-me:
+    key: ${REMEMBER_ME_KEY:discodeit-remember-me-key}
+    token-validity-seconds: ${REMEMBER_ME_TOKEN_VALIDITY:1209600}  # (기본값: 14일)
   admin:
     username: ${ADMIN_USERNAME:admin}
     email: ${ADMIN_EMAIL:admin@discodeit.com}
