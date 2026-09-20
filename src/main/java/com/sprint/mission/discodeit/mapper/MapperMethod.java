@@ -17,6 +17,9 @@ public class MapperMethod {
     private final BinaryContentStorage binaryContentStorage;
 
     public byte[] getByteFrom(UUID id) {
+
+        if (id == null) return null;
+
         try (InputStream in = binaryContentStorage.get(id)){
             return in.readAllBytes();
         } catch (IOException e) {

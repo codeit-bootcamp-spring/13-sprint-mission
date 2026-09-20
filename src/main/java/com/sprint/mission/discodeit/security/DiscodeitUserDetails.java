@@ -47,7 +47,7 @@ public class DiscodeitUserDetails implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // 접두어 "ROLE_" 은 관례적으로 붙임.
         return List.of(
-                new SimpleGrantedAuthority("ROLE_" + userDto.role().value())
+                new SimpleGrantedAuthority("ROLE_" + userDto.role())
         );
     }
 

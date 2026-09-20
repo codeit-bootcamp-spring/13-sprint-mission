@@ -61,6 +61,9 @@ public class BasicChannelService implements ChannelService {
     @Transactional
     public ChannelDto createPublicChannel(PublicChannelCreateRequest cpb){
         Channel channel = channelRepository.save(new Channel(cpb.name(), cpb.description(), ChannelType.PUBLIC));
+
+        log.debug("ChannelService - public 채널 생성 {}",channel.getId());
+
         return channelDtoFrom(channel);
     }
 
@@ -73,6 +76,8 @@ public class BasicChannelService implements ChannelService {
     @Transactional
     public ChannelDto createPrivateChannel(PrivateChannelCreateRequest cpv){
         Channel channel = channelRepository.save(new Channel("", "", ChannelType.PRIVATE));
+
+        log.debug("ChannelService - private 채널 생성 {}",channel.getId());
 
         // todo - request 를 command 레이어를 넣으면서 stream 으로 변경 예정.
         // stream 을 쓰는게 좋다고 했다.
@@ -167,6 +172,7 @@ public class BasicChannelService implements ChannelService {
     private ChannelDto channelDtoFrom(Channel channel){
         ChannelProjection projection = channelRepository.getChannelById(channel.getId())
                 .orElseThrow(RuntimeException::new);
+
         return mapStructMapper.toDto(
                 projection,
                 getUserDtoFromId(projection.users())
@@ -178,7 +184,12 @@ public class BasicChannelService implements ChannelService {
         List<UserDto> users = getUserDtoFromId(channel.users());
         return mapStructMapper.toDto(channel, users);
     }
+
     private List<UserDto> getUserDtoFromId(UUID... userId){
+
+        // public 이라면 user == empty Array
+        if (userId == null) return List.of();
+
         Collection<UserProjection> users = userRepository.getUserInfoFromIds(userId);
 
         return users.stream().map(

@@ -36,11 +36,11 @@ public class LoginFailureHandler implements AuthenticationFailureHandler {
 
         objectMapper.writeValue(
                 response.getWriter(),
-                ErrorResponse.builder(  // 설정한 code 의 내용으로 ErrorResponse 반환.
+                ErrorResponse.builder(  // 설정한 code 의 내용으로 ErrorResponse 반환. // bean 이 없어서 에러?
                         exception,
                         code.status(),
                         code.defaultMessage()
-                )
+                ).build()
         );
 
     }

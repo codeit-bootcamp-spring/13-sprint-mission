@@ -15,7 +15,7 @@ public interface UserRepository extends JpaRepository<User, UUID>, UserQueryDsl 
     List<User> findByEmail(String email);
     List<User> findByUsername(String name);
 
-    @EntityGraph(attributePaths = {"profile","status"})
+    @EntityGraph(attributePaths = {"profile"})
     @Query("SELECT a FROM User a")
     List<User> findAllWithProfile();
 

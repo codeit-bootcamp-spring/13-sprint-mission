@@ -26,6 +26,7 @@ public class AuthController implements AuthControllerDoc {
     @GetMapping("csrf-token")
     public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken){  // HandlerMethodArgumentResolver 를 통해 자동으로 주입
         String tokenValue = csrfToken.getToken();
+
         log.debug("토큰 요청됨 - {}",tokenValue);
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
