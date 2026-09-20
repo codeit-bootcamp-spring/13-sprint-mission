@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -93,6 +94,7 @@ public class BasicUserService implements UserService {
     return userDtos;
   }
 
+  @PreAuthorize("#userId == principal.userDto.id")
   @Transactional
   @Override
   public UserDto update(UUID userId, UserUpdateRequest userUpdateRequest,
@@ -139,6 +141,7 @@ public class BasicUserService implements UserService {
     return userMapper.toDto(user);
   }
 
+  @PreAuthorize("#userId == principal.userDto.id")
   @Transactional
   @Override
   public void delete(UUID userId) {
