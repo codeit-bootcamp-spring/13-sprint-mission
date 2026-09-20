@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!--
+        로그 출력 패턴
+        예: 26-08-02 10:33:55.740 [main] DEBUG c.s.m.discodeit.DiscodeitApplication - message
+    -->
+    <property
+            name="LOG_PATTERN"
+            value="%d{yy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+
+    <!-- 프로젝트 루트의 .logs 폴더 -->
+    <property
+            name="LOG_DIR"
+            value="${LOG_DIR:-.logs}"/>
+
+    <!-- 현재 로그 파일 -->
+    <property
+            name="LOG_FILE"
+            value="${LOG_DIR}/discodeit.log"/>
+
+    <!-- 콘솔 출력 -->
+    <appender
+            name="CONSOLE"
+            class="ch.qos.logback.core.ConsoleAppender">
+
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 파일 출력 -->
+    <appender
+            name="FILE"
+            class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+        <!-- 현재 기록되는 파일 -->
+        <file>${LOG_FILE}</file>
+
+        <!-- 일자별 로그 파일 분리 -->
+        <rollingPolicy
+                class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+
+            <fileNamePattern>
+                ${LOG_DIR}/discodeit.%d{yyyy-MM-dd}.log
+            </fileNamePattern>
+
+            <!-- 로그 파일 30일 보관 -->
+            <maxHistory>30</maxHistory>
+
+            <!-- 애플리케이션 실행 시 30일이 지난 로그 정리 -->
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 개발 환경 -->
+    <springProfile name="dev">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+
+    <!-- 운영 환경 -->
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+
+    <!-- 테스트 환경 -->
+    <springProfile name="test">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+
+    <!-- 프로파일이 활성화되지 않은 경우 -->
+    <springProfile name="!dev &amp; !prod &amp; !test">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+
+</configuration>
