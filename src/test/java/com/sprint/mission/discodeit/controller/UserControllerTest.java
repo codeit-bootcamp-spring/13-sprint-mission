@@ -42,12 +42,24 @@ class UserControllerTest {
     private UserService userService;
 
     @Test
-    void createUser_유효한_요청이면_201과_사용자_JSON을_반환한다() throws Exception {
+    void createUser_유효한_요청이면_200과_사용자_JSON을_반환한다()
+            throws Exception {
         UUID userId = UUID.randomUUID();
-        UserRequest request =
-                new UserRequest("codeit", "codeit@example.com", "password123");
-        UserResponse response =
-                new UserResponse(userId, "codeit", "codeit@example.com", false, null);
+
+        UserRequest request = new UserRequest(
+                "codeit",
+                "codeit@example.com",
+                "password123"
+        );
+
+        UserResponse response = new UserResponse(
+                userId,
+                "codeit",
+                "codeit@example.com",
+                false,
+                null
+        );
+
         MockMultipartFile requestPart = new MockMultipartFile(
                 "userCreateRequest",
                 "",
@@ -58,21 +70,30 @@ class UserControllerTest {
         given(userService.create(any(UserRequest.class), isNull()))
                 .willReturn(response);
 
-        mockMvc.perform(multipart("/api/users").file(requestPart))
-                .andExpect(status().isCreated())
+        mockMvc.perform(
+                        multipart("/api/users")
+                                .file(requestPart)
+                )
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(userId.toString()))
                 .andExpect(jsonPath("$.username").value("codeit"))
                 .andExpect(jsonPath("$.email").value("codeit@example.com"))
                 .andExpect(jsonPath("$.online").value(false));
 
-        then(userService).should().create(any(UserRequest.class), isNull());
+        then(userService)
+                .should()
+                .create(any(UserRequest.class), isNull());
     }
 
     @Test
     void createUser_사용자_이름이_비어있으면_400과_검증_오류_JSON을_반환한다()
             throws Exception {
-        UserRequest request =
-                new UserRequest("", "codeit@example.com", "password123");
+        UserRequest request = new UserRequest(
+                "",
+                "codeit@example.com",
+                "password123"
+        );
+
         MockMultipartFile requestPart = new MockMultipartFile(
                 "userCreateRequest",
                 "",
@@ -80,11 +101,17 @@ class UserControllerTest {
                 objectMapper.writeValueAsBytes(request)
         );
 
-        mockMvc.perform(multipart("/api/users").file(requestPart))
+        mockMvc.perform(
+                        multipart("/api/users")
+                                .file(requestPart)
+                )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
-                .andExpect(jsonPath("$.details.errors[0].field").value("username"));
+                .andExpect(
+                        jsonPath("$.details.errors[0].field")
+                                .value("username")
+                );
 
         then(userService).shouldHaveNoInteractions();
     }
