@@ -33,11 +33,14 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.test.context.support.WithAnonymousUser;
+import org.springframework.security.test.context.support.WithMockUser;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
+@WithMockUser(roles = "CHANNEL_MANAGER")
 class ChannelApiIntegrationTest {
 
   @Autowired
@@ -274,4 +277,33 @@ class ChannelApiIntegrationTest {
         .with(csrf()))
         .andExpect(status().isNotFound());
   }
-} 
+
+  @Test
+  @DisplayName("공개 채널 생성 실패 API 통합 테스트 - 권한 부족")
+  @WithMockUser(roles = "USER")
+  void createPublicChannel_Forbidden() throws Exception {
+    // Given
+    PublicChannelCreateRequest createRequest = new PublicChannelCreateRequest(
+        "권한 없는 채널",
+        "USER 권한으로는 생성할 수 없습니다."
+    );
+    String requestBody = objectMapper.writeValueAsString(createRequest);
+
+    // When & Then
+    mockMvc.perform(post("/api/channels/public")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestBody)
+            .with(csrf()))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @DisplayName("채널 목록 조회 실패 API 통합 테스트 - 미인증")
+  @WithAnonymousUser
+  void findAllChannels_Unauthorized() throws Exception {
+    // When & Then
+    mockMvc.perform(get("/api/channels")
+            .param("userId", UUID.randomUUID().toString()))
+        .andExpect(status().isUnauthorized());
+  }
+}

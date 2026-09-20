@@ -2,9 +2,7 @@ package com.sprint.mission.discodeit.config;
 
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,8 +50,6 @@ public class AdminAccountInitializer implements ApplicationRunner {
                 null
         );
         admin.updateRole(Role.ADMIN);
-        // UserStatus 생성자가 admin.setStatus(this)를 호출하며, User의 cascade 설정으로 함께 저장된다
-        new UserStatus(admin, Instant.now());
 
         userRepository.save(admin);
         log.info("어드민 계정을 초기화했습니다: username={}", adminUsername);

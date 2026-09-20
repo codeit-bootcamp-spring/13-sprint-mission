@@ -16,13 +16,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.data.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.data.UserDto;
-import com.sprint.mission.discodeit.dto.data.UserStatusDto;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
-import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.UserStatusService;
 import com.sprint.mission.discodeit.entity.Role;
 import java.time.Instant;
 import java.util.List;
@@ -51,8 +48,6 @@ class UserControllerTest {
   @MockitoBean
   private UserService userService;
 
-  @MockitoBean
-  private UserStatusService userStatusService;
 
   @Test
   @DisplayName("사용자 생성 성공 테스트")
@@ -302,49 +297,6 @@ class UserControllerTest {
     // When & Then
     mockMvc.perform(delete("/api/users/{userId}", nonExistentUserId)
             .contentType(MediaType.APPLICATION_JSON))
-        .andExpect(status().isNotFound());
-  }
-
-  @Test
-  @DisplayName("사용자 상태 업데이트 성공 테스트")
-  void updateUserStatus_Success() throws Exception {
-    // Given
-    UUID userId = UUID.randomUUID();
-    UUID statusId = UUID.randomUUID();
-    Instant lastActiveAt = Instant.now();
-
-    UserStatusUpdateRequest updateRequest = new UserStatusUpdateRequest(lastActiveAt);
-    UserStatusDto updatedStatus = new UserStatusDto(statusId, userId, lastActiveAt);
-
-    given(userStatusService.updateByUserId(eq(userId), any(UserStatusUpdateRequest.class)))
-        .willReturn(updatedStatus);
-
-    // When & Then
-    mockMvc.perform(patch("/api/users/{userId}/userStatus", userId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(updateRequest)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.id").value(statusId.toString()))
-        .andExpect(jsonPath("$.userId").value(userId.toString()))
-        .andExpect(content().json(objectMapper.writeValueAsString(updatedStatus)));
-  }
-
-  @Test
-  @DisplayName("사용자 상태 업데이트 실패 테스트 - 존재하지 않는 사용자 상태")
-  void updateUserStatus_Failure_UserStatusNotFound() throws Exception {
-    // Given
-    UUID userId = UUID.randomUUID();
-    Instant lastActiveAt = Instant.now();
-
-    UserStatusUpdateRequest updateRequest = new UserStatusUpdateRequest(lastActiveAt);
-
-    given(userStatusService.updateByUserId(eq(userId), any(UserStatusUpdateRequest.class)))
-        .willThrow(UserNotFoundException.withId(userId));
-
-    // When & Then
-    mockMvc.perform(patch("/api/users/{userId}/userStatus", userId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(updateRequest)))
         .andExpect(status().isNotFound());
   }
 } 

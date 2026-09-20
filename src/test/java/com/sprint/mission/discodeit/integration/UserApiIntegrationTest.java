@@ -14,7 +14,6 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.data.UserDto;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
-import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.service.UserService;
 import java.time.Instant;
@@ -30,11 +29,13 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.test.context.support.WithMockUser;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
+@WithMockUser(roles = "USER")
 class UserApiIntegrationTest {
 
   @Autowired
@@ -82,7 +83,7 @@ class UserApiIntegrationTest {
         .andExpect(jsonPath("$.username", is("testuser")))
         .andExpect(jsonPath("$.email", is("test@example.com")))
         .andExpect(jsonPath("$.profile.fileName", is("profile.jpg")))
-        .andExpect(jsonPath("$.online", is(true)));
+        .andExpect(jsonPath("$.online", is(false)));
   }
 
   @Test
@@ -256,53 +257,6 @@ class UserApiIntegrationTest {
     // When & Then
     mockMvc.perform(delete("/api/users/{userId}", nonExistentUserId)
         .with(csrf()))
-        .andExpect(status().isNotFound());
-  }
-
-  @Test
-  @DisplayName("사용자 상태 업데이트 API 통합 테스트")
-  void updateUserStatus_Success() throws Exception {
-    // Given
-    // 테스트 사용자 생성 - Service를 통해 초기화
-    UserCreateRequest createRequest = new UserCreateRequest(
-        "statususer",
-        "status@example.com",
-        "Password1!"
-    );
-
-    UserDto createdUser = userService.create(createRequest, Optional.empty());
-    UUID userId = createdUser.id();
-
-    Instant newLastActiveAt = Instant.now();
-    UserStatusUpdateRequest statusUpdateRequest = new UserStatusUpdateRequest(
-        newLastActiveAt
-    );
-    String requestBody = objectMapper.writeValueAsString(statusUpdateRequest);
-
-    // When & Then
-    mockMvc.perform(patch("/api/users/{userId}/userStatus", userId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(requestBody)
-            .with(csrf()))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.lastActiveAt", is(newLastActiveAt.toString())));
-  }
-
-  @Test
-  @DisplayName("사용자 상태 업데이트 실패 API 통합 테스트 - 존재하지 않는 사용자")
-  void updateUserStatus_Failure_UserNotFound() throws Exception {
-    // Given
-    UUID nonExistentUserId = UUID.randomUUID();
-    UserStatusUpdateRequest statusUpdateRequest = new UserStatusUpdateRequest(
-        Instant.now()
-    );
-    String requestBody = objectMapper.writeValueAsString(statusUpdateRequest);
-
-    // When & Then
-    mockMvc.perform(patch("/api/users/{userId}/userStatus", nonExistentUserId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(requestBody)
-            .with(csrf()))
         .andExpect(status().isNotFound());
   }
 } 
