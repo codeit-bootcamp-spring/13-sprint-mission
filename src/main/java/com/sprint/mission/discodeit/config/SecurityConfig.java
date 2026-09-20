@@ -10,49 +10,62 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout
+        .HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final SpaCsrfTokenRequestHandler spaCsrfTokenRequestHandler;
+    private final SpaCsrfTokenRequestHandler
+            spaCsrfTokenRequestHandler;
     private final LoginSuccessHandler loginSuccessHandler;
     private final LoginFailureHandler loginFailureHandler;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http)
-            throws Exception {
+    public SecurityFilterChain filterChain(
+            HttpSecurity http
+    ) throws Exception {
         return http
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(
-                                CookieCsrfTokenRepository.withHttpOnlyFalse()
+                                CookieCsrfTokenRepository
+                                        .withHttpOnlyFalse()
                         )
                         .csrfTokenRequestHandler(
                                 spaCsrfTokenRequestHandler
                         )
                 )
                 .authorizeHttpRequests(authorize -> authorize
-                        .anyRequest().permitAll()
+                        .anyRequest()
+                        .permitAll()
                 )
                 .formLogin(formLogin -> formLogin
-                        .loginProcessingUrl("/api/auth/login")
+                        .loginProcessingUrl(
+                                "/api/auth/login"
+                        )
                         .usernameParameter("username")
                         .passwordParameter("password")
-                        .successHandler(loginSuccessHandler)
-                        .failureHandler(loginFailureHandler)
+                        .successHandler(
+                                loginSuccessHandler
+                        )
+                        .failureHandler(
+                                loginFailureHandler
+                        )
                         .permitAll()
                 )
                 .logout(logout -> logout
-                        .logoutUrl("/api/auth/logout")
+                        .logoutUrl(
+                                "/api/auth/logout"
+                        )
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
                         .deleteCookies("JSESSIONID")
                         .logoutSuccessHandler(
-                                (request, response, authentication) ->
-                                        response.setStatus(
-                                                HttpStatus.NO_CONTENT.value()
-                                        )
+                                new HttpStatusReturningLogoutSuccessHandler(
+                                        HttpStatus.NO_CONTENT
+                                )
                         )
                         .permitAll()
                 )
