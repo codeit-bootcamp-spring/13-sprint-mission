@@ -8,6 +8,8 @@ public enum ErrorCode {
     USER_USERNAME_DUPLICATED("USER_USERNAME_DUPLICATED", HttpStatus.CONFLICT, "이미 사용 중인 사용자 이름입니다."),
     USER_LOGIN_FAILED("USER_LOGIN_FAILED", HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 일치하지 않습니다."),
 
+    TOKEN_RENEWAL_FAILED("TOKEN_RENEWAL_FAILED", HttpStatus.UNAUTHORIZED, "토큰 갱신에 실패했습니다."),
+
     USER_STATUS_NOT_FOUND("USER_STATUS_NOT_FOUND", HttpStatus.NOT_FOUND, "사용자 상태를 찾을 수 없습니다."),
     USER_STATUS_ALREADY_EXISTS("USER_STATUS_ALREADY_EXISTS", HttpStatus.CONFLICT, "이미 사용자 상태가 존재합니다."),
 

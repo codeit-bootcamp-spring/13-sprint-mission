@@ -77,6 +77,11 @@ discodeit:
       key: ${REMEMBER_ME_KEY}
       # 기본 유효기간: 30일
       token-validity-seconds: 2592000
+    jwt:
+      secret: ${JWT_SECRET:secret-very-to-long-bytes32-has-sufficient-strength}
+      access-token-validity: ${JWT_ACCESS_TOKEN_VALIDITY:10m}
+      refresh-token-validity: ${JWT_REFRESH_TOKEN_VALIDITY:14d}
+      issuer: ${JWT_ISSUER:discodeit}
   storage:
     # 파일 저장 방식과 경로를 환경변수로 설정
     type: ${STORAGE_TYPE:local}
