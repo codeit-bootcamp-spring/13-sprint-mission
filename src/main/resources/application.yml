@@ -82,6 +82,10 @@ discodeit:
       access-token-validity: ${JWT_ACCESS_TOKEN_VALIDITY:10m}
       refresh-token-validity: ${JWT_REFRESH_TOKEN_VALIDITY:14d}
       issuer: ${JWT_ISSUER:discodeit}
+    refresh-cookie:
+      http-only: ${REFRESH_COOKIE_HTTP_ONLY:true}
+      secure: ${REFRESH_COOKIE_SECURE:false}
+      same-site: ${REFRESH_COOKIE_SAME_SITE:lax}
   storage:
     # 파일 저장 방식과 경로를 환경변수로 설정
     type: ${STORAGE_TYPE:local}
