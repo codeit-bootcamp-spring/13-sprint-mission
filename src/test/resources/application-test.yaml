@@ -17,6 +17,12 @@ spring:
       mode: never
 
 discodeit:
+  admin:
+    enabled: false
+    username: admin
+    email: admin@discodeit.com
+    password: admin1234
+
   storage:
     type: local
     local:
