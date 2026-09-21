@@ -13,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -21,6 +22,7 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -28,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(MessageController.class)
 @Import(GlobalExceptionHandler.class)
+@WithMockUser
 class MessageControllerTest {
 
     @Autowired
@@ -54,6 +57,7 @@ class MessageControllerTest {
 
         mockMvc.perform(multipart("/api/messages")
                         .file(jsonPart)
+                        .with(csrf())
                         .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.content").value("안녕"));
@@ -66,7 +70,8 @@ class MessageControllerTest {
         willThrow(MessageNotFoundException.withId(messageId))
                 .given(messageService).delete(messageId);
 
-        mockMvc.perform(delete("/api/messages/{messageId}", messageId.toString()))
+        mockMvc.perform(delete("/api/messages/{messageId}", messageId.toString())
+                        .with(csrf()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("MESSAGE_NOT_FOUND"));
     }

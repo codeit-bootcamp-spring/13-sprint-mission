@@ -29,19 +29,16 @@ public class User extends BaseUpdatableEntity {
     @JoinColumn(name = "profile_id", unique = true, nullable = true)
     private BinaryContent profile;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private UserStatus status;
 
     protected User() {}
 
-    public User (String username, String email, String password, Role role, BinaryContent profile, UserStatus status) {
+    public User (String username, String email, String password, Role role, BinaryContent profile) {
         super();
         this.username = username;
         this.email = email;
         this.password = password;
         this.role = role;
         this.profile =  profile;
-        this.status = status;
     }
 
     //이름 수정

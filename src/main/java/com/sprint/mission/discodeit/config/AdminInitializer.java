@@ -2,10 +2,7 @@ package com.sprint.mission.discodeit.config;
 
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
-import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -17,7 +14,6 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AdminInitializer implements ApplicationRunner {
 
-    private final UserStatusRepository userStatusRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
 
@@ -30,13 +26,10 @@ public class AdminInitializer implements ApplicationRunner {
                     "admin@discodeit.com",
                     passwordEncoder.encode("admin1234"),
                     Role.ADMIN,
-                    null,
                     null
             );
             userRepository.save(admin);
 
-            UserStatus adminStatus = new UserStatus(admin);
-            userStatusRepository.save(adminStatus);
         }
     }
 }

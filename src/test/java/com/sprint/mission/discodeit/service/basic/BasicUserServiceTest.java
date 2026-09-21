@@ -3,15 +3,15 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
 import com.sprint.mission.discodeit.dto.command.user.UserUpdateCommand;
 import com.sprint.mission.discodeit.dto.user.UserDto;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.security.SessionManager;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,14 +19,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
@@ -36,11 +37,12 @@ class BasicUserServiceTest {
     // 가짜 의존성 주입
 
     @Mock private UserRepository userRepository;
-    @Mock private UserStatusRepository userStatusRepository;
     @Mock private BinaryContentRepository binaryContentRepository;
     @Mock private ReadStatusRepository readStatusRepository;
     @Mock private UserMapper userMapper;
-    @Mock private BinaryContentStorage  binaryContentStorage;
+    @Mock private BinaryContentStorage binaryContentStorage;
+    @Mock private PasswordEncoder passwordEncoder;
+    @Mock private SessionManager sessionManager;
 
     // 위의 @Mock들이 이 안에 자동으로 주입
     @InjectMocks private BasicUserService userService;
@@ -53,8 +55,9 @@ class BasicUserServiceTest {
 
         given(userRepository.existsByUsername("박경석")).willReturn(false);
         given(userRepository.existsByEmail("park@gmail.com")).willReturn(false);
-        UserDto expected = new UserDto(null, "박경석", "park@gmail.com", null, false);
-        given(userMapper.toDto(any(User.class), any(UserStatus.class))).willReturn(expected);
+        given(passwordEncoder.encode("0000")).willReturn("encoded");
+        UserDto expected = new UserDto(null, "박경석", "park@gmail.com", Role.USER, null, false);
+        given(userMapper.toDto(any(User.class), anyBoolean())).willReturn(expected);
 
         // when
         UserDto result = userService.createUser(command, null);
@@ -64,7 +67,6 @@ class BasicUserServiceTest {
         assertThat(result.email()).isEqualTo("park@gmail.com");
 
         then(userRepository).should().save(any(User.class));
-        then(userStatusRepository).should().save(any(UserStatus.class));
     }
 
     @Test
@@ -84,15 +86,14 @@ class BasicUserServiceTest {
     void 유저_수정_성공() {
         // given
         UUID userId = UUID.randomUUID();
-        User user = new User("박경석", "park@gmail.com", "0000", null, null);
+        User user = new User("박경석", "park@gmail.com", "0000", Role.USER, null);
         UserUpdateCommand command = new UserUpdateCommand("김철수", null, null);
 
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(userRepository.existsByUsername("김철수")).willReturn(false);
-        given(userStatusRepository.findByUserId(userId)).willReturn(Optional.empty());
 
-        UserDto expected = new UserDto(null, "김철수", "park@gmail.com", null, false);
-        given(userMapper.toDto(any(User.class), any())).willReturn(expected);
+        UserDto expected = new UserDto(null, "김철수", "park@gmail.com", Role.USER, null, false);
+        given(userMapper.toDto(any(User.class), anyBoolean())).willReturn(expected);
 
         // when
         UserDto result = userService.updateUser(userId, command, null);
@@ -120,7 +121,7 @@ class BasicUserServiceTest {
     void 유저삭제_성공() {
         // given
         UUID userId = UUID.randomUUID();
-        User user = new User("박경석", "park@gmail.com", "0000", null, null);
+        User user = new User("박경석", "park@gmail.com", "0000", Role.USER, null);
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
 
         // when
@@ -128,6 +129,7 @@ class BasicUserServiceTest {
 
         // then
         then(userRepository).should().deleteById(userId);
+        then(sessionManager).should().invalidateSessions(userId);
 
     }
 

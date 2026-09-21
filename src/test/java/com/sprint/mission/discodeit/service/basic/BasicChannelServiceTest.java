@@ -12,6 +12,7 @@ import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.PrivateChannelUpdateException;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -37,6 +38,7 @@ class BasicChannelServiceTest {
     @Mock private ReadStatusRepository readStatusRepository;
     @Mock private UserRepository userRepository;
     @Mock private ChannelMapper channelMapper;
+    @Mock private MessageRepository  messageRepository;
 
     @InjectMocks
     private BasicChannelService channelService;
@@ -130,6 +132,8 @@ class BasicChannelServiceTest {
 
         channelService.deleteChannel(channelId);
 
+        then(messageRepository).should().deleteByChannelId(channel.getId());
+        then(readStatusRepository).should().deleteByChannelId(channel.getId());
         then(channelRepository).should().deleteById(channel.getId());
     }
 

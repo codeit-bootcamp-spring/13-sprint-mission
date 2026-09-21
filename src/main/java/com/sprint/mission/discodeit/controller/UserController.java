@@ -5,10 +5,7 @@ import com.sprint.mission.discodeit.dto.command.binarycontent.BinaryContentCreat
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.userstatus.UserStatusDto;
-import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.UserStatusService;
 import com.sprint.mission.discodeit.util.FileUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +25,6 @@ import java.util.UUID;
 public class UserController implements UserControllerDocs {
 
     private final UserService userService;
-    private final UserStatusService userStatusService;
-
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserDto> createUser(@Valid @RequestPart("userCreateRequest") UserCreateRequest request,
@@ -65,12 +60,5 @@ public class UserController implements UserControllerDocs {
     public ResponseEntity<List<UserDto>> findAllUser(){
         List<UserDto> allUser = userService.findAllUser();
         return ResponseEntity.status(HttpStatus.OK).body(allUser);
-    }
-
-    @PatchMapping("/{userId}/userStatus")
-    public ResponseEntity<UserStatusDto> updateUserStatus(@PathVariable UUID userId,
-                                                          @Valid @RequestBody UserStatusUpdateRequest request){
-        UserStatusDto userStatusResponse = userStatusService.updateByUserId(userId, request.toCommand());
-        return ResponseEntity.status(HttpStatus.OK).body(userStatusResponse);
     }
 }

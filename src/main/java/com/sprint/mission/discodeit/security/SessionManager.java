@@ -12,7 +12,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class SessionManager {
 
-    private final SessionManager sessionManager;
     private final SessionRegistry sessionRegistry;
 
     public boolean isOnline(UUID userId) {

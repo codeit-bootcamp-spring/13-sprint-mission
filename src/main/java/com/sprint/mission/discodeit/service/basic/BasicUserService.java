@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.auth.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.command.binarycontent.BinaryContentCreateCommand;
 import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
 import com.sprint.mission.discodeit.dto.command.user.UserUpdateCommand;
@@ -8,28 +7,23 @@ import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.security.SessionManager;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.session.SessionInformation;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -39,13 +33,12 @@ import java.util.stream.Collectors;
 public class BasicUserService implements UserService {
 
     private final UserRepository userRepository;
-    private final UserStatusRepository userStatusRepository;
     private final BinaryContentRepository binaryContentRepository;
     private final ReadStatusRepository readStatusRepository;
     private final UserMapper userMapper;
     private final BinaryContentStorage binaryContentStorage;
     private final PasswordEncoder passwordEncoder;
-    private final SessionRegistry  sessionRegistry;
+    private final SessionManager  sessionManager;
 
 
     @Override
@@ -73,13 +66,11 @@ public class BasicUserService implements UserService {
             binaryContentStorage.put(profile.getId(), profileRequest.bytes());
         }
         String encodedPassword = passwordEncoder.encode(command.password());
-        User user = new User(command.username(), command.email(), encodedPassword, Role.USER, profile, null);
+        User user = new User(command.username(), command.email(), encodedPassword, Role.USER, profile);
         userRepository.save(user);
 
-        UserStatus userStatus = new UserStatus(user);
-        userStatusRepository.save(userStatus);
         log.info("유저 생성 완료 - name: {}, userId: {}", command.username(),  user.getId());
-        return  userMapper.toDto(user, userStatus);
+        return  userMapper.toDto(user, false);
 
     }
 
@@ -89,12 +80,9 @@ public class BasicUserService implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> UserNotFoundException.withId(userId));
 
-        UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElse(null);
-
         log.debug("유저 조회 - name: {}", user.getUsername());
 
-        return userMapper.toDto(user, userStatus);
+        return userMapper.toDto(user, sessionManager.isOnline(userId));
     }
 
     @Transactional(readOnly = true)
@@ -105,13 +93,9 @@ public class BasicUserService implements UserService {
             return  new ArrayList<>();
         }
         log.debug("전체 유저 조회 완료 - 총 {}명", users.size());
-        return  users.stream()
-                .map(user -> {
-                    UserStatus userStatus = userStatusRepository.findByUserId(user.getId())
-                            .orElse(null);
-                    return userMapper.toDto(user, userStatus);
-                })
-                .collect(Collectors.toList());
+        return users.stream()
+                .map(user -> userMapper.toDto(user, sessionManager.isOnline(user.getId())))
+                .toList();
     }
 
     @Override
@@ -151,15 +135,9 @@ public class BasicUserService implements UserService {
             user.updateUserPassword(passwordEncoder.encode(command.newPassword()));
         userRepository.save(user);
 
-        UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElse(null);
-        if (userStatus == null){
-             userStatus = new UserStatus(user);
-        }
-
         log.info("유저 수정 완료 -  name: {}, userId: {}", user.getUsername(), user.getId());
 
-        return userMapper.toDto(user, userStatus);
+        return userMapper.toDto(user, sessionManager.isOnline(userId));
     }
 
     @Override
@@ -171,6 +149,7 @@ public class BasicUserService implements UserService {
         }
         readStatusRepository.deleteByUserId(userId);
         userRepository.deleteById(userId);
+        sessionManager.invalidateSessions(userId);
         log.info("유저 삭제 - name: {}, userId: {}", user.getUsername(), user.getId());
     }
 
@@ -182,22 +161,10 @@ public class BasicUserService implements UserService {
         user.updateRole(newRole);
         userRepository.save(user);
 
-        invalidateSessions(userId);
+        sessionManager.invalidateSessions(userId);
 
-        UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElse(null);
         log.info("권한 수정 완료 - userId: {}, newRole: {}", user.getId(), newRole);
 
-        return userMapper.toDto(user, userStatus);
+        return userMapper.toDto(user, false);
     }
-
-    private void invalidateSessions(UUID userId) {
-        sessionRegistry.getAllPrincipals().stream()
-                .filter(principal -> principal instanceof DiscodeitUserDetails details
-                && details.getUserDto().id().equals(userId))
-                .flatMap(principal -> sessionRegistry.getAllSessions(principal, false).stream())
-                .forEach(SessionInformation::expireNow);
-        log.info("세션 무효화 - userId: {}", userId);
-    }
-
 }

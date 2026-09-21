@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.repository;
 
 import com.sprint.mission.discodeit.config.JpaAuditingConfig;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +27,7 @@ class UserRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        User user = new User("박경석", "park@gmail.com", "0000", null, null);
+        User user = new User("박경석", "park@gmail.com", "0000", Role.USER, null);
         em.persist(user);
         em.flush();
         em.clear();

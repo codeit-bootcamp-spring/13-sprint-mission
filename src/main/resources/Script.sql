@@ -36,16 +36,6 @@ CREATE TABLE channels(
     type VARCHAR(10) NOT NULL CHECK ( type IN ('PUBLIC', 'PRIVATE'))
 );
 
--- userStatus 테이블 생성
--- 유저 테이블 id를 참조, 연관 엔티티 삭제 시 같이 삭제
-CREATE TABLE user_statuses(
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz,
-    user_id UUID UNIQUE NOT NULL references users(id) ON DELETE CASCADE,
-    last_active_at timestamptz NOT NULL
-);
-
 -- read_statuses 테이블 생성
 -- 유저 테이블 유저 아이디 참조, 연관 엔티티 삭제 시 같이 삭제
 -- 채널 테이블 채널 아이디 참조, 연관 엔티티 삭제 시 같이 삭제
