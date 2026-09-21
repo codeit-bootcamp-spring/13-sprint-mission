@@ -6,7 +6,6 @@ import com.sprint.mission.discodeit.config.JwtProperties;
 import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
 import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
 import com.sprint.mission.discodeit.security.JwtTokenProvider;
 import jakarta.servlet.Filter;
@@ -80,9 +79,6 @@ class JwtAuthenticationIntegrationTest {
     JwtProperties jwtProperties;
 
     @Autowired
-    DiscodeitUserDetailsService userDetailsService;
-
-    @Autowired
     JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Autowired
@@ -127,7 +123,7 @@ class JwtAuthenticationIntegrationTest {
         User user = createUser();
         // 실행 속도나 대기에 의존하지 않고 과거에 발급되어 만료된 실제 JWT를 만든다.
         JwtTokenProvider pastProvider = new JwtTokenProvider(
-                jwtProperties, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC), userDetailsService
+                jwtProperties, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC)
         );
         String expiredToken = pastProvider.generateAccessToken(user.getId(), user.getUsername(), user.getRole());
 

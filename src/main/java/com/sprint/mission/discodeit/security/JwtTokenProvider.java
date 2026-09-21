@@ -1,9 +1,7 @@
 package com.sprint.mission.discodeit.security;
 
 import com.sprint.mission.discodeit.config.JwtProperties;
-import com.sprint.mission.discodeit.dto.response.TokenDto;
 import com.sprint.mission.discodeit.entity.Role;
-import com.sprint.mission.discodeit.exception.jwt.TokenRenewalFailedException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -27,18 +25,16 @@ import java.util.UUID;
 public class JwtTokenProvider {
 
     public static final String CLAIM_ROLE = "role";
-    private static final String CLAIM_USER_ID = "user_id";
-    private static final String CLAIM_TOKEN_TYPE = "token_type";
+    public static final String CLAIM_USER_ID = "user_id";
+    public static final String CLAIM_TOKEN_TYPE = "token_type";
 
     private final JwtProperties jwtProperties;
     private final Clock clock;
     private final SecretKey secretKey;
-    private final DiscodeitUserDetailsService discodeitUserDetailsService;
 
-    public JwtTokenProvider(JwtProperties jwtProperties, Clock clock, DiscodeitUserDetailsService discodeitUserDetailsService) {
+    public JwtTokenProvider(JwtProperties jwtProperties, Clock clock) {
         this.jwtProperties = jwtProperties;
         this.clock = clock;
-        this.discodeitUserDetailsService = discodeitUserDetailsService;
         this.secretKey = Keys.hmacShaKeyFor(generateSecretKeyBytes());
     }
 
@@ -54,23 +50,6 @@ public class JwtTokenProvider {
             case ACCESS ->  createAccessToken(userId, username, role, now);
             case REFRESH -> createRefreshToken(userId, username, now);
         };
-    }
-
-    // 갱신
-    public TokenDto renewGenerateToken(String token) {
-        return validateToken(token)
-                .filter(this::isTokenRefreshType)
-                .map(claims -> {
-                    DiscodeitUserDetails userDetails = (DiscodeitUserDetails) discodeitUserDetailsService.loadUserByUsername(claims.getSubject());
-                    return new TokenDto(
-                            generateAccessToken(
-                            getUserId(claims),
-                            userDetails.getUsername(),
-                            userDetails.getUserDto().role()),
-                            generateRefreshToken(getUserId(claims), userDetails.getUsername())
-                            );
-                })
-                .orElseThrow(TokenRenewalFailedException::new);
     }
 
     // 유효성 검사
@@ -123,12 +102,6 @@ public class JwtTokenProvider {
 
     private byte[] generateSecretKeyBytes() {
         return jwtProperties.secret().getBytes(StandardCharsets.UTF_8);
-    }
-
-    private boolean isTokenRefreshType(Claims claims) {
-        String tokenType = claims.get(CLAIM_TOKEN_TYPE, String.class);
-
-        return TokenType.REFRESH.name().equals(tokenType);
     }
 
     private String createRefreshToken(UUID userId,String username,Instant now) {
