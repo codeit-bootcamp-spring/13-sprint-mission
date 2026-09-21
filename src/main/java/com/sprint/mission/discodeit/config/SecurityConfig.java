@@ -21,7 +21,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -45,9 +44,6 @@ public class SecurityConfig {
             LoginFailureHandler loginFailureHandler,
             AuthenticationEntryPoint restAuthenticationEntryPoint,
             AccessDeniedHandler restAccessDeniedHandler,
-            SessionRegistry sessionRegistry,
-            UserDetailsService userDetailsService,
-            RememberMeProperties rememberMeProperties,
             JwtAuthenticationFilter jwtAuthenticationFilter
     ) throws Exception {
 
@@ -100,12 +96,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .rememberMe(remember -> remember
-                        .rememberMeParameter("remember-me")
-                        .key(rememberMeProperties.key())
-                        .tokenValiditySeconds(rememberMeProperties.tokenValiditySeconds())
-                        .userDetailsService(userDetailsService)
-                )
+                // 로그인 유지는 REFRESH_TOKEN 쿠키를 사용하는 갱신 API가 담당한다.
+                .rememberMe(remember -> remember.disable())
                 .build();
     }
 

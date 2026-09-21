@@ -72,11 +72,6 @@ management:
       enabled: true
 discodeit:
   security:
-    remember-me:
-      # Remember-Me 쿠키 서명에 사용하는 비밀 키
-      key: ${REMEMBER_ME_KEY}
-      # 기본 유효기간: 30일
-      token-validity-seconds: 2592000
     jwt:
       secret: ${JWT_SECRET:secret-very-to-long-bytes32-has-sufficient-strength}
       access-token-validity: ${JWT_ACCESS_TOKEN_VALIDITY:10m}

@@ -96,30 +96,33 @@ class JwtAuthenticationIntegrationTest {
     }
 
     @Test
-    @DisplayName("실제 폼 로그인에서 발급받은 ACCESS 토큰으로 현재 사용자 정보를 조회한다")
-    void getMe_authenticatesUsingAccessTokenIssuedByFormLogin() throws Exception {
+    @DisplayName("실제 폼 로그인에서 발급받은 ACCESS 토큰으로 보호된 사용자 목록을 조회한다")
+    void getUsers_authenticatesUsingAccessTokenIssuedByFormLogin() throws Exception {
         User user = createUser();
         ResponseEntity<String> loginResponse = login(user);
 
-        ResponseEntity<String> response = getMe(accessToken(loginResponse));
+        ResponseEntity<String> response = getUsers(accessToken(loginResponse));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertJsonContentType(response);
         JsonNode body = objectMapper.readTree(response.getBody());
-        assertThat(body.path("id").asText()).isEqualTo(user.getId().toString());
-        assertThat(body.path("username").asText()).isEqualTo(user.getUsername());
-        assertThat(body.path("role").asText()).isEqualTo(user.getRole().name());
+        assertThat(body.isArray()).isTrue();
+        assertThat(body).anySatisfy(item -> {
+            assertThat(item.path("id").asText()).isEqualTo(user.getId().toString());
+            assertThat(item.path("username").asText()).isEqualTo(user.getUsername());
+            assertThat(item.path("role").asText()).isEqualTo(user.getRole().name());
+        });
     }
 
     @Test
     @DisplayName("토큰 없이 보호 API에 접근하면 401과 AUTH_401 오류를 반환한다")
-    void getMe_returnsUnauthorizedWithoutToken() throws Exception {
-        assertUnauthorized(getMe(null));
+    void getUsers_returnsUnauthorizedWithoutToken() throws Exception {
+        assertUnauthorized(getUsers(null));
     }
 
     @Test
     @DisplayName("동일한 키로 서명했어도 만료된 ACCESS 토큰은 보호 API에서 거부한다")
-    void getMe_returnsUnauthorizedForExpiredAccessToken() throws Exception {
+    void getUsers_returnsUnauthorizedForExpiredAccessToken() throws Exception {
         User user = createUser();
         // 실행 속도나 대기에 의존하지 않고 과거에 발급되어 만료된 실제 JWT를 만든다.
         JwtTokenProvider pastProvider = new JwtTokenProvider(
@@ -127,23 +130,23 @@ class JwtAuthenticationIntegrationTest {
         );
         String expiredToken = pastProvider.generateAccessToken(user.getId(), user.getUsername(), user.getRole());
 
-        assertUnauthorized(getMe(expiredToken));
+        assertUnauthorized(getUsers(expiredToken));
     }
 
     @Test
     @DisplayName("잘못된 형식의 토큰으로 보호 API에 접근하면 401을 반환한다")
-    void getMe_returnsUnauthorizedForMalformedToken() throws Exception {
-        assertUnauthorized(getMe("not-a-jwt"));
+    void getUsers_returnsUnauthorizedForMalformedToken() throws Exception {
+        assertUnauthorized(getUsers("not-a-jwt"));
     }
 
     @Test
     @DisplayName("로그인에서 발급한 REFRESH 토큰을 Bearer 헤더로 보내도 인증하지 않는다")
-    void getMe_rejectsRefreshTokenFromLogin() throws Exception {
+    void getUsers_rejectsRefreshTokenFromLogin() throws Exception {
         ResponseEntity<String> loginResponse = login(createUser());
         String refreshToken = cookie(loginResponse, "REFRESH_TOKEN").getValue();
         assertThat(jwtTokenProvider.validateToken(refreshToken)).isPresent();
 
-        assertUnauthorized(getMe(refreshToken));
+        assertUnauthorized(getUsers(refreshToken));
     }
 
     @Test
@@ -151,8 +154,8 @@ class JwtAuthenticationIntegrationTest {
     void authentication_doesNotPersistToNextRequest() throws Exception {
         ResponseEntity<String> loginResponse = login(createUser());
 
-        ResponseEntity<String> authenticatedResponse = getMe(accessToken(loginResponse));
-        ResponseEntity<String> nextResponse = getMe(null);
+        ResponseEntity<String> authenticatedResponse = getUsers(accessToken(loginResponse));
+        ResponseEntity<String> nextResponse = getUsers(null);
 
         assertThat(authenticatedResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertUnauthorized(nextResponse);
@@ -163,14 +166,14 @@ class JwtAuthenticationIntegrationTest {
 
     @Test
     @DisplayName("토큰이 유효해도 사용자가 삭제되었다면 서버 오류 대신 401을 반환한다")
-    void getMe_returnsUnauthorizedAfterUserDeleted() throws Exception {
+    void getUsers_returnsUnauthorizedAfterUserDeleted() throws Exception {
         User user = createUser();
         String token = accessToken(login(user));
         userRepository.deleteById(user.getId());
         createdUserIds.remove(user.getId());
         assertThat(jwtTokenProvider.validateToken(token)).isPresent();
 
-        assertUnauthorized(getMe(token));
+        assertUnauthorized(getUsers(token));
     }
 
     @Test
@@ -250,13 +253,13 @@ class JwtAuthenticationIntegrationTest {
         return token;
     }
 
-    private ResponseEntity<String> getMe(String token) {
+    private ResponseEntity<String> getUsers(String token) {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         if (token != null) {
             headers.setBearerAuth(token);
         }
-        return restTemplate.exchange("/api/auth/me", HttpMethod.GET, new HttpEntity<>(headers), String.class);
+        return restTemplate.exchange("/api/users", HttpMethod.GET, new HttpEntity<>(headers), String.class);
     }
 
     private void assertUnauthorized(ResponseEntity<String> response) throws Exception {

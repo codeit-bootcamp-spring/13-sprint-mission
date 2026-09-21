@@ -22,9 +22,6 @@ public interface AuthApi {
     @Operation(summary = "csrf-token 발급")
     ResponseEntity<Void> getCsrfToken(@Parameter(hidden = true) CsrfToken csrfToken);
 
-    @Operation(summary = "세션을 통한 유저 반환")
-    ResponseEntity<UserDto> getMe(@Parameter(hidden = true) UserDto userDto);
-
     @Operation(
             summary = "리프레시 토큰으로 사용자 정보와 액세스 토큰 갱신",
             description = "액세스 토큰이 없거나 만료된 상태에서도 호출할 수 있습니다. "

@@ -67,7 +67,7 @@ class JwtAuthenticationFilterTest {
     void setUp() {
         SecurityContextHolder.clearContext();
         filter = new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService, authenticationEntryPoint);
-        request = new MockHttpServletRequest("GET", "/api/auth/me");
+        request = new MockHttpServletRequest("GET", "/api/users");
         response = new MockHttpServletResponse();
     }
 

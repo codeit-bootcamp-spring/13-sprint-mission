@@ -21,6 +21,8 @@ import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -198,38 +200,37 @@ class DiscodeitApiIntegrationTest {
     }
 
     @Test
-    @DisplayName("현재 사용자 조회 성공 - 로그인 세션으로 동일한 사용자 정보 반환")
-    void getMe_returnsCurrentUser_whenSessionIsAuthenticated() throws Exception {
-        // given
-        // 실제 사용자 생성 및 폼 로그인을 통해 SecurityContext가 저장된 HTTP 세션을 준비한다.
+    @DisplayName("새로고침 후 리프레시 쿠키로 사용자 정보와 액세스 토큰을 복원한다")
+    void refresh_restoresCurrentUserWithoutAccessTokenOrSession() throws Exception {
         String suffix = uniqueSuffix();
-        String username = "sessionUser-" + suffix;
-        String email = "session-user-" + suffix + "@gmail.com";
+        String username = "refreshUser-" + suffix;
+        String email = "refresh-user-" + suffix + "@gmail.com";
         UUID userId = createUser(username, email);
-
-        // 실제로 분리된 HTTP 요청처럼 로그인에서 사용자와 상태를 DB로부터 다시 조회하도록 한다.
         flushAndClear();
 
         MvcResult loginResult = performLogin(username, "integrationPassword")
                 .andExpect(status().isOk())
-                .andExpect(authenticated().withUsername(username))
                 .andReturn();
+        Cookie refreshCookie = loginResult.getResponse().getCookie("REFRESH_TOKEN");
+        assertThat(refreshCookie).isNotNull();
+        assertThat(loginResult.getRequest().getSession(false)).isNull();
 
-        MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
-        assertThat(session).isNotNull();
-
-        // when & then
-        // 브라우저가 JSESSIONID 쿠키를 자동으로 전달하는 동작을 동일한 MockHttpSession 재사용으로 검증한다.
-        mockMvc.perform(get("/api/auth/me")
-                        .session(session)
+        // 새 요청에는 ACCESS와 로그인 세션 없이 REFRESH 및 CSRF 정보만 전달한다.
+        MvcResult result = mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(refreshCookie)
+                        .with(csrf())
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(authenticated().withUsername(username))
-                .andExpect(jsonPath("$.id").value(userId.toString()))
-                .andExpect(jsonPath("$.username").value(username))
-                .andExpect(jsonPath("$.email").value(email))
-                .andExpect(jsonPath("$.online").value(true));
+                .andExpect(jsonPath("$.userDto.id").value(userId.toString()))
+                .andExpect(jsonPath("$.userDto.username").value(username))
+                .andExpect(jsonPath("$.userDto.email").value(email))
+                .andExpect(unauthenticated())
+                .andReturn();
+
+        assertJwtLoginResponse(result, userId, username);
+        assertThat(result.getRequest().getSession(false)).isNull();
+        // 새 ACCESS의 보호 API 접근과 요청 간 세션 미생성은 실제 HTTP 통합 테스트에서 검증한다.
     }
 
     @Test
@@ -304,106 +305,38 @@ class DiscodeitApiIntegrationTest {
         assertJwtLoginResponse(secondLogin, userId, username);
     }
 
-    @Test
-    @DisplayName("로그인 유지 성공 - 세션 쿠키 없이 Remember-Me 쿠키로 자동 로그인")
-    void rememberMe_autoLogsIn_whenSessionCookieIsMissing() throws Exception {
+    @ParameterizedTest(name = "remember-me={0}")
+    @ValueSource(strings = {"missing", "true", "false"})
+    @DisplayName("기존 RememberMe 파라미터와 무관하게 JWT만 발급하고 세션을 만들지 않는다")
+    void login_ignoresLegacyRememberMeParameter(String parameter) throws Exception {
         String suffix = uniqueSuffix();
-        String username = "rememberMeUser-" + suffix;
-        UUID userId = createUser(username, "remember-me-" + suffix + "@gmail.com");
+        String username = "jwtRememberUser-" + suffix;
+        UUID userId = createUser(username, "jwt-remember-" + suffix + "@gmail.com");
         flushAndClear();
 
-        MvcResult loginResult = performRememberMeLogin(username, "integrationPassword")
+        ResultActions login = "missing".equals(parameter)
+                ? performLogin(username, "integrationPassword")
+                : performLoginWithRememberMe(username, "integrationPassword", Boolean.parseBoolean(parameter));
+        MvcResult result = login
                 .andExpect(status().isOk())
                 .andExpect(authenticated().withUsername(username))
-                .andExpect(cookie().exists("remember-me"))
-                .andExpect(cookie().maxAge("remember-me", 60 * 60 * 24 * 30))
+                .andExpect(cookie().doesNotExist("remember-me"))
                 .andReturn();
 
-        Cookie rememberMeCookie = loginResult.getResponse().getCookie("remember-me");
-        MockHttpSession loginSession = (MockHttpSession) loginResult.getRequest().getSession(false);
-        assertThat(rememberMeCookie).isNotNull();
-        assertThat(loginSession).isNotNull();
+        assertJwtLoginResponse(result, userId, username);
+    }
 
-        MvcResult autoLoginResult = mockMvc.perform(get("/api/auth/me")
-                        .cookie(rememberMeCookie)
+    @Test
+    @DisplayName("기존 RememberMe 쿠키만으로 보호 API에 접근할 수 없다")
+    void legacyRememberMeCookie_doesNotAuthenticate() throws Exception {
+        mockMvc.perform(get("/api/users")
+                        .cookie(new Cookie("remember-me", "legacy-cookie"))
                         .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(authenticated().withUsername(username))
-                .andExpect(jsonPath("$.id").value(userId.toString()))
-                .andExpect(jsonPath("$.username").value(username))
-                .andExpect(jsonPath("$.online").value(true))
-                .andReturn();
-
-        MockHttpSession autoLoginSession =
-                (MockHttpSession) autoLoginResult.getRequest().getSession(false);
-        assertThat(autoLoginSession).isNotNull();
-        assertThat(autoLoginSession.getId()).isNotEqualTo(loginSession.getId());
-    }
-
-    @Test
-    @DisplayName("로그인 유지 미선택 - Remember-Me 쿠키를 발급하지 않는다")
-    void rememberMe_doesNotIssueCookie_whenParameterIsMissing() throws Exception {
-        String suffix = uniqueSuffix();
-        String username = "noRememberMeUser-" + suffix;
-        createUser(username, "no-remember-me-" + suffix + "@gmail.com");
-        flushAndClear();
-
-        MvcResult loginResult = performLogin(username, "integrationPassword")
-                .andExpect(status().isOk())
-                .andExpect(authenticated().withUsername(username))
-                .andExpect(cookie().doesNotExist("remember-me"))
-                .andReturn();
-
-        assertThat(loginResult.getResponse().getCookie("remember-me")).isNull();
-    }
-
-    @Test
-    @DisplayName("로그인 유지 해제 - remember-me가 false이면 쿠키를 발급하지 않는다")
-    void rememberMe_doesNotIssueCookie_whenParameterIsFalse() throws Exception {
-        String suffix = uniqueSuffix();
-        String username = "falseRememberMeUser-" + suffix;
-        createUser(username, "false-remember-me-" + suffix + "@gmail.com");
-        flushAndClear();
-
-        MvcResult loginResult = performLoginWithRememberMe(
-                        username,
-                        "integrationPassword",
-                        false
-                )
-                .andExpect(status().isOk())
-                .andExpect(authenticated().withUsername(username))
-                .andExpect(cookie().doesNotExist("remember-me"))
-                .andReturn();
-
-        assertThat(loginResult.getResponse().getCookie("remember-me")).isNull();
-    }
-
-    @Test
-    @DisplayName("로그인 유지 로그아웃 성공 - 세션과 Remember-Me 쿠키를 제거한다")
-    void rememberMe_logoutInvalidatesSessionAndCookie() throws Exception {
-        String suffix = uniqueSuffix();
-        String username = "rememberMeLogoutUser-" + suffix;
-        createUser(username, "remember-me-logout-" + suffix + "@gmail.com");
-        flushAndClear();
-
-        MvcResult loginResult = performRememberMeLogin(username, "integrationPassword")
-                .andExpect(status().isOk())
-                .andReturn();
-        Cookie rememberMeCookie = loginResult.getResponse().getCookie("remember-me");
-        MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
-        assertThat(rememberMeCookie).isNotNull();
-        assertThat(session).isNotNull();
-
-        mockMvc.perform(post("/api/auth/logout")
-                        .session(session)
-                        .cookie(rememberMeCookie)
-                        .with(csrf()))
-                .andExpect(status().isNoContent())
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTH_401"))
                 .andExpect(unauthenticated())
-                .andExpect(cookie().maxAge("JSESSIONID", 0))
-                .andExpect(cookie().maxAge("remember-me", 0));
-
-        assertThat(session.isInvalid()).isTrue();
+                .andExpect(cookie().doesNotExist("REFRESH_TOKEN"))
+                .andExpect(cookie().doesNotExist("JSESSIONID"));
     }
 
     @Test
@@ -1079,10 +1012,6 @@ class DiscodeitApiIntegrationTest {
         MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
         assertThat(session).isNotNull();
         return session;
-    }
-
-    private ResultActions performRememberMeLogin(String username, String password) throws Exception {
-        return performLoginWithRememberMe(username, password, true);
     }
 
     private ResultActions performLoginWithRememberMe(
