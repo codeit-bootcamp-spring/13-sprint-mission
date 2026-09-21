@@ -18,6 +18,7 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,34 +39,74 @@ public class BasicChannelService implements ChannelService {
     private final ChannelMapper channelMapper;
 
     @Override
-    public ChannelResponse createPrivateChannel(ChannelPrivateRequest dto) {
-        int participantCount = dto.channelIds() == null ? 0 : dto.channelIds().size();
-        log.debug("PRIVATE 채널 생성 시작: participantCount={}", participantCount);
-        Channel channel = new Channel(null, null, ChannelType.PRIVATE);
+    public ChannelResponse createPrivateChannel(
+            ChannelPrivateRequest dto
+    ) {
+        int participantCount = dto.channelIds() == null
+                ? 0
+                : dto.channelIds().size();
+
+        log.debug(
+                "PRIVATE 채널 생성 시작: participantCount={}",
+                participantCount
+        );
+
+        Channel channel = new Channel(
+                null,
+                null,
+                ChannelType.PRIVATE
+        );
 
         Channel savedChannel = channelRepository.save(channel);
 
         if (dto.channelIds() != null) {
             for (UUID userId : dto.channelIds()) {
                 User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new UserNotFoundException(userId));
-                ReadStatus readStatus = new ReadStatus(savedChannel, user);
+                        .orElseThrow(
+                                () -> new UserNotFoundException(
+                                        userId
+                                )
+                        );
+
+                ReadStatus readStatus =
+                        new ReadStatus(savedChannel, user);
+
                 readStatusRepository.save(readStatus);
             }
         }
 
-        log.info("PRIVATE 채널 생성 완료: channelId={}, participantCount={}",
-                savedChannel.getId(), participantCount);
+        log.info(
+                "PRIVATE 채널 생성 완료: channelId={}, participantCount={}",
+                savedChannel.getId(),
+                participantCount
+        );
+
         return channelMapper.toDto(savedChannel);
     }
 
     @Override
-    public ChannelResponse createPublicChannel(ChannelPublicRequest dto) {
-        log.debug("PUBLIC 채널 생성 시작: name={}", dto.name());
-        Channel channel = new Channel(dto.name(), dto.description(), ChannelType.PUBLIC);
+    @PreAuthorize("hasRole('CHANNEL_MANAGER')")
+    public ChannelResponse createPublicChannel(
+            ChannelPublicRequest dto
+    ) {
+        log.debug(
+                "PUBLIC 채널 생성 시작: name={}",
+                dto.name()
+        );
+
+        Channel channel = new Channel(
+                dto.name(),
+                dto.description(),
+                ChannelType.PUBLIC
+        );
+
         Channel savedChannel = channelRepository.save(channel);
 
-        log.info("PUBLIC 채널 생성 완료: channelId={}", savedChannel.getId());
+        log.info(
+                "PUBLIC 채널 생성 완료: channelId={}",
+                savedChannel.getId()
+        );
+
         return channelMapper.toDto(savedChannel);
     }
 
@@ -85,35 +126,70 @@ public class BasicChannelService implements ChannelService {
     @Override
     @Transactional(readOnly = true)
     public List<ChannelResponse> findAllByUserId(UUID userId) {
-        return channelRepository.findAll().stream()
-                .filter(channel -> channel.getType() == ChannelType.PUBLIC
-                        || readStatusRepository.existsByChannelIdAndUserId(channel.getId(), userId))
+        return channelRepository.findAll()
+                .stream()
+                .filter(
+                        channel ->
+                                channel.getType()
+                                        == ChannelType.PUBLIC
+                                        || readStatusRepository
+                                        .existsByChannelIdAndUserId(
+                                                channel.getId(),
+                                                userId
+                                        )
+                )
                 .map(channelMapper::toDto)
                 .toList();
     }
 
     @Override
-    public ChannelResponse update(UUID id, ChannelPublicRequest dto) {
-        log.debug("채널 수정 시작: channelId={}", id);
+    @PreAuthorize("hasRole('CHANNEL_MANAGER')")
+    public ChannelResponse update(
+            UUID id,
+            ChannelPublicRequest dto
+    ) {
+        log.debug(
+                "채널 수정 시작: channelId={}",
+                id
+        );
+
         Channel channel = channelRepository.findById(id)
-                .orElseThrow(() -> new ChannelNotFoundException(id));
+                .orElseThrow(
+                        () -> new ChannelNotFoundException(id)
+                );
 
         if (channel.getType() == ChannelType.PRIVATE) {
             throw new PrivateChannelUpdateException(id);
         }
 
-        channel.updateTitles(dto.name(), dto.description());
+        channel.updateTitles(
+                dto.name(),
+                dto.description()
+        );
 
-        log.info("채널 수정 완료: channelId={}", id);
+        log.info(
+                "채널 수정 완료: channelId={}",
+                id
+        );
+
         return channelMapper.toDto(channel);
     }
 
     @Override
+    @PreAuthorize("hasRole('CHANNEL_MANAGER')")
     public void delete(UUID id) {
-        log.debug("채널 삭제 시작: channelId={}", id);
+        log.debug(
+                "채널 삭제 시작: channelId={}",
+                id
+        );
+
         messageRepository.deleteByChannelId(id);
         readStatusRepository.deleteByChannelId(id);
         channelRepository.deleteById(id);
-        log.info("채널 삭제 완료: channelId={}", id);
+
+        log.info(
+                "채널 삭제 완료: channelId={}",
+                id
+        );
     }
 }

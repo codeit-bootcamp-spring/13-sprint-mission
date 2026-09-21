@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -23,88 +24,159 @@ public class GlobalExceptionHandler {
     private final ErrorCodeStatusMapper errorCodeStatusMapper;
 
     @ExceptionHandler(DiscodeitException.class)
-    public ResponseEntity<ErrorResponse> handleDiscodeitException(DiscodeitException exception) {
-        HttpStatus status = errorCodeStatusMapper.toHttpStatus(exception.getErrorCode());
-        log.warn("요청 처리 실패: code={}, details={}",
-                exception.getErrorCode().name(), exception.getDetails());
+    public ResponseEntity<ErrorResponse> handleDiscodeitException(
+            DiscodeitException exception
+    ) {
+        HttpStatus status = errorCodeStatusMapper.toHttpStatus(
+                exception.getErrorCode()
+        );
 
-        return ResponseEntity.status(status).body(new ErrorResponse(
-                Instant.now(),
-                status.value(),
+        log.warn(
+                "요청 처리 실패: code={}, details={}",
                 exception.getErrorCode().name(),
-                exception.getMessage(),
-                exception.getClass().getSimpleName(),
                 exception.getDetails()
-        ));
+        );
+
+        return ResponseEntity
+                .status(status)
+                .body(
+                        new ErrorResponse(
+                                Instant.now(),
+                                status.value(),
+                                exception.getErrorCode().name(),
+                                exception.getMessage(),
+                                exception.getClass().getSimpleName(),
+                                exception.getDetails()
+                        )
+                );
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+            AccessDeniedException exception
+    ) {
+        HttpStatus status = HttpStatus.FORBIDDEN;
+
+        log.warn(
+                "접근 권한이 없습니다: exception={}",
+                exception.getClass().getSimpleName()
+        );
+
+        return ResponseEntity
+                .status(status)
+                .body(
+                        new ErrorResponse(
+                                Instant.now(),
+                                status.value(),
+                                ErrorCode.ACCESS_DENIED.name(),
+                                ErrorCode.ACCESS_DENIED.getMessage(),
+                                exception.getClass().getSimpleName(),
+                                Map.of()
+                        )
+                );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
-            MethodArgumentNotValidException exception) {
-
+    public ResponseEntity<ErrorResponse>
+    handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException exception
+    ) {
         HttpStatus status = HttpStatus.BAD_REQUEST;
-        List<Map<String, String>> errors = exception.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(this::toValidationError)
-                .toList();
 
-        log.warn("요청 데이터 검증 실패: errors={}", errors);
+        List<Map<String, String>> errors =
+                exception.getBindingResult()
+                        .getFieldErrors()
+                        .stream()
+                        .map(this::toValidationError)
+                        .toList();
 
-        return ResponseEntity.status(status).body(new ErrorResponse(
-                Instant.now(),
-                status.value(),
-                ErrorCode.VALIDATION_FAILED.name(),
-                ErrorCode.VALIDATION_FAILED.getMessage(),
-                exception.getClass().getSimpleName(),
-                Map.of("errors", errors)
-        ));
+        log.warn(
+                "요청 데이터 검증 실패: errors={}",
+                errors
+        );
+
+        return ResponseEntity
+                .status(status)
+                .body(
+                        new ErrorResponse(
+                                Instant.now(),
+                                status.value(),
+                                ErrorCode.VALIDATION_FAILED.name(),
+                                ErrorCode.VALIDATION_FAILED.getMessage(),
+                                exception.getClass().getSimpleName(),
+                                Map.of("errors", errors)
+                        )
+                );
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(
-            NoResourceFoundException exception) {
-
-        HttpStatus status = errorCodeStatusMapper.toHttpStatus(ErrorCode.RESOURCE_NOT_FOUND);
-        Map<String, Object> details = Map.of(
-                "resourcePath", exception.getResourcePath()
+    public ResponseEntity<ErrorResponse>
+    handleNoResourceFoundException(
+            NoResourceFoundException exception
+    ) {
+        HttpStatus status = errorCodeStatusMapper.toHttpStatus(
+                ErrorCode.RESOURCE_NOT_FOUND
         );
 
-        log.debug("정적 리소스를 찾을 수 없습니다: resourcePath={}",
-                exception.getResourcePath());
+        Map<String, Object> details = Map.of(
+                "resourcePath",
+                exception.getResourcePath()
+        );
 
-        return ResponseEntity.status(status).body(new ErrorResponse(
-                Instant.now(),
-                status.value(),
-                ErrorCode.RESOURCE_NOT_FOUND.name(),
-                ErrorCode.RESOURCE_NOT_FOUND.getMessage(),
-                exception.getClass().getSimpleName(),
-                details
-        ));
+        log.debug(
+                "정적 리소스를 찾을 수 없습니다: resourcePath={}",
+                exception.getResourcePath()
+        );
+
+        return ResponseEntity
+                .status(status)
+                .body(
+                        new ErrorResponse(
+                                Instant.now(),
+                                status.value(),
+                                ErrorCode.RESOURCE_NOT_FOUND.name(),
+                                ErrorCode.RESOURCE_NOT_FOUND.getMessage(),
+                                exception.getClass().getSimpleName(),
+                                details
+                        )
+                );
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleUnexpectedException(Exception exception) {
+    public ResponseEntity<ErrorResponse> handleUnexpectedException(
+            Exception exception
+    ) {
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-        log.error("예상하지 못한 오류가 발생했습니다.", exception);
 
-        return ResponseEntity.status(status).body(new ErrorResponse(
-                Instant.now(),
-                status.value(),
-                ErrorCode.INTERNAL_SERVER_ERROR.name(),
-                ErrorCode.INTERNAL_SERVER_ERROR.getMessage(),
-                exception.getClass().getSimpleName(),
-                Map.of()
-        ));
+        log.error(
+                "예상하지 못한 오류가 발생했습니다.",
+                exception
+        );
+
+        return ResponseEntity
+                .status(status)
+                .body(
+                        new ErrorResponse(
+                                Instant.now(),
+                                status.value(),
+                                ErrorCode.INTERNAL_SERVER_ERROR.name(),
+                                ErrorCode.INTERNAL_SERVER_ERROR.getMessage(),
+                                exception.getClass().getSimpleName(),
+                                Map.of()
+                        )
+                );
     }
 
-    private Map<String, String> toValidationError(FieldError fieldError) {
+    private Map<String, String> toValidationError(
+            FieldError fieldError
+    ) {
         return Map.of(
-                "field", fieldError.getField(),
-                "message", fieldError.getDefaultMessage() == null
+                "field",
+                fieldError.getField(),
+                "message",
+                fieldError.getDefaultMessage() == null
                         ? "유효하지 않은 값입니다."
                         : fieldError.getDefaultMessage()
         );
     }
-
 }
