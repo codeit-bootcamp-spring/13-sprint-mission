@@ -2,6 +2,8 @@ package com.sprint.mission.discodeit.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.config.JwtProperties;
+import com.sprint.mission.discodeit.config.JwtTokenProvider;
 import com.sprint.mission.discodeit.dto.command.channel.ChannelCreatePublicCommand;
 import com.sprint.mission.discodeit.dto.request.channel.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
@@ -64,6 +66,12 @@ class DiscodeitApiIntegrationTest {
     ObjectMapper objectMapper;
 
     @Autowired
+    JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    JwtProperties jwtProperties;
+
+    @Autowired
     UserRepository userRepository;
 
     @Autowired
@@ -106,7 +114,7 @@ class DiscodeitApiIntegrationTest {
     }
 
     @Test
-    @DisplayName("사용자 생성 및 로그인 통합 성공 - 실제 DB 사용자로 인증")
+    @DisplayName("사용자 생성 및 로그인 통합 성공 - 실제 DB 사용자로 인증하고 세션 없이 JWT 발급")
     void userCreateAndLogin_authenticatesPersistedUser() throws Exception {
         // given
         // 통합 테스트는 Controller 슬라이스 테스트와 달리 Service, Repository, Mapper, DB를 모두 실제 Bean으로 사용한다.
@@ -170,18 +178,23 @@ class DiscodeitApiIntegrationTest {
         MvcResult loginResult = performLogin(createRequest.username(), createRequest.password())
 
                 // then
-                // 폼 로그인 필터와 커스텀 인증 컴포넌트가 함께 동작해 사용자 정보를 내려줘야 한다.
+                // 폼 로그인 필터와 JWT 성공 핸들러가 함께 동작해 사용자 정보와 토큰을 내려줘야 한다.
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(userId.toString()))
-                .andExpect(jsonPath("$.username").value(createRequest.username()))
-                .andExpect(jsonPath("$.online").value(true))
-                .andExpect(jsonPath("$.role").value(Role.USER.name()))
+                .andExpect(content().encoding(StandardCharsets.UTF_8.name()))
+                .andExpect(jsonPath("$.userDto.id").value(userId.toString()))
+                .andExpect(jsonPath("$.userDto.username").value(createRequest.username()))
+                .andExpect(jsonPath("$.userDto.email").value(createRequest.email()))
+                .andExpect(jsonPath("$.userDto.profile.id").value(profileId.toString()))
+                .andExpect(jsonPath("$.userDto.online").value(true))
+                .andExpect(jsonPath("$.userDto.role").value(Role.USER.name()))
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
+                .andExpect(jsonPath("$.userDto.password").doesNotExist())
                 .andExpect(authenticated().withUsername(createRequest.username()))
                 .andReturn();
 
-        MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
-        assertThat(session).isNotNull();
+        assertJwtLoginResponse(loginResult, userId, createRequest.username());
     }
 
     @Test
@@ -272,8 +285,8 @@ class DiscodeitApiIntegrationTest {
     }
 
     @Test
-    @DisplayName("동일한 계정으로 다시 로그인하면 기존 세션을 만료하고 새 세션을 유지한다")
-    void login_expiresPreviousSession_whenSameAccountLogsInAgain() throws Exception {
+    @DisplayName("동일한 계정으로 반복 로그인해도 세션 없이 JWT를 발급한다")
+    void login_succeedsWithoutSession_whenSameAccountLogsInAgain() throws Exception {
         String suffix = uniqueSuffix();
         String username = "concurrentUser-" + suffix;
         UUID userId = createUser(username, "concurrent-user-" + suffix + "@gmail.com");
@@ -282,30 +295,13 @@ class DiscodeitApiIntegrationTest {
         MvcResult firstLogin = performLogin(username, "integrationPassword")
                 .andExpect(status().isOk())
                 .andReturn();
-        MockHttpSession firstSession = (MockHttpSession) firstLogin.getRequest().getSession(false);
-        assertThat(firstSession).isNotNull();
+        assertJwtLoginResponse(firstLogin, userId, username);
 
         MvcResult secondLogin = performLogin(username, "integrationPassword")
                 .andExpect(status().isOk())
                 .andReturn();
-        MockHttpSession secondSession = (MockHttpSession) secondLogin.getRequest().getSession(false);
-        assertThat(secondSession).isNotNull();
-        assertThat(secondSession.getId()).isNotEqualTo(firstSession.getId());
-
-        SessionInformation firstSessionInformation =
-                sessionRegistry.getSessionInformation(firstSession.getId());
-        SessionInformation secondSessionInformation =
-                sessionRegistry.getSessionInformation(secondSession.getId());
-
-        assertThat(firstSessionInformation).isNotNull();
-        assertThat(firstSessionInformation.isExpired()).isTrue();
-        assertThat(secondSessionInformation).isNotNull();
-        assertThat(secondSessionInformation.isExpired()).isFalse();
-
-        mockMvc.perform(get("/api/auth/me").session(secondSession))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(userId.toString()))
-                .andExpect(jsonPath("$.online").value(true));
+        // 같은 초에 발급된 JWT는 값이 같을 수 있으므로 토큰 값의 차이는 요구하지 않는다.
+        assertJwtLoginResponse(secondLogin, userId, username);
     }
 
     @Test
@@ -475,6 +471,9 @@ class DiscodeitApiIntegrationTest {
                 .andExpect(jsonPath("$.message").value("아이디 또는 비밀번호가 일치하지 않습니다."))
                 .andExpect(jsonPath("$.details").isEmpty())
                 .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.accessToken").doesNotExist())
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
+                .andExpect(cookie().doesNotExist("REFRESH_TOKEN"))
                 .andExpect(unauthenticated());
     }
 
@@ -490,6 +489,9 @@ class DiscodeitApiIntegrationTest {
                 .andExpect(jsonPath("$.message").value("아이디 또는 비밀번호가 일치하지 않습니다."))
                 .andExpect(jsonPath("$.details").isEmpty())
                 .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.accessToken").doesNotExist())
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
+                .andExpect(cookie().doesNotExist("REFRESH_TOKEN"))
                 .andExpect(unauthenticated());
     }
 
@@ -1029,6 +1031,35 @@ class DiscodeitApiIntegrationTest {
                 .andReturn();
 
         return uuidAt(readBody(result), "/id");
+    }
+
+    private void assertJwtLoginResponse(MvcResult result, UUID userId, String username) throws Exception {
+        JsonNode body = readBody(result);
+        assertThat(uuidAt(body, "/userDto/id")).isEqualTo(userId);
+        assertThat(body.at("/userDto/username").asText()).isEqualTo(username);
+        String accessToken = body.path("accessToken").asText();
+        assertThat(accessToken).isNotBlank();
+        assertThat(jwtTokenProvider.validateToken(accessToken)).hasValueSatisfying(claims -> {
+            assertThat(claims.get("user_id", String.class)).isEqualTo(userId.toString());
+            assertThat(claims.getSubject()).isEqualTo(username);
+            assertThat(claims.get("token_type", String.class)).isEqualTo("ACCESS");
+            assertThat(claims.get("role", String.class)).isEqualTo(Role.USER.name());
+        });
+
+        Cookie refreshTokenCookie = result.getResponse().getCookie("REFRESH_TOKEN");
+        assertThat(refreshTokenCookie).isNotNull();
+        assertThat(refreshTokenCookie.isHttpOnly()).isTrue();
+        assertThat(refreshTokenCookie.getMaxAge())
+                .isEqualTo(Math.toIntExact(jwtProperties.refreshTokenValidity().getSeconds()));
+        assertThat(jwtTokenProvider.validateToken(refreshTokenCookie.getValue())).hasValueSatisfying(claims -> {
+            assertThat(claims.get("user_id", String.class)).isEqualTo(userId.toString());
+            assertThat(claims.getSubject()).isEqualTo(username);
+            assertThat(claims.get("token_type", String.class)).isEqualTo("REFRESH");
+        });
+
+        assertThat(result.getRequest().getSession(false)).isNull();
+        assertThat(result.getResponse().getCookie("JSESSIONID")).isNull();
+        assertThat(sessionRegistry.getAllPrincipals()).isEmpty();
     }
 
     private ResultActions performLogin(String username, String password) throws Exception {
