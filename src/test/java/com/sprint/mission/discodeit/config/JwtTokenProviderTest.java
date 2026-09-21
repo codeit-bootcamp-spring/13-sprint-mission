@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.config;
 
-import com.sprint.mission.discodeit.config.JwtTokenProvider.TokenType;
+import com.sprint.mission.discodeit.security.JwtTokenProvider;
+import com.sprint.mission.discodeit.security.JwtTokenProvider.TokenType;
 import com.sprint.mission.discodeit.dto.response.TokenDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Role;

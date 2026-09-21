@@ -1,10 +1,9 @@
-package com.sprint.mission.discodeit.config;
+package com.sprint.mission.discodeit.security;
 
+import com.sprint.mission.discodeit.config.JwtProperties;
 import com.sprint.mission.discodeit.dto.response.TokenDto;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.exception.jwt.TokenRenewalFailedException;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
