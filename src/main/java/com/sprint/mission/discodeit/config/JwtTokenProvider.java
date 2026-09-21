@@ -150,4 +150,8 @@ public class JwtTokenProvider {
                 .signWith(secretKey, Jwts.SIG.HS256)
                 .compact();
     }
+
+    public long getRefreshTokenLifetime(){
+       return jwtProperties.refreshTokenValidity().getSeconds();
+    }
 }
