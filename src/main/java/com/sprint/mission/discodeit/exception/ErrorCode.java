@@ -28,6 +28,8 @@ public enum ErrorCode {
 
     LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다."),
 
+    SESSION_EXPIRED(HttpStatus.UNAUTHORIZED, "세션이 만료되었습니다. 다시 로그인해주세요."),
+
     STORAGE_PUT_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장에 실패했습니다."),
     STORAGE_GET_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일을 불러오지 못했습니다."),
     STORAGE_INIT_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "스토리지 초기화에 실패했습니다."),

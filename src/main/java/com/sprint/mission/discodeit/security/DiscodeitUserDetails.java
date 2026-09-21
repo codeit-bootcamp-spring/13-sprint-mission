@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 @Getter
 @RequiredArgsConstructor
@@ -51,5 +52,17 @@ public class DiscodeitUserDetails implements UserDetails {
     @Override
     public boolean isEnabled() {
         return UserDetails.super.isEnabled();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        DiscodeitUserDetails that = (DiscodeitUserDetails) o;
+        return Objects.equals(userDto.id(), that.userDto.id());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(userDto.id());
     }
 }

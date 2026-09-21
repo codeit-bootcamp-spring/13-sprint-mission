@@ -16,11 +16,14 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.session.SessionInformation;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +45,7 @@ public class BasicUserService implements UserService {
     private final UserMapper userMapper;
     private final BinaryContentStorage binaryContentStorage;
     private final PasswordEncoder passwordEncoder;
+    private final SessionRegistry  sessionRegistry;
 
 
     @Override
@@ -178,11 +182,22 @@ public class BasicUserService implements UserService {
         user.updateRole(newRole);
         userRepository.save(user);
 
+        invalidateSessions(userId);
+
         UserStatus userStatus = userStatusRepository.findByUserId(userId)
                 .orElse(null);
         log.info("권한 수정 완료 - userId: {}, newRole: {}", user.getId(), newRole);
 
         return userMapper.toDto(user, userStatus);
+    }
+
+    private void invalidateSessions(UUID userId) {
+        sessionRegistry.getAllPrincipals().stream()
+                .filter(principal -> principal instanceof DiscodeitUserDetails details
+                && details.getUserDto().id().equals(userId))
+                .flatMap(principal -> sessionRegistry.getAllSessions(principal, false).stream())
+                .forEach(SessionInformation::expireNow);
+        log.info("세션 무효화 - userId: {}", userId);
     }
 
 }
