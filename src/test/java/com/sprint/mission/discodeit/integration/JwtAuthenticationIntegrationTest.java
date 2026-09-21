@@ -3,11 +3,15 @@ package com.sprint.mission.discodeit.integration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.config.JwtProperties;
+import com.sprint.mission.discodeit.config.RefreshCookieProperties;
 import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
+import com.sprint.mission.discodeit.dto.command.user.UserRoleUpdateCommand;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
 import com.sprint.mission.discodeit.security.JwtTokenProvider;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.ServletContext;
@@ -17,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
@@ -28,16 +33,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import java.net.HttpCookie;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -51,7 +61,10 @@ import static org.assertj.core.api.Assertions.assertThat;
         "discodeit.security.jwt.secret=jwt-authentication-integration-test-secret-with-at-least-32-bytes",
         "discodeit.security.jwt.access-token-validity=10m",
         "discodeit.security.jwt.refresh-token-validity=14d",
-        "discodeit.security.jwt.issuer=jwt-authentication-test"
+        "discodeit.security.jwt.issuer=jwt-authentication-test",
+        "discodeit.security.refresh-cookie.http-only=true",
+        "discodeit.security.refresh-cookie.secure=false",
+        "discodeit.security.refresh-cookie.same-site=Lax"
 })
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -79,6 +92,9 @@ class JwtAuthenticationIntegrationTest {
     JwtProperties jwtProperties;
 
     @Autowired
+    RefreshCookieProperties refreshCookieProperties;
+
+    @Autowired
     JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Autowired
@@ -86,6 +102,10 @@ class JwtAuthenticationIntegrationTest {
 
     @Autowired
     ServletContext servletContext;
+
+    @Autowired
+    @Qualifier("requestMappingHandlerMapping")
+    RequestMappingHandlerMapping requestMappingHandlerMapping;
 
     private final List<UUID> createdUserIds = new ArrayList<>();
 
@@ -177,6 +197,220 @@ class JwtAuthenticationIntegrationTest {
     }
 
     @Test
+    @DisplayName("로그인 쿠키만으로 갱신하고 새 ACCESS 토큰으로 인증하며 다음 요청에 인증을 유지하지 않는다")
+    void refresh_issuesTokensFromLoginCookieWithoutPersistingAuthentication() throws Exception {
+        User user = createUser();
+        ResponseEntity<String> loginResponse = login(user);
+        assertRefreshCookieAttributes(loginResponse);
+
+        // ACCESS 토큰이나 세션 없이 REFRESH_TOKEN 쿠키와 CSRF 정보만 전송한다.
+        ResponseEntity<String> response = refresh(cookie(loginResponse, "REFRESH_TOKEN").getValue());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertJsonContentType(response);
+        JsonNode body = objectMapper.readTree(response.getBody());
+        assertThat(body.size()).isEqualTo(2);
+        assertThat(body.path("userDto").path("id").asText()).isEqualTo(user.getId().toString());
+        assertThat(body.path("userDto").path("username").asText()).isEqualTo(user.getUsername());
+        assertThat(body.findValues("refreshToken")).isEmpty();
+        assertThat(body.findValues("password")).isEmpty();
+        assertTokenClaims(accessToken(response), JwtTokenProvider.TokenType.ACCESS, user);
+        assertTokenClaims(cookie(response, "REFRESH_TOKEN").getValue(), JwtTokenProvider.TokenType.REFRESH, user);
+        assertRefreshCookieAttributes(response);
+
+        ResponseEntity<String> authenticated = getUsers(accessToken(response));
+        assertThat(authenticated.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(objectMapper.readTree(authenticated.getBody()))
+                .anySatisfy(item -> assertThat(item.path("id").asText()).isEqualTo(user.getId().toString()));
+        ResponseEntity<String> unauthenticated = getUsers(null);
+        assertUnauthorized(unauthenticated);
+        assertNoSessionCookie(loginResponse);
+        assertNoSessionCookie(response);
+        assertNoSessionCookie(authenticated);
+        assertNoSessionCookie(unauthenticated);
+    }
+
+    @Test
+    @DisplayName("만료된 ACCESS 헤더가 있어도 유효한 리프레시 쿠키로 갱신한다")
+    void refresh_succeedsWithExpiredAccessToken() throws Exception {
+        User user = createUser();
+        ResponseEntity<String> loginResponse = login(user);
+        JwtTokenProvider pastProvider = new JwtTokenProvider(jwtProperties, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
+        String expiredAccess = pastProvider.generateAccessToken(user.getId(), user.getUsername(), user.getRole());
+        assertThat(jwtTokenProvider.validateToken(expiredAccess)).isEmpty();
+
+        ResponseEntity<String> response = refresh(cookie(loginResponse, "REFRESH_TOKEN").getValue(), expiredAccess);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(objectMapper.readTree(response.getBody()).path("userDto").path("id").asText())
+                .isEqualTo(user.getId().toString());
+        assertTokenClaims(accessToken(response), JwtTokenProvider.TokenType.ACCESS, user);
+        assertRefreshCookieAttributes(response);
+        assertThat(getUsers(accessToken(response)).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertNoSessionCookie(response);
+    }
+
+    @Test
+    @DisplayName("리프레시 쿠키만으로 일반 보호 API를 인증하지 않는다")
+    void getUsers_rejectsRefreshCookieWithoutAccessToken() throws Exception {
+        String refreshToken = cookie(login(createUser()), "REFRESH_TOKEN").getValue();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        headers.set(HttpHeaders.COOKIE, "REFRESH_TOKEN=" + refreshToken);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                "/api/users", HttpMethod.GET, new HttpEntity<>(headers), String.class);
+
+        assertUnauthorized(response);
+        assertNoRefreshCookie(response);
+        assertNoSessionCookie(response);
+    }
+
+    @Test
+    @DisplayName("Security 체인에 기존 RememberMe 인증 필터를 등록하지 않는다")
+    void securityChain_doesNotContainRememberMeFilter() {
+        assertThat(securityFilterChain.getFilters())
+                .noneMatch(RememberMeAuthenticationFilter.class::isInstance);
+    }
+
+    @Test
+    @DisplayName("Me API 매핑을 제거하고 갱신 API의 쿠키·응답 계약을 문서화한다")
+    void refresh_isDocumentedAndMeApiIsNotMapped() throws Exception {
+        assertThat(requestMappingHandlerMapping.getHandlerMethods().keySet())
+                .flatExtracting(info -> info.getPatternValues())
+                .doesNotContain("/api/auth/me", "/auth/me");
+
+        ResponseEntity<String> response = restTemplate.getForEntity("/v3/api/docs", String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode paths = objectMapper.readTree(response.getBody()).path("paths");
+        assertThat(paths.has("/api/auth/me")).isFalse();
+        assertThat(paths.has("/auth/me")).isFalse();
+        JsonNode operation = paths.path("/api/auth/refresh").path("post");
+        assertThat(operation.isMissingNode()).isFalse();
+        assertThat(operation.path("parameters")).anySatisfy(parameter -> {
+            assertThat(parameter.path("name").asText()).isEqualTo("REFRESH_TOKEN");
+            assertThat(parameter.path("in").asText()).isEqualTo("cookie");
+            assertThat(parameter.path("required").asBoolean()).isTrue();
+        });
+        assertThat(operation.path("parameters")).anySatisfy(parameter -> {
+            assertThat(parameter.path("name").asText()).isEqualTo("X-XSRF-TOKEN");
+            assertThat(parameter.path("in").asText()).isEqualTo("header");
+            assertThat(parameter.path("required").asBoolean()).isTrue();
+        });
+        JsonNode responses = operation.path("responses");
+        assertThat(responses.path("200").path("content").path("application/json").path("schema").path("$ref").asText())
+                .isEqualTo("#/components/schemas/JwtDto");
+        assertThat(responses.path("200").path("headers").has("Set-Cookie")).isTrue();
+        assertThat(responses.path("401").path("content").path("application/json").path("schema").path("$ref").asText())
+                .isEqualTo("#/components/schemas/ApiErrorResponse");
+        assertThat(responses.has("403")).isTrue();
+    }
+
+    @Test
+    @DisplayName("로그인 후 변경된 사용자 권한을 갱신 응답과 새 ACCESS 토큰에 반영한다")
+    void refresh_usesCurrentRoleFromDatabase() throws Exception {
+        User user = createUser();
+        ResponseEntity<String> loginResponse = login(user);
+        assertThat(jwtTokenProvider.parseClaims(accessToken(loginResponse)).get("role", String.class))
+                .isEqualTo(Role.USER.name());
+        user.updateRole(new UserRoleUpdateCommand(Role.CHANNEL_MANAGER));
+        userRepository.saveAndFlush(user);
+
+        ResponseEntity<String> response = refresh(cookie(loginResponse, "REFRESH_TOKEN").getValue());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(objectMapper.readTree(response.getBody()).path("userDto").path("role").asText())
+                .isEqualTo(Role.CHANNEL_MANAGER.name());
+        assertTokenClaims(accessToken(response), JwtTokenProvider.TokenType.ACCESS, user);
+    }
+
+    @Test
+    @DisplayName("과거에 발급한 리프레시 토큰의 갱신은 새 발급 시각과 설정된 유효기간을 적용한다")
+    void refresh_renewsIssuedAtAndExpirationWithoutWaiting() throws Exception {
+        User user = createUser();
+        Instant past = Instant.now().minusSeconds(3600).truncatedTo(ChronoUnit.SECONDS);
+        JwtTokenProvider pastProvider = new JwtTokenProvider(jwtProperties, Clock.fixed(past, ZoneOffset.UTC));
+        String oldToken = pastProvider.generateRefreshToken(user.getId(), user.getUsername());
+        Instant before = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+
+        ResponseEntity<String> response = refresh(oldToken);
+
+        Instant after = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Claims access = assertTokenClaims(accessToken(response), JwtTokenProvider.TokenType.ACCESS, user);
+        Claims refresh = assertTokenClaims(cookie(response, "REFRESH_TOKEN").getValue(),
+                JwtTokenProvider.TokenType.REFRESH, user);
+        // 같은 초에 발급된 JWT 문자열의 차이를 요구하지 않고 시각과 수명을 검증한다.
+        assertThat(access.getIssuedAt().toInstant()).isBetween(before, after).isAfter(past);
+        assertThat(refresh.getIssuedAt().toInstant()).isBetween(before, after).isAfter(past);
+        assertThat(access.getExpiration().toInstant())
+                .isEqualTo(access.getIssuedAt().toInstant().plus(jwtProperties.accessTokenValidity()));
+        assertThat(refresh.getExpiration().toInstant())
+                .isEqualTo(refresh.getIssuedAt().toInstant().plus(jwtProperties.refreshTokenValidity()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"expired", "tampered", "access", "malformed", "empty"})
+    @DisplayName("만료·변조·ACCESS·잘못된 형식·빈 토큰은 갱신 실패 401로 거부한다")
+    void refresh_rejectsInvalidRefreshCookie(String scenario) throws Exception {
+        User user = createUser();
+        String token = switch (scenario) {
+            case "expired" -> new JwtTokenProvider(jwtProperties, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC))
+                    .generateRefreshToken(user.getId(), user.getUsername());
+            case "tampered" -> {
+                String[] parts = jwtTokenProvider.generateRefreshToken(user.getId(), user.getUsername()).split("\\.");
+                String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+                parts[1] = Base64.getUrlEncoder().withoutPadding().encodeToString(
+                        payload.replace(user.getId().toString(), UUID.randomUUID().toString())
+                                .getBytes(StandardCharsets.UTF_8));
+                yield String.join(".", parts);
+            }
+            case "access" -> jwtTokenProvider.generateAccessToken(user.getId(), user.getUsername(), user.getRole());
+            case "malformed" -> "not-a-jwt";
+            case "empty" -> "";
+            default -> throw new IllegalArgumentException("지원하지 않는 테스트 시나리오: " + scenario);
+        };
+
+        assertRenewalFailure(refresh(token));
+    }
+
+    @Test
+    @DisplayName("유효한 CSRF 정보가 있어도 리프레시 쿠키가 없으면 갱신 실패 JSON과 401을 반환한다")
+    void refresh_returnsRenewalFailureWhenCookieIsMissing() throws Exception {
+        assertRenewalFailure(refresh(null));
+    }
+
+    @Test
+    @DisplayName("유효한 리프레시 토큰의 사용자가 삭제되면 500 대신 갱신 실패 401을 반환한다")
+    void refresh_returnsRenewalFailureAfterUserDeleted() throws Exception {
+        User user = createUser();
+        String refreshToken = cookie(login(user), "REFRESH_TOKEN").getValue();
+        userRepository.deleteById(user.getId());
+        createdUserIds.remove(user.getId());
+        assertThat(jwtTokenProvider.validateToken(refreshToken)).isPresent();
+
+        assertRenewalFailure(refresh(refreshToken));
+    }
+
+    @Test
+    @DisplayName("정상 리프레시 쿠키가 있어도 CSRF 정보가 없으면 403으로 거부한다")
+    void refresh_rejectsRequestWithoutCsrf() throws Exception {
+        String refreshToken = cookie(login(createUser()), "REFRESH_TOKEN").getValue();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        headers.set(HttpHeaders.COOKIE, "REFRESH_TOKEN=" + refreshToken);
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "/api/auth/refresh", new HttpEntity<>(headers), String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertJsonContentType(response);
+        assertThat(objectMapper.readTree(response.getBody()).path("code").asText()).isEqualTo("AUTH_403");
+        assertNoRefreshCookie(response);
+    }
+
+    @Test
     @DisplayName("JWT 필터는 서블릿에 직접 등록되지 않고 Security 체인에서 폼 로그인 앞에 한 번만 등록된다")
     void jwtFilter_isOnlyRegisteredInSecurityChain() {
         Map<String, ? extends FilterRegistration> registrations = servletContext.getFilterRegistrations();
@@ -251,6 +485,77 @@ class JwtAuthenticationIntegrationTest {
         String token = objectMapper.readTree(loginResponse.getBody()).path("accessToken").asText();
         assertThat(token).isNotBlank();
         return token;
+    }
+
+    private ResponseEntity<String> refresh(String refreshToken) {
+        return refresh(refreshToken, null);
+    }
+
+    private ResponseEntity<String> refresh(String refreshToken, String accessToken) {
+        // 로그인에서 사용한 CSRF 쿠키를 재사용하지 않고 갱신 요청용 쿠키·헤더를 명시적으로 준비한다.
+        ResponseEntity<String> csrfResponse = restTemplate.getForEntity("/api/auth/csrf-token", String.class);
+        assertThat(csrfResponse.getStatusCode()).isEqualTo(HttpStatus.NON_AUTHORITATIVE_INFORMATION);
+        HttpCookie csrfCookie = cookie(csrfResponse, "XSRF-TOKEN");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        String cookieHeader = csrfCookie.getName() + "=" + csrfCookie.getValue();
+        if (refreshToken != null) {
+            cookieHeader += "; REFRESH_TOKEN=" + refreshToken;
+        }
+        headers.set(HttpHeaders.COOKIE, cookieHeader);
+        headers.set("X-XSRF-TOKEN", csrfCookie.getValue());
+        if (accessToken != null) {
+            headers.setBearerAuth(accessToken);
+        }
+        return restTemplate.postForEntity("/api/auth/refresh", new HttpEntity<>(headers), String.class);
+    }
+
+    private Claims assertTokenClaims(String token, JwtTokenProvider.TokenType type, User user) {
+        Claims claims = jwtTokenProvider.validateToken(token).orElseThrow();
+        assertThat(jwtTokenProvider.getTokenType(claims)).isEqualTo(type.name());
+        assertThat(jwtTokenProvider.getUserId(claims)).isEqualTo(user.getId());
+        assertThat(claims.getSubject()).isEqualTo(user.getUsername());
+        assertThat(claims.getIssuer()).isEqualTo(jwtProperties.issuer());
+        if (type == JwtTokenProvider.TokenType.ACCESS) {
+            assertThat(claims.get("role", String.class)).isEqualTo(user.getRole().name());
+        } else {
+            assertThat(claims).doesNotContainKey("role");
+        }
+        return claims;
+    }
+
+    private void assertRefreshCookieAttributes(ResponseEntity<String> response) {
+        // 삭제 쿠키와 새 쿠키를 중복 전송하지 않고, 정상 형식의 새 쿠키 하나만 발급한다.
+        List<HttpCookie> refreshCookies = cookies(response).stream()
+                .filter(cookie -> "REFRESH_TOKEN".equals(cookie.getName()))
+                .toList();
+        assertThat(refreshCookies).hasSize(1);
+        HttpCookie refreshCookie = refreshCookies.get(0);
+        assertThat(refreshCookie.getValue()).isNotBlank();
+        assertThat(refreshCookie.isHttpOnly()).isEqualTo(refreshCookieProperties.httpOnly());
+        assertThat(refreshCookie.getSecure()).isEqualTo(refreshCookieProperties.secure());
+        assertThat(refreshCookie.getMaxAge()).isPositive()
+                .isEqualTo(jwtProperties.refreshTokenValidity().getSeconds());
+        assertThat(response.getHeaders().getOrEmpty(HttpHeaders.SET_COOKIE))
+                .filteredOn(header -> header.startsWith("REFRESH_TOKEN="))
+                .singleElement()
+                .satisfies(header -> assertThat(header)
+                        .contains("SameSite=" + refreshCookieProperties.sameSite()));
+    }
+
+    private void assertRenewalFailure(ResponseEntity<String> response) throws Exception {
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertJsonContentType(response);
+        JsonNode body = objectMapper.readTree(response.getBody());
+        assertThat(body.path("status").asInt()).isEqualTo(401);
+        assertThat(body.path("code").asText()).isEqualTo("TOKEN_RENEWAL_FAILED");
+        assertThat(body.findValues("accessToken")).isEmpty();
+        assertThat(body.findValues("refreshToken")).isEmpty();
+        assertNoRefreshCookie(response);
+    }
+
+    private void assertNoRefreshCookie(ResponseEntity<String> response) {
+        assertThat(cookies(response)).extracting(HttpCookie::getName).doesNotContain("REFRESH_TOKEN");
     }
 
     private ResponseEntity<String> getUsers(String token) {
