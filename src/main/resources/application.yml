@@ -15,6 +15,9 @@ spring:
 
 #파일 저장 방식 변경 설정
 discodeit:
+  security:
+    remember-me:
+      key: ${REMEMBER_ME_KEY:local-dev-remember-me-key}
   storage:
     type: ${STORAGE_TYPE:local}
     local:
