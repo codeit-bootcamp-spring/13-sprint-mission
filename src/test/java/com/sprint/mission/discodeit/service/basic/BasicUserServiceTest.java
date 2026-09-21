@@ -128,7 +128,7 @@ class BasicUserServiceTest {
         userService.deleteUser(userId);
 
         // then
-        then(userRepository).should().deleteById(userId);
+        then(userRepository).should().delete(user);
         then(sessionManager).should().invalidateSessions(userId);
 
     }

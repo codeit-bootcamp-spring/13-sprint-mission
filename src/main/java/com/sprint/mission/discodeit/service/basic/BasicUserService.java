@@ -60,9 +60,8 @@ public class BasicUserService implements UserService {
         //프로필 이미지 처리
         BinaryContent profile = null;
         if (profileRequest != null) {
-             profile = new BinaryContent(profileRequest.fileName(),
-                    profileRequest.fileSize(), profileRequest.contentType());
-            binaryContentRepository.save(profile);
+            profile = binaryContentRepository.save(new BinaryContent(
+                    profileRequest.fileName(), profileRequest.fileSize(), profileRequest.contentType()));
             binaryContentStorage.put(profile.getId(), profileRequest.bytes());
         }
         String encodedPassword = passwordEncoder.encode(command.password());
@@ -105,16 +104,18 @@ public class BasicUserService implements UserService {
 
         //프로필 이미지 선택적 처리
         if (profileRequest != null) {
-            if (user.getProfile() != null){
-                binaryContentRepository.deleteById(user.getProfile().getId());
-            }
+            BinaryContent oldProfile = user.getProfile();
 
-            BinaryContent profile = new BinaryContent(
-                    profileRequest.fileName(), profileRequest.fileSize(), profileRequest.contentType());
-            binaryContentRepository.save(profile);
+            BinaryContent profile = binaryContentRepository.save(new BinaryContent(
+                    profileRequest.fileName(), profileRequest.fileSize(), profileRequest.contentType()));
             binaryContentStorage.put(profile.getId(), profileRequest.bytes());
             user.updateUserProfileId(profile);
+
+            if (oldProfile != null) {
+                binaryContentRepository.delete(oldProfile);
+            }
         }
+
         if (command.newUsername() != null) {
             if (userRepository.existsByUsername(command.newUsername())){
                 log.warn("이름 변경 실패 - 중복된 username: {}", command.newUsername());
@@ -144,11 +145,12 @@ public class BasicUserService implements UserService {
     public void deleteUser(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(()->UserNotFoundException.withId(userId));
-        if (user.getProfile() != null){
-            binaryContentRepository.delete(user.getProfile());
-        }
+        BinaryContent profile = user.getProfile();
         readStatusRepository.deleteByUserId(userId);
-        userRepository.deleteById(userId);
+        userRepository.delete(user);
+        if (profile != null) {
+            binaryContentRepository.delete(profile);
+        }
         sessionManager.invalidateSessions(userId);
         log.info("유저 삭제 - name: {}, userId: {}", user.getUsername(), user.getId());
     }
