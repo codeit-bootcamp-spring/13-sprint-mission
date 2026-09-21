@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -100,6 +101,7 @@ public class BasicMessageService implements MessageService {
 
     //메시지 수정
     @Override
+    @PreAuthorize("@messageSecurity.isAuthor(#messageId, principal)")
     public MessageDto updateMessage(UUID messageId, MessageUpdateCommand command) {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() -> MessageNotFoundException.withId(messageId));
@@ -114,6 +116,7 @@ public class BasicMessageService implements MessageService {
 
     //메시지, 첨부파일 삭제
     @Override
+    @PreAuthorize("@messageSecurity.isAuthor(#messageId, principal)")
     public void delete(UUID messageId) {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() -> MessageNotFoundException.withId(messageId));

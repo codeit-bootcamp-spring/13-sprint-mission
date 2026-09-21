@@ -19,6 +19,7 @@ import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.parameters.P;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -98,6 +99,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @PreAuthorize("principal.userDto.id().equals(#userId)")
     public UserDto updateUser(UUID userId, UserUpdateCommand command, BinaryContentCreateCommand profileRequest) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> UserNotFoundException.withId(userId));
@@ -142,6 +144,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @PreAuthorize("principal.userDto.id().equals(#userId)")
     public void deleteUser(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(()->UserNotFoundException.withId(userId));
