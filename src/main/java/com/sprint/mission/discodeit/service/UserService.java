@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.service;
 
 import com.sprint.mission.discodeit.dto.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.UserResponse;
+import com.sprint.mission.discodeit.dto.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.UserUpdateRequest;
 
 import java.util.List;
@@ -18,5 +19,7 @@ public interface UserService {
     UserResponse update(UserUpdateRequest request);
     // 유저 삭제 기능
     void delete(UUID id);
+    // 유저 권한 수정 기능
+    UserResponse updateRole(UserRoleUpdateRequest request);
 
 }

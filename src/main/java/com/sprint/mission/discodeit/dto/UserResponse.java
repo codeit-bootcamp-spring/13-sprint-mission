@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.dto;
 
+import com.sprint.mission.discodeit.entity.Role;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -23,6 +24,9 @@ public class UserResponse {
     // 사용자 이메일
     private String email;
 
+    // 사용자 권한
+    private Role role;
+
     // 프로필 이미지로 연결된 BinaryContent의 id
     private UUID profileId;
 
@@ -43,6 +47,7 @@ public class UserResponse {
             Instant updatedAt,
             String username,
             String email,
+            Role role,
             UUID profileId,
             boolean online
     ) {
@@ -52,6 +57,7 @@ public class UserResponse {
                 updatedAt,
                 username,
                 email,
+                role,
                 profileId,
                 null,
                 online
@@ -65,6 +71,7 @@ public class UserResponse {
             Instant updatedAt,
             String username,
             String email,
+            Role role,
             UUID profileId,
             BinaryContentResponse profile,
             boolean online
@@ -74,6 +81,7 @@ public class UserResponse {
         this.updatedAt = updatedAt;
         this.username = username;
         this.email = email;
+        this.role = role;
         this.profileId = profileId;
         this.profileImageId = profileId;
         this.profile = profile;

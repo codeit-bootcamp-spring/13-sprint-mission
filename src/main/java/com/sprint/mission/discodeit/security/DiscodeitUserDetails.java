@@ -4,10 +4,12 @@ import com.sprint.mission.discodeit.dto.UserResponse;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 @Getter
 @RequiredArgsConstructor
@@ -21,8 +23,11 @@ public class DiscodeitUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // 현재 프로젝트에는 별도의 권한(Role) 개념이 없으므로 빈 목록 반환
-        return List.of();
+        return List.of(
+                new SimpleGrantedAuthority(
+                        "ROLE_" + userDto.getRole().name()
+                )
+        );
     }
 
     @Override
@@ -53,5 +58,28 @@ public class DiscodeitUserDetails implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof DiscodeitUserDetails that)) {
+            return false;
+        }
+
+        return Objects.equals(
+                userDto.getId(),
+                that.userDto.getId()
+        );
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                userDto.getId()
+        );
     }
 }

@@ -42,6 +42,12 @@ public enum ErrorCode {
             "아이디 또는 비밀번호가 올바르지 않습니다."
     ),
 
+    ACCESS_DENIED(
+            HttpStatus.FORBIDDEN,
+            "AUTH-002",
+            "접근 권한이 없습니다."
+    ),
+
     // Channel
     CHANNEL_NOT_FOUND(
             HttpStatus.NOT_FOUND,

@@ -23,6 +23,7 @@ import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,7 +47,11 @@ public class BasicChannelService implements ChannelService {
     private final BinaryContentService binaryContentService;
 
     @Override
-    public ChannelResponse createPublicChannel(ChannelCreateRequest request) {
+    @PreAuthorize("hasRole('CHANNEL_MANAGER')")
+    public ChannelResponse createPublicChannel(
+            ChannelCreateRequest request
+    ) {
+
         log.info(
                 "공개 채널 생성을 시작합니다. name={}",
                 request == null ? null : request.getName()
@@ -54,7 +59,10 @@ public class BasicChannelService implements ChannelService {
 
         if (request == null) {
             log.warn("공개 채널 생성 요청이 비어 있습니다.");
-            throw new IllegalArgumentException("채널 생성 요청은 비어 있을 수 없습니다.");
+
+            throw new IllegalArgumentException(
+                    "채널 생성 요청은 비어 있을 수 없습니다."
+            );
         }
 
         try {
@@ -70,7 +78,8 @@ public class BasicChannelService implements ChannelService {
                     request.getDescription()
             );
 
-            Channel savedChannel = channelRepository.save(channel);
+            Channel savedChannel =
+                    channelRepository.save(channel);
 
             log.info(
                     "공개 채널 생성이 완료되었습니다. channelId={}, name={}",
@@ -81,29 +90,43 @@ public class BasicChannelService implements ChannelService {
             return toResponse(savedChannel);
 
         } catch (RuntimeException e) {
+
             log.error(
                     "공개 채널 생성 중 오류가 발생했습니다. name={}",
                     request.getName(),
                     e
             );
+
             throw e;
         }
     }
 
     @Override
-    public ChannelResponse createPrivateChannel(PrivateChannelCreateRequest request) {
+    public ChannelResponse createPrivateChannel(
+            PrivateChannelCreateRequest request
+    ) {
+
         log.info("비공개 채널 생성을 시작합니다.");
 
         if (request == null) {
             log.warn("비공개 채널 생성 요청이 비어 있습니다.");
-            throw new IllegalArgumentException("PRIVATE 채널 생성 요청은 비어 있을 수 없습니다.");
+
+            throw new IllegalArgumentException(
+                    "PRIVATE 채널 생성 요청은 비어 있을 수 없습니다."
+            );
         }
 
-        List<UUID> participantUserIds = request.getParticipantIds();
+        List<UUID> participantUserIds =
+                request.getParticipantIds();
 
-        if (participantUserIds == null || participantUserIds.isEmpty()) {
+        if (participantUserIds == null
+                || participantUserIds.isEmpty()) {
+
             log.warn("비공개 채널 참여자 목록이 비어 있습니다.");
-            throw new IllegalArgumentException("PRIVATE 채널 참여자 목록은 비어 있을 수 없습니다.");
+
+            throw new IllegalArgumentException(
+                    "PRIVATE 채널 참여자 목록은 비어 있을 수 없습니다."
+            );
         }
 
         log.debug(
@@ -112,25 +135,36 @@ public class BasicChannelService implements ChannelService {
                 participantUserIds
         );
 
-        Set<UUID> uniqueParticipantUserIds = new HashSet<>();
+        Set<UUID> uniqueParticipantUserIds =
+                new HashSet<>();
 
         for (UUID userId : participantUserIds) {
+
             if (userId == null) {
-                log.warn("비공개 채널 참여자 id가 null입니다.");
-                throw new IllegalArgumentException("참여자 id는 null일 수 없습니다.");
+                log.warn(
+                        "비공개 채널 참여자 id가 null입니다."
+                );
+
+                throw new IllegalArgumentException(
+                        "참여자 id는 null일 수 없습니다."
+                );
             }
 
             if (!uniqueParticipantUserIds.add(userId)) {
+
                 log.warn(
                         "비공개 채널 참여자 id가 중복되었습니다. userId={}",
                         userId
                 );
+
                 throw new IllegalArgumentException(
-                        "PRIVATE 채널 참여자 id가 중복되었습니다. userId=" + userId
+                        "PRIVATE 채널 참여자 id가 중복되었습니다. userId="
+                                + userId
                 );
             }
 
             if (!userRepository.existsById(userId)) {
+
                 log.warn(
                         "비공개 채널 참여자를 찾을 수 없습니다. userId={}",
                         userId
@@ -141,29 +175,37 @@ public class BasicChannelService implements ChannelService {
         }
 
         try {
+
             Channel channel = new Channel(
                     ChannelType.PRIVATE,
                     null,
                     null
             );
 
-            Channel savedChannel = channelRepository.save(channel);
+            Channel savedChannel =
+                    channelRepository.save(channel);
 
             for (UUID userId : uniqueParticipantUserIds) {
-                User user = userRepository.findById(userId)
-                        .orElseThrow(() -> {
-                            log.warn(
-                                    "ReadStatus 생성 중 참여자를 찾을 수 없습니다. userId={}",
-                                    userId
-                            );
 
-                            return new UserNotFoundException(userId);
-                        });
+                User user =
+                        userRepository.findById(userId)
+                                .orElseThrow(() -> {
 
-                ReadStatus readStatus = new ReadStatus(
-                        user,
-                        savedChannel
-                );
+                                    log.warn(
+                                            "ReadStatus 생성 중 참여자를 찾을 수 없습니다. userId={}",
+                                            userId
+                                    );
+
+                                    return new UserNotFoundException(
+                                            userId
+                                    );
+                                });
+
+                ReadStatus readStatus =
+                        new ReadStatus(
+                                user,
+                                savedChannel
+                        );
 
                 readStatusRepository.save(readStatus);
             }
@@ -177,32 +219,41 @@ public class BasicChannelService implements ChannelService {
             return toResponse(savedChannel);
 
         } catch (RuntimeException e) {
+
             log.error(
                     "비공개 채널 생성 중 오류가 발생했습니다. participantCount={}",
                     uniqueParticipantUserIds.size(),
                     e
             );
+
             throw e;
         }
     }
 
-
     @Override
     @Transactional(readOnly = true)
     public ChannelResponse find(UUID id) {
-        Channel channel = findChannelById(id);
+
+        Channel channel =
+                findChannelById(id);
 
         return toResponse(channel);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ChannelResponse> findAllByUserId(UUID userId) {
+    public List<ChannelResponse> findAllByUserId(
+            UUID userId
+    ) {
+
         if (userId == null) {
-            throw new IllegalArgumentException("채널을 조회할 사용자 id는 필수입니다.");
+            throw new IllegalArgumentException(
+                    "채널을 조회할 사용자 id는 필수입니다."
+            );
         }
 
         if (!userRepository.existsById(userId)) {
+
             log.warn(
                     "채널을 조회할 사용자를 찾을 수 없습니다. userId={}",
                     userId
@@ -211,24 +262,41 @@ public class BasicChannelService implements ChannelService {
             throw new UserNotFoundException(userId);
         }
 
-        List<Channel> channels = channelRepository.findAll();
-        List<ChannelResponse> responses = new ArrayList<>();
+        List<Channel> channels =
+                channelRepository.findAll();
 
-        List<UUID> channelIds = readStatusRepository.findChannelIdsByUserId(userId);
+        List<ChannelResponse> responses =
+                new ArrayList<>();
 
-        Set<UUID> participatedPrivateChannelIds = channelIds == null
-                ? new HashSet<>()
-                : new HashSet<>(channelIds);
+        List<UUID> channelIds =
+                readStatusRepository
+                        .findChannelIdsByUserId(userId);
+
+        Set<UUID> participatedPrivateChannelIds =
+                channelIds == null
+                        ? new HashSet<>()
+                        : new HashSet<>(channelIds);
 
         for (Channel channel : channels) {
-            if (channel.getType() == ChannelType.PUBLIC) {
-                responses.add(toResponse(channel));
+
+            if (channel.getType()
+                    == ChannelType.PUBLIC) {
+
+                responses.add(
+                        toResponse(channel)
+                );
+
                 continue;
             }
 
-            if (channel.getType() == ChannelType.PRIVATE
-                    && participatedPrivateChannelIds.contains(channel.getId())) {
-                responses.add(toResponse(channel));
+            if (channel.getType()
+                    == ChannelType.PRIVATE
+                    && participatedPrivateChannelIds
+                    .contains(channel.getId())) {
+
+                responses.add(
+                        toResponse(channel)
+                );
             }
         }
 
@@ -236,25 +304,51 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public ChannelResponse update(ChannelUpdateRequest request) {
+    @PreAuthorize(
+            "hasRole('CHANNEL_MANAGER') "
+                    + "or @channelSecurity.isPrivateChannel(#request.getId())"
+    )
+    public ChannelResponse update(
+            ChannelUpdateRequest request
+    ) {
+
         log.info(
                 "채널 수정을 시작합니다. channelId={}",
-                request == null ? null : request.getId()
+                request == null
+                        ? null
+                        : request.getId()
         );
 
         if (request == null) {
-            log.warn("채널 수정 요청이 비어 있습니다.");
-            throw new IllegalArgumentException("채널 수정 요청은 비어 있을 수 없습니다.");
+
+            log.warn(
+                    "채널 수정 요청이 비어 있습니다."
+            );
+
+            throw new IllegalArgumentException(
+                    "채널 수정 요청은 비어 있을 수 없습니다."
+            );
         }
 
         if (request.getId() == null) {
-            log.warn("수정할 채널 id가 null입니다.");
-            throw new IllegalArgumentException("수정할 채널 id는 null일 수 없습니다.");
+
+            log.warn(
+                    "수정할 채널 id가 null입니다."
+            );
+
+            throw new IllegalArgumentException(
+                    "수정할 채널 id는 null일 수 없습니다."
+            );
         }
 
-        Channel channel = findChannelById(request.getId());
+        Channel channel =
+                findChannelById(
+                        request.getId()
+                );
 
-        if (channel.getType() == ChannelType.PRIVATE) {
+        if (channel.getType()
+                == ChannelType.PRIVATE) {
+
             log.warn(
                     "비공개 채널 수정 요청을 거부합니다. channelId={}",
                     request.getId()
@@ -266,6 +360,7 @@ public class BasicChannelService implements ChannelService {
         }
 
         try {
+
             log.debug(
                     "채널 수정 요청을 처리합니다. channelId={}, name={}, description={}",
                     request.getId(),
@@ -279,7 +374,8 @@ public class BasicChannelService implements ChannelService {
                     request.getDescription()
             );
 
-            Channel savedChannel = channelRepository.save(channel);
+            Channel savedChannel =
+                    channelRepository.save(channel);
 
             log.info(
                     "채널 수정이 완료되었습니다. channelId={}",
@@ -289,33 +385,55 @@ public class BasicChannelService implements ChannelService {
             return toResponse(savedChannel);
 
         } catch (RuntimeException e) {
+
             log.error(
                     "채널 수정 중 오류가 발생했습니다. channelId={}",
                     request.getId(),
                     e
             );
+
             throw e;
         }
     }
 
     @Override
+    @PreAuthorize(
+            "hasRole('CHANNEL_MANAGER') "
+                    + "or @channelSecurity.isPrivateChannel(#id)"
+    )
     public void delete(UUID id) {
-        log.info("채널 삭제를 시작합니다. channelId={}", id);
 
-        Channel channel = findChannelById(id);
+        log.info(
+                "채널 삭제를 시작합니다. channelId={}",
+                id
+        );
+
+        Channel channel =
+                findChannelById(id);
 
         try {
+
             log.debug(
                     "채널 관련 데이터를 삭제합니다. channelId={}, channelType={}",
                     channel.getId(),
                     channel.getType()
             );
 
-            deleteMessageAttachmentsByChannelId(channel.getId());
+            deleteMessageAttachmentsByChannelId(
+                    channel.getId()
+            );
 
-            messageRepository.deleteByChannel_Id(channel.getId());
-            readStatusRepository.deleteByChannel_Id(channel.getId());
-            channelRepository.deleteById(channel.getId());
+            messageRepository.deleteByChannel_Id(
+                    channel.getId()
+            );
+
+            readStatusRepository.deleteByChannel_Id(
+                    channel.getId()
+            );
+
+            channelRepository.deleteById(
+                    channel.getId()
+            );
 
             log.info(
                     "채널 삭제가 완료되었습니다. channelId={}",
@@ -323,23 +441,31 @@ public class BasicChannelService implements ChannelService {
             );
 
         } catch (RuntimeException e) {
+
             log.error(
                     "채널 삭제 중 오류가 발생했습니다. channelId={}",
                     id,
                     e
             );
+
             throw e;
         }
     }
 
-    private void deleteMessageAttachmentsByChannelId(UUID channelId) {
+    private void deleteMessageAttachmentsByChannelId(
+            UUID channelId
+    ) {
+
         log.debug(
                 "채널 메시지 첨부파일 삭제를 시작합니다. channelId={}",
                 channelId
         );
 
         List<Message> messages =
-                messageRepository.findAllByChannel_Id(channelId);
+                messageRepository
+                        .findAllByChannel_Id(
+                                channelId
+                        );
 
         log.debug(
                 "채널 메시지를 조회했습니다. channelId={}, messageCount={}",
@@ -347,16 +473,23 @@ public class BasicChannelService implements ChannelService {
                 messages.size()
         );
 
-        Set<UUID> attachmentIds = new HashSet<>();
+        Set<UUID> attachmentIds =
+                new HashSet<>();
 
         for (Message message : messages) {
-            List<UUID> messageAttachmentIds = message.getAttachmentIds();
 
-            if (messageAttachmentIds == null || messageAttachmentIds.isEmpty()) {
+            List<UUID> messageAttachmentIds =
+                    message.getAttachmentIds();
+
+            if (messageAttachmentIds == null
+                    || messageAttachmentIds.isEmpty()) {
+
                 continue;
             }
 
-            attachmentIds.addAll(messageAttachmentIds);
+            attachmentIds.addAll(
+                    messageAttachmentIds
+            );
         }
 
         log.debug(
@@ -366,6 +499,7 @@ public class BasicChannelService implements ChannelService {
         );
 
         for (UUID attachmentId : attachmentIds) {
+
             if (attachmentId == null) {
                 continue;
             }
@@ -376,7 +510,9 @@ public class BasicChannelService implements ChannelService {
                     attachmentId
             );
 
-            binaryContentService.delete(attachmentId);
+            binaryContentService.delete(
+                    attachmentId
+            );
         }
 
         log.info(
@@ -386,8 +522,12 @@ public class BasicChannelService implements ChannelService {
         );
     }
 
-    private Channel findChannelById(UUID channelId) {
+    private Channel findChannelById(
+            UUID channelId
+    ) {
+
         if (channelId == null) {
+
             log.warn(
                     "채널 조회에 실패했습니다. channelId가 null입니다."
             );
@@ -397,20 +537,32 @@ public class BasicChannelService implements ChannelService {
             );
         }
 
-        return channelRepository.findById(channelId)
+        return channelRepository
+                .findById(channelId)
                 .orElseThrow(() -> {
+
                     log.warn(
                             "채널을 찾을 수 없습니다. channelId={}",
                             channelId
                     );
 
-                    return new ChannelNotFoundException(channelId);
+                    return new ChannelNotFoundException(
+                            channelId
+                    );
                 });
     }
 
-    private ChannelResponse toResponse(Channel channel) {
-        List<UUID> participantUserIds = getParticipantUserIds(channel);
-        List<UserResponse> participants = toParticipantResponses(participantUserIds);
+    private ChannelResponse toResponse(
+            Channel channel
+    ) {
+
+        List<UUID> participantUserIds =
+                getParticipantUserIds(channel);
+
+        List<UserResponse> participants =
+                toParticipantResponses(
+                        participantUserIds
+                );
 
         return new ChannelResponse(
                 channel.getId(),
@@ -419,23 +571,39 @@ public class BasicChannelService implements ChannelService {
                 channel.getType(),
                 channel.getName(),
                 channel.getDescription(),
-                getLastMessageAt(channel.getId()),
+                getLastMessageAt(
+                        channel.getId()
+                ),
                 participantUserIds,
                 participants
         );
     }
 
-    private Instant getLastMessageAt(UUID channelId) {
-        return messageRepository.findLastMessageAtByChannelId(channelId);
+    private Instant getLastMessageAt(
+            UUID channelId
+    ) {
+
+        return messageRepository
+                .findLastMessageAtByChannelId(
+                        channelId
+                );
     }
 
-    private List<UUID> getParticipantUserIds(Channel channel) {
-        if (channel.getType() != ChannelType.PRIVATE) {
+    private List<UUID> getParticipantUserIds(
+            Channel channel
+    ) {
+
+        if (channel.getType()
+                != ChannelType.PRIVATE) {
+
             return new ArrayList<>();
         }
 
         List<UUID> participantUserIds =
-                readStatusRepository.findUserIdsByChannelId(channel.getId());
+                readStatusRepository
+                        .findUserIdsByChannelId(
+                                channel.getId()
+                        );
 
         if (participantUserIds == null) {
             return new ArrayList<>();
@@ -444,29 +612,44 @@ public class BasicChannelService implements ChannelService {
         return participantUserIds;
     }
 
-    private List<UserResponse> toParticipantResponses(List<UUID> participantUserIds) {
-        List<UserResponse> participants = new ArrayList<>();
+    private List<UserResponse> toParticipantResponses(
+            List<UUID> participantUserIds
+    ) {
 
-        if (participantUserIds == null || participantUserIds.isEmpty()) {
+        List<UserResponse> participants =
+                new ArrayList<>();
+
+        if (participantUserIds == null
+                || participantUserIds.isEmpty()) {
+
             return participants;
         }
 
         for (UUID userId : participantUserIds) {
+
             if (userId == null) {
                 continue;
             }
 
-            userRepository.findById(userId)
+            userRepository
+                    .findById(userId)
                     .map(this::toUserResponse)
-                    .ifPresent(participants::add);
+                    .ifPresent(
+                            participants::add
+                    );
         }
 
         return participants;
     }
 
-    private UserResponse toUserResponse(User user) {
+    private UserResponse toUserResponse(
+            User user
+    ) {
+
         BinaryContentResponse profileResponse =
-                toBinaryContentResponse(user.getProfile());
+                toBinaryContentResponse(
+                        user.getProfile()
+                );
 
         return new UserResponse(
                 user.getId(),
@@ -474,13 +657,17 @@ public class BasicChannelService implements ChannelService {
                 user.getUpdatedAt(),
                 user.getUsername(),
                 user.getEmail(),
+                user.getRole(),
                 user.getProfileId(),
                 profileResponse,
                 false
         );
     }
 
-    private BinaryContentResponse toBinaryContentResponse(BinaryContent binaryContent) {
+    private BinaryContentResponse toBinaryContentResponse(
+            BinaryContent binaryContent
+    ) {
+
         if (binaryContent == null) {
             return null;
         }

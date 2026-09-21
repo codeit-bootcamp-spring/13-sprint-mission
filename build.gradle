@@ -53,6 +53,9 @@ dependencies {
 	// Test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
+	// Spring Security Test
+	testImplementation 'org.springframework.security:spring-security-test'
+
 	testCompileOnly 'org.projectlombok:lombok'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 

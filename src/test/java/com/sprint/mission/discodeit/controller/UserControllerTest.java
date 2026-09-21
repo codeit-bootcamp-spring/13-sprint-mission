@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.UserResponse;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.mapper.UserMultipartMapper;
 import com.sprint.mission.discodeit.service.UserService;
 import org.junit.jupiter.api.DisplayName;
@@ -94,6 +95,7 @@ class UserControllerTest {
                     null,
                     "tester",
                     "tester@test.com",
+                    Role.USER,
                     null,
                     false
             );
@@ -128,6 +130,10 @@ class UserControllerTest {
                     .andExpect(
                             jsonPath("$.email")
                                     .value("tester@test.com")
+                    )
+                    .andExpect(
+                            jsonPath("$.role")
+                                    .value("USER")
                     )
                     .andExpect(
                             jsonPath("$.online")
@@ -235,6 +241,7 @@ class UserControllerTest {
                     updatedAt,
                     "tester",
                     "tester@test.com",
+                    Role.USER,
                     profileId,
                     true
             );
@@ -271,6 +278,10 @@ class UserControllerTest {
                     .andExpect(
                             jsonPath("$.email")
                                     .value("tester@test.com")
+                    )
+                    .andExpect(
+                            jsonPath("$.role")
+                                    .value("USER")
                     )
                     .andExpect(
                             jsonPath("$.profileId")
@@ -324,6 +335,7 @@ class UserControllerTest {
                     null,
                     "user1",
                     "user1@test.com",
+                    Role.USER,
                     null,
                     true
             );
@@ -334,6 +346,7 @@ class UserControllerTest {
                     null,
                     "user2",
                     "user2@test.com",
+                    Role.USER,
                     null,
                     false
             );
@@ -365,6 +378,10 @@ class UserControllerTest {
                                     .value("user1")
                     )
                     .andExpect(
+                            jsonPath("$[0].role")
+                                    .value("USER")
+                    )
+                    .andExpect(
                             jsonPath("$[0].online")
                                     .value(true)
                     )
@@ -375,6 +392,10 @@ class UserControllerTest {
                     .andExpect(
                             jsonPath("$[1].username")
                                     .value("user2")
+                    )
+                    .andExpect(
+                            jsonPath("$[1].role")
+                                    .value("USER")
                     )
                     .andExpect(
                             jsonPath("$[1].online")

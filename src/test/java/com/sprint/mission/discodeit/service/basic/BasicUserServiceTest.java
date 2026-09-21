@@ -4,7 +4,6 @@ import com.sprint.mission.discodeit.dto.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.UserResponse;
 import com.sprint.mission.discodeit.dto.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.entity.UserData;
 import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -12,7 +11,6 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -21,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -48,17 +47,16 @@ class BasicUserServiceTest {
     private BinaryContentService binaryContentService;
 
     @Mock
-    private UserStatusRepository userStatusRepository;
-
-    @Mock
     private MessageRepository messageRepository;
 
     @Mock
     private ReadStatusRepository readStatusRepository;
 
-    // 추가: BasicUserService에 주입되는 PasswordEncoder Mock
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private SessionRegistry sessionRegistry;
 
     @InjectMocks
     private BasicUserService userService;
@@ -70,102 +68,147 @@ class BasicUserServiceTest {
         @Test
         @DisplayName("정상적인 요청이면 사용자를 생성한다")
         void should_CreateUser_when_RequestIsValid() {
+
             // given
-            UserCreateRequest request = new UserCreateRequest(
-                    "tester",
-                    "tester@example.com",
-                    "password1234",
-                    null
+            UserCreateRequest request =
+                    new UserCreateRequest(
+                            "tester",
+                            "tester@example.com",
+                            "password1234",
+                            null
+                    );
+
+            given(
+                    userRepository.existsByUsername("tester")
+            ).willReturn(false);
+
+            given(
+                    userRepository.existsByEmail(
+                            "tester@example.com"
+                    )
+            ).willReturn(false);
+
+            given(
+                    passwordEncoder.encode("password1234")
+            ).willReturn(
+                    "$2a$10$encodedPassword"
             );
 
-            given(userRepository.existsByUsername("tester"))
-                    .willReturn(false);
-
-            given(userRepository.existsByEmail("tester@example.com"))
-                    .willReturn(false);
-
-            // 추가: 평문 비밀번호를 인코딩한 값으로 반환하도록 설정
-            given(passwordEncoder.encode("password1234"))
-                    .willReturn("$2a$10$encodedPassword");
-
-            given(userRepository.save(any(User.class)))
-                    .willAnswer(invocation -> invocation.getArgument(0));
-
-            given(userStatusRepository.save(any(UserStatus.class)))
-                    .willAnswer(invocation -> invocation.getArgument(0));
-
-            given(userStatusRepository.findByUserId(any()))
-                    .willReturn(null);
+            given(
+                    userRepository.save(
+                            any(User.class)
+                    )
+            ).willAnswer(
+                    invocation ->
+                            invocation.getArgument(0)
+            );
 
             // when
-            UserResponse response = userService.create(request);
+            UserResponse response =
+                    userService.create(request);
 
             // then
-            assertThat(response).isNotNull();
-            assertThat(response.getUsername()).isEqualTo("tester");
-            assertThat(response.getEmail()).isEqualTo("tester@example.com");
-            assertThat(response.isOnline()).isFalse();
+            assertThat(response)
+                    .isNotNull();
+
+            assertThat(
+                    response.getUsername()
+            ).isEqualTo("tester");
+
+            assertThat(
+                    response.getEmail()
+            ).isEqualTo(
+                    "tester@example.com"
+            );
+
+            /*
+             * 생성 직후에는 로그인 세션이 없으므로
+             * SessionRegistry 기준 online=false
+             */
+            assertThat(
+                    response.isOnline()
+            ).isFalse();
 
             then(userRepository)
                     .should()
-                    .existsByUsername("tester");
+                    .existsByUsername(
+                            "tester"
+                    );
 
             then(userRepository)
                     .should()
-                    .existsByEmail("tester@example.com");
+                    .existsByEmail(
+                            "tester@example.com"
+                    );
 
-            // 추가: 비밀번호 인코딩 호출 검증
             then(passwordEncoder)
                     .should()
-                    .encode("password1234");
+                    .encode(
+                            "password1234"
+                    );
 
             then(userRepository)
                     .should()
-                    .save(any(User.class));
-
-            then(userStatusRepository)
-                    .should()
-                    .save(any(UserStatus.class));
+                    .save(
+                            any(User.class)
+                    );
         }
 
         @Test
         @DisplayName("사용자 이름이 중복되면 사용자 생성에 실패한다")
         void should_ThrowUserAlreadyExistsException_when_UsernameIsDuplicated() {
-            // given
-            UserCreateRequest request = new UserCreateRequest(
-                    "tester",
-                    "tester@example.com",
-                    "password1234",
-                    null
-            );
 
-            given(userRepository.existsByUsername("tester"))
-                    .willReturn(true);
+            // given
+            UserCreateRequest request =
+                    new UserCreateRequest(
+                            "tester",
+                            "tester@example.com",
+                            "password1234",
+                            null
+                    );
+
+            given(
+                    userRepository.existsByUsername(
+                            "tester"
+                    )
+            ).willReturn(true);
 
             // when & then
-            assertThatThrownBy(() -> userService.create(request))
-                    .isInstanceOf(UserAlreadyExistsException.class);
+            assertThatThrownBy(
+                    () -> userService.create(request)
+            ).isInstanceOf(
+                    UserAlreadyExistsException.class
+            );
 
             then(userRepository)
                     .should()
-                    .existsByUsername("tester");
+                    .existsByUsername(
+                            "tester"
+                    );
 
             then(userRepository)
-                    .should(never())
-                    .existsByEmail(any());
+                    .should(
+                            never()
+                    )
+                    .existsByEmail(
+                            any()
+                    );
 
-            // 중복 사용자이므로 비밀번호 인코딩도 수행되지 않아야 함
             then(passwordEncoder)
-                    .should(never())
-                    .encode(any());
+                    .should(
+                            never()
+                    )
+                    .encode(
+                            any()
+                    );
 
             then(userRepository)
-                    .should(never())
-                    .save(any(User.class));
-
-            then(userStatusRepository)
-                    .should(never())
-                    .save(any(UserStatus.class));
+                    .should(
+                            never()
+                    )
+                    .save(
+                            any(User.class)
+                    );
         }
     }
 
@@ -176,122 +219,208 @@ class BasicUserServiceTest {
         @Test
         @DisplayName("존재하는 사용자의 정보를 정상적으로 수정한다")
         void should_UpdateUser_when_UserExists() {
+
             // given
-            User user = createUser(
-                    "oldUsername",
-                    "old@example.com",
-                    "oldPassword"
+            User user =
+                    createUser(
+                            "oldUsername",
+                            "old@example.com",
+                            "oldPassword"
+                    );
+
+            UUID userId =
+                    user.getId();
+
+            UserUpdateRequest request =
+                    new UserUpdateRequest(
+                            userId,
+                            "newUsername",
+                            "new@example.com",
+                            "newPassword",
+                            null,
+                            null
+                    );
+
+            given(
+                    userRepository.findById(
+                            userId
+                    )
+            ).willReturn(
+                    Optional.of(user)
             );
 
-            UUID userId = user.getId();
+            given(
+                    userRepository.existsByUsername(
+                            "newUsername"
+                    )
+            ).willReturn(false);
 
-            UserUpdateRequest request = new UserUpdateRequest(
-                    userId,
-                    "newUsername",
-                    "new@example.com",
-                    "newPassword",
-                    null,
-                    null
+            given(
+                    userRepository.existsByEmail(
+                            "new@example.com"
+                    )
+            ).willReturn(false);
+
+            given(
+                    passwordEncoder.encode(
+                            "newPassword"
+                    )
+            ).willReturn(
+                    "$2a$10$encodedNewPassword"
             );
 
-            given(userRepository.findById(userId))
-                    .willReturn(Optional.of(user));
-
-            given(userRepository.existsByUsername("newUsername"))
-                    .willReturn(false);
-
-            given(userRepository.existsByEmail("new@example.com"))
-                    .willReturn(false);
-
-            // 추가: 수정 비밀번호도 인코딩된 값으로 반환
-            given(passwordEncoder.encode("newPassword"))
-                    .willReturn("$2a$10$encodedNewPassword");
-
-            given(userRepository.save(any(User.class)))
-                    .willAnswer(invocation -> invocation.getArgument(0));
-
-            given(userStatusRepository.findByUserId(userId))
-                    .willReturn(null);
+            given(
+                    userRepository.save(
+                            any(User.class)
+                    )
+            ).willAnswer(
+                    invocation ->
+                            invocation.getArgument(0)
+            );
 
             // when
-            UserResponse response = userService.update(request);
+            UserResponse response =
+                    userService.update(
+                            request
+                    );
 
             // then
-            assertThat(response).isNotNull();
-            assertThat(response.getUsername()).isEqualTo("newUsername");
-            assertThat(response.getEmail()).isEqualTo("new@example.com");
+            assertThat(response)
+                    .isNotNull();
 
-            assertThat(user.getUsername()).isEqualTo("newUsername");
-            assertThat(user.getEmail()).isEqualTo("new@example.com");
+            assertThat(
+                    response.getUsername()
+            ).isEqualTo(
+                    "newUsername"
+            );
 
-            // 수정: 평문이 아니라 인코딩된 비밀번호를 기대
-            assertThat(user.getPassword())
-                    .isEqualTo("$2a$10$encodedNewPassword");
+            assertThat(
+                    response.getEmail()
+            ).isEqualTo(
+                    "new@example.com"
+            );
+
+            assertThat(
+                    user.getUsername()
+            ).isEqualTo(
+                    "newUsername"
+            );
+
+            assertThat(
+                    user.getEmail()
+            ).isEqualTo(
+                    "new@example.com"
+            );
+
+            assertThat(
+                    user.getPassword()
+            ).isEqualTo(
+                    "$2a$10$encodedNewPassword"
+            );
 
             then(userRepository)
                     .should()
-                    .findById(userId);
+                    .findById(
+                            userId
+                    );
 
             then(userRepository)
                     .should()
-                    .existsByUsername("newUsername");
+                    .existsByUsername(
+                            "newUsername"
+                    );
 
             then(userRepository)
                     .should()
-                    .existsByEmail("new@example.com");
+                    .existsByEmail(
+                            "new@example.com"
+                    );
 
-            // 추가: 비밀번호 인코딩 호출 검증
             then(passwordEncoder)
                     .should()
-                    .encode("newPassword");
+                    .encode(
+                            "newPassword"
+                    );
 
             then(userRepository)
                     .should()
-                    .save(user);
+                    .save(
+                            user
+                    );
         }
 
         @Test
         @DisplayName("존재하지 않는 사용자를 수정하면 예외가 발생한다")
         void should_ThrowUserNotFoundException_when_UpdatingUnknownUser() {
-            // given
-            UUID userId = UUID.randomUUID();
 
-            UserUpdateRequest request = new UserUpdateRequest(
-                    userId,
-                    "newUsername",
-                    "new@example.com",
-                    "newPassword",
-                    null,
-                    null
+            // given
+            UUID userId =
+                    UUID.randomUUID();
+
+            UserUpdateRequest request =
+                    new UserUpdateRequest(
+                            userId,
+                            "newUsername",
+                            "new@example.com",
+                            "newPassword",
+                            null,
+                            null
+                    );
+
+            given(
+                    userRepository.findById(
+                            userId
+                    )
+            ).willReturn(
+                    Optional.empty()
             );
 
-            given(userRepository.findById(userId))
-                    .willReturn(Optional.empty());
-
             // when & then
-            assertThatThrownBy(() -> userService.update(request))
-                    .isInstanceOf(UserNotFoundException.class);
+            assertThatThrownBy(
+                    () -> userService.update(
+                            request
+                    )
+            ).isInstanceOf(
+                    UserNotFoundException.class
+            );
 
             then(userRepository)
                     .should()
-                    .findById(userId);
+                    .findById(
+                            userId
+                    );
 
             then(userRepository)
-                    .should(never())
-                    .existsByUsername(any());
+                    .should(
+                            never()
+                    )
+                    .existsByUsername(
+                            any()
+                    );
 
             then(userRepository)
-                    .should(never())
-                    .existsByEmail(any());
+                    .should(
+                            never()
+                    )
+                    .existsByEmail(
+                            any()
+                    );
 
-            // 사용자 자체가 없으므로 인코딩도 수행되지 않아야 함
             then(passwordEncoder)
-                    .should(never())
-                    .encode(any());
+                    .should(
+                            never()
+                    )
+                    .encode(
+                            any()
+                    );
 
             then(userRepository)
-                    .should(never())
-                    .save(any(User.class));
+                    .should(
+                            never()
+                    )
+                    .save(
+                            any(User.class)
+                    );
         }
     }
 
@@ -302,94 +431,149 @@ class BasicUserServiceTest {
         @Test
         @DisplayName("존재하는 사용자를 정상적으로 삭제한다")
         void should_DeleteUser_when_UserExists() {
+
             // given
-            User user = createUser(
-                    "tester",
-                    "tester@example.com",
-                    "password1234"
+            User user =
+                    createUser(
+                            "tester",
+                            "tester@example.com",
+                            "password1234"
+                    );
+
+            UUID userId =
+                    user.getId();
+
+            given(
+                    userRepository.findById(
+                            userId
+                    )
+            ).willReturn(
+                    Optional.of(user)
             );
 
-            UUID userId = user.getId();
-
-            given(userRepository.findById(userId))
-                    .willReturn(Optional.of(user));
-
-            given(messageRepository.findAllByAuthor_Id(userId))
-                    .willReturn(List.of());
+            given(
+                    messageRepository.findAllByAuthor_Id(
+                            userId
+                    )
+            ).willReturn(
+                    List.of()
+            );
 
             // when
-            userService.delete(userId);
+            userService.delete(
+                    userId
+            );
 
             // then
             then(userRepository)
                     .should()
-                    .findById(userId);
+                    .findById(
+                            userId
+                    );
 
             then(messageRepository)
                     .should()
-                    .findAllByAuthor_Id(userId);
+                    .findAllByAuthor_Id(
+                            userId
+                    );
 
             then(messageRepository)
                     .should()
-                    .deleteByAuthor_Id(userId);
+                    .deleteByAuthor_Id(
+                            userId
+                    );
 
             then(readStatusRepository)
                     .should()
-                    .deleteByUser_Id(userId);
-
-            then(userStatusRepository)
-                    .should()
-                    .deleteByUserId(userId);
+                    .deleteByUser_Id(
+                            userId
+                    );
 
             then(userRepository)
                     .should()
-                    .deleteById(userId);
+                    .deleteById(
+                            userId
+                    );
 
             then(binaryContentService)
-                    .should(never())
-                    .delete(any(UUID.class));
+                    .should(
+                            never()
+                    )
+                    .delete(
+                            any(UUID.class)
+                    );
         }
 
         @Test
         @DisplayName("존재하지 않는 사용자를 삭제하면 예외가 발생한다")
         void should_ThrowUserNotFoundException_when_DeletingUnknownUser() {
-            // given
-            UUID userId = UUID.randomUUID();
 
-            given(userRepository.findById(userId))
-                    .willReturn(Optional.empty());
+            // given
+            UUID userId =
+                    UUID.randomUUID();
+
+            given(
+                    userRepository.findById(
+                            userId
+                    )
+            ).willReturn(
+                    Optional.empty()
+            );
 
             // when & then
-            assertThatThrownBy(() -> userService.delete(userId))
-                    .isInstanceOf(UserNotFoundException.class);
+            assertThatThrownBy(
+                    () -> userService.delete(
+                            userId
+                    )
+            ).isInstanceOf(
+                    UserNotFoundException.class
+            );
 
             then(userRepository)
                     .should()
-                    .findById(userId);
+                    .findById(
+                            userId
+                    );
 
             then(messageRepository)
-                    .should(never())
-                    .findAllByAuthor_Id(any(UUID.class));
+                    .should(
+                            never()
+                    )
+                    .findAllByAuthor_Id(
+                            any(UUID.class)
+                    );
 
             then(messageRepository)
-                    .should(never())
-                    .deleteByAuthor_Id(any(UUID.class));
+                    .should(
+                            never()
+                    )
+                    .deleteByAuthor_Id(
+                            any(UUID.class)
+                    );
 
             then(readStatusRepository)
-                    .should(never())
-                    .deleteByUser_Id(any(UUID.class));
-
-            then(userStatusRepository)
-                    .should(never())
-                    .deleteByUserId(any(UUID.class));
+                    .should(
+                            never()
+                    )
+                    .deleteByUser_Id(
+                            any(UUID.class)
+                    );
 
             then(userRepository)
-                    .should(never())
-                    .deleteById(any(UUID.class));
+                    .should(
+                            never()
+                    )
+                    .deleteById(
+                            any(UUID.class)
+                    );
 
             then(binaryContentService)
-                    .should(never())
-                    .delete(any(UUID.class));
+                    .should(
+                            never()
+                    )
+                    .delete(
+                            any(UUID.class)
+                    );
         }
     }
 
@@ -398,12 +582,16 @@ class BasicUserServiceTest {
             String email,
             String password
     ) {
-        UserData userData = new UserData(
-                username,
-                email,
-                password
-        );
 
-        return new User(userData);
+        UserData userData =
+                new UserData(
+                        username,
+                        email,
+                        password
+                );
+
+        return new User(
+                userData
+        );
     }
 }

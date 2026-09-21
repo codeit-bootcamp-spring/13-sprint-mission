@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.ChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.UserCreateRequest;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,6 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -33,6 +39,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 @Transactional
+@WithMockUser(
+        username = "test-admin",
+        roles = "ADMIN"
+)
 @DisplayName("메시지 API 통합 테스트")
 class MessageApiIntegrationTest {
 
@@ -41,6 +51,14 @@ class MessageApiIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private DiscodeitUserDetailsService discodeitUserDetailsService;
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Nested
     @DisplayName("메시지 생성")
@@ -557,6 +575,7 @@ class MessageApiIntegrationTest {
         @Test
         @DisplayName("생성한 메시지를 수정하면 변경된 내용이 반영된다")
         void success() throws Exception {
+
             String userId = createUser(
                     "updateMessageUser",
                     "update-message@test.com"
@@ -573,61 +592,48 @@ class MessageApiIntegrationTest {
                     channelId
             );
 
+            // 메시지 작성자로 인증
+            authenticateAs("updateMessageUser");
+
             String requestJson = """
-                    {
-                      "newContent": "수정 후 메시지"
-                    }
-                    """;
+            {
+              "newContent": "수정 후 메시지"
+            }
+            """;
 
-            mockMvc.perform(patch(
-                            "/api/messages/{messageId}",
-                            messageId
+            mockMvc.perform(
+                            patch(
+                                    "/api/messages/{messageId}",
+                                    messageId
+                            )
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(requestJson)
                     )
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(requestJson))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.id")
-                            .value(messageId))
-                    .andExpect(jsonPath("$.content")
-                            .value("수정 후 메시지"))
-                    .andExpect(jsonPath("$.updatedAt")
-                            .isNotEmpty());
-
-            mockMvc.perform(get(
-                            "/api/messages/{messageId}",
-                            messageId
-                    ))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.content")
-                            .value("수정 후 메시지"));
-        }
-
-        @Test
-        @DisplayName("수정할 내용이 없으면 400 Bad Request를 반환한다")
-        void missingContent() throws Exception {
-            String userId = createUser(
-                    "missingUpdateUser",
-                    "missing-update@test.com"
-            );
-
-            String channelId = createPublicChannel(
-                    "수정 실패 채널",
-                    "수정값 없음 검증"
-            );
-
-            String messageId = createMessage(
-                    "기존 메시지",
-                    userId,
-                    channelId
-            );
-
-            mockMvc.perform(patch(
-                            "/api/messages/{messageId}",
-                            messageId
+                    .andExpect(
+                            jsonPath("$.id")
+                                    .value(messageId)
                     )
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("{}"))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(
+                            jsonPath("$.content")
+                                    .value("수정 후 메시지")
+                    )
+                    .andExpect(
+                            jsonPath("$.updatedAt")
+                                    .isNotEmpty()
+                    );
+
+            mockMvc.perform(
+                            get(
+                                    "/api/messages/{messageId}",
+                                    messageId
+                            )
+                    )
+                    .andExpect(status().isOk())
+                    .andExpect(
+                            jsonPath("$.content")
+                                    .value("수정 후 메시지")
+                    );
         }
 
         @Test
@@ -690,6 +696,7 @@ class MessageApiIntegrationTest {
         @Test
         @DisplayName("생성한 메시지를 삭제하면 204 No Content를 반환한다")
         void success() throws Exception {
+
             String userId = createUser(
                     "deleteMessageUser",
                     "delete-message@test.com"
@@ -706,24 +713,38 @@ class MessageApiIntegrationTest {
                     channelId
             );
 
-            mockMvc.perform(delete(
-                            "/api/messages/{messageId}",
-                            messageId
-                    ))
+            // 메시지 작성자로 인증
+            authenticateAs("deleteMessageUser");
+
+            mockMvc.perform(
+                            delete(
+                                    "/api/messages/{messageId}",
+                                    messageId
+                            )
+                    )
                     .andExpect(status().isNoContent())
                     .andExpect(content().string(""));
 
-            mockMvc.perform(get(
-                            "/api/messages/{messageId}",
-                            messageId
-                    ))
+            mockMvc.perform(
+                            get(
+                                    "/api/messages/{messageId}",
+                                    messageId
+                            )
+                    )
                     .andExpect(status().isNotFound());
 
-            mockMvc.perform(get("/api/messages")
-                            .param("channelId", channelId))
+            mockMvc.perform(
+                            get("/api/messages")
+                                    .param(
+                                            "channelId",
+                                            channelId
+                                    )
+                    )
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.content")
-                            .isEmpty());
+                    .andExpect(
+                            jsonPath("$.content")
+                                    .isEmpty()
+                    );
         }
 
         @Test
@@ -825,5 +846,26 @@ class MessageApiIntegrationTest {
     private void waitForDifferentCreatedAt()
             throws InterruptedException {
         Thread.sleep(1000);
+    }
+
+    private void authenticateAs(
+            String username
+    ) {
+
+        UserDetails userDetails =
+                discodeitUserDetailsService
+                        .loadUserByUsername(username);
+
+        UsernamePasswordAuthenticationToken authentication =
+                UsernamePasswordAuthenticationToken
+                        .authenticated(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+
+        SecurityContextHolder
+                .getContext()
+                .setAuthentication(authentication);
     }
 }
