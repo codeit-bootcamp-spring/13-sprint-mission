@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.exception.ApiErrorResponse;
+import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
 import com.sprint.mission.discodeit.security.handler.JwtLoginSuccessHandler;
 import com.sprint.mission.discodeit.security.handler.LoginFailureHandler;
 import com.sprint.mission.discodeit.security.handler.SpaCsrfTokenRequestHandler;
@@ -24,6 +25,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
@@ -45,7 +47,8 @@ public class SecurityConfig {
             AccessDeniedHandler restAccessDeniedHandler,
             SessionRegistry sessionRegistry,
             UserDetailsService userDetailsService,
-            RememberMeProperties rememberMeProperties
+            RememberMeProperties rememberMeProperties,
+            JwtAuthenticationFilter jwtAuthenticationFilter
     ) throws Exception {
 
         return http
@@ -53,6 +56,7 @@ public class SecurityConfig {
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
                 )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/csrf-token",

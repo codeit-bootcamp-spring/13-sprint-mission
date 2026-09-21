@@ -113,6 +113,10 @@ public class JwtTokenProvider {
         return UUID.fromString(claims.get(CLAIM_USER_ID, String.class));
     }
 
+    public String getTokenType(Claims claims) {
+        return claims.get(CLAIM_TOKEN_TYPE, String.class);
+    }
+
     private Date generateExpirationDate(Instant now, Duration expirationDuration) {
         return Date.from(now.plus(expirationDuration));
     }
