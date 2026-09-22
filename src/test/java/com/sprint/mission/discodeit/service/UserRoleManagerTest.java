@@ -8,7 +8,7 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.security.JwtRegistry;
 import com.sprint.mission.discodeit.service.basic.UserRoleManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,19 +16,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.session.SessionInformation;
-import org.springframework.security.core.session.SessionRegistry;
 
 import java.time.OffsetDateTime;
-import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
@@ -46,7 +41,7 @@ class UserRoleManagerTest {
     UserMapper userMapper;
 
     @Mock
-    SessionRegistry sessionRegistry;
+    JwtRegistry jwtRegistry;
 
     @Test
     @DisplayName("사용자가 존재하면 실제 엔티티의 역할을 변경한다")
@@ -68,47 +63,22 @@ class UserRoleManagerTest {
     }
 
     @Test
-    @DisplayName("역할을 변경하면 해당 사용자의 활성 세션만 만료한다")
-    void updateRole_expiresOnlyTargetUserSessions() {
+    @DisplayName("역할을 변경하면 해당 사용자의 JWT만 무효화한다")
+    void updateRole_invalidatesOnlyTargetUserTokens() {
         UUID userId = UUID.randomUUID();
         UUID otherUserId = UUID.randomUUID();
         User user = createUser();
         UserRoleUpdateCommand command = new UserRoleUpdateCommand(Role.CHANNEL_MANAGER);
         UserDto expected = userDto(userId, Role.CHANNEL_MANAGER);
-        DiscodeitUserDetails targetPrincipal = new DiscodeitUserDetails(
-                userDto(userId, Role.USER),
-                "encodedPassword"
-        );
-        DiscodeitUserDetails otherPrincipal = new DiscodeitUserDetails(
-                userDto(otherUserId, Role.USER),
-                "encodedPassword"
-        );
-        SessionInformation targetSession = new SessionInformation(
-                targetPrincipal,
-                "target-session",
-                new Date()
-        );
-        SessionInformation otherSession = new SessionInformation(
-                otherPrincipal,
-                "other-session",
-                new Date()
-        );
 
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
-        given(sessionRegistry.getAllPrincipals()).willReturn(List.of(targetPrincipal, otherPrincipal));
-        given(sessionRegistry.getAllSessions(any(), eq(false))).willAnswer(invocation ->
-                invocation.getArgument(0).equals(targetPrincipal)
-                        ? List.of(targetSession)
-                        : List.of(otherSession)
-        );
         given(userMapper.toDto(user)).willReturn(expected);
 
         UserDto result = userRoleManager.updateRole(userId, command);
 
         assertThat(result).isSameAs(expected);
-        assertThat(targetSession.isExpired()).isTrue();
-        assertThat(otherSession.isExpired()).isFalse();
-        then(sessionRegistry).should().getAllSessions(targetPrincipal, false);
+        then(jwtRegistry).should().invalidateJwtInformationByUserId(userId);
+        then(jwtRegistry).should(never()).invalidateJwtInformationByUserId(otherUserId);
     }
 
     @Test
@@ -123,7 +93,7 @@ class UserRoleManagerTest {
 
         then(userRepository).should().findById(userId);
         then(userMapper).shouldHaveNoInteractions();
-        then(sessionRegistry).shouldHaveNoInteractions();
+        then(jwtRegistry).shouldHaveNoInteractions();
     }
 
     private User createUser() {

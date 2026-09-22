@@ -32,7 +32,6 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
@@ -51,6 +50,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -348,17 +348,16 @@ class DiscodeitApiIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("사용자 역할을 변경하면 대상 사용자의 세션만 만료한다")
-    void updateUserRole_expiresOnlyTargetUserSession() throws Exception {
+    @DisplayName("사용자 역할을 변경하면 대상 사용자의 JWT만 무효화한다")
+    void updateUserRole_invalidatesOnlyTargetUserTokens() throws Exception {
         String suffix = uniqueSuffix();
-        String targetUsername = "roleSessionTarget-" + suffix;
-        String otherUsername = "roleSessionOther-" + suffix;
+        String targetUsername = "roleJwtTarget-" + suffix;
+        String otherUsername = "roleJwtOther-" + suffix;
         UUID targetUserId = createUser(
                 targetUsername,
-                "role-session-target-" + suffix + "@gmail.com"
+                "role-jwt-target-" + suffix + "@gmail.com"
         );
-        createUser(otherUsername, "role-session-other-" + suffix + "@gmail.com");
+        UUID otherUserId = createUser(otherUsername, "role-jwt-other-" + suffix + "@gmail.com");
         flushAndClear();
 
         MvcResult targetLogin = performLogin(targetUsername, "integrationPassword")
@@ -367,16 +366,15 @@ class DiscodeitApiIntegrationTest {
         MvcResult otherLogin = performLogin(otherUsername, "integrationPassword")
                 .andExpect(status().isOk())
                 .andReturn();
-        MockHttpSession targetSession = (MockHttpSession) targetLogin.getRequest().getSession(false);
-        MockHttpSession otherSession = (MockHttpSession) otherLogin.getRequest().getSession(false);
-        assertThat(targetSession).isNotNull();
-        assertThat(otherSession).isNotNull();
+        String targetAccess = readBody(targetLogin).path("accessToken").asText();
+        String otherAccess = readBody(otherLogin).path("accessToken").asText();
 
         UserRoleUpdateRequest request = new UserRoleUpdateRequest(
                 targetUserId,
                 Role.CHANNEL_MANAGER
         );
         mockMvc.perform(put("/api/auth/role")
+                        .with(user("admin").roles("ADMIN"))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -385,15 +383,16 @@ class DiscodeitApiIntegrationTest {
                 .andExpect(jsonPath("$.role").value(Role.CHANNEL_MANAGER.name()))
                 .andExpect(jsonPath("$.online").value(false));
 
-        SessionInformation targetSessionInformation =
-                sessionRegistry.getSessionInformation(targetSession.getId());
-        SessionInformation otherSessionInformation =
-                sessionRegistry.getSessionInformation(otherSession.getId());
-
-        assertThat(targetSessionInformation).isNotNull();
-        assertThat(targetSessionInformation.isExpired()).isTrue();
-        assertThat(otherSessionInformation).isNotNull();
-        assertThat(otherSessionInformation.isExpired()).isFalse();
+        assertThat(jwtRegistry.hasActiveJwtInformationByUserId(targetUserId)).isFalse();
+        assertThat(jwtRegistry.hasActiveJwtInformationByUserId(otherUserId)).isTrue();
+        assertThat(jwtRegistry.hasActiveJwtInformationByRefreshToken(
+                targetLogin.getResponse().getCookie("REFRESH_TOKEN").getValue())).isFalse();
+        assertThat(jwtRegistry.hasActiveJwtInformationByRefreshToken(
+                otherLogin.getResponse().getCookie("REFRESH_TOKEN").getValue())).isTrue();
+        mockMvc.perform(get("/api/users").header("Authorization", "Bearer " + targetAccess))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/users").header("Authorization", "Bearer " + otherAccess))
+                .andExpect(status().isOk());
     }
 
     @Test
