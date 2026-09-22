@@ -89,6 +89,25 @@ class JwtTokenProviderTest {
 
     @ParameterizedTest(name = "{0}")
     @EnumSource(TokenType.class)
+    @DisplayName("같은 시각과 사용자로 발급해도 JWT ID가 달라 토큰이 중복되지 않는다")
+    void generateToken_isUniqueEvenWithFixedClock(TokenType type) {
+        String first = type == TokenType.ACCESS
+                ? provider.generateAccessToken(USER_ID, USERNAME, Role.USER)
+                : provider.generateRefreshToken(USER_ID, USERNAME);
+        String second = type == TokenType.ACCESS
+                ? provider.generateAccessToken(USER_ID, USERNAME, Role.USER)
+                : provider.generateRefreshToken(USER_ID, USERNAME);
+
+        Claims firstClaims = readSignedToken(first, FIXED_CLOCK).getPayload();
+        Claims secondClaims = readSignedToken(second, FIXED_CLOCK).getPayload();
+        assertThat(first).isNotEqualTo(second);
+        assertThat(firstClaims.getIssuedAt()).isEqualTo(secondClaims.getIssuedAt());
+        assertThat(firstClaims.getId()).isNotBlank().isNotEqualTo(secondClaims.getId());
+        assertThat(secondClaims.getId()).isNotBlank();
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @EnumSource(TokenType.class)
     @DisplayName("정상 토큰을 검증하고 JSON 문자열로 저장된 사용자 ID를 UUID로 복원한다")
     void validateToken_returnsClaimsAndRestoresUserId(TokenType type) {
         String token = signedToken(type.name(), ISSUER, SIGNING_KEY, ISSUED_AT.plusSeconds(600));

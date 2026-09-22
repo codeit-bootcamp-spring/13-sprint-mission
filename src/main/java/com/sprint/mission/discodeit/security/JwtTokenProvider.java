@@ -107,6 +107,7 @@ public class JwtTokenProvider {
     private String createRefreshToken(UUID userId,String username,Instant now) {
 
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(username)
                 .claims(Map.of(CLAIM_USER_ID, userId, CLAIM_TOKEN_TYPE, TokenType.REFRESH))
                 .issuer(jwtProperties.issuer())
@@ -118,6 +119,7 @@ public class JwtTokenProvider {
 
     private String createAccessToken(UUID userId, String username, Role role, Instant now) {
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(username)
                 .claims(Map.of(CLAIM_ROLE, role.name(), CLAIM_USER_ID, userId, CLAIM_TOKEN_TYPE, TokenType.ACCESS))
                 .issuer(jwtProperties.issuer())
