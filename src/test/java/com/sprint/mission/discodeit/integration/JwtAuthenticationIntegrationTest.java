@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.config.JwtProperties;
 import com.sprint.mission.discodeit.config.RefreshCookieProperties;
 import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
 import com.sprint.mission.discodeit.dto.command.user.UserRoleUpdateCommand;
+import com.sprint.mission.discodeit.dto.request.user.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -54,7 +55,12 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
@@ -426,7 +432,10 @@ class JwtAuthenticationIntegrationTest {
     @Test
     @DisplayName("ACCESS와 세션 없이 로그아웃하여 로그인에서 받은 리프레시 쿠키를 삭제한다")
     void logout_clearsLoginRefreshCookieWithoutAccessTokenOrSession() throws Exception {
-        ResponseEntity<String> loginResponse = login(createUser());
+        User user = createUser();
+        ResponseEntity<String> loginResponse = login(user);
+        ResponseEntity<String> otherLogin = login(createUser());
+        assertUserOnline(getUsers(accessToken(otherLogin)), user, true);
         HttpCookie issuedCookie = cookie(loginResponse, "REFRESH_TOKEN");
 
         ResponseEntity<String> response = logout(issuedCookie.getValue(), true);
@@ -435,8 +444,12 @@ class JwtAuthenticationIntegrationTest {
         assertThat(deletedCookie.getPath()).isEqualTo(issuedCookie.getPath());
         assertThat(deletedCookie.getDomain()).isEqualTo(issuedCookie.getDomain());
         assertNoSessionCookie(loginResponse);
-        // 삭제된 쿠키를 보내지 않는 다음 요청을 재현한다. 기존 JWT 자체의 폐기를 검증하는 것은 아니다.
         // 로그아웃 시 CSRF 쿠키도 정리되므로 refresh 헬퍼에서 새 CSRF 쿠키·헤더를 준비한다.
+        assertUnauthorized(getUsers(accessToken(loginResponse)));
+        assertRenewalFailure(refresh(issuedCookie.getValue()));
+        assertThat(jwtRegistry.hasActiveJwtInformationByUserId(user.getId())).isFalse();
+        assertUserOnline(getUsers(accessToken(otherLogin)), user, false);
+        assertThat(refresh(cookie(otherLogin, "REFRESH_TOKEN").getValue()).getStatusCode()).isEqualTo(HttpStatus.OK);
         assertRenewalFailure(refresh(null));
         assertUnauthorized(getUsers(null));
     }
@@ -498,6 +511,161 @@ class JwtAuthenticationIntegrationTest {
 
         assertThat(registration).as("기존 서블릿 필터 %s", filterName).isNotNull();
         assertThat(registration.getUrlPatternMappings()).contains("/*");
+    }
+
+    @Test
+    @DisplayName("재로그인은 기존 ACCESS·REFRESH를 폐기하고 새 로그인만 유지한다")
+    void login_invalidatesPreviousTokenPair() throws Exception {
+        User user = createUser();
+        ResponseEntity<String> first = login(user);
+        ResponseEntity<String> second = login(user);
+        String oldRefresh = cookie(first, "REFRESH_TOKEN").getValue();
+        String newRefresh = cookie(second, "REFRESH_TOKEN").getValue();
+
+        assertThat(accessToken(second)).isNotEqualTo(accessToken(first));
+        assertThat(newRefresh).isNotEqualTo(oldRefresh);
+        assertUnauthorized(getUsers(accessToken(first)));
+        assertRenewalFailure(refresh(oldRefresh));
+        assertUserOnline(getUsers(accessToken(second)), user, true);
+        assertThat(refresh(newRefresh).getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    @DisplayName("갱신 성공 후 이전 토큰 쌍은 재사용할 수 없고 새 토큰 쌍만 사용할 수 있다")
+    void refresh_rotatesBothTokensAndRejectsReplay() throws Exception {
+        User user = createUser();
+        ResponseEntity<String> initial = login(user);
+        String oldRefresh = cookie(initial, "REFRESH_TOKEN").getValue();
+
+        ResponseEntity<String> rotated = refresh(oldRefresh);
+
+        assertThat(rotated.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(accessToken(rotated)).isNotEqualTo(accessToken(initial));
+        String newRefresh = cookie(rotated, "REFRESH_TOKEN").getValue();
+        assertThat(newRefresh).isNotEqualTo(oldRefresh);
+        assertUnauthorized(getUsers(accessToken(initial)));
+        assertRenewalFailure(refresh(oldRefresh));
+        assertUserOnline(getUsers(accessToken(rotated)), user, true);
+        assertThat(refresh(newRefresh).getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    @DisplayName("동일 리프레시 쿠키의 동시 HTTP 요청은 200 하나와 새 쿠키 없는 401 하나를 반환한다")
+    void refresh_concurrentRequestsReturnOneSuccessAndOneUnauthorized() throws Exception {
+        ResponseEntity<String> login = login(createUser());
+        String oldRefresh = cookie(login, "REFRESH_TOKEN").getValue();
+        CyclicBarrier start = new CyclicBarrier(2);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            Future<ResponseEntity<String>> first = executor.submit(() -> {
+                start.await(5, SECONDS);
+                return refresh(oldRefresh);
+            });
+            Future<ResponseEntity<String>> second = executor.submit(() -> {
+                start.await(5, SECONDS);
+                return refresh(oldRefresh);
+            });
+            List<ResponseEntity<String>> responses = List.of(first.get(10, SECONDS), second.get(10, SECONDS));
+            assertThat(responses).extracting(ResponseEntity::getStatusCode)
+                    .containsExactlyInAnyOrder(HttpStatus.OK, HttpStatus.UNAUTHORIZED);
+            ResponseEntity<String> success = responses.stream()
+                    .filter(response -> response.getStatusCode().equals(HttpStatus.OK)).findFirst().orElseThrow();
+            ResponseEntity<String> failure = responses.stream()
+                    .filter(response -> response.getStatusCode().equals(HttpStatus.UNAUTHORIZED)).findFirst().orElseThrow();
+
+            assertRenewalFailure(failure);
+            assertRefreshCookieAttributes(success);
+            assertUnauthorized(getUsers(accessToken(login)));
+            assertThat(getUsers(accessToken(success)).getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(jwtRegistry.hasActiveJwtInformationByRefreshToken(
+                    cookie(success, "REFRESH_TOKEN").getValue())).isTrue();
+        } finally {
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(5, SECONDS)).isTrue();
+        }
+    }
+
+    @Test
+    @DisplayName("서명과 만료가 유효해도 등록되지 않은 토큰은 인증과 갱신에 사용할 수 없다")
+    void unregisteredTokens_areRejected() throws Exception {
+        User user = createUser();
+        String access = jwtTokenProvider.generateAccessToken(user.getId(), user.getUsername(), user.getRole());
+        String refresh = jwtTokenProvider.generateRefreshToken(user.getId(), user.getUsername());
+        assertThat(jwtTokenProvider.validateToken(access)).isPresent();
+        assertThat(jwtTokenProvider.validateToken(refresh)).isPresent();
+
+        assertUnauthorized(getUsers(access));
+        assertRenewalFailure(refresh(refresh));
+        assertThat(jwtRegistry.hasActiveJwtInformationByUserId(user.getId())).isFalse();
+    }
+
+    @Test
+    @DisplayName("권한 변경 API는 대상 사용자만 강제 로그아웃하고 다른 사용자의 인증은 유지한다")
+    void updateRole_invalidatesOnlyTargetUser() throws Exception {
+        User admin = createUser();
+        admin.updateRole(new UserRoleUpdateCommand(Role.ADMIN));
+        userRepository.saveAndFlush(admin);
+        ResponseEntity<String> adminLogin = login(admin);
+        User target = createUser();
+        ResponseEntity<String> targetLogin = login(target);
+        User other = createUser();
+        ResponseEntity<String> otherLogin = login(other);
+        assertUserOnline(getUsers(accessToken(otherLogin)), target, true);
+
+        ResponseEntity<String> csrfResponse = restTemplate.getForEntity("/api/auth/csrf-token", String.class);
+        HttpCookie csrfCookie = cookie(csrfResponse, "XSRF-TOKEN");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(accessToken(adminLogin));
+        headers.set(HttpHeaders.COOKIE, csrfCookie.getName() + "=" + csrfCookie.getValue());
+        headers.set("X-XSRF-TOKEN", csrfCookie.getValue());
+
+        ResponseEntity<String> updated = restTemplate.exchange("/api/auth/role", HttpMethod.PUT,
+                new HttpEntity<>(new UserRoleUpdateRequest(target.getId(), Role.CHANNEL_MANAGER), headers), String.class);
+
+        assertThat(updated.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode body = objectMapper.readTree(updated.getBody());
+        assertThat(body.path("role").asText()).isEqualTo(Role.CHANNEL_MANAGER.name());
+        assertThat(body.path("online").asBoolean()).isFalse();
+        assertThat(userRepository.findById(target.getId()).orElseThrow().getRole()).isEqualTo(Role.CHANNEL_MANAGER);
+        assertUnauthorized(getUsers(accessToken(targetLogin)));
+        assertRenewalFailure(refresh(cookie(targetLogin, "REFRESH_TOKEN").getValue()));
+        assertUserOnline(getUsers(accessToken(otherLogin)), target, false);
+        assertUserOnline(getUsers(accessToken(adminLogin)), other, true);
+        assertThat(refresh(cookie(otherLogin, "REFRESH_TOKEN").getValue()).getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        ResponseEntity<String> relogin = login(target);
+        assertThat(objectMapper.readTree(relogin.getBody()).path("userDto").path("role").asText())
+                .isEqualTo(Role.CHANNEL_MANAGER.name());
+        assertUserOnline(getUsers(accessToken(relogin)), target, true);
+    }
+
+    @Test
+    @DisplayName("만료 정리는 리프레시 만료 사용자만 오프라인으로 바꾸고 유효한 로그인은 유지한다")
+    void cleanup_removesExpiredRefreshAndUpdatesOnlineState() throws Exception {
+        User expiredUser = createUser();
+        ResponseEntity<String> validLogin = login(createUser());
+        JwtTokenProvider pastProvider = new JwtTokenProvider(jwtProperties, Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
+        String expiredRefresh = pastProvider.generateRefreshToken(expiredUser.getId(), expiredUser.getUsername());
+        jwtRegistry.registerJwtInformation(new JwtInformation(userMapper.toDto(expiredUser, true),
+                pastProvider.generateAccessToken(expiredUser.getId(), expiredUser.getUsername(), expiredUser.getRole()),
+                expiredRefresh));
+        assertUserOnline(getUsers(accessToken(validLogin)), expiredUser, true);
+
+        jwtRegistry.clearExpiredJwtInformation();
+
+        assertThat(jwtRegistry.hasActiveJwtInformationByUserId(expiredUser.getId())).isFalse();
+        assertUserOnline(getUsers(accessToken(validLogin)), expiredUser, false);
+        assertRenewalFailure(refresh(expiredRefresh));
+        assertThat(refresh(cookie(validLogin, "REFRESH_TOKEN").getValue()).getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    private void assertUserOnline(ResponseEntity<String> response, User user, boolean online) throws Exception {
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(objectMapper.readTree(response.getBody())).anySatisfy(item -> {
+            assertThat(item.path("id").asText()).isEqualTo(user.getId().toString());
+            assertThat(item.path("online").asBoolean()).isEqualTo(online);
+        });
     }
 
     private User createUser() {

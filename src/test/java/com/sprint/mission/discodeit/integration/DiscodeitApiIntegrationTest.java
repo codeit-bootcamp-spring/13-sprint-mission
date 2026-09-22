@@ -309,8 +309,17 @@ class DiscodeitApiIntegrationTest {
         MvcResult secondLogin = performLogin(username, "integrationPassword")
                 .andExpect(status().isOk())
                 .andReturn();
-        // 같은 초에 발급된 JWT는 값이 같을 수 있으므로 토큰 값의 차이는 요구하지 않는다.
         assertJwtLoginResponse(secondLogin, userId, username);
+        String firstAccess = readBody(firstLogin).path("accessToken").asText();
+        String secondAccess = readBody(secondLogin).path("accessToken").asText();
+        String firstRefresh = firstLogin.getResponse().getCookie("REFRESH_TOKEN").getValue();
+        String secondRefresh = secondLogin.getResponse().getCookie("REFRESH_TOKEN").getValue();
+        assertThat(secondAccess).isNotEqualTo(firstAccess);
+        assertThat(secondRefresh).isNotEqualTo(firstRefresh);
+        assertThat(jwtRegistry.hasActiveJwtInformationByAccessToken(firstAccess)).isFalse();
+        assertThat(jwtRegistry.hasActiveJwtInformationByRefreshToken(firstRefresh)).isFalse();
+        assertThat(jwtRegistry.hasActiveJwtInformationByAccessToken(secondAccess)).isTrue();
+        assertThat(jwtRegistry.hasActiveJwtInformationByRefreshToken(secondRefresh)).isTrue();
     }
 
     @ParameterizedTest(name = "remember-me={0}")
