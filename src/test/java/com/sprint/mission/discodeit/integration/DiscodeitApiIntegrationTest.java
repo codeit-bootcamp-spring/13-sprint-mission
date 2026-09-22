@@ -234,15 +234,12 @@ class DiscodeitApiIntegrationTest {
     }
 
     @Test
-    @DisplayName("로그아웃 성공 - 인증과 세션을 제거하고 204 응답 반환")
-    void logout_invalidatesSessionAndReturnsNoContent() throws Exception {
-        // given
-        // 실제 사용자 생성 및 폼 로그인을 통해 SecurityContext가 저장된 HTTP 세션을 준비한다.
+    @DisplayName("로그아웃 성공 - 로그인에서 받은 리프레시 쿠키를 삭제하고 세션 없이 204를 반환한다")
+    void logout_clearsRefreshCookieAndReturnsNoContentWithoutSession() throws Exception {
         String suffix = uniqueSuffix();
         String username = "logoutUser-" + suffix;
         createUser(username, "logout-user-" + suffix + "@gmail.com");
 
-        // 실제로 분리된 HTTP 요청처럼 로그인에서 사용자를 DB로부터 다시 조회하도록 한다.
         flushAndClear();
 
         MvcResult loginResult = performLogin(username, "integrationPassword")
@@ -250,21 +247,23 @@ class DiscodeitApiIntegrationTest {
                 .andExpect(authenticated().withUsername(username))
                 .andReturn();
 
-        MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
-        assertThat(session).isNotNull();
-        assertThat(sessionRegistry.getSessionInformation(session.getId())).isNotNull();
+        Cookie refreshCookie = loginResult.getResponse().getCookie("REFRESH_TOKEN");
+        assertThat(refreshCookie).isNotNull();
+        assertThat(loginResult.getRequest().getSession(false)).isNull();
 
-        // when & then
-        // 동일한 세션과 CSRF 토큰으로 로그아웃하면 인증 및 세션과 JSESSIONID 쿠키가 제거되어야 한다.
-        mockMvc.perform(post("/api/auth/logout")
-                        .session(session)
+        // ACCESS 토큰과 로그인 세션 없이 REFRESH 및 CSRF 정보만으로 로그아웃한다.
+        MvcResult logoutResult = mockMvc.perform(post("/api/auth/logout")
+                        .cookie(refreshCookie)
                         .with(csrf()))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""))
                 .andExpect(unauthenticated())
-                .andExpect(cookie().maxAge("JSESSIONID", 0));
+                .andExpect(cookie().value("REFRESH_TOKEN", ""))
+                .andExpect(cookie().maxAge("REFRESH_TOKEN", 0))
+                .andExpect(cookie().maxAge("JSESSIONID", 0))
+                .andReturn();
 
-        assertThat(session.isInvalid()).isTrue();
+        assertThat(logoutResult.getRequest().getSession(false)).isNull();
     }
 
     @Test
