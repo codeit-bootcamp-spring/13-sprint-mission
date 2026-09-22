@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.config.JwtProperties;
 import com.sprint.mission.discodeit.security.JwtTokenProvider;
+import com.sprint.mission.discodeit.security.JwtRegistry;
 import com.sprint.mission.discodeit.dto.command.channel.ChannelCreatePublicCommand;
 import com.sprint.mission.discodeit.dto.request.channel.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
@@ -44,6 +45,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -69,6 +71,11 @@ class DiscodeitApiIntegrationTest {
 
     @Autowired
     JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    JwtRegistry jwtRegistry;
+
+    private final List<UUID> createdUserIds = new ArrayList<>();
 
     @Autowired
     JwtProperties jwtProperties;
@@ -107,7 +114,8 @@ class DiscodeitApiIntegrationTest {
     WebApplicationContext webApplicationContext;
 
     @AfterEach
-    void clearSessionRegistry() {
+    void clearAuthenticationRegistries() {
+        createdUserIds.forEach(jwtRegistry::invalidateJwtInformationByUserId);
         sessionRegistry.getAllPrincipals().forEach(principal ->
                 sessionRegistry.getAllSessions(principal, true).forEach(sessionInformation ->
                         sessionRegistry.removeSessionInformation(sessionInformation.getSessionId())
@@ -161,6 +169,7 @@ class DiscodeitApiIntegrationTest {
 
         JsonNode createBody = readBody(createResult);
         UUID userId = uuidAt(createBody, "/id");
+        createdUserIds.add(userId);
         UUID profileId = uuidAt(createBody, "/profile/id");
 
         // 실제 DB 저장 여부를 Repository 재조회로 확인한다.
@@ -962,7 +971,9 @@ class DiscodeitApiIntegrationTest {
                 .andExpect(jsonPath("$.role").value(Role.USER.name()))
                 .andReturn();
 
-        return uuidAt(readBody(result), "/id");
+        UUID userId = uuidAt(readBody(result), "/id");
+        createdUserIds.add(userId);
+        return userId;
     }
 
     private void assertJwtLoginResponse(MvcResult result, UUID userId, String username) throws Exception {

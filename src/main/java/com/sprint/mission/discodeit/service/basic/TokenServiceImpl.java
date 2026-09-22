@@ -5,9 +5,7 @@ import com.sprint.mission.discodeit.dto.response.JwtDtoWithRefresh;
 import com.sprint.mission.discodeit.dto.response.TokenDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.exception.jwt.TokenRenewalFailedException;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
-import com.sprint.mission.discodeit.security.JwtTokenProvider;
+import com.sprint.mission.discodeit.security.*;
 import com.sprint.mission.discodeit.service.RefreshTokenCookieManager;
 import com.sprint.mission.discodeit.service.TokenService;
 import io.jsonwebtoken.Claims;
@@ -23,10 +21,16 @@ public class TokenServiceImpl implements TokenService {
     private final JwtTokenProvider jwtTokenProvider;
     private final DiscodeitUserDetailsService discodeitUserDetailsService;
     private final RefreshTokenCookieManager refreshTokenCookieManager;
+    private final JwtRegistry jwtRegistry;
 
     @Override
     public JwtDtoWithRefresh rotateRefreshToken() {
-        Claims claims = jwtTokenProvider.validateToken(getRefreshToken())
+        String refreshToken = getRefreshToken();
+        if(!jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)){
+            throw new TokenRenewalFailedException();
+        }
+
+        Claims claims = jwtTokenProvider.validateToken(refreshToken)
                 .filter(this::isTokenRefreshType)
                 .orElseThrow(TokenRenewalFailedException::new);
 
@@ -39,6 +43,8 @@ public class TokenServiceImpl implements TokenService {
 
         UserDto userDto = userDetails.getUserDto();
         TokenDto tokenDto = generateToken(userDto);
+
+        jwtRegistry.rotateJwtInformation(refreshToken, new JwtInformation(userDto, tokenDto.accessToken(), tokenDto.refreshToken()));
 
         return new JwtDtoWithRefresh(
                 new JwtDto(userDto, tokenDto.accessToken()),

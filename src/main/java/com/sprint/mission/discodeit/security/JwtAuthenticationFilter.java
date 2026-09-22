@@ -27,6 +27,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final DiscodeitUserDetailsService discodeitUserDetailsService;
     private final AuthenticationEntryPoint restAuthenticationEntryPoint;
+    private final JwtRegistry jwtRegistry;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -55,6 +56,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String accessToken = header.substring(BEARER_PREFIX.length());
         jwtTokenProvider.validateToken(accessToken)
                 .filter(claims -> accessTokenTypeName().equals(jwtTokenProvider.getTokenType(claims)))
+                .filter(claims -> jwtRegistry.hasActiveJwtInformationByAccessToken(accessToken))
                 .ifPresent(claims ->{
                     DiscodeitUserDetails userDetails = (DiscodeitUserDetails) discodeitUserDetailsService.loadUserByUsername(claims.getSubject());
 

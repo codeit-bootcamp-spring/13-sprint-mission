@@ -59,6 +59,9 @@ class JwtAuthenticationFilterTest {
     @Mock
     FilterChain filterChain;
 
+    @Mock
+    JwtRegistry jwtRegistry;
+
     JwtAuthenticationFilter filter;
     MockHttpServletRequest request;
     MockHttpServletResponse response;
@@ -66,7 +69,7 @@ class JwtAuthenticationFilterTest {
     @BeforeEach
     void setUp() {
         SecurityContextHolder.clearContext();
-        filter = new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService, authenticationEntryPoint);
+        filter = new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService, authenticationEntryPoint, jwtRegistry);
         request = new MockHttpServletRequest("GET", "/api/users");
         response = new MockHttpServletResponse();
     }
@@ -88,7 +91,7 @@ class JwtAuthenticationFilterTest {
         filter.doFilter(request, response, filterChain);
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
-        verifyNoInteractions(jwtTokenProvider, userDetailsService, authenticationEntryPoint);
+        verifyNoInteractions(jwtTokenProvider, jwtRegistry, userDetailsService, authenticationEntryPoint);
         verify(filterChain).doFilter(request, response);
     }
 
@@ -148,6 +151,7 @@ class JwtAuthenticationFilterTest {
     @DisplayName("사용자 조회 실패 시 기존 인증을 정리하고 EntryPoint로 위임한 뒤 요청을 중단한다")
     void doFilter_clearsContextAndStopsChainWhenUserIsMissing() throws Exception {
         stubValidatedToken(ACCESS_TOKEN, JwtTokenProvider.TokenType.ACCESS);
+        given(jwtRegistry.hasActiveJwtInformationByAccessToken(ACCESS_TOKEN)).willReturn(true);
         UsernameNotFoundException failure = new UsernameNotFoundException("사용자를 찾을 수 없습니다.");
         given(userDetailsService.loadUserByUsername(USERNAME)).willThrow(failure);
         SecurityContextHolder.getContext().setAuthentication(
@@ -213,6 +217,7 @@ class JwtAuthenticationFilterTest {
 
     private DiscodeitUserDetails stubAccessAuthentication() {
         stubValidatedToken(ACCESS_TOKEN, JwtTokenProvider.TokenType.ACCESS);
+        given(jwtRegistry.hasActiveJwtInformationByAccessToken(ACCESS_TOKEN)).willReturn(true);
         OffsetDateTime now = OffsetDateTime.parse("2026-09-21T00:00:00Z");
         UserDto userDto = new UserDto(
                 UUID.fromString("00000000-0000-0000-0000-000000000001"),
@@ -221,5 +226,19 @@ class JwtAuthenticationFilterTest {
         DiscodeitUserDetails userDetails = new DiscodeitUserDetails(userDto, "unused-password");
         given(userDetailsService.loadUserByUsername(USERNAME)).willReturn(userDetails);
         return userDetails;
+    }
+
+    @Test
+    @DisplayName("서명과 만료가 유효해도 레지스트리에 없는 ACCESS 토큰으로 인증하지 않는다")
+    void doFilter_rejectsUnregisteredAccessToken() throws Exception {
+        stubValidatedToken(ACCESS_TOKEN, JwtTokenProvider.TokenType.ACCESS);
+        given(jwtRegistry.hasActiveJwtInformationByAccessToken(ACCESS_TOKEN)).willReturn(false);
+        request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + ACCESS_TOKEN);
+
+        filter.doFilter(request, response, filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        verifyNoInteractions(userDetailsService, authenticationEntryPoint);
+        verify(filterChain).doFilter(request, response);
     }
 }

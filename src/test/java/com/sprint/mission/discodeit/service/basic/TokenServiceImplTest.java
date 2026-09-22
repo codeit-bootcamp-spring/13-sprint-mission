@@ -9,6 +9,8 @@ import com.sprint.mission.discodeit.exception.jwt.TokenRenewalFailedException;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
 import com.sprint.mission.discodeit.security.JwtTokenProvider;
+import com.sprint.mission.discodeit.security.JwtInformation;
+import com.sprint.mission.discodeit.security.JwtRegistry;
 import com.sprint.mission.discodeit.service.RefreshTokenCookieManager;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -38,6 +40,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -58,13 +61,16 @@ class TokenServiceImplTest {
     @Mock
     RefreshTokenCookieManager cookieManager;
 
+    @Mock
+    JwtRegistry jwtRegistry;
+
     TokenServiceImpl service;
     UserDto userDto;
 
     @BeforeEach
     void setUp() {
         SecurityContextHolder.clearContext();
-        service = new TokenServiceImpl(jwtTokenProvider, userDetailsService, cookieManager);
+        service = new TokenServiceImpl(jwtTokenProvider, userDetailsService, cookieManager, jwtRegistry);
         OffsetDateTime now = OffsetDateTime.parse("2026-09-21T00:00:00Z");
         userDto = new UserDto(UUID.randomUUID(), "refresh-user", "refresh@example.com",
                 null, true, Role.CHANNEL_MANAGER, now, now);
@@ -102,6 +108,8 @@ class TokenServiceImplTest {
 
         assertThat(result).isEqualTo(new JwtDtoWithRefresh(
                 new JwtDto(userDto, NEW_ACCESS_TOKEN), NEW_REFRESH_TOKEN));
+        verify(jwtRegistry).rotateJwtInformation(REFRESH_TOKEN,
+                new JwtInformation(userDto, NEW_ACCESS_TOKEN, NEW_REFRESH_TOKEN));
         verify(cookieManager).readRefreshToken();
         verify(userDetailsService).loadUserByUsername(userDto.username());
         verify(jwtTokenProvider).generateAccessToken(userDto.id(), userDto.username(), userDto.role());
@@ -115,6 +123,7 @@ class TokenServiceImplTest {
     void rotateRefreshToken_rejectsInvalidToken() {
         Authentication previous = setPreviousAuthentication();
         given(cookieManager.readRefreshToken()).willReturn(Optional.of("invalid-token"));
+        given(jwtRegistry.hasActiveJwtInformationByRefreshToken("invalid-token")).willReturn(true);
         given(jwtTokenProvider.validateToken("invalid-token")).willReturn(Optional.empty());
 
         assertThatThrownBy(service::rotateRefreshToken)
@@ -138,7 +147,7 @@ class TokenServiceImplTest {
                 .hasMessage("토큰 갱신에 실패했습니다.");
 
         verify(cookieManager).readRefreshToken();
-        verifyNoInteractions(jwtTokenProvider, userDetailsService);
+        verifyNoInteractions(jwtTokenProvider, userDetailsService, jwtRegistry);
         verifyNoCookieChanges();
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isSameAs(previous);
     }
@@ -198,6 +207,7 @@ class TokenServiceImplTest {
 
     private void stubValidatedToken(JwtTokenProvider.TokenType type) {
         given(cookieManager.readRefreshToken()).willReturn(Optional.of(REFRESH_TOKEN));
+        given(jwtRegistry.hasActiveJwtInformationByRefreshToken(REFRESH_TOKEN)).willReturn(true);
         Claims claims = Jwts.claims().subject(userDto.username())
                 .add(JwtTokenProvider.CLAIM_TOKEN_TYPE, type.name()).build();
         given(jwtTokenProvider.validateToken(REFRESH_TOKEN)).willReturn(Optional.of(claims));
@@ -208,6 +218,37 @@ class TokenServiceImplTest {
         Authentication authentication = new UsernamePasswordAuthenticationToken("another-user", null, List.of());
         SecurityContextHolder.getContext().setAuthentication(authentication);
         return authentication;
+    }
+
+    @Test
+    @DisplayName("등록되지 않은 리프레시 토큰은 검증과 발급 전에 거부한다")
+    void rotateRefreshToken_rejectsUnregisteredToken() {
+        given(cookieManager.readRefreshToken()).willReturn(Optional.of(REFRESH_TOKEN));
+        given(jwtRegistry.hasActiveJwtInformationByRefreshToken(REFRESH_TOKEN)).willReturn(false);
+
+        assertThatThrownBy(service::rotateRefreshToken).isInstanceOf(TokenRenewalFailedException.class);
+
+        verifyNoInteractions(jwtTokenProvider, userDetailsService);
+        verify(jwtRegistry, never()).rotateJwtInformation(any(), any());
+        verifyNoCookieChanges();
+    }
+
+    @Test
+    @DisplayName("사전 검사 후 다른 요청이 토큰을 교체하면 갱신 실패를 전파하고 새 쿠키를 쓰지 않는다")
+    void rotateRefreshToken_propagatesRegistryRotationFailure() {
+        Authentication previous = setPreviousAuthentication();
+        stubValidatedToken(JwtTokenProvider.TokenType.REFRESH);
+        given(userDetailsService.loadUserByUsername(userDto.username()))
+                .willReturn(new DiscodeitUserDetails(userDto, "unused-password"));
+        stubGeneratedTokens();
+        TokenRenewalFailedException failure = new TokenRenewalFailedException();
+        doThrow(failure).when(jwtRegistry).rotateJwtInformation(REFRESH_TOKEN,
+                new JwtInformation(userDto, NEW_ACCESS_TOKEN, NEW_REFRESH_TOKEN));
+
+        assertThatThrownBy(service::rotateRefreshToken).isSameAs(failure);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isSameAs(previous);
+        verifyNoCookieChanges();
     }
 
     private void verifyNoTokenGeneration() {

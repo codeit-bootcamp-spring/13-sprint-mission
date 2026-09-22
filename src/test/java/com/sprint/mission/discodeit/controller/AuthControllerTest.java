@@ -12,6 +12,7 @@ import com.sprint.mission.discodeit.exception.jwt.TokenRenewalFailedException;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
 import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
 import com.sprint.mission.discodeit.security.JwtTokenProvider;
+import com.sprint.mission.discodeit.security.JwtRegistry;
 import com.sprint.mission.discodeit.security.handler.JwtLoginSuccessHandler;
 import com.sprint.mission.discodeit.security.handler.JwtLogoutHandler;
 import com.sprint.mission.discodeit.security.handler.LoginFailureHandler;
@@ -66,6 +67,9 @@ class AuthControllerTest {
 
     @MockitoBean
     JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    JwtRegistry jwtRegistry;
 
     @MockitoBean
     DiscodeitUserDetailsService userDetailsService;

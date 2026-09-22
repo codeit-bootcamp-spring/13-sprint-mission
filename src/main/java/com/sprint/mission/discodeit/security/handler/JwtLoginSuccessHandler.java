@@ -5,6 +5,8 @@ import com.sprint.mission.discodeit.dto.response.JwtDto;
 import com.sprint.mission.discodeit.dto.response.TokenDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.security.JwtInformation;
+import com.sprint.mission.discodeit.security.JwtRegistry;
 import com.sprint.mission.discodeit.service.TokenService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,12 +26,20 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final ObjectMapper objectMapper;
     private final TokenService tokenService;
+    private final JwtRegistry jwtRegistry;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         DiscodeitUserDetails discodeitUser = (DiscodeitUserDetails) authentication.getPrincipal();
         UserDto body = discodeitUser.getUserDto();
         TokenDto tokenDto = tokenService.generateToken(body);
+
+        jwtRegistry.registerJwtInformation(new JwtInformation(
+                    body,
+                    tokenDto.accessToken(),
+                    tokenDto.refreshToken()
+                )
+        );
 
         JwtDto jwtDto = new JwtDto(body, tokenDto.accessToken());
         tokenService.addRefreshTokenCookie(tokenDto.refreshToken());

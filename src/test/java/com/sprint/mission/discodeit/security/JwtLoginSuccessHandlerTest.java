@@ -40,6 +40,9 @@ class JwtLoginSuccessHandlerTest {
     @Mock
     TokenService tokenService;
 
+    @Mock
+    JwtRegistry jwtRegistry;
+
     ObjectMapper objectMapper;
     JwtLoginSuccessHandler jwtLoginSuccessHandler;
     UserDto userDto;
@@ -48,7 +51,7 @@ class JwtLoginSuccessHandlerTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper().findAndRegisterModules();
-        jwtLoginSuccessHandler = new JwtLoginSuccessHandler(objectMapper, tokenService);
+        jwtLoginSuccessHandler = new JwtLoginSuccessHandler(objectMapper, tokenService, jwtRegistry);
         OffsetDateTime now = OffsetDateTime.parse("2026-09-10T10:00:00+09:00");
         userDto = new UserDto(
                 UUID.randomUUID(),
@@ -73,6 +76,7 @@ class JwtLoginSuccessHandlerTest {
         authenticate();
 
         verify(tokenService).generateToken(userDto);
+        verify(jwtRegistry).registerJwtInformation(new JwtInformation(userDto, ACCESS_TOKEN, REFRESH_TOKEN));
         verify(tokenService).addRefreshTokenCookie(REFRESH_TOKEN);
     }
 

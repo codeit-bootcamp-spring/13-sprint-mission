@@ -9,7 +9,10 @@ import com.sprint.mission.discodeit.dto.command.user.UserRoleUpdateCommand;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
+import com.sprint.mission.discodeit.security.JwtInformation;
+import com.sprint.mission.discodeit.security.JwtRegistry;
 import com.sprint.mission.discodeit.security.JwtTokenProvider;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.Filter;
@@ -89,6 +92,12 @@ class JwtAuthenticationIntegrationTest {
     JwtTokenProvider jwtTokenProvider;
 
     @Autowired
+    JwtRegistry jwtRegistry;
+
+    @Autowired
+    UserMapper userMapper;
+
+    @Autowired
     JwtProperties jwtProperties;
 
     @Autowired
@@ -111,6 +120,7 @@ class JwtAuthenticationIntegrationTest {
 
     @AfterEach
     void deleteCreatedUsers() {
+        createdUserIds.forEach(jwtRegistry::invalidateJwtInformationByUserId);
         // 실제 HTTP 요청은 별도 트랜잭션이므로 테스트 롤백 대신 생성한 사용자만 정리한다.
         userRepository.deleteAllById(createdUserIds);
     }
@@ -190,7 +200,6 @@ class JwtAuthenticationIntegrationTest {
         User user = createUser();
         String token = accessToken(login(user));
         userRepository.deleteById(user.getId());
-        createdUserIds.remove(user.getId());
         assertThat(jwtTokenProvider.validateToken(token)).isPresent();
 
         assertUnauthorized(getUsers(token));
@@ -308,7 +317,7 @@ class JwtAuthenticationIntegrationTest {
     }
 
     @Test
-    @DisplayName("로그인 후 변경된 사용자 권한을 갱신 응답과 새 ACCESS 토큰에 반영한다")
+    @DisplayName("권한 변경 API를 거치지 않은 DB 변경도 갱신 시 현재 사용자 정보로 조회한다")
     void refresh_usesCurrentRoleFromDatabase() throws Exception {
         User user = createUser();
         ResponseEntity<String> loginResponse = login(user);
@@ -332,6 +341,8 @@ class JwtAuthenticationIntegrationTest {
         Instant past = Instant.now().minusSeconds(3600).truncatedTo(ChronoUnit.SECONDS);
         JwtTokenProvider pastProvider = new JwtTokenProvider(jwtProperties, Clock.fixed(past, ZoneOffset.UTC));
         String oldToken = pastProvider.generateRefreshToken(user.getId(), user.getUsername());
+        jwtRegistry.registerJwtInformation(new JwtInformation(userMapper.toDto(user, true),
+                pastProvider.generateAccessToken(user.getId(), user.getUsername(), user.getRole()), oldToken));
         Instant before = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 
         ResponseEntity<String> response = refresh(oldToken);
@@ -341,7 +352,7 @@ class JwtAuthenticationIntegrationTest {
         Claims access = assertTokenClaims(accessToken(response), JwtTokenProvider.TokenType.ACCESS, user);
         Claims refresh = assertTokenClaims(cookie(response, "REFRESH_TOKEN").getValue(),
                 JwtTokenProvider.TokenType.REFRESH, user);
-        // 같은 초에 발급된 JWT 문자열의 차이를 요구하지 않고 시각과 수명을 검증한다.
+        assertThat(cookie(response, "REFRESH_TOKEN").getValue()).isNotEqualTo(oldToken);
         assertThat(access.getIssuedAt().toInstant()).isBetween(before, after).isAfter(past);
         assertThat(refresh.getIssuedAt().toInstant()).isBetween(before, after).isAfter(past);
         assertThat(access.getExpiration().toInstant())
@@ -372,6 +383,9 @@ class JwtAuthenticationIntegrationTest {
             default -> throw new IllegalArgumentException("지원하지 않는 테스트 시나리오: " + scenario);
         };
 
+        // 레지스트리 존재 검사 이후 JWT 검증·타입 검사까지 도달하는 실패 경로를 검증한다.
+        jwtRegistry.registerJwtInformation(new JwtInformation(userMapper.toDto(user, true), "unused-access", token));
+
         assertRenewalFailure(refresh(token));
     }
 
@@ -387,7 +401,6 @@ class JwtAuthenticationIntegrationTest {
         User user = createUser();
         String refreshToken = cookie(login(user), "REFRESH_TOKEN").getValue();
         userRepository.deleteById(user.getId());
-        createdUserIds.remove(user.getId());
         assertThat(jwtTokenProvider.validateToken(refreshToken)).isPresent();
 
         assertRenewalFailure(refresh(refreshToken));
