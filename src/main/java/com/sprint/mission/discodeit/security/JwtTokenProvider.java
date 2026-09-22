@@ -127,7 +127,7 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public long getRefreshTokenLifetime(){
-       return jwtProperties.refreshTokenValidity().getSeconds();
+    public Duration getRefreshTokenExpirationTime(){
+       return jwtProperties.refreshTokenValidity();
     }
 }

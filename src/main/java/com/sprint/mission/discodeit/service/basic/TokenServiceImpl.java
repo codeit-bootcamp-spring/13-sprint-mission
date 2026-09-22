@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.config.RefreshCookieProperties;
 import com.sprint.mission.discodeit.dto.response.JwtDto;
 import com.sprint.mission.discodeit.dto.response.JwtDtoWithRefresh;
 import com.sprint.mission.discodeit.dto.response.TokenDto;
@@ -9,31 +8,21 @@ import com.sprint.mission.discodeit.exception.jwt.TokenRenewalFailedException;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
 import com.sprint.mission.discodeit.security.JwtTokenProvider;
+import com.sprint.mission.discodeit.service.RefreshTokenCookieManager;
 import com.sprint.mission.discodeit.service.TokenService;
 import io.jsonwebtoken.Claims;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
+import java.time.Duration;
 
 @Service
 @RequiredArgsConstructor
 public class TokenServiceImpl implements TokenService {
     private final JwtTokenProvider jwtTokenProvider;
-    private final RefreshCookieProperties refreshCookieProperties;
     private final DiscodeitUserDetailsService discodeitUserDetailsService;
-
-    private final ObjectProvider<HttpServletResponse> responseProvider;
-    private final ObjectProvider<HttpServletRequest> requestProvider;
-
-    public static final String REFRESH_TOKEN = "REFRESH_TOKEN";
+    private final RefreshTokenCookieManager refreshTokenCookieManager;
 
     @Override
     public JwtDtoWithRefresh rotateRefreshToken() {
@@ -67,16 +56,8 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     public void addRefreshTokenCookie(String refreshToken) {
-        responseProvider.getObject().addHeader(HttpHeaders.SET_COOKIE, createRefreshTokenCookie(refreshToken).toString());
-    }
-
-    private ResponseCookie createRefreshTokenCookie(String refreshToken) {
-        return ResponseCookie.from(REFRESH_TOKEN, refreshToken)
-                .httpOnly(refreshCookieProperties.httpOnly())
-                .secure(refreshCookieProperties.secure())
-                .sameSite(refreshCookieProperties.sameSite())
-                .maxAge(jwtTokenProvider.getRefreshTokenLifetime())
-                .build();
+        Duration maxAge = jwtTokenProvider.getRefreshTokenExpirationTime();
+        refreshTokenCookieManager.writeRefreshTokenCookie(refreshToken, maxAge);
     }
 
     private boolean isTokenRefreshType(Claims claims) {
@@ -84,15 +65,7 @@ public class TokenServiceImpl implements TokenService {
     }
 
     private String getRefreshToken() {
-        Cookie[] cookies = requestProvider.getObject().getCookies();
-        if (cookies == null) {
-            return null;
-        }
-
-        return Arrays.stream(cookies)
-                .filter(cookie -> cookie.getName().equals(REFRESH_TOKEN))
-                .findFirst()
-                .map(Cookie::getValue)
-                .orElse(null);
+        return refreshTokenCookieManager.readRefreshToken()
+                .orElseThrow(TokenRenewalFailedException::new);
     }
 }
