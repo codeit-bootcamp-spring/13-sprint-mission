@@ -411,6 +411,48 @@ class JwtAuthenticationIntegrationTest {
     }
 
     @Test
+    @DisplayName("ACCESS와 세션 없이 로그아웃하여 로그인에서 받은 리프레시 쿠키를 삭제한다")
+    void logout_clearsLoginRefreshCookieWithoutAccessTokenOrSession() throws Exception {
+        ResponseEntity<String> loginResponse = login(createUser());
+        HttpCookie issuedCookie = cookie(loginResponse, "REFRESH_TOKEN");
+
+        ResponseEntity<String> response = logout(issuedCookie.getValue(), true);
+
+        HttpCookie deletedCookie = assertLogoutResponse(response);
+        assertThat(deletedCookie.getPath()).isEqualTo(issuedCookie.getPath());
+        assertThat(deletedCookie.getDomain()).isEqualTo(issuedCookie.getDomain());
+        assertNoSessionCookie(loginResponse);
+        // 삭제된 쿠키를 보내지 않는 다음 요청을 재현한다. 기존 JWT 자체의 폐기를 검증하는 것은 아니다.
+        // 로그아웃 시 CSRF 쿠키도 정리되므로 refresh 헬퍼에서 새 CSRF 쿠키·헤더를 준비한다.
+        assertRenewalFailure(refresh(null));
+        assertUnauthorized(getUsers(null));
+    }
+
+    @Test
+    @DisplayName("리프레시 쿠키와 인증 정보 없이 로그아웃을 반복해도 삭제 쿠키와 204를 반환한다")
+    void logout_returnsNoContentWhenRepeatedWithoutRefreshCookie() {
+        ResponseEntity<String> firstResponse = logout(null, true);
+        ResponseEntity<String> secondResponse = logout(null, true);
+
+        assertLogoutResponse(firstResponse);
+        assertLogoutResponse(secondResponse);
+    }
+
+    @Test
+    @DisplayName("정상 리프레시 쿠키가 있어도 CSRF 정보 없는 로그아웃은 쿠키 삭제 없이 403으로 거부한다")
+    void logout_rejectsRequestWithoutCsrf() throws Exception {
+        String refreshToken = cookie(login(createUser()), "REFRESH_TOKEN").getValue();
+
+        ResponseEntity<String> response = logout(refreshToken, false);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertJsonContentType(response);
+        assertThat(objectMapper.readTree(response.getBody()).path("code").asText()).isEqualTo("AUTH_403");
+        assertNoRefreshCookie(response);
+        assertNoSessionCookie(response);
+    }
+
+    @Test
     @DisplayName("JWT 필터는 서블릿에 직접 등록되지 않고 Security 체인에서 폼 로그인 앞에 한 번만 등록된다")
     void jwtFilter_isOnlyRegisteredInSecurityChain() {
         Map<String, ? extends FilterRegistration> registrations = servletContext.getFilterRegistrations();
@@ -508,6 +550,53 @@ class JwtAuthenticationIntegrationTest {
             headers.setBearerAuth(accessToken);
         }
         return restTemplate.postForEntity("/api/auth/refresh", new HttpEntity<>(headers), String.class);
+    }
+
+    private ResponseEntity<String> logout(String refreshToken, boolean withCsrf) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        List<String> requestCookies = new ArrayList<>();
+        if (withCsrf) {
+            ResponseEntity<String> csrfResponse = restTemplate.getForEntity("/api/auth/csrf-token", String.class);
+            assertThat(csrfResponse.getStatusCode()).isEqualTo(HttpStatus.NON_AUTHORITATIVE_INFORMATION);
+            HttpCookie csrfCookie = cookie(csrfResponse, "XSRF-TOKEN");
+            requestCookies.add(csrfCookie.getName() + "=" + csrfCookie.getValue());
+            headers.set("X-XSRF-TOKEN", csrfCookie.getValue());
+        }
+        if (refreshToken != null) {
+            requestCookies.add("REFRESH_TOKEN=" + refreshToken);
+        }
+        if (!requestCookies.isEmpty()) {
+            headers.set(HttpHeaders.COOKIE, String.join("; ", requestCookies));
+        }
+        return restTemplate.postForEntity("/api/auth/logout", new HttpEntity<>(headers), String.class);
+    }
+
+    private HttpCookie assertLogoutResponse(ResponseEntity<String> response) {
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        assertThat(response.getBody()).isNullOrEmpty();
+        assertThat(response.getHeaders()).doesNotContainKey(HttpHeaders.AUTHORIZATION);
+        List<HttpCookie> refreshCookies = cookies(response).stream()
+                .filter(cookie -> "REFRESH_TOKEN".equals(cookie.getName()))
+                .toList();
+        assertThat(refreshCookies).hasSize(1);
+        HttpCookie deletedCookie = refreshCookies.get(0);
+        assertThat(deletedCookie.getValue()).isEmpty();
+        assertThat(deletedCookie.getMaxAge()).isZero();
+        assertThat(deletedCookie.isHttpOnly()).isEqualTo(refreshCookieProperties.httpOnly());
+        assertThat(deletedCookie.getSecure()).isEqualTo(refreshCookieProperties.secure());
+        assertThat(deletedCookie.getPath()).isNull();
+        assertThat(deletedCookie.getDomain()).isNull();
+        assertThat(response.getHeaders().getOrEmpty(HttpHeaders.SET_COOKIE))
+                .filteredOn(header -> header.startsWith("REFRESH_TOKEN="))
+                .singleElement()
+                .satisfies(header -> assertThat(header)
+                        .contains("SameSite=" + refreshCookieProperties.sameSite()));
+        // 기존 JSESSIONID 삭제 응답은 허용하되 새 세션 쿠키를 발급해서는 안 된다.
+        assertThat(cookies(response))
+                .filteredOn(cookie -> "JSESSIONID".equals(cookie.getName()))
+                .allSatisfy(cookie -> assertThat(cookie.getMaxAge()).isZero());
+        return deletedCookie;
     }
 
     private Claims assertTokenClaims(String token, JwtTokenProvider.TokenType type, User user) {
