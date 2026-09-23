@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.within;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Channel.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -76,7 +77,7 @@ class MessageRepositoryTest {
 
     // when
     Slice<Message> result =
-        messageRepository.findByChannel_Id(
+        messageRepository.findByChannelId(
             channel.getId(),
             pageable
         );
@@ -110,7 +111,7 @@ class MessageRepositoryTest {
 
     // when
     Slice<Message> result =
-        messageRepository.findByChannel_Id(
+        messageRepository.findByChannelId(
             channel.getId(),
             pageable
         );
@@ -183,7 +184,8 @@ class MessageRepositoryTest {
         "testUser",
         "test@test.com",
         "password",
-        null
+        null,
+        Role.USER
     );
 
     return userRepository.save(user);

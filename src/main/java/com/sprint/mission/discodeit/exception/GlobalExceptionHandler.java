@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -92,6 +93,25 @@ public class GlobalExceptionHandler {
       NoResourceFoundException e
   ) {
     ErrorCode errorCode = ErrorCode.ENDPOINT_NOT_FOUND;
+
+    ErrorResponse response = new ErrorResponse(
+        Instant.now(),
+        errorCode.getCode(),
+        errorCode.getMessage(),
+        Map.of(),
+        errorCode.getStatus().value(),
+        e.getClass().getSimpleName()
+    );
+
+    return ResponseEntity
+        .status(errorCode.getStatus())
+        .body(response);
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException e) {
+
+    ErrorCode errorCode = ErrorCode.ACCESS_DENIED;
 
     ErrorResponse response = new ErrorResponse(
         Instant.now(),

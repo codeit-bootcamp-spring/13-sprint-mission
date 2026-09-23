@@ -61,7 +61,7 @@ public class BasicReadStatusService implements ReadStatusService {
         });
 
     boolean isAlreadyExist =
-        readStatusRepository.findByUser_IdAndChannel_Id(
+        readStatusRepository.findByUserIdAndChannelId(
             request.userId(),
             request.channelId()
         ).isPresent();
@@ -104,7 +104,7 @@ public class BasicReadStatusService implements ReadStatusService {
     log.debug("사용자별 읽음 상태 조회 시작: userId={}", userId);
 
     List<ReadStatusDto> readStatuses =
-        readStatusRepository.findByUser_Id(userId).stream()
+        readStatusRepository.findByUserId(userId).stream()
             .map(readStatusMapper::toDto)
             .toList();
 

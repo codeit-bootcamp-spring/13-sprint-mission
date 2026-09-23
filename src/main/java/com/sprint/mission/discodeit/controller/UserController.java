@@ -9,9 +9,9 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -42,9 +42,10 @@ public class UserController {
 
     UserDto response = userService.create(request, profile);
 
-    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    return ResponseEntity.ok(response);
   }
 
+  @PreAuthorize("#id == principal.getUserDto().id()")
   @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<UserDto> update(
       @PathVariable("userId") UUID id,
@@ -82,6 +83,7 @@ public class UserController {
     return ResponseEntity.ok(response);
   }
 
+  @PreAuthorize("#id == principal.getUserDto().id()")
   @DeleteMapping("/{userId}")
   public ResponseEntity<Void> delete(
       @PathVariable("userId") UUID id

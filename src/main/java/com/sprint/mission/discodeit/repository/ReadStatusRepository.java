@@ -10,25 +10,25 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ReadStatusRepository extends JpaRepository<ReadStatus, UUID> {
 
-  Optional<ReadStatus> findByUser_IdAndChannel_Id(
+  Optional<ReadStatus> findByUserIdAndChannelId(
       UUID userId,
       UUID channelId
   );
 
-  List<ReadStatus> findByUser_Id(UUID userId);
+  List<ReadStatus> findByUserId(UUID userId);
 
   @EntityGraph(attributePaths = {"user"})
-  List<ReadStatus> findByChannel_Id(UUID channelId);
+  List<ReadStatus> findByChannelId(UUID channelId);
 
   @EntityGraph(attributePaths = {"user", "channel"})
-  List<ReadStatus> findByChannel_IdIn(List<UUID> channelIds);
+  List<ReadStatus> findByChannelIdIn(List<UUID> channelIds);
 
   @EntityGraph(attributePaths = {"channel"})
-  List<ReadStatus> findByUser_IdAndChannel_Type(
+  List<ReadStatus> findByUserIdAndChannelType(
       UUID userId,
       ChannelType channelType
   );
 
-  void deleteByChannel_Id(UUID channelId);
+  void deleteByChannelId(UUID channelId);
 }
 

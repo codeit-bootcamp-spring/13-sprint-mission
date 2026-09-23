@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -26,6 +27,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(UserController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class UserControllerTest {
 
@@ -39,7 +41,7 @@ class UserControllerTest {
   private UserService userService;
 
   @Test
-  @DisplayName("정상적인 요청으로 사용자를 생성하면 201 응답을 반환한다")
+  @DisplayName("정상적인 요청으로 사용자를 생성하면 200 응답을 반환한다")
   void 사용자_생성_성공() throws Exception {
     // given
     MockMultipartFile requestPart = new MockMultipartFile(
@@ -71,7 +73,7 @@ class UserControllerTest {
             multipart("/api/users")
                 .file(requestPart)
         )
-        .andExpect(status().isCreated())
+        .andExpect(status().isOk())
         .andExpect(
             content().contentTypeCompatibleWith(
                 MediaType.APPLICATION_JSON

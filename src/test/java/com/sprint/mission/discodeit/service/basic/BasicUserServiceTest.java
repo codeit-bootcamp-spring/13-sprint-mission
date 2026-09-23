@@ -14,6 +14,7 @@ import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.user.DuplicateUserException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -30,6 +31,8 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 public class BasicUserServiceTest {
@@ -45,6 +48,12 @@ public class BasicUserServiceTest {
 
   @Mock
   private BinaryContentStorage binaryContentStorage;
+
+  @Mock
+  private PasswordEncoder passwordEncoder;
+
+  @Mock
+  private SessionRegistry sessionRegistry;
 
   @InjectMocks
   private BasicUserService basicUserService;
@@ -64,7 +73,8 @@ public class BasicUserServiceTest {
         request.username(),
         request.email(),
         null,
-        false
+        false,
+        Role.USER
     );
 
     given(userRepository.findByUsername(request.username()))
@@ -72,6 +82,9 @@ public class BasicUserServiceTest {
 
     given(userRepository.findByEmail(request.email()))
         .willReturn(Optional.empty());
+
+    given(passwordEncoder.encode(request.password()))
+        .willReturn("encodedPassword");
 
     given(userMapper.toDto(any(User.class)))
         .willReturn(expected);
@@ -102,7 +115,8 @@ public class BasicUserServiceTest {
         request.username(),
         "existing@example.com",
         "password",
-        null
+        null,
+        Role.USER
     );
 
     given(userRepository.findByUsername(request.username()))
@@ -136,7 +150,8 @@ public class BasicUserServiceTest {
         "existingUser",
         request.email(),
         "password",
-        null
+        null,
+        Role.USER
     );
 
     given(userRepository.findByUsername(request.username()))
@@ -185,7 +200,8 @@ public class BasicUserServiceTest {
         "oldUsername",
         "old@test.com",
         "oldPassword",
-        null
+        null,
+        Role.USER
     );
 
     UserUpdateRequest request = new UserUpdateRequest(
@@ -205,6 +221,9 @@ public class BasicUserServiceTest {
     given(userRepository.findByEmail(request.newEmail()))
         .willReturn(Optional.empty());
 
+    given(passwordEncoder.encode(request.newPassword()))
+        .willReturn("encodedPassword");
+
     given(userMapper.toDto(user))
         .willReturn(expected);
 
@@ -222,7 +241,7 @@ public class BasicUserServiceTest {
         .isEqualTo(request.newEmail());
 
     assertThat(user.getPassword())
-        .isEqualTo(request.newPassword());
+        .isEqualTo("encodedPassword");
 
     then(userRepository).should()
         .findById(userId);

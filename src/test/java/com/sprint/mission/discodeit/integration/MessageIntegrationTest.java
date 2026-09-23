@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.integration;
 
 import static org.hamcrest.Matchers.nullValue;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -11,6 +13,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.Role;
+import com.sprint.mission.discodeit.security.CustomUserDetails;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -56,6 +61,8 @@ class MessageIntegrationTest {
     mockMvc.perform(
             multipart("/api/messages")
                 .file(requestPart)
+                .with(csrf())
+                .with(user(authenticatedUser(userId)))
         )
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id").exists())
@@ -89,6 +96,7 @@ class MessageIntegrationTest {
     // when & then
     mockMvc.perform(
             get("/api/messages")
+                .with(user(authenticatedUser(userId)))
                 .param("channelId", channelId.toString())
                 .param("page", "0")
                 .param("size", "10")
@@ -132,6 +140,8 @@ class MessageIntegrationTest {
     // when & then
     mockMvc.perform(
             patch("/api/messages/{messageId}", messageId)
+                .with(csrf())
+                .with(user(authenticatedUser(userId)))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody)
         )
@@ -162,12 +172,15 @@ class MessageIntegrationTest {
     // when
     mockMvc.perform(
             delete("/api/messages/{messageId}", messageId)
+                .with(csrf())
+                .with(user(authenticatedUser(userId)))
         )
         .andExpect(status().isNoContent());
 
     // then
     mockMvc.perform(
             get("/api/messages/{messageId}", messageId)
+                .with(user(authenticatedUser(userId)))
         )
         .andExpect(status().isNotFound())
         .andExpect(
@@ -197,8 +210,9 @@ class MessageIntegrationTest {
     MvcResult result = mockMvc.perform(
             multipart("/api/users")
                 .file(requestPart)
+                .with(csrf())
         )
-        .andExpect(status().isCreated())
+        .andExpect(status().isOk())
         .andReturn();
 
     JsonNode responseBody = objectMapper.readTree(
@@ -220,6 +234,8 @@ class MessageIntegrationTest {
 
     MvcResult result = mockMvc.perform(
             post("/api/channels/public")
+                .with(csrf())
+                .with(user("manager").roles("CHANNEL_MANAGER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody)
         )
@@ -249,6 +265,8 @@ class MessageIntegrationTest {
     MvcResult result = mockMvc.perform(
             multipart("/api/messages")
                 .file(requestPart)
+                .with(csrf())
+                .with(user(authenticatedUser(authorId)))
         )
         .andExpect(status().isCreated())
         .andReturn();
@@ -284,6 +302,22 @@ class MessageIntegrationTest {
         "",
         MediaType.APPLICATION_JSON_VALUE,
         requestBody.getBytes(StandardCharsets.UTF_8)
+    );
+  }
+
+  private CustomUserDetails authenticatedUser(UUID userId) {
+    UserDto userDto = new UserDto(
+        userId,
+        "messageTestUser",
+        "message@test.com",
+        null,
+        true,
+        Role.USER
+    );
+
+    return new CustomUserDetails(
+        userDto,
+        "password"
     );
   }
 }

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Channel.ChannelType;
 import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import java.time.Instant;
 import java.util.List;
@@ -37,7 +38,8 @@ class ChannelRepositoryTest {
         "testUser",
         "test@test.com",
         "password",
-        null
+        null,
+        Role.USER
     );
 
     Channel publicChannel = new Channel(
@@ -66,7 +68,8 @@ class ChannelRepositoryTest {
         "testUser",
         "test@test.com",
         "password",
-        null
+        null,
+        Role.USER
     );
 
     Channel privateChannel = new Channel(
@@ -88,7 +91,7 @@ class ChannelRepositoryTest {
 
     // when
     List<ReadStatus> result =
-        readStatusRepository.findByUser_IdAndChannel_Type(
+        readStatusRepository.findByUserIdAndChannelType(
             user.getId(),
             ChannelType.PRIVATE
         );
@@ -107,14 +110,16 @@ class ChannelRepositoryTest {
         "participant",
         "participant@test.com",
         "password",
-        null
+        null,
+        Role.USER
     );
 
     User otherUser = new User(
         "otherUser",
         "other@test.com",
         "password",
-        null
+        null,
+        Role.USER
     );
 
     Channel privateChannel = new Channel(
