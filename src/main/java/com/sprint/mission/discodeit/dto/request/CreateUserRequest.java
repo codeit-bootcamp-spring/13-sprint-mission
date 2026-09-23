@@ -8,7 +8,7 @@ public record CreateUserRequest(
         @Size(max = 30, message = "사용자 이름은 30자 이하여야 합니다.")
         String username,
 
-        @NotBlank
+        @NotBlank(message = "이메일은 필수입니다.")
         @Email(message = "올바른 이메일의 형식이 아닙니다.")
         @Size(max = 50, message = "이메일은 50자 이하여야 합니다.")
         String email,

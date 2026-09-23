@@ -3,16 +3,17 @@ package com.sprint.mission.discodeit.controller;
 import com.sprint.mission.discodeit.dto.command.CreateUserCommand;
 import com.sprint.mission.discodeit.dto.command.UpdateUserCommand;
 import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.exception.GlobalExceptionHandler;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.UserStatusService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -24,12 +25,14 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
 @Import(GlobalExceptionHandler.class)
+@WithMockUser(username = "test-user", roles = "USER")
 public class UserControllerTest {
 
     @Autowired
@@ -37,9 +40,6 @@ public class UserControllerTest {
 
     @MockitoBean
     private UserService userService;
-
-    @MockitoBean
-    private UserStatusService userStatusService;
 
     @Test
     @DisplayName("사용자 생성에 성공하면 201과 생성된 사용자를 반환한다.")
@@ -52,7 +52,8 @@ public class UserControllerTest {
                 "홍길동",
                 "hong12@test.com",
                 null,
-                false
+                false,
+                Role.USER
         );
 
         given(userService.create(
@@ -63,6 +64,7 @@ public class UserControllerTest {
         // when & then
         mockMvc.perform(
                         multipart("/api/users")
+                                .with(csrf())
                                 .param("username", "홍길동")
                                 .param("email", "hong12@test.com")
                                 .param("password", "12345")
@@ -87,6 +89,10 @@ public class UserControllerTest {
                 .andExpect(
                         jsonPath("$.online")
                                 .value(false)
+                )
+                .andExpect(
+                        jsonPath("$.role")
+                                .value("USER")
                 );
 
         ArgumentCaptor<CreateUserCommand> commandCaptor =
@@ -117,6 +123,7 @@ public class UserControllerTest {
         // when & then
         mockMvc.perform(
                         multipart("/api/users")
+                                .with(csrf())
                                 .param("username", " ")
                                 .param("email", "hong12@test.com")
                                 .param("password", "12345")
@@ -138,16 +145,14 @@ public class UserControllerTest {
         then(userService)
                 .shouldHaveNoInteractions();
 
-        then(userStatusService)
-                .shouldHaveNoInteractions();
     }
-
     @Test
     @DisplayName("이메일이 공백이면 400을 반환한다")
     void create_fail_emailBlank() throws Exception {
         // when & then
         mockMvc.perform(
                         multipart("/api/users")
+                                .with(csrf())
                                 .param("username", "홍길동")
                                 .param("email", " ")
                                 .param("password", "12345")
@@ -163,14 +168,12 @@ public class UserControllerTest {
                 )
                 .andExpect(
                         jsonPath("$.details.email")
-                                .value("올바른 이메일의 형식이 아닙니다.")
+                                .exists()
                 );
 
         then(userService)
                 .shouldHaveNoInteractions();
 
-        then(userStatusService)
-                .shouldHaveNoInteractions();
     }
 
     @Test
@@ -179,6 +182,7 @@ public class UserControllerTest {
         // when & then
         mockMvc.perform(
                         multipart("/api/users")
+                                .with(csrf())
                                 .param("username", "홍길동")
                                 .param("email", "false-email")
                                 .param("password", "12345")
@@ -200,8 +204,6 @@ public class UserControllerTest {
         then(userService)
                 .shouldHaveNoInteractions();
 
-        then(userStatusService)
-                .shouldHaveNoInteractions();
     }
 
     @Test
@@ -210,6 +212,7 @@ public class UserControllerTest {
         // when & then
         mockMvc.perform(
                         multipart("/api/users")
+                                .with(csrf())
                                 .param("username", "홍길동")
                                 .param("email", "hong12@test.com")
                                 .param("password", " ")
@@ -230,9 +233,6 @@ public class UserControllerTest {
 
         then(userService)
                 .shouldHaveNoInteractions();
-
-        then(userStatusService)
-                .shouldHaveNoInteractions();
     }
 
     @Test
@@ -246,7 +246,8 @@ public class UserControllerTest {
                 "홍감자",
                 "hong12@test.com",
                 null,
-                false
+                false,
+                Role.USER
         );
 
         given(userService.update(
@@ -265,6 +266,7 @@ public class UserControllerTest {
                                     request.setMethod("PATCH");
                                     return request;
                                 })
+                                .with(csrf())
                                 .param("username", "홍감자")
                 )
                 .andExpect(status().isOk())
@@ -318,7 +320,8 @@ public class UserControllerTest {
                 "홍길동",
                 "honghong12@test.com",
                 null,
-                false
+                false,
+                Role.USER
         );
 
         given(userService.update(
@@ -337,6 +340,7 @@ public class UserControllerTest {
                                     request.setMethod("PATCH");
                                     return request;
                                 })
+                                .with(csrf())
                                 .param("email", "honghong12@test.com")
                 )
                 .andExpect(status().isOk())
@@ -400,6 +404,7 @@ public class UserControllerTest {
                                     request.setMethod("PATCH");
                                     return request;
                                 })
+                                .with(csrf())
                                 .param("username", "홍감자")
                 )
                 .andExpect(status().isNotFound())

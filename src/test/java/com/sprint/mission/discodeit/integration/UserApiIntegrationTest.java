@@ -2,17 +2,22 @@ package com.sprint.mission.discodeit.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
@@ -20,6 +25,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -30,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
+@WithMockUser(username = "test-user", roles = "USER")
 class UserApiIntegrationTest {
 
     @Autowired
@@ -50,6 +58,7 @@ class UserApiIntegrationTest {
         // when & then
         mockMvc.perform(
                         multipart("/api/users")
+                                .with(csrf())
                                 .param("username", "홍길동")
                                 .param("email", "hong12@test.com")
                                 .param("password", "12345")
@@ -66,7 +75,9 @@ class UserApiIntegrationTest {
                 .andExpect(
                         jsonPath("$.email")
                                 .value("hong12@test.com")
-                );
+                )
+                .andExpect(jsonPath("$.role").value("USER"));
+
 
         Optional<User> savedUser =
                 userRepository.findByEmail("hong12@test.com");
@@ -79,6 +90,9 @@ class UserApiIntegrationTest {
 
         assertThat(savedUser.get().getEmail())
                 .isEqualTo("hong12@test.com");
+
+        assertThat(savedUser.get().getRole())
+                .isEqualTo(Role.USER);
     }
 
     @Test
@@ -134,6 +148,8 @@ class UserApiIntegrationTest {
                                     request.setMethod("PATCH");
                                     return request;
                                 })
+                                .with(authenticatedAs(userId))
+                                .with(csrf())
                                 .param("username", "홍감자")
                 )
                 .andExpect(status().isOk())
@@ -176,6 +192,8 @@ class UserApiIntegrationTest {
         // when & then
         mockMvc.perform(
                         delete("/api/users/{userId}", userId)
+                                .with(authenticatedAs(userId))
+                                .with(csrf())
                 )
                 .andExpect(status().isNoContent());
 
@@ -198,6 +216,8 @@ class UserApiIntegrationTest {
                                 "/api/users/{userId}",
                                 unknownUserId
                         )
+                                .with(authenticatedAs(unknownUserId))
+                                .with(csrf())
                 )
                 .andExpect(status().isNotFound())
                 .andExpect(
@@ -220,6 +240,7 @@ class UserApiIntegrationTest {
         // when & then
         mockMvc.perform(
                         multipart("/api/users")
+                                .with(csrf())
                                 .param("username", " ")
                                 .param("email", "hong12@test.com")
                                 .param("password", "12345")
@@ -249,6 +270,7 @@ class UserApiIntegrationTest {
         // when & then
         mockMvc.perform(
                         multipart("/api/users")
+                                .with(csrf())
                                 .param("username", "홍길동")
                                 .param("email", " ")
                                 .param("password", "12345")
@@ -267,8 +289,9 @@ class UserApiIntegrationTest {
                                 .exists()
                 );
 
-        assertThat(userRepository.count())
-                .isZero();
+        assertThat(
+                userRepository.findByEmail("hong12@test.com")
+        ).isEmpty();
     }
 
     @Test
@@ -277,6 +300,7 @@ class UserApiIntegrationTest {
         // when & then
         mockMvc.perform(
                         multipart("/api/users")
+                                .with(csrf())
                                 .param("username", "홍길동")
                                 .param("email", "hong12@test.com")
                                 .param("password", " ")
@@ -300,6 +324,85 @@ class UserApiIntegrationTest {
         ).isEmpty();
     }
 
+    private RequestPostProcessor authenticatedAs(UUID userId) {
+        UserDto userDto = new UserDto(
+                userId,
+                "test-user",
+                "test-user@test.com",
+                null,
+                true,
+                Role.USER
+        );
+
+        DiscodeitUserDetails userDetails =
+                new DiscodeitUserDetails(
+                        userDto,
+                        "12345"
+                );
+        return user(userDetails);
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 정보는 수정할 수 없다.")
+    void updateUser_fail_notOwner() throws Exception {
+        // given
+        UUID targetUserId = createUserThroughApi(
+                "수정대상",
+        "target@teat.com",
+        "12345"
+        );
+
+        UUID loginUserId = UUID.randomUUID();
+
+        // when & then
+        mockMvc.perform(
+                        multipart(
+                                "/api/users/{userId}",
+                                targetUserId
+                        )
+                        .with(request -> {
+                            request.setMethod("PATCH");
+                            return request;
+                        })
+                        .with(authenticatedAs(loginUserId))
+                        .with(csrf())
+                        .param("username", "권한없는수정")
+                )
+                .andExpect(status().isForbidden());
+
+                User targetUser = userRepository.findById(targetUserId)
+                        .orElseThrow();
+                assertThat(targetUser.getUsername())
+                        .isEqualTo("수정대상");
+    }
+
+    @Test
+    @DisplayName("다른 사용자는 삭제할 수 없다.")
+    void deleteUser_fail_notOwner() throws Exception {
+        // given
+        UUID targetUserId = createUserThroughApi(
+                "삭제대상",
+                "delete_target@test.com",
+                "12345"
+        );
+
+        // when & then
+        mockMvc.perform(
+                delete(
+                        "/api/users/{userId}",
+                        targetUserId
+                )
+                        .with(authenticatedAs(UUID.randomUUID()))
+                        .with(csrf())
+
+                )
+                .andExpect(status().isForbidden());
+
+        assertThat(userRepository.findById(targetUserId))
+                .isPresent();
+
+    }
+
     private UUID createUserThroughApi(
             String username,
             String email,
@@ -307,6 +410,7 @@ class UserApiIntegrationTest {
     ) throws Exception {
         MvcResult result = mockMvc.perform(
                         multipart("/api/users")
+                                .with(csrf())
                                 .param("username", username)
                                 .param("email", email)
                                 .param("password", password)

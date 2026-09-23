@@ -4,18 +4,18 @@ import com.sprint.mission.discodeit.dto.command.CreateUserCommand;
 import com.sprint.mission.discodeit.dto.command.UpdateUserCommand;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.service.AuthService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
@@ -36,13 +37,16 @@ public class BasicUserServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private UserStatusRepository userStatusRepository;
-
-    @Mock
     private UserMapper userMapper;
 
     @InjectMocks
     private BasicUserService userService;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private AuthService authService;
 
     @Test
     @DisplayName("사용자 생성 성공")
@@ -62,7 +66,10 @@ public class BasicUserServiceTest {
         given(userRepository.existsByEmail("hong12@test.com"))
                 .willReturn(false);
 
-        given(userMapper.toDto(any(User.class)))
+        given(passwordEncoder.encode("12345"))
+                .willReturn("encoded-password");
+
+        given(userMapper.toDto(any(User.class), eq(false)))
                 .willReturn(expected);
 
         // when
@@ -75,13 +82,9 @@ public class BasicUserServiceTest {
                 .should()
                 .save(any(User.class));
 
-        then(userStatusRepository)
-                .should()
-                .save(any(UserStatus.class));
-
         then(userMapper)
                 .should()
-                .toDto(any(User.class));
+                .toDto(any(User.class), eq(false));
     }
 
     @Test
@@ -133,8 +136,11 @@ public class BasicUserServiceTest {
         given(userRepository.findByUsername("홍감자"))
                 .willReturn(Optional.empty());
 
-        given(userMapper.toDto(user))
-        .willReturn(expected);
+        given(authService.isOnline(userId))
+                .willReturn(true);
+
+        given(userMapper.toDto(user, true))
+                .willReturn(expected);
 
         // when
         UserDto result = userService.update(
@@ -161,9 +167,13 @@ public class BasicUserServiceTest {
                 .should(never())
                 .findByEmail(anyString());
 
+        then(authService)
+                .should()
+                .isOnline(userId);
+
         then(userMapper)
-        .should()
-        .toDto(user);
+                .should()
+                .toDto(user, true);
     }
 
     @Test
@@ -204,9 +214,6 @@ public class BasicUserServiceTest {
 
         given(userRepository.findById(userId))
                 .willReturn(Optional.of(user));
-
-        given(userStatusRepository.findByUserId(userId))
-                .willReturn(Optional.empty());
 
         // when
         userService.delete(userId);

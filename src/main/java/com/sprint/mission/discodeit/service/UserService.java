@@ -1,11 +1,13 @@
 package com.sprint.mission.discodeit.service;
 
 
-import com.sprint.mission.discodeit.dto.command.*;
-import com.sprint.mission.discodeit.dto.request.*;
-import com.sprint.mission.discodeit.dto.response.*;
+import com.sprint.mission.discodeit.dto.command.CreateBinaryContentCommand;
+import com.sprint.mission.discodeit.dto.command.CreateUserCommand;
+import com.sprint.mission.discodeit.dto.command.UpdateUserCommand;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 public interface UserService {
 

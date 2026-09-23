@@ -72,6 +72,7 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ReadStatusDto> findAllByUserId(UUID userId) {
         if (userId == null) {
             throw new UserNotFoundException(userId);
@@ -83,6 +84,7 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ReadStatusDto find(UUID id) {
         if (id == null) {
             throw new UserNotFoundException(id);

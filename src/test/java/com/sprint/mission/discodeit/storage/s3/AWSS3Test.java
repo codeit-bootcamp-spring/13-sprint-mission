@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.storage.s3;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
@@ -15,6 +16,10 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequ
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
+@EnabledIfEnvironmentVariable(
+        named = "RUN_S3_TESTS",
+        matches = "true"
+)
 public class AWSS3Test {
 
     private final String bucketName = "discodeit-binary-content-storage-hj";

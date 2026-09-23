@@ -1,20 +1,30 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.command.*;
-import com.sprint.mission.discodeit.dto.request.*;
-import com.sprint.mission.discodeit.dto.response.*;
-import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.exception.user.*;
-import com.sprint.mission.discodeit.mapper.*;
-import com.sprint.mission.discodeit.repository.*;
-import com.sprint.mission.discodeit.service.*;
-import com.sprint.mission.discodeit.storage.*;
-import lombok.*;
-import lombok.extern.slf4j.*;
-import org.springframework.stereotype.*;
-import org.springframework.transaction.annotation.*;
+import com.sprint.mission.discodeit.dto.command.CreateBinaryContentCommand;
+import com.sprint.mission.discodeit.dto.command.CreateUserCommand;
+import com.sprint.mission.discodeit.dto.command.UpdateUserCommand;
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import com.sprint.mission.discodeit.mapper.UserMapper;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.service.AuthService;
+import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -23,11 +33,12 @@ import java.util.*;
 public class BasicUserService implements UserService {
 
     private final UserRepository repository;
-    private final UserStatusRepository userStatusRepository;
     private final BinaryContentRepository binaryContentRepository;
     private final BinaryContentService binaryContentService;
     private final BinaryContentStorage binaryContentStorage;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthService authService;
 
     @Override
     @Transactional
@@ -59,10 +70,12 @@ public class BasicUserService implements UserService {
 
         log.info("사용자 생성 요청");
 
+        String encodedPassword = passwordEncoder.encode(command.password());
+
         User user = new User(
                 command.username(),
                 command.email(),
-                command.password()
+                encodedPassword
         );
 
         if (profileImage != null) {
@@ -78,16 +91,13 @@ public class BasicUserService implements UserService {
             log.debug("사용자 프로필 이미지 저장 완료. profileId={}", profile.getId());
         }
         repository.save(user);
-        UserStatus userStatus = new UserStatus(user);
-        userStatusRepository.save(userStatus);
-
-        log.info("사용자 생성 완료. id={}",
-                user.getId());
-        return userMapper.toDto(user);
+        log.info("사용자 생성 완료. id={}", user.getId());
+        return userMapper.toDto(user, false);
     }
 
 
     @Override
+    @Transactional(readOnly = true)
     public UserDto findByUserId(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
@@ -96,18 +106,27 @@ public class BasicUserService implements UserService {
         User user = repository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
-        return userMapper.toDto(user);
+        boolean online = authService.isOnline(id);
+
+        return userMapper.toDto(user, online);
 
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<UserDto> findAll() {
         List<User> users = repository.findAll();
-        return userMapper.toDtoList(users);
+        return users.stream()
+                .map(user -> {
+                    boolean online = authService.isOnline(user.getId());
+                    return userMapper.toDto(user, online);
+                })
+                .toList();
     }
 
     @Override
     @Transactional
+    @PreAuthorize("#id == authentication.principal.userDto.id()")
     public UserDto update(UUID id, UpdateUserCommand command,
                           CreateBinaryContentCommand profileImage) {
 
@@ -157,7 +176,10 @@ public class BasicUserService implements UserService {
                 throw new IllegalArgumentException("비밀번호는 공백일 수 없습니다.");
             }
 
-            user.updatePassword(command.password());
+            String encodedPassword =
+                    passwordEncoder.encode(command.password());
+
+            user.updatePassword(encodedPassword);
         }
 
         if (profileImage != null) {
@@ -182,11 +204,14 @@ public class BasicUserService implements UserService {
         }
         log.info("사용자 수정 완료. id={}", user.getId());
 
-        return userMapper.toDto(user);
+        boolean online = authService.isOnline(id);
+
+        return userMapper.toDto(user, online);
     }
 
     @Override
     @Transactional
+    @PreAuthorize("#id == authentication.principal.userDto.id()")
     public void delete(UUID id) {
 
         if (id == null) {
@@ -198,8 +223,6 @@ public class BasicUserService implements UserService {
         User user = repository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
-        userStatusRepository.findByUserId(id).ifPresent(userStatusRepository::delete);
-
         BinaryContent profile = user.getProfile();
 
         if (profile != null) {
@@ -209,4 +232,6 @@ public class BasicUserService implements UserService {
         repository.delete(user);
         log.info("사용자 삭제 완료. id={}", id);
     }
+
+
 }

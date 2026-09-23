@@ -1,9 +1,13 @@
 package com.sprint.mission.discodeit.service;
 
-import com.sprint.mission.discodeit.dto.command.*;
-import com.sprint.mission.discodeit.dto.request.*;
-import com.sprint.mission.discodeit.dto.response.*;
+import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.Role;
+
+import java.util.UUID;
 
 public interface AuthService {
-    LoginResponse login(LoginCommand command);
+
+    UserDto updateRole(UUID userId, Role newRole);
+
+    boolean isOnline(UUID userId);
 }

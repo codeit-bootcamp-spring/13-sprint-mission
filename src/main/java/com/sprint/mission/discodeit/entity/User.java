@@ -22,23 +22,21 @@ public class User extends BaseUpdatableEntity {
     @JoinColumn(name = "profile_id", unique = true, nullable = true)
     private BinaryContent profile;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private UserStatus userStatus;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Role role;
 
     public User(String username, String email, String password) {
         super();
         this.username = username;
         this.email = email;
         this.password = password;
+        this.role = Role.USER;
     }
 
     public void updateProfile(BinaryContent profile) {
         this.profile = profile;
     }
-
-    public void updateUserStatus(UserStatus userStatus) {
-        this.userStatus = userStatus;
-        }
 
     public void updateUserName(String username) {
         this.username = username;
@@ -50,6 +48,13 @@ public class User extends BaseUpdatableEntity {
 
     public void updatePassword(String password) {
         this.password = password;
+    }
+
+    public void updateRole(Role role) {
+        if( role == null) {
+            throw new IllegalArgumentException("권한은 필수 입니다.");
+        }
+        this.role = role;
     }
 
 }
