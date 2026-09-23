@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.data.ChannelDto;
@@ -32,11 +33,14 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.test.context.support.WithAnonymousUser;
+import org.springframework.security.test.context.support.WithMockUser;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
+@WithMockUser(roles = "CHANNEL_MANAGER")
 class ChannelApiIntegrationTest {
 
   @Autowired
@@ -65,7 +69,8 @@ class ChannelApiIntegrationTest {
     // When & Then
     mockMvc.perform(post("/api/channels/public")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(requestBody))
+            .content(requestBody)
+            .with(csrf()))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id", notNullValue()))
         .andExpect(jsonPath("$.type", is(ChannelType.PUBLIC.name())))
@@ -87,7 +92,8 @@ class ChannelApiIntegrationTest {
     // When & Then
     mockMvc.perform(post("/api/channels/public")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(requestBody))
+            .content(requestBody)
+            .with(csrf()))
         .andExpect(status().isBadRequest());
   }
 
@@ -119,7 +125,8 @@ class ChannelApiIntegrationTest {
     // When & Then
     mockMvc.perform(post("/api/channels/private")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(requestBody))
+            .content(requestBody)
+            .with(csrf()))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id", notNullValue()))
         .andExpect(jsonPath("$.type", is(ChannelType.PRIVATE.name())))
@@ -196,7 +203,8 @@ class ChannelApiIntegrationTest {
     // When & Then
     mockMvc.perform(patch("/api/channels/{channelId}", channelId)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(requestBody))
+            .content(requestBody)
+            .with(csrf()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id", is(channelId.toString())))
         .andExpect(jsonPath("$.name", is("수정된 채널")))
@@ -219,7 +227,8 @@ class ChannelApiIntegrationTest {
     // When & Then
     mockMvc.perform(patch("/api/channels/{channelId}", nonExistentChannelId)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(requestBody))
+            .content(requestBody)
+            .with(csrf()))
         .andExpect(status().isNotFound());
   }
 
@@ -237,7 +246,8 @@ class ChannelApiIntegrationTest {
     UUID channelId = createdChannel.id();
 
     // When & Then
-    mockMvc.perform(delete("/api/channels/{channelId}", channelId))
+    mockMvc.perform(delete("/api/channels/{channelId}", channelId)
+        .with(csrf()))
         .andExpect(status().isNoContent());
 
     // 삭제 확인 - 사용자로 채널 조회 시 삭제된 채널은 조회되지 않아야 함
@@ -263,7 +273,37 @@ class ChannelApiIntegrationTest {
     UUID nonExistentChannelId = UUID.randomUUID();
 
     // When & Then
-    mockMvc.perform(delete("/api/channels/{channelId}", nonExistentChannelId))
+    mockMvc.perform(delete("/api/channels/{channelId}", nonExistentChannelId)
+        .with(csrf()))
         .andExpect(status().isNotFound());
   }
-} 
+
+  @Test
+  @DisplayName("공개 채널 생성 실패 API 통합 테스트 - 권한 부족")
+  @WithMockUser(roles = "USER")
+  void createPublicChannel_Forbidden() throws Exception {
+    // Given
+    PublicChannelCreateRequest createRequest = new PublicChannelCreateRequest(
+        "권한 없는 채널",
+        "USER 권한으로는 생성할 수 없습니다."
+    );
+    String requestBody = objectMapper.writeValueAsString(createRequest);
+
+    // When & Then
+    mockMvc.perform(post("/api/channels/public")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(requestBody)
+            .with(csrf()))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @DisplayName("채널 목록 조회 실패 API 통합 테스트 - 미인증")
+  @WithAnonymousUser
+  void findAllChannels_Unauthorized() throws Exception {
+    // When & Then
+    mockMvc.perform(get("/api/channels")
+            .param("userId", UUID.randomUUID().toString()))
+        .andExpect(status().isUnauthorized());
+  }
+}

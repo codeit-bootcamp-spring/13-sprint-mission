@@ -22,6 +22,7 @@ import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.service.MessageService;
+import com.sprint.mission.discodeit.entity.Role;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +41,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(MessageController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class MessageControllerTest {
 
   @Autowired
@@ -84,7 +87,8 @@ class MessageControllerTest {
         "testuser",
         "test@example.com",
         null,
-        true
+        true,
+        Role.USER
     );
     
     BinaryContentDto attachmentDto = new BinaryContentDto(
@@ -163,7 +167,8 @@ class MessageControllerTest {
         "testuser",
         "test@example.com",
         null,
-        true
+        true,
+        Role.USER
     );
 
     MessageDto updatedMessage = new MessageDto(
@@ -251,7 +256,8 @@ class MessageControllerTest {
         "testuser",
         "test@example.com",
         null,
-        true
+        true,
+        Role.USER
     );
     
     List<MessageDto> messages = List.of(

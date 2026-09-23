@@ -29,6 +29,7 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
+import com.sprint.mission.discodeit.entity.Role;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -109,7 +110,7 @@ class BasicMessageServiceTest {
         Instant.now(),
         content,
         channelId,
-        new UserDto(authorId, "testUser", "test@example.com", null, true),
+        new UserDto(authorId, "testUser", "test@example.com", null, true, Role.USER),
         List.of(attachmentDto)
     );
   }
@@ -223,7 +224,7 @@ class BasicMessageServiceTest {
         message1CreatedAt,
         content + "1",
         channelId,
-        new UserDto(authorId, "testUser", "test@example.com", null, true),
+        new UserDto(authorId, "testUser", "test@example.com", null, true, Role.USER),
         List.of(attachmentDto)
     );
     
@@ -233,7 +234,7 @@ class BasicMessageServiceTest {
         message2CreatedAt,
         content + "2",
         channelId,
-        new UserDto(authorId, "testUser", "test@example.com", null, true),
+        new UserDto(authorId, "testUser", "test@example.com", null, true, Role.USER),
         List.of(attachmentDto)
     );
     
@@ -278,7 +279,7 @@ class BasicMessageServiceTest {
         message3CreatedAt,
         content + "3",
         channelId,
-        new UserDto(authorId, "testUser", "test@example.com", null, true),
+        new UserDto(authorId, "testUser", "test@example.com", null, true, Role.USER),
         List.of(attachmentDto)
     );
     List<MessageDto> secondPageDtos = List.of(messageDto3);
