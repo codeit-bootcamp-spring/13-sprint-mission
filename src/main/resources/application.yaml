@@ -8,13 +8,19 @@ spring:
       max-file-size: 10MB
       max-request-size: 20MB
   profiles:
-#    active: dev
     active: ${PROFILE:prod}
+
+  # .sql 파일을 이용하지 않고, hibernate 가 DDL 을 작성하도록 설정.
+  sql:
+    init:
+      mode: never
+
 
 # Server port.
 # set 80 fix in docker container
 server:
   port: 80
+
 
 # Custom setting
 discodeit:
@@ -36,8 +42,12 @@ discodeit:
 
 
 
-#springdoc:
+springdoc:
 #  packages-to-scan: com.sprint.mission.discodeit.controller.docs
+  api-docs:
+    path: /swagger-doc
+
+### Actuator 관련 설정. ###
 
 # Actuator config
 management:

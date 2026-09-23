@@ -2,17 +2,18 @@ package com.sprint.mission.discodeit.controller;
 
 
 import com.sprint.mission.discodeit.controller.docs.AuthControllerDoc;
-import com.sprint.mission.discodeit.dto.request.LoginRequest;
+import com.sprint.mission.discodeit.dto.request.user.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.AuthService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,13 +23,40 @@ public class AuthController implements AuthControllerDoc {
 
     private final AuthService authService;
 
-    @RequestMapping(value = "/login", method = RequestMethod.POST)
-    public ResponseEntity<UserDto> login(
-            @Valid @RequestBody LoginRequest loginRequest
-    ){
-        return ResponseEntity.ok(authService.login(loginRequest));
+    @GetMapping("csrf-token")
+    public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken){  // HandlerMethodArgumentResolver 를 통해 자동으로 주입
+        String tokenValue = csrfToken.getToken();
+
+        log.debug("토큰 요청됨 - {}",tokenValue);
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
+    /**
+     * 쿠키에 저장된 세션ID 를 통한 사용자 정보 조회 API.
+     * @param userDetails 유저 인증 정보 객체.
+     * @return 200 응답
+     */
+    @GetMapping("me")
+    public ResponseEntity<UserDto> me(
+            @AuthenticationPrincipal DiscodeitUserDetails userDetails   // 인증이 성공한다면, 자동으로 반환.
+    ){
+        log.debug("AuthControl - me : {}",userDetails);
 
+        UserDto dto = null;
 
+        if (userDetails != null) dto = userDetails.getUserDto();
+
+        return ResponseEntity.ok(dto);
+    }
+
+    @PutMapping("role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserDto> changeRole(
+            @RequestBody UserRoleUpdateRequest request
+    ){
+        return ResponseEntity.ok(
+                authService.roleUpdate(request.userId(), request.newRole())
+        );
+    }
 }

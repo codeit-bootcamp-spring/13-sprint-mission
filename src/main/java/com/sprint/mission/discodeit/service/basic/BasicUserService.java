@@ -7,23 +7,24 @@ import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.UserDuplicatedException;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.mapper.MapperMethod;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.UserService;
 
-import java.time.Instant;
 import java.util.*;
 
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 
@@ -33,12 +34,14 @@ import org.springframework.stereotype.Service;
 public class BasicUserService implements UserService {
 
     private final UserRepository userRepository;
-    private final UserStatusRepository userStatusRepository;
     private final BinaryContentRepository binaryContentRepository;
     private final BinaryContentStorage binaryContentStorage;
     private final MapStructMapper mapStructMapper;
     private final MapperMethod mapperMethod;
 
+    private final PasswordEncoder passwordEncoder;
+
+    private final SessionRegistry sessionRegistry;
 
     private BinaryContent profileIdFromOBCC(Optional<BinaryContentCreate> obcc){
         // duble running?
@@ -62,27 +65,26 @@ public class BasicUserService implements UserService {
 
     @Override
     @Transactional
-    public UserDto create(UserCreateRequest cui, Optional<BinaryContentCreate> obcc){
-        nameCheck(cui.username());
-        emailCheck(cui.email());
-
+    public UserDto create(UserCreateRequest userCreateRequest, Optional<BinaryContentCreate> obcc){
+        String username = nameCheck(userCreateRequest.username());
+        String email = emailCheck(userCreateRequest.email());
+        String password = passwordEncoder.encode(userCreateRequest.password());
         BinaryContent bc = profileIdFromOBCC(obcc);
 
         User user = new User(
-                cui.username(),
-                cui.email(),
-                cui.password(),
+                username,
+                email,
+                password,   // password save at encoding data.
                 bc,
-                null
+                Role.USER
         );
-        UserStatus ust = new UserStatus(user, Instant.now());
-        user.setStatus(ust);
+
+        log.debug("created User - username : {}, email : {}, password - {}", username, email, password);
 
         userRepository.save(user);
 
-        log.info("user created - id: {}, username: {}", user.getId(), cui.username());
-
-        return mapStructMapper.toDto(user,toBinaryDto(user),user.online());
+        // online 정보 설정.
+        return mapStructMapper.toDto(user,toBinaryDto(user),userOnline(user.getUsername()));
     }
 
     @Override
@@ -90,19 +92,18 @@ public class BasicUserService implements UserService {
     public List<UserDto> getUserList(){
         return userRepository.findAllWithProfile()
                 .stream()
-                .map(u -> mapStructMapper.toDto(u,toBinaryDto(u),u.online()))
+                .map(u -> mapStructMapper.toDto(u,toBinaryDto(u),userOnline(u.getUsername())))
                 .toList();
     }
 
 
-    // Todo - Profile create 2 times. why????
     @Override
     @Transactional
     public UserDto update(UUID id, UserUpdateRequest uui, Optional<BinaryContentCreate> obcc){
         User user = getUserOrException(id);
 
-        nameCheck(uui.newUsername());
-        emailCheck(uui.newEmail());
+        String newName = nameCheck(uui.newUsername());
+        String newEmail = emailCheck(uui.newEmail());
 
         if (uui.newUsername() != null) user.setUsername(uui.newUsername());
         if (uui.newEmail() != null) user.setEmail(uui.newEmail());
@@ -118,7 +119,7 @@ public class BasicUserService implements UserService {
         return mapStructMapper.toDto(
                 user
                 , toBinaryDto(user)
-                , user.online()
+                , userOnline(user.getUsername())
         );
     }
 
@@ -127,13 +128,11 @@ public class BasicUserService implements UserService {
     @Transactional
     public void delete(UUID id){
         User user =  getUserOrException(id);
-        Optional<UserStatus> us = userStatusRepository.findByUserId(id).stream().findFirst();
 
         userRepository.delete(user);
         if (user.getProfile() != null) {
             binaryContentStorage.delete(user.getProfile().getId());
         }
-        us.ifPresent(userStatusRepository::delete);
 
         log.info("user with id - {} deleted", id);
 
@@ -146,24 +145,39 @@ public class BasicUserService implements UserService {
 
     }
 
-    private void nameCheck(String username){
+    private String nameCheck(String username){
         Optional<User> sameNameChecker = userRepository.findByUsername(username).stream().findFirst();
         if(sameNameChecker.isPresent()){
             throw new UserDuplicatedException("User with name - {} already exists", username);
         }
+        return username;
     }
 
-    private void emailCheck(String email){
+    private String emailCheck(String email){
         Optional<User> sameEmailChecker = userRepository.findByEmail(email).stream().findFirst();
         if(sameEmailChecker.isPresent()){
             throw new UserDuplicatedException("User with email - {} already exists", email);
         }
+        return email;
     }
 
     private BinaryContentDto toBinaryDto(User user){
         if (user.getProfile() == null) return null;
         BinaryContent bc = user.getProfile();
-        return mapStructMapper.toDto(bc, mapperMethod.getByteFrom(bc));
+        return mapStructMapper.toDto(bc, mapperMethod.getByteFrom(bc.getId()));
+    }
+
+
+    private Boolean userOnline(String username){
+        for (Object principal : sessionRegistry.getAllPrincipals()) {
+            if (
+                    principal instanceof DiscodeitUserDetails details
+                            && details.getUsername().equals(username)
+            ){
+                return true;
+            }
+        }
+        return false;
     }
 
 }

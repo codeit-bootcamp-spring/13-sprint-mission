@@ -9,13 +9,13 @@ import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.UserStatusService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,7 +31,6 @@ import java.util.UUID;
 public class UserController implements UserControllerDoc {
 
     private final UserService userService;
-    private final UserStatusService userStatusService;
 
     @RequestMapping(value = "",method = RequestMethod.GET)
     public ResponseEntity<List<UserDto>> findAll(){
@@ -54,6 +53,7 @@ public class UserController implements UserControllerDoc {
     }
 
     @RequestMapping(value = "/{userId}",method = RequestMethod.DELETE)
+    @PreAuthorize("@AuthChecker.isSameUser(#userId, principal.username)")
     public ResponseEntity<Object> delete(
             @PathVariable UUID userId
     ){
@@ -67,6 +67,7 @@ public class UserController implements UserControllerDoc {
             method = RequestMethod.PATCH,
             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}
     )
+    @PreAuthorize("@AuthChecker.isSameUser(#userId, principal.username)")
     public ResponseEntity<UserDto> update(
             @PathVariable UUID userId,
             @Valid @RequestPart("userUpdateRequest") UserUpdateRequest uui,
@@ -74,16 +75,6 @@ public class UserController implements UserControllerDoc {
     ){
         Optional<BinaryContentCreate> bcc = Optional.ofNullable(tmb).flatMap(this::thumbnailResolver);
         UserDto res = this.userService.update(userId, uui, bcc);
-        return ResponseEntity.ok(res);
-    }
-
-
-    @RequestMapping(value = "/{userId}/userStatus", method = RequestMethod.PATCH)
-    public ResponseEntity<UserStatusDto> updateUserStatusByUserId(
-            @PathVariable UUID userId,
-            @RequestBody UserStatusUpdateRequest usur
-    ){
-        UserStatusDto res = userStatusService.updateByUserId(userId, usur);
         return ResponseEntity.ok(res);
     }
 

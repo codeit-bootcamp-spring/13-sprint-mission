@@ -103,22 +103,4 @@ public interface UserControllerDoc {
             MultipartFile tmb
     );
 
-
-    @Operation(summary = "유저 상태 수정", description = "특정 유저 상태 수정")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "유저 상태 업데이트 성공"),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "해당 유저 상태 없음",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = ProblemDetail.class)
-                    )
-            )
-    })
-    @RequestMapping(value = "/{userId}/userStatus", method = RequestMethod.PATCH)
-    ResponseEntity<UserStatusDto> updateUserStatusByUserId(
-            @PathVariable UUID userId,
-            @RequestBody UserStatusUpdateRequest usur
-    );
 }

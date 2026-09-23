@@ -4,13 +4,12 @@ import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
+import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.UserStatusService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -54,8 +53,7 @@ public class ControllerTest {
     MessageService messageService;
     @MockitoBean
     ChannelService channelService;
-    @MockitoBean
-    UserStatusService userStatusService;
+
 
     @Mock
     MapStructMapper mapStructMapper;
@@ -63,11 +61,11 @@ public class ControllerTest {
     @Nested
     @DisplayName("user controller")
     class UserControllerTests {
-        private User user = new User("김숙희","ksk@email.com","password",null,mock(UserStatus.class));
+        private User user = new User("김숙희","ksk@email.com","password",null, Role.USER);
 
 
         private UserDto getDto(User user){
-            return new UserDto(null, user.getUsername(), user.getEmail(),null,false);
+            return new UserDto(null, user.getUsername(), user.getEmail(),null,false,Role.USER);
         }
 
         @Test

@@ -125,7 +125,7 @@ public class ChannelServiceTest {
                     .willReturn(emptySlice);
             given(channelRepository.findById(id)).willReturn(Optional.of(channel));
 
-            channelService.update(id,request);
+            channelService.update(id,request,any());
 
             assertThat(channel.getDescription()).isEqualTo("modified");
         }
@@ -140,7 +140,7 @@ public class ChannelServiceTest {
             // when
             given(channelRepository.findById(id)).willReturn(Optional.of(channel));
             // then
-            assertThatThrownBy(() -> channelService.update(id,request)).isInstanceOf(ChannelTypeException.class);
+            assertThatThrownBy(() -> channelService.update(id,request,any())).isInstanceOf(ChannelTypeException.class);
 
         }
     }
@@ -154,7 +154,7 @@ public class ChannelServiceTest {
             UUID id = UUID.randomUUID();
             Channel channel = publicChannel();
             given(channelRepository.findById(id)).willReturn(Optional.of(channel));
-            channelService.deleteChannel(id);
+            channelService.deleteChannel(id,null);
             verify(channelRepository).deleteById(id);
         }
 
@@ -163,7 +163,7 @@ public class ChannelServiceTest {
         void fail() {
             UUID id = UUID.randomUUID();
             given(channelRepository.findById(id)).willReturn(Optional.empty());
-            assertThatThrownBy(() ->  channelService.deleteChannel(id)).isInstanceOf(ChannelNotFoundException.class);
+            assertThatThrownBy(() ->  channelService.deleteChannel(id,any())).isInstanceOf(ChannelNotFoundException.class);
         }
     }
 

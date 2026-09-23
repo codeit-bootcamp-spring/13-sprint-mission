@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.entity;
 
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.sprint.mission.discodeit.security.role.Role;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -28,36 +28,23 @@ public class User extends BaseUpdatableEntity {
     @OnDelete(action = OnDeleteAction.SET_NULL)
     private BinaryContent profile;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private UserStatus status;
+    @Enumerated(EnumType.STRING)
+    @Column
+    private Role role;
 
     public User (
             String username,
             String email,
             String password,
             BinaryContent profile,
-            UserStatus status
+            Role role
     ){
         this.username = username;
         this.email = email;
         this.password = password;
         this.profile = profile;
-        this.status = status;
+        this.role = role;
     }
 
-    public boolean online(){
-        return this.status.online();
-    }
-
-    @Override
-    public String toString() {
-        return "User{" +
-                "username='" + username + '\'' +
-                ", email='" + email + '\'' +
-                ", password='" + password + '\'' +
-                ", profile=" + profile +
-                ", status=" + status +
-                '}';
-    }
+    public void updateRole(Role role){ this.role = role; }
 }

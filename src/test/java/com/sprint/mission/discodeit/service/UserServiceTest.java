@@ -3,13 +3,12 @@ package com.sprint.mission.discodeit.service;
 import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.UserDuplicatedException;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.mapper.MapperMethod;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.basic.BasicUserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -36,12 +35,8 @@ public class UserServiceTest {
     UserRepository userRepository;
     @Mock
     UserCreateRequest userCreateRequest;
-    @Mock
-    UserStatus userStatus;
     @InjectMocks
     BasicUserService userService;
-    @Mock
-    UserStatusRepository userStatusRepository;
 
     @Nested
     class Create{
@@ -93,7 +88,7 @@ public class UserServiceTest {
     class Update{
 
         User setUp() {
-            return new User("김숙희", "ksk@email.com","password",null,userStatus);
+            return new User("김숙희", "ksk@email.com","password",null, Role.USER);
         }
 
         @Test
@@ -142,7 +137,7 @@ public class UserServiceTest {
         void delete() {
             // given
             UUID id = UUID.randomUUID();
-            User user = new User("김숙희", "ksk@email.com","password",null,userStatus);
+            User user = new User("김숙희", "ksk@email.com","password",null,Role.USER);
             given(userRepository.findById(id)).willReturn(Optional.of(user));
 
             // when
@@ -158,8 +153,7 @@ public class UserServiceTest {
         void fail() {
             // given
             UUID id = UUID.randomUUID();
-            User user = new User("김숙희", "ksk@email.com","password",null,userStatus);
-            UserStatus status = new UserStatus(user, Instant.now());
+            User user = new User("김숙희", "ksk@email.com","password",null,Role.USER);
 
             given(userRepository.findById(id)).willReturn(Optional.empty());
 //            given(userStatusRepository.delete(status)).willReturn();
