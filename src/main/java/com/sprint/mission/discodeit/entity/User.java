@@ -1,9 +1,10 @@
 package com.sprint.mission.discodeit.entity;
 
 import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
-import com.sprint.mission.discodeit.entity.UserData;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
@@ -43,12 +44,21 @@ public class User extends BaseUpdatableEntity {
     )
     private String password;
 
+    @Enumerated(EnumType.STRING)
+    @Column(
+            name = "role",
+            nullable = false,
+            length = 20
+    )
+    private Role role;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_id")
     private BinaryContent profile;
 
     public User(UserData data) {
         applyUserData(data);
+        this.role = Role.USER;
         this.profile = null;
     }
 
@@ -68,6 +78,17 @@ public class User extends BaseUpdatableEntity {
 
     public void updateProfile(BinaryContent profile) {
         this.profile = profile;
+        markUpdated();
+    }
+
+    public void updateRole(Role role) {
+        if (role == null) {
+            throw new IllegalArgumentException(
+                    "사용자 권한은 필수입니다."
+            );
+        }
+
+        this.role = role;
         markUpdated();
     }
 

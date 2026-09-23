@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.ChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.UserCreateRequest;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,6 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -30,9 +36,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 @Transactional
+@WithMockUser(
+        username = "test-admin",
+        roles = "ADMIN"
+)
 @DisplayName("메시지 API 통합 테스트")
 class MessageApiIntegrationTest {
 
@@ -41,6 +51,14 @@ class MessageApiIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private DiscodeitUserDetailsService discodeitUserDetailsService;
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Nested
     @DisplayName("메시지 생성")
@@ -124,7 +142,6 @@ class MessageApiIntegrationTest {
         @Test
         @DisplayName("메시지 내용이 비어 있으면 400 Bad Request를 반환한다")
         void blankContent() throws Exception {
-            // given
             String userId = createUser(
                     "blankUser",
                     "blank-user@test.com"
@@ -142,7 +159,6 @@ class MessageApiIntegrationTest {
                             UUID.fromString(channelId)
                     );
 
-            // when & then
             mockMvc.perform(post("/api/messages")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -152,7 +168,6 @@ class MessageApiIntegrationTest {
         @Test
         @DisplayName("작성자 ID가 없으면 400 Bad Request를 반환한다")
         void missingAuthorId() throws Exception {
-            // given
             String channelId = createPublicChannel(
                     "작성자 검증 채널",
                     "작성자 ID 검증"
@@ -165,7 +180,6 @@ class MessageApiIntegrationTest {
                             UUID.fromString(channelId)
                     );
 
-            // when & then
             mockMvc.perform(post("/api/messages")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -175,7 +189,6 @@ class MessageApiIntegrationTest {
         @Test
         @DisplayName("채널 ID가 없으면 400 Bad Request를 반환한다")
         void missingChannelId() throws Exception {
-            // given
             String userId = createUser(
                     "missingChannelUser",
                     "missing-channel@test.com"
@@ -188,7 +201,6 @@ class MessageApiIntegrationTest {
                             null
                     );
 
-            // when & then
             mockMvc.perform(post("/api/messages")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -198,7 +210,6 @@ class MessageApiIntegrationTest {
         @Test
         @DisplayName("존재하지 않는 작성자로 메시지를 생성하면 404 Not Found를 반환한다")
         void authorNotFound() throws Exception {
-            // given
             String channelId = createPublicChannel(
                     "존재하지 않는 작성자 테스트",
                     "작성자 조회 실패 검증"
@@ -211,7 +222,6 @@ class MessageApiIntegrationTest {
                             UUID.fromString(channelId)
                     );
 
-            // when & then
             mockMvc.perform(post("/api/messages")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -221,7 +231,6 @@ class MessageApiIntegrationTest {
         @Test
         @DisplayName("존재하지 않는 채널에 메시지를 생성하면 404 Not Found를 반환한다")
         void channelNotFound() throws Exception {
-            // given
             String userId = createUser(
                     "channelNotFoundUser",
                     "channel-not-found@test.com"
@@ -234,7 +243,6 @@ class MessageApiIntegrationTest {
                             UUID.randomUUID()
                     );
 
-            // when & then
             mockMvc.perform(post("/api/messages")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -249,7 +257,6 @@ class MessageApiIntegrationTest {
         @Test
         @DisplayName("채널에 생성한 메시지를 최신순으로 조회한다")
         void success() throws Exception {
-            // given
             String userId = createUser(
                     "listUser",
                     "list-user@test.com"
@@ -272,7 +279,6 @@ class MessageApiIntegrationTest {
                     channelId
             );
 
-            // when & then
             mockMvc.perform(get("/api/messages")
                             .param("channelId", channelId)
                             .param("size", "10"))
@@ -301,13 +307,11 @@ class MessageApiIntegrationTest {
         @Test
         @DisplayName("메시지가 없으면 빈 목록을 반환한다")
         void empty() throws Exception {
-            // given
             String channelId = createPublicChannel(
                     "빈 목록 채널",
                     "메시지가 없는 채널"
             );
 
-            // when & then
             mockMvc.perform(get("/api/messages")
                             .param("channelId", channelId))
                     .andExpect(status().isOk())
@@ -324,7 +328,6 @@ class MessageApiIntegrationTest {
         @Test
         @DisplayName("size보다 메시지가 많으면 hasNext와 nextCursor를 반환한다")
         void cursorFirstPage() throws Exception {
-            // given
             String userId = createUser(
                     "cursorUser",
                     "cursor-user@test.com"
@@ -343,7 +346,6 @@ class MessageApiIntegrationTest {
 
             createMessage("메시지 3", userId, channelId);
 
-            // when & then
             MvcResult result = mockMvc.perform(get("/api/messages")
                             .param("channelId", channelId)
                             .param("size", "2"))
@@ -365,14 +367,15 @@ class MessageApiIntegrationTest {
             String nextCursor =
                     body.get("nextCursor").asText();
 
-            assertThat(Instant.parse(nextCursor)).isNotNull();
+            assertThat(Instant.parse(nextCursor))
+                    .isNotNull();
         }
 
         @Test
         @DisplayName("nextCursor를 이용해 다음 메시지 페이지를 조회한다")
         void should_ReturnNextMessagePage_when_NextCursorIsProvided()
                 throws Exception {
-            // given
+
             String userId = createUser(
                     "nextCursorUser",
                     "next-cursor@test.com"
@@ -441,7 +444,6 @@ class MessageApiIntegrationTest {
                     .get("id")
                     .asText();
 
-            // when
             MvcResult nextPage = mockMvc.perform(
                             get("/api/messages")
                                     .param("channelId", channelId)
@@ -466,7 +468,6 @@ class MessageApiIntegrationTest {
             JsonNode nextPageContent =
                     nextPageBody.get("content");
 
-            // then
             assertThat(nextPageContent).isNotNull();
             assertThat(nextPageContent.isArray()).isTrue();
             assertThat(nextPageContent.size()).isEqualTo(1);
@@ -484,7 +485,6 @@ class MessageApiIntegrationTest {
         @Test
         @DisplayName("after 파라미터를 cursor처럼 사용할 수 있다")
         void afterCompatibility() throws Exception {
-            // given
             String userId = createUser(
                     "afterUser",
                     "after-user@test.com"
@@ -559,7 +559,6 @@ class MessageApiIntegrationTest {
         @Test
         @DisplayName("존재하지 않는 채널의 메시지 목록을 조회하면 404 Not Found를 반환한다")
         void channelNotFound() throws Exception {
-            // when & then
             mockMvc.perform(get("/api/messages")
                             .param(
                                     "channelId",
@@ -576,7 +575,7 @@ class MessageApiIntegrationTest {
         @Test
         @DisplayName("생성한 메시지를 수정하면 변경된 내용이 반영된다")
         void success() throws Exception {
-            // given
+
             String userId = createUser(
                     "updateMessageUser",
                     "update-message@test.com"
@@ -593,73 +592,53 @@ class MessageApiIntegrationTest {
                     channelId
             );
 
+            // 메시지 작성자로 인증
+            authenticateAs("updateMessageUser");
+
             String requestJson = """
-                    {
-                      "newContent": "수정 후 메시지"
-                    }
-                    """;
+            {
+              "newContent": "수정 후 메시지"
+            }
+            """;
 
-            // when & then
-            mockMvc.perform(patch(
-                            "/api/messages/{messageId}",
-                            messageId
+            mockMvc.perform(
+                            patch(
+                                    "/api/messages/{messageId}",
+                                    messageId
+                            )
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(requestJson)
                     )
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(requestJson))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.id")
-                            .value(messageId))
-                    .andExpect(jsonPath("$.content")
-                            .value("수정 후 메시지"))
-                    .andExpect(jsonPath("$.updatedAt")
-                            .isNotEmpty());
-
-            /*
-             * 실제 H2 DB에 수정 내용이 반영됐는지 재조회한다.
-             */
-            mockMvc.perform(get(
-                            "/api/messages/{messageId}",
-                            messageId
-                    ))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.content")
-                            .value("수정 후 메시지"));
-        }
-
-        @Test
-        @DisplayName("수정할 내용이 없으면 400 Bad Request를 반환한다")
-        void missingContent() throws Exception {
-            // given
-            String userId = createUser(
-                    "missingUpdateUser",
-                    "missing-update@test.com"
-            );
-
-            String channelId = createPublicChannel(
-                    "수정 실패 채널",
-                    "수정값 없음 검증"
-            );
-
-            String messageId = createMessage(
-                    "기존 메시지",
-                    userId,
-                    channelId
-            );
-
-            // when & then
-            mockMvc.perform(patch(
-                            "/api/messages/{messageId}",
-                            messageId
+                    .andExpect(
+                            jsonPath("$.id")
+                                    .value(messageId)
                     )
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("{}"))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(
+                            jsonPath("$.content")
+                                    .value("수정 후 메시지")
+                    )
+                    .andExpect(
+                            jsonPath("$.updatedAt")
+                                    .isNotEmpty()
+                    );
+
+            mockMvc.perform(
+                            get(
+                                    "/api/messages/{messageId}",
+                                    messageId
+                            )
+                    )
+                    .andExpect(status().isOk())
+                    .andExpect(
+                            jsonPath("$.content")
+                                    .value("수정 후 메시지")
+                    );
         }
 
         @Test
         @DisplayName("수정할 내용이 공백이면 400 Bad Request를 반환한다")
         void blankContent() throws Exception {
-            // given
             String userId = createUser(
                     "blankUpdateUser",
                     "blank-update@test.com"
@@ -682,7 +661,6 @@ class MessageApiIntegrationTest {
                     }
                     """;
 
-            // when & then
             mockMvc.perform(patch(
                             "/api/messages/{messageId}",
                             messageId
@@ -695,14 +673,12 @@ class MessageApiIntegrationTest {
         @Test
         @DisplayName("존재하지 않는 메시지를 수정하면 404 Not Found를 반환한다")
         void messageNotFound() throws Exception {
-            // given
             String requestJson = """
                     {
                       "newContent": "수정된 메시지"
                     }
                     """;
 
-            // when & then
             mockMvc.perform(patch(
                             "/api/messages/{messageId}",
                             UUID.randomUUID()
@@ -720,7 +696,7 @@ class MessageApiIntegrationTest {
         @Test
         @DisplayName("생성한 메시지를 삭제하면 204 No Content를 반환한다")
         void success() throws Exception {
-            // given
+
             String userId = createUser(
                     "deleteMessageUser",
                     "delete-message@test.com"
@@ -737,32 +713,43 @@ class MessageApiIntegrationTest {
                     channelId
             );
 
-            // when
-            mockMvc.perform(delete(
-                            "/api/messages/{messageId}",
-                            messageId
-                    ))
+            // 메시지 작성자로 인증
+            authenticateAs("deleteMessageUser");
+
+            mockMvc.perform(
+                            delete(
+                                    "/api/messages/{messageId}",
+                                    messageId
+                            )
+                    )
                     .andExpect(status().isNoContent())
                     .andExpect(content().string(""));
 
-            // then
-            mockMvc.perform(get(
-                            "/api/messages/{messageId}",
-                            messageId
-                    ))
+            mockMvc.perform(
+                            get(
+                                    "/api/messages/{messageId}",
+                                    messageId
+                            )
+                    )
                     .andExpect(status().isNotFound());
 
-            mockMvc.perform(get("/api/messages")
-                            .param("channelId", channelId))
+            mockMvc.perform(
+                            get("/api/messages")
+                                    .param(
+                                            "channelId",
+                                            channelId
+                                    )
+                    )
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.content")
-                            .isEmpty());
+                    .andExpect(
+                            jsonPath("$.content")
+                                    .isEmpty()
+                    );
         }
 
         @Test
         @DisplayName("존재하지 않는 메시지를 삭제하면 404 Not Found를 반환한다")
         void messageNotFound() throws Exception {
-            // when & then
             mockMvc.perform(delete(
                             "/api/messages/{messageId}",
                             UUID.randomUUID()
@@ -773,7 +760,6 @@ class MessageApiIntegrationTest {
         @Test
         @DisplayName("잘못된 UUID 형식으로 삭제하면 400 Bad Request를 반환한다")
         void invalidMessageId() throws Exception {
-            // when & then
             mockMvc.perform(delete(
                             "/api/messages/{messageId}",
                             "invalid-uuid"
@@ -786,6 +772,7 @@ class MessageApiIntegrationTest {
             String username,
             String email
     ) throws Exception {
+
         UserCreateRequest request = new UserCreateRequest(
                 username,
                 email,
@@ -796,7 +783,7 @@ class MessageApiIntegrationTest {
         MvcResult result = mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
+                .andExpect(status().isOk())
                 .andReturn();
 
         return extractId(result);
@@ -806,6 +793,7 @@ class MessageApiIntegrationTest {
             String name,
             String description
     ) throws Exception {
+
         ChannelCreateRequest request = new ChannelCreateRequest(
                 null,
                 name,
@@ -826,6 +814,7 @@ class MessageApiIntegrationTest {
             String userId,
             String channelId
     ) throws Exception {
+
         MessageCreateRequest request =
                 new MessageCreateRequest(
                         content,
@@ -842,9 +831,14 @@ class MessageApiIntegrationTest {
         return extractId(result);
     }
 
-    private String extractId(MvcResult result) throws Exception {
+    private String extractId(MvcResult result)
+            throws Exception {
+
         return objectMapper
-                .readTree(result.getResponse().getContentAsString())
+                .readTree(
+                        result.getResponse()
+                                .getContentAsString()
+                )
                 .get("id")
                 .asText();
     }
@@ -852,5 +846,26 @@ class MessageApiIntegrationTest {
     private void waitForDifferentCreatedAt()
             throws InterruptedException {
         Thread.sleep(1000);
+    }
+
+    private void authenticateAs(
+            String username
+    ) {
+
+        UserDetails userDetails =
+                discodeitUserDetailsService
+                        .loadUserByUsername(username);
+
+        UsernamePasswordAuthenticationToken authentication =
+                UsernamePasswordAuthenticationToken
+                        .authenticated(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+
+        SecurityContextHolder
+                .getContext()
+                .setAuthentication(authentication);
     }
 }

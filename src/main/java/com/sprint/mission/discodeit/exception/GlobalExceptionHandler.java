@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -251,6 +252,31 @@ public class GlobalExceptionHandler {
         return buildResponse(
                 ErrorCode.INVALID_REQUEST,
                 exception.getMessage(),
+                Map.of(),
+                exception
+        );
+    }
+
+    /**
+     * 인증된 사용자가 필요한 권한을 가지고 있지 않은 경우를 처리한다.
+     *
+     * 예:
+     * USER가 CHANNEL_MANAGER 전용 기능에 접근한 경우
+     * CHANNEL_MANAGER가 ADMIN 전용 기능에 접근한 경우
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+            AccessDeniedException exception
+    ) {
+
+        log.warn(
+                "접근 권한이 없습니다. message={}",
+                exception.getMessage()
+        );
+
+        return buildResponse(
+                ErrorCode.ACCESS_DENIED,
+                "접근 권한이 없습니다.",
                 Map.of(),
                 exception
         );

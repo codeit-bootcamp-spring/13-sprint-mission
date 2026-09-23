@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.repository;
 
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,6 +14,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     // 같은 email을 가진 사용자가 이미 존재하는지 확인
     boolean existsByEmail(String email);
+
+    // 해당 권한을 가진 사용자가 존재하는지 확인
+    boolean existsByRole(Role role);
 
     // username으로 사용자 조회
     User findByUsername(String username);

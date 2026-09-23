@@ -43,12 +43,18 @@ dependencies {
 	// Swagger / OpenAPI
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17'
 
+	// Spring Security
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
 	// Test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+	// Spring Security Test
+	testImplementation 'org.springframework.security:spring-security-test'
 
 	testCompileOnly 'org.projectlombok:lombok'
 	testAnnotationProcessor 'org.projectlombok:lombok'

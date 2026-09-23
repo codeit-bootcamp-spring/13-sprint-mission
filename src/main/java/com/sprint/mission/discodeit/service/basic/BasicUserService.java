@@ -1,10 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.BinaryContentCreateRequest;
-import com.sprint.mission.discodeit.dto.BinaryContentResponse;
-import com.sprint.mission.discodeit.dto.UserCreateRequest;
-import com.sprint.mission.discodeit.dto.UserResponse;
-import com.sprint.mission.discodeit.dto.UserUpdateRequest;
+import com.sprint.mission.discodeit.dto.*;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.ErrorCode;
 import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
@@ -14,11 +10,14 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,9 +36,10 @@ public class BasicUserService implements UserService {
     private final UserRepository userRepository;
     private final BinaryContentRepository binaryContentRepository;
     private final BinaryContentService binaryContentService;
-    private final UserStatusRepository userStatusRepository;
     private final MessageRepository messageRepository;
     private final ReadStatusRepository readStatusRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final SessionRegistry sessionRegistry;
 
     @Override
     public UserResponse create(UserCreateRequest request) {
@@ -84,10 +84,13 @@ public class BasicUserService implements UserService {
             BinaryContent profile =
                     saveProfileImage(request.getProfileImage());
 
+            String encodedPassword =
+                    passwordEncoder.encode(request.getPassword());
+
             UserData userData = new UserData(
                     request.getUsername(),
                     request.getEmail(),
-                    request.getPassword()
+                    encodedPassword
             );
 
             User user = new User(userData);
@@ -102,9 +105,6 @@ public class BasicUserService implements UserService {
             }
 
             User savedUser = userRepository.save(user);
-
-            UserStatus userStatus = new UserStatus(savedUser.getId());
-            userStatusRepository.save(userStatus);
 
             log.info(
                     "사용자 생성이 완료되었습니다. userId={}, username={}",
@@ -121,6 +121,7 @@ public class BasicUserService implements UserService {
                     request.getEmail(),
                     exception
             );
+
             throw exception;
         }
     }
@@ -147,6 +148,14 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @PreAuthorize("""
+        #request == null
+        or #request.getId() == null
+        or @userAuthorization.isOwner(
+            #request.getId(),
+            authentication
+        )
+        """)
     public UserResponse update(UserUpdateRequest request) {
         log.info(
                 "사용자 수정을 시작합니다. userId={}",
@@ -155,6 +164,7 @@ public class BasicUserService implements UserService {
 
         if (request == null) {
             log.warn("사용자 수정 요청이 비어 있습니다.");
+
             throw new IllegalArgumentException(
                     "사용자 수정 요청은 비어 있을 수 없습니다."
             );
@@ -162,6 +172,7 @@ public class BasicUserService implements UserService {
 
         if (request.getId() == null) {
             log.warn("수정할 사용자 id가 null입니다.");
+
             throw new IllegalArgumentException(
                     "수정할 사용자 id는 null일 수 없습니다."
             );
@@ -189,7 +200,7 @@ public class BasicUserService implements UserService {
 
         String updatePassword = isBlank(request.getPassword())
                 ? user.getPassword()
-                : request.getPassword();
+                : passwordEncoder.encode(request.getPassword());
 
         if (!user.getUsername().equals(updateUsername)
                 && userRepository.existsByUsername(updateUsername)) {
@@ -244,7 +255,9 @@ public class BasicUserService implements UserService {
                         "사용자 프로필 이미지를 교체합니다. userId={}, oldProfileId={}, newProfileId={}",
                         user.getId(),
                         oldProfileId,
-                        newProfile == null ? null : newProfile.getId()
+                        newProfile == null
+                                ? null
+                                : newProfile.getId()
                 );
 
                 if (oldProfileId != null) {
@@ -276,7 +289,8 @@ public class BasicUserService implements UserService {
                 );
             }
 
-            User savedUser = userRepository.save(user);
+            User savedUser =
+                    userRepository.save(user);
 
             log.info(
                     "사용자 수정이 완료되었습니다. userId={}",
@@ -291,16 +305,75 @@ public class BasicUserService implements UserService {
                     request.getId(),
                     exception
             );
+
             throw exception;
         }
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserResponse updateRole(UserRoleUpdateRequest request) {
+        log.info(
+                "사용자 권한 수정을 시작합니다. userId={}, newRole={}",
+                request == null ? null : request.userId(),
+                request == null ? null : request.newRole()
+        );
+
+        if (request == null) {
+            throw new IllegalArgumentException(
+                    "사용자 권한 수정 요청은 비어 있을 수 없습니다."
+            );
+        }
+
+        if (request.userId() == null) {
+            throw new IllegalArgumentException(
+                    "수정할 사용자 id는 null일 수 없습니다."
+            );
+        }
+
+        if (request.newRole() == null) {
+            throw new IllegalArgumentException(
+                    "변경할 사용자 권한은 null일 수 없습니다."
+            );
+        }
+
+        User user =
+                findUserById(request.userId());
+
+        user.updateRole(request.newRole());
+
+        User savedUser =
+                userRepository.save(user);
+
+        expireUserSessions(savedUser.getId());
+
+        log.info(
+                "사용자 권한 수정이 완료되었습니다. userId={}, newRole={}",
+                savedUser.getId(),
+                savedUser.getRole()
+        );
+
+        return toResponse(savedUser);
+    }
+
+    @Override
+    @PreAuthorize("""
+        #id == null
+        or @userAuthorization.isOwner(
+            #id,
+            authentication
+        )
+        """)
     public void delete(UUID id) {
-        log.info("사용자 삭제를 시작합니다. userId={}", id);
+        log.info(
+                "사용자 삭제를 시작합니다. userId={}",
+                id
+        );
 
         User user = findUserById(id);
-        UUID profileId = user.getProfileId();
+
+        UUID profileId =
+                user.getProfileId();
 
         try {
             log.debug(
@@ -313,7 +386,6 @@ public class BasicUserService implements UserService {
 
             messageRepository.deleteByAuthor_Id(id);
             readStatusRepository.deleteByUser_Id(id);
-            userStatusRepository.deleteByUserId(id);
             userRepository.deleteById(id);
 
             if (profileId != null) {
@@ -331,6 +403,7 @@ public class BasicUserService implements UserService {
                     id,
                     exception
             );
+
             throw exception;
         }
     }
@@ -357,9 +430,14 @@ public class BasicUserService implements UserService {
                 });
     }
 
-    private void validateCreateRequest(UserCreateRequest request) {
+    private void validateCreateRequest(
+            UserCreateRequest request
+    ) {
+
         if (request == null) {
-            log.warn("사용자 생성 요청이 비어 있습니다.");
+            log.warn(
+                    "사용자 생성 요청이 비어 있습니다."
+            );
 
             throw new IllegalArgumentException(
                     "사용자 생성 요청은 비어 있을 수 없습니다."
@@ -397,14 +475,19 @@ public class BasicUserService implements UserService {
         }
     }
 
-    private void deleteMessageAttachmentsByAuthorId(UUID authorId) {
+    private void deleteMessageAttachmentsByAuthorId(
+            UUID authorId
+    ) {
+
         log.debug(
                 "사용자가 작성한 메시지 첨부파일 삭제를 시작합니다. authorId={}",
                 authorId
         );
 
         List<Message> messages =
-                messageRepository.findAllByAuthor_Id(authorId);
+                messageRepository.findAllByAuthor_Id(
+                        authorId
+                );
 
         log.debug(
                 "사용자가 작성한 메시지를 조회했습니다. authorId={}, messageCount={}",
@@ -412,7 +495,8 @@ public class BasicUserService implements UserService {
                 messages.size()
         );
 
-        Set<UUID> attachmentIds = new HashSet<>();
+        Set<UUID> attachmentIds =
+                new HashSet<>();
 
         for (Message message : messages) {
             List<UUID> messageAttachmentIds =
@@ -420,10 +504,13 @@ public class BasicUserService implements UserService {
 
             if (messageAttachmentIds == null
                     || messageAttachmentIds.isEmpty()) {
+
                 continue;
             }
 
-            attachmentIds.addAll(messageAttachmentIds);
+            attachmentIds.addAll(
+                    messageAttachmentIds
+            );
         }
 
         log.debug(
@@ -443,7 +530,9 @@ public class BasicUserService implements UserService {
                     attachmentId
             );
 
-            binaryContentService.delete(attachmentId);
+            binaryContentService.delete(
+                    attachmentId
+            );
         }
 
         log.info(
@@ -456,8 +545,12 @@ public class BasicUserService implements UserService {
     private BinaryContent saveProfileImage(
             BinaryContentCreateRequest profileImage
     ) {
+
         if (profileImage == null) {
-            log.debug("저장할 프로필 이미지가 없습니다.");
+            log.debug(
+                    "저장할 프로필 이미지가 없습니다."
+            );
+
             return null;
         }
 
@@ -468,7 +561,9 @@ public class BasicUserService implements UserService {
         );
 
         BinaryContentResponse savedProfile =
-                binaryContentService.create(profileImage);
+                binaryContentService.create(
+                        profileImage
+                );
 
         BinaryContent profile =
                 binaryContentRepository
@@ -494,11 +589,17 @@ public class BasicUserService implements UserService {
         return profile;
     }
 
-    private UserResponse toResponse(User user) {
-        BinaryContent profile = user.getProfile();
+    private UserResponse toResponse(
+            User user
+    ) {
+
+        BinaryContent profile =
+                user.getProfile();
 
         BinaryContentResponse profileResponse =
-                toBinaryContentResponse(profile);
+                toBinaryContentResponse(
+                        profile
+                );
 
         return new UserResponse(
                 user.getId(),
@@ -506,6 +607,7 @@ public class BasicUserService implements UserService {
                 user.getUpdatedAt(),
                 user.getUsername(),
                 user.getEmail(),
+                user.getRole(),
                 user.getProfileId(),
                 profileResponse,
                 getOnlineStatus(user.getId())
@@ -515,6 +617,7 @@ public class BasicUserService implements UserService {
     private BinaryContentResponse toBinaryContentResponse(
             BinaryContent binaryContent
     ) {
+
         if (binaryContent == null) {
             return null;
         }
@@ -529,37 +632,88 @@ public class BasicUserService implements UserService {
         );
     }
 
-    private boolean getOnlineStatus(UUID userId) {
-        try {
-            UserStatus userStatus =
-                    userStatusRepository.findByUserId(userId);
+    private boolean getOnlineStatus(
+            UUID userId
+    ) {
 
-            if (userStatus == null) {
-                log.warn(
-                        "UserStatus가 존재하지 않아 offline 상태로 응답합니다. userId={}",
-                        userId
+        return sessionRegistry.getAllPrincipals()
+                .stream()
+                .filter(
+                        principal ->
+                                principal
+                                        instanceof DiscodeitUserDetails
+                )
+                .map(
+                        principal ->
+                                (DiscodeitUserDetails) principal
+                )
+                .filter(
+                        userDetails ->
+                                userId.equals(
+                                        userDetails
+                                                .getUserDto()
+                                                .getId()
+                                )
+                )
+                .anyMatch(
+                        userDetails ->
+                                !sessionRegistry
+                                        .getAllSessions(
+                                                userDetails,
+                                                false
+                                        )
+                                        .isEmpty()
                 );
-                return false;
-            }
-
-            return userStatus.isOnline();
-
-        } catch (RuntimeException exception) {
-            log.error(
-                    "UserStatus 조회 중 오류가 발생했습니다. userId={}",
-                    userId,
-                    exception
-            );
-
-            throw new IllegalStateException(
-                    "UserStatus 조회 중 오류가 발생했습니다. userId="
-                            + userId,
-                    exception
-            );
-        }
     }
 
-    private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
+    private void expireUserSessions(
+            UUID userId
+    ) {
+
+        sessionRegistry.getAllPrincipals()
+                .stream()
+                .filter(
+                        principal ->
+                                principal
+                                        instanceof DiscodeitUserDetails
+                )
+                .map(
+                        principal ->
+                                (DiscodeitUserDetails) principal
+                )
+                .filter(
+                        userDetails ->
+                                userId.equals(
+                                        userDetails
+                                                .getUserDto()
+                                                .getId()
+                                )
+                )
+                .forEach(
+                        userDetails ->
+                                sessionRegistry
+                                        .getAllSessions(
+                                                userDetails,
+                                                false
+                                        )
+                                        .forEach(
+                                                sessionInformation ->
+                                                        sessionInformation
+                                                                .expireNow()
+                                        )
+                );
+
+        log.info(
+                "사용자의 기존 로그인 세션을 만료했습니다. userId={}",
+                userId
+        );
+    }
+
+    private boolean isBlank(
+            String value
+    ) {
+
+        return value == null
+                || value.trim().isEmpty();
     }
 }

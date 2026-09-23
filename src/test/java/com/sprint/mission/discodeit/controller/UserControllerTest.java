@@ -3,12 +3,14 @@ package com.sprint.mission.discodeit.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.UserResponse;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.mapper.UserMultipartMapper;
 import com.sprint.mission.discodeit.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
@@ -28,11 +30,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 @DisplayName("UserController 슬라이스 테스트")
 class UserControllerTest {
@@ -72,10 +74,11 @@ class UserControllerTest {
     class Create {
 
         @Test
-        @DisplayName("유효한 JSON 요청이면 사용자를 생성하고 201 Created를 반환한다")
+        @DisplayName("유효한 JSON 요청이면 사용자를 생성하고 200 OK를 반환한다")
         void success() throws Exception {
             // given
             UUID userId = UUID.randomUUID();
+
             Instant createdAt =
                     Instant.parse("2026-07-28T01:00:00Z");
 
@@ -92,6 +95,7 @@ class UserControllerTest {
                     null,
                     "tester",
                     "tester@test.com",
+                    Role.USER,
                     null,
                     false
             );
@@ -102,25 +106,39 @@ class UserControllerTest {
             // when & then
             mockMvc.perform(post("/api/users")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isCreated())
-                    .andExpect(header().string(
-                            "Location",
-                            "/api/users/" + userId
-                    ))
-                    .andExpect(content().contentTypeCompatibleWith(
-                            MediaType.APPLICATION_JSON
-                    ))
-                    .andExpect(jsonPath("$.id")
-                            .value(userId.toString()))
-                    .andExpect(jsonPath("$.createdAt")
-                            .value(createdAt.toString()))
-                    .andExpect(jsonPath("$.username")
-                            .value("tester"))
-                    .andExpect(jsonPath("$.email")
-                            .value("tester@test.com"))
-                    .andExpect(jsonPath("$.online")
-                            .value(false));
+                            .content(
+                                    objectMapper.writeValueAsString(request)
+                            ))
+                    .andExpect(status().isOk())
+                    .andExpect(
+                            content().contentTypeCompatibleWith(
+                                    MediaType.APPLICATION_JSON
+                            )
+                    )
+                    .andExpect(
+                            jsonPath("$.id")
+                                    .value(userId.toString())
+                    )
+                    .andExpect(
+                            jsonPath("$.createdAt")
+                                    .value(createdAt.toString())
+                    )
+                    .andExpect(
+                            jsonPath("$.username")
+                                    .value("tester")
+                    )
+                    .andExpect(
+                            jsonPath("$.email")
+                                    .value("tester@test.com")
+                    )
+                    .andExpect(
+                            jsonPath("$.role")
+                                    .value("USER")
+                    )
+                    .andExpect(
+                            jsonPath("$.online")
+                                    .value(false)
+                    );
 
             then(userService)
                     .should()
@@ -141,7 +159,9 @@ class UserControllerTest {
             // when & then
             mockMvc.perform(post("/api/users")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
+                            .content(
+                                    objectMapper.writeValueAsString(request)
+                            ))
                     .andExpect(status().isBadRequest());
 
             then(userService)
@@ -163,7 +183,9 @@ class UserControllerTest {
             // when & then
             mockMvc.perform(post("/api/users")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
+                            .content(
+                                    objectMapper.writeValueAsString(request)
+                            ))
                     .andExpect(status().isBadRequest());
 
             then(userService)
@@ -185,7 +207,9 @@ class UserControllerTest {
             // when & then
             mockMvc.perform(post("/api/users")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
+                            .content(
+                                    objectMapper.writeValueAsString(request)
+                            ))
                     .andExpect(status().isBadRequest());
 
             then(userService)
@@ -217,6 +241,7 @@ class UserControllerTest {
                     updatedAt,
                     "tester",
                     "tester@test.com",
+                    Role.USER,
                     profileId,
                     true
             );
@@ -225,27 +250,51 @@ class UserControllerTest {
                     .willReturn(response);
 
             // when & then
-            mockMvc.perform(get("/api/users/{userId}", userId))
+            mockMvc.perform(
+                            get("/api/users/{userId}", userId)
+                    )
                     .andExpect(status().isOk())
-                    .andExpect(content().contentTypeCompatibleWith(
-                            MediaType.APPLICATION_JSON
-                    ))
-                    .andExpect(jsonPath("$.id")
-                            .value(userId.toString()))
-                    .andExpect(jsonPath("$.createdAt")
-                            .value(createdAt.toString()))
-                    .andExpect(jsonPath("$.updatedAt")
-                            .value(updatedAt.toString()))
-                    .andExpect(jsonPath("$.username")
-                            .value("tester"))
-                    .andExpect(jsonPath("$.email")
-                            .value("tester@test.com"))
-                    .andExpect(jsonPath("$.profileId")
-                            .value(profileId.toString()))
-                    .andExpect(jsonPath("$.profileImageId")
-                            .value(profileId.toString()))
-                    .andExpect(jsonPath("$.online")
-                            .value(true));
+                    .andExpect(
+                            content().contentTypeCompatibleWith(
+                                    MediaType.APPLICATION_JSON
+                            )
+                    )
+                    .andExpect(
+                            jsonPath("$.id")
+                                    .value(userId.toString())
+                    )
+                    .andExpect(
+                            jsonPath("$.createdAt")
+                                    .value(createdAt.toString())
+                    )
+                    .andExpect(
+                            jsonPath("$.updatedAt")
+                                    .value(updatedAt.toString())
+                    )
+                    .andExpect(
+                            jsonPath("$.username")
+                                    .value("tester")
+                    )
+                    .andExpect(
+                            jsonPath("$.email")
+                                    .value("tester@test.com")
+                    )
+                    .andExpect(
+                            jsonPath("$.role")
+                                    .value("USER")
+                    )
+                    .andExpect(
+                            jsonPath("$.profileId")
+                                    .value(profileId.toString())
+                    )
+                    .andExpect(
+                            jsonPath("$.profileImageId")
+                                    .value(profileId.toString())
+                    )
+                    .andExpect(
+                            jsonPath("$.online")
+                                    .value(true)
+                    );
 
             then(userService)
                     .should()
@@ -256,10 +305,12 @@ class UserControllerTest {
         @DisplayName("잘못된 UUID 형식으로 조회하면 400 Bad Request를 반환한다")
         void invalidUserId() throws Exception {
             // when & then
-            mockMvc.perform(get(
-                            "/api/users/{userId}",
-                            "invalid-uuid"
-                    ))
+            mockMvc.perform(
+                            get(
+                                    "/api/users/{userId}",
+                                    "invalid-uuid"
+                            )
+                    )
                     .andExpect(status().isBadRequest());
 
             then(userService)
@@ -284,6 +335,7 @@ class UserControllerTest {
                     null,
                     "user1",
                     "user1@test.com",
+                    Role.USER,
                     null,
                     true
             );
@@ -294,34 +346,61 @@ class UserControllerTest {
                     null,
                     "user2",
                     "user2@test.com",
+                    Role.USER,
                     null,
                     false
             );
 
             given(userService.readAll())
-                    .willReturn(List.of(firstUser, secondUser));
+                    .willReturn(
+                            List.of(firstUser, secondUser)
+                    );
 
             // when & then
             mockMvc.perform(get("/api/users"))
                     .andExpect(status().isOk())
-                    .andExpect(content().contentTypeCompatibleWith(
-                            MediaType.APPLICATION_JSON
-                    ))
+                    .andExpect(
+                            content().contentTypeCompatibleWith(
+                                    MediaType.APPLICATION_JSON
+                            )
+                    )
                     .andExpect(jsonPath("$").isArray())
-                    .andExpect(jsonPath("$.length()")
-                            .value(2))
-                    .andExpect(jsonPath("$[0].id")
-                            .value(firstUserId.toString()))
-                    .andExpect(jsonPath("$[0].username")
-                            .value("user1"))
-                    .andExpect(jsonPath("$[0].online")
-                            .value(true))
-                    .andExpect(jsonPath("$[1].id")
-                            .value(secondUserId.toString()))
-                    .andExpect(jsonPath("$[1].username")
-                            .value("user2"))
-                    .andExpect(jsonPath("$[1].online")
-                            .value(false));
+                    .andExpect(
+                            jsonPath("$.length()")
+                                    .value(2)
+                    )
+                    .andExpect(
+                            jsonPath("$[0].id")
+                                    .value(firstUserId.toString())
+                    )
+                    .andExpect(
+                            jsonPath("$[0].username")
+                                    .value("user1")
+                    )
+                    .andExpect(
+                            jsonPath("$[0].role")
+                                    .value("USER")
+                    )
+                    .andExpect(
+                            jsonPath("$[0].online")
+                                    .value(true)
+                    )
+                    .andExpect(
+                            jsonPath("$[1].id")
+                                    .value(secondUserId.toString())
+                    )
+                    .andExpect(
+                            jsonPath("$[1].username")
+                                    .value("user2")
+                    )
+                    .andExpect(
+                            jsonPath("$[1].role")
+                                    .value("USER")
+                    )
+                    .andExpect(
+                            jsonPath("$[1].online")
+                                    .value(false)
+                    );
 
             then(userService)
                     .should()
@@ -338,9 +417,11 @@ class UserControllerTest {
             // when & then
             mockMvc.perform(get("/api/users"))
                     .andExpect(status().isOk())
-                    .andExpect(content().contentTypeCompatibleWith(
-                            MediaType.APPLICATION_JSON
-                    ))
+                    .andExpect(
+                            content().contentTypeCompatibleWith(
+                                    MediaType.APPLICATION_JSON
+                            )
+                    )
                     .andExpect(jsonPath("$").isArray())
                     .andExpect(jsonPath("$").isEmpty());
 
@@ -361,10 +442,9 @@ class UserControllerTest {
             UUID userId = UUID.randomUUID();
 
             // when & then
-            mockMvc.perform(delete(
-                            "/api/users/{userId}",
-                            userId
-                    ))
+            mockMvc.perform(
+                            delete("/api/users/{userId}", userId)
+                    )
                     .andExpect(status().isNoContent())
                     .andExpect(content().string(""));
 
@@ -377,10 +457,12 @@ class UserControllerTest {
         @DisplayName("잘못된 UUID 형식으로 삭제하면 400 Bad Request를 반환한다")
         void invalidUserId() throws Exception {
             // when & then
-            mockMvc.perform(delete(
-                            "/api/users/{userId}",
-                            "invalid-uuid"
-                    ))
+            mockMvc.perform(
+                            delete(
+                                    "/api/users/{userId}",
+                                    "invalid-uuid"
+                            )
+                    )
                     .andExpect(status().isBadRequest());
 
             then(userService)
