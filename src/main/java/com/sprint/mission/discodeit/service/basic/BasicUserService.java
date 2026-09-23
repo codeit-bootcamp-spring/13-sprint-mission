@@ -10,10 +10,14 @@ import com.sprint.mission.discodeit.exception.user.UserNameAlreadyExistsExceptio
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.*;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,11 +34,12 @@ public class BasicUserService implements UserService {
     //필드
     private final UserRepository userRepository;
     private final BinaryContentRepository binaryContentRepository;
-    private final UserStatusRepository userStatusRepository;
     private final ReadStatusRepository readStatusRepository;
     private final MessageRepository messageRepository;
     private final UserMapper userMapper;
     private final BinaryContentStorage binaryContentStorage;
+    private final PasswordEncoder passwordEncoder;
+    private final SessionRegistry sessionRegistry;
 
     //interface
     @Override
@@ -56,20 +61,18 @@ public class BasicUserService implements UserService {
             log.info("프로필 파일 업로드 완료");
         }
 
+        // 비밀번호 암호화
+        String encryptedPassword = passwordEncoder.encode(request.password());
+
         //유저 생성
-        User user = new User(request.username(), request.email(), request.password(), binaryContent);
+        User user = new User(request.username(), request.email(), encryptedPassword, binaryContent, Role.USER);
         log.info("유저: {}가 생성됨.", user.getUsername());
 
-        //UserStatus 생성
-        UserStatus userStatus = new UserStatus(user);
-//        userStatus = userStatusRepository.save(userStatus);
-
-        user.assignStatus(userStatus);
         user = userRepository.save(user);
 
         log.info("유저 생성 완료");
 
-        return userMapper.toDto(user);
+        return userMapper.toDto(user, false);
     }
 
     @Override
@@ -79,7 +82,8 @@ public class BasicUserService implements UserService {
         User userTemp = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
-        return userMapper.toDto(userTemp);
+        boolean online = isOnline(userId);
+        return userMapper.toDto(userTemp, online);
     }
 
     @Override
@@ -89,11 +93,12 @@ public class BasicUserService implements UserService {
         List<User> users = userRepository.findAll();
 
         return users.stream()
-                .map(userMapper::toDto)
+                .map(user -> userMapper.toDto(user, isOnline(user.getId())))
                 .toList();
     }
 
     @Override
+    @PreAuthorize("#userId == authentication.principal.userDto.id")
     @Transactional
     public UserDto updateUser(UUID userId, UserUpdateRequest request, MultipartFile file) {
         log.debug("유저 수정 시작");
@@ -130,17 +135,22 @@ public class BasicUserService implements UserService {
         log.info("유저: {}가 수정됨.", userTemp.getUsername());
         log.info("name: {}, email: {}\n-> name: {}, email: {}", userTemp.getUsername(), userTemp.getEmail(), request.newUsername(), request.newEmail());
 
+        // 비밀번호 암호화
+        String encryptedPassword = passwordEncoder.encode(request.newPassword());
+
         //유저 업데이트
-        userTemp.updateUser(request.newUsername(), request.newEmail(), request.newPassword(), binaryContent);
+        userTemp.updateUser(request.newUsername(), request.newEmail(), encryptedPassword, binaryContent);
         //dirty checking
         //userTemp = userRepository.save(userTemp);
 
         log.info("유저 수정 완료");
 
-        return userMapper.toDto(userTemp);
+        boolean online = isOnline(userId);
+        return userMapper.toDto(userTemp, online);
     }
 
     @Override
+    @PreAuthorize("#userId == authentication.principal.userDto.id")
     @Transactional
     public void deleteUser(UUID userId) {
         log.debug("유저 삭제 시작");
@@ -221,6 +231,19 @@ public class BasicUserService implements UserService {
         if (binaryContent != null && binaryContent.getId() != null) {
             binaryContentRepository.deleteById(binaryContent.getId());
         }
+    }
+
+    // 로그인 여부 판단 메서드
+    private boolean isOnline(UUID userId) {
+        for (Object principal : sessionRegistry.getAllPrincipals()) {
+            if (principal instanceof DiscodeitUserDetails details && userId.equals(details.getUserDto().id())) {
+                if (!sessionRegistry.getAllSessions(principal, false).isEmpty()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     // 들어온 이름 필드가 레포지터리에 존재하는지 검증하는 메서드

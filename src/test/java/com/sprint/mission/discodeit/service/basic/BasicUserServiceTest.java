@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.user.UserNameAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -18,6 +19,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +29,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
@@ -48,11 +52,17 @@ class BasicUserServiceTest {
     @Mock
     private UserMapper userMapper;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private SessionRegistry sessionRegistry;
+
     @InjectMocks
     private BasicUserService basicUserService;
 
     private User sample() {
-        return new User("이름_샘플", "이메일_샘플", "패스워드_샘플", null);
+        return new User("이름_샘플", "이메일_샘플", "패스워드_샘플", null, Role.USER);
     }
 
     @Nested
@@ -61,48 +71,72 @@ class BasicUserServiceTest {
         @Test
         @DisplayName("중복된 이름, 이메일이 없으면 유저 생성")
         void create_success() {
-            //given
+            // given
             UserCreateRequest request = new UserCreateRequest(
                     "테스트 이름",
                     "테스트 이메일",
                     "테스트 패스워드"
             );
 
-            User saved = new User(request.username(), request.email(), request.password(), null);
+            String encodedPassword = "암호화된 패스워드";
+
+            User saved = new User(
+                    request.username(),
+                    request.email(),
+                    encodedPassword,
+                    null,
+                    Role.USER
+            );
 
             UserDto createdUserDto = new UserDto(
                     saved.getId(),
                     saved.getUsername(),
                     saved.getEmail(),
                     null,
-                    true
+                    false,
+                    Role.USER
             );
 
             given(userRepository.existsByUsername(request.username()))
                     .willReturn(false);
             given(userRepository.existsByEmail(request.email()))
                     .willReturn(false);
+
+            given(passwordEncoder.encode(request.password()))
+                    .willReturn(encodedPassword);
+
             given(userRepository.save(any(User.class)))
                     .willReturn(saved);
-            given(userMapper.toDto(any(User.class)))
+
+            given(userMapper.toDto(any(User.class), eq(false)))
                     .willReturn(createdUserDto);
 
-            //when
+            // when
             UserDto result = basicUserService.createUser(request, null);
 
-            //then
+            // then
             assertThat(result.username())
                     .isEqualTo(request.username());
             assertThat(result.email())
                     .isEqualTo(request.email());
+            assertThat(result.online())
+                    .isFalse();
+            assertThat(result.role())
+                    .isEqualTo(Role.USER);
 
             then(userRepository).should()
                     .existsByUsername(request.username());
             then(userRepository).should()
                     .existsByEmail(request.email());
+
+            then(passwordEncoder).should()
+                    .encode(request.password());
+
             then(userRepository).should()
                     .save(any(User.class));
 
+            then(userMapper).should()
+                    .toDto(any(User.class), eq(false));
         }
 
         @Test
@@ -126,9 +160,51 @@ class BasicUserServiceTest {
                     .existsByUsername(request.username());
             then(userRepository).should(never())
                     .save(any(User.class));
+            then(passwordEncoder).should(never())
+                    .encode(any());
 
         }
 
+    }
+
+    @Nested
+    @DisplayName("(조회) get")
+    class Get {
+
+        @Test
+        @DisplayName("활성 세션이 없으면 offline 상태로 유저 조회")
+        void getUser_offline() {
+            // given
+            UUID userId = UUID.randomUUID();
+            User user = sample();
+
+            UserDto userDto = new UserDto(
+                    user.getId(),
+                    user.getUsername(),
+                    user.getEmail(),
+                    null,
+                    false,
+                    Role.USER
+            );
+
+            given(userRepository.findById(userId))
+                    .willReturn(Optional.of(user));
+
+            given(sessionRegistry.getAllPrincipals())
+                    .willReturn(List.of());
+
+            given(userMapper.toDto(user, false))
+                    .willReturn(userDto);
+
+            // when
+            UserDto result = basicUserService.getUser(userId);
+
+            // then
+            assertThat(result.online()).isFalse();
+
+            then(userMapper).should()
+                    .toDto(user, false);
+        }
     }
 
     @Nested
@@ -147,12 +223,15 @@ class BasicUserServiceTest {
                     "테스트 패스워드"
             );
 
-            UserDto createdUserDto = new UserDto(
+            String encodedPassword = "암호화된 패스워드";
+
+            UserDto updatedUserDto = new UserDto(
                     user.getId(),
                     request.newUsername(),
                     request.newEmail(),
                     null,
-                    true
+                    false,
+                    Role.USER
             );
 
             given(userRepository.findById(randomId))
@@ -161,11 +240,19 @@ class BasicUserServiceTest {
                     .willReturn(false);
             given(userRepository.existsByEmail(request.newEmail()))
                     .willReturn(false);
-            given(userMapper.toDto(any(User.class)))
-                    .willReturn(createdUserDto);
+
+            given(passwordEncoder.encode(request.newPassword()))
+                    .willReturn(encodedPassword);
+
+            given(sessionRegistry.getAllPrincipals())
+                    .willReturn(List.of());
+
+            given(userMapper.toDto(user, false))
+                    .willReturn(updatedUserDto);
 
             // when
-            UserDto result = basicUserService.updateUser(randomId, request, null);
+            UserDto result =
+                    basicUserService.updateUser(randomId, request, null);
 
             // then
             assertThat(user.getUsername())
@@ -173,12 +260,24 @@ class BasicUserServiceTest {
             assertThat(user.getEmail())
                     .isEqualTo(request.newEmail());
 
+            // 이번 실습에서 추가된 핵심 검증
+            assertThat(user.getPassword())
+                    .isEqualTo(encodedPassword);
+
             assertThat(result.username())
                     .isEqualTo(request.newUsername());
             assertThat(result.email())
                     .isEqualTo(request.newEmail());
+            assertThat(result.role())
+                    .isEqualTo(Role.USER);
+            assertThat(result.online())
+                    .isFalse();
 
-            then(userRepository).should().findById(randomId);
+            then(passwordEncoder).should()
+                    .encode(request.newPassword());
+
+            then(userMapper).should()
+                    .toDto(user, false);
         }
 
         @Test
@@ -204,6 +303,8 @@ class BasicUserServiceTest {
                     .findById(randomId);
             then(userRepository).should(never())
                     .existsByUsername(any());
+            then(passwordEncoder).should(never())
+                    .encode(any());
         }
     }
 

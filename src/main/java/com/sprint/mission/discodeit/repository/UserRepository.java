@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.repository;
 
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,11 +13,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+    boolean existsByRole(Role role);
 
     @Override
-    @EntityGraph(attributePaths = {"profile", "status"})
+    @EntityGraph(attributePaths = {"profile"})
     List<User> findAll();
     Optional<User> findByUsernameAndPassword(String username, String password);
+    Optional<User> findByUsername(String username);
 
 
 }

@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.repository;
 
 import com.sprint.mission.discodeit.config.JpaAuditingConfig;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -30,14 +31,15 @@ class UserRepositoryTest {
     class ExistsByUsername {
 
         @Test
-        @DisplayName("동일한 유저 이름이 존재하면 true를 반환")
+        @DisplayName("동일한 사용자 이름이 존재하면 true를 반환")
         void get_success() {
             // given
             User user = new User(
                     "user1",
                     "user1@example.com",
                     "password",
-                    null
+                    null,
+                    Role.USER
             );
 
             userRepository.saveAndFlush(user);
@@ -72,7 +74,8 @@ class UserRepositoryTest {
                     "user1",
                     "user1@example.com",
                     "password",
-                    null
+                    null,
+                    Role.USER
             );
 
             userRepository.saveAndFlush(user);
@@ -85,10 +88,11 @@ class UserRepositoryTest {
         }
 
         @Test
-        @DisplayName("동일한 이메일이 없으면 false를 반환한다")
+        @DisplayName("동일한 이메일이 없으면 false를 반환")
         void get_fail() {
             // when
-            boolean result = userRepository.existsByEmail("unknown@example.com");
+            boolean result =
+                    userRepository.existsByEmail("unknown@example.com");
 
             // then
             assertThat(result).isFalse();
@@ -96,60 +100,84 @@ class UserRepositoryTest {
     }
 
     @Nested
-    @DisplayName("사용자 이름과 비밀번호로 사용자 조회")
-    class FindByUsernameAndPassword {
+    @DisplayName("사용자 이름으로 사용자 조회")
+    class FindByUsername {
 
         @Test
-        @DisplayName("사용자 이름과 비밀번호가 모두 일치하면 사용자를 반환")
+        @DisplayName("사용자 이름이 일치하면 사용자를 반환")
         void get_success() {
             // given
             User user = new User(
                     "user1",
                     "user1@example.com",
-                    "password",
-                    null
+                    "encoded-password",
+                    null,
+                    Role.USER
             );
 
             userRepository.saveAndFlush(user);
 
             // when
             Optional<User> result =
-                    userRepository.findByUsernameAndPassword(
-                            "user1",
-                            "password"
-                    );
+                    userRepository.findByUsername("user1");
 
             // then
-            assertThat(result)
-                    .isPresent();
+            assertThat(result).isPresent();
             assertThat(result.get().getUsername())
                     .isEqualTo("user1");
             assertThat(result.get().getEmail())
                     .isEqualTo("user1@example.com");
+            assertThat(result.get().getRole())
+                    .isEqualTo(Role.USER);
         }
 
         @Test
-        @DisplayName("비밀번호가 일치하지 않으면 빈 Optional을 반환")
+        @DisplayName("사용자 이름이 존재하지 않으면 빈 Optional을 반환")
         void get_fail() {
-            // given
-            User user = new User(
-                    "user1",
-                    "user1@example.com",
-                    "password",
-                    null
-            );
-
-            userRepository.saveAndFlush(user);
-
             // when
             Optional<User> result =
-                    userRepository.findByUsernameAndPassword(
-                            "user1",
-                            "wrong-password"
-                    );
+                    userRepository.findByUsername("unknown");
 
             // then
             assertThat(result).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("권한을 가진 사용자 존재 여부 조회")
+    class ExistsByRole {
+
+        @Test
+        @DisplayName("해당 권한을 가진 사용자가 존재하면 true를 반환")
+        void get_success() {
+            // given
+            User admin = new User(
+                    "admin",
+                    "admin@example.com",
+                    "encoded-password",
+                    null,
+                    Role.ADMIN
+            );
+
+            userRepository.saveAndFlush(admin);
+
+            // when
+            boolean result =
+                    userRepository.existsByRole(Role.ADMIN);
+
+            // then
+            assertThat(result).isTrue();
+        }
+
+        @Test
+        @DisplayName("해당 권한을 가진 사용자가 없으면 false를 반환")
+        void get_fail() {
+            // when
+            boolean result =
+                    userRepository.existsByRole(Role.ADMIN);
+
+            // then
+            assertThat(result).isFalse();
         }
     }
 
@@ -165,14 +193,16 @@ class UserRepositoryTest {
                     "user1",
                     "user1@example.com",
                     "password1",
-                    null
+                    null,
+                    Role.USER
             );
 
             User secondUser = new User(
                     "user2",
                     "user2@example.com",
                     "password2",
-                    null
+                    null,
+                    Role.CHANNEL_MANAGER
             );
 
             userRepository.saveAllAndFlush(
@@ -185,9 +215,20 @@ class UserRepositoryTest {
             // then
             assertThat(result)
                     .hasSize(2);
+
             assertThat(result)
                     .extracting(User::getUsername)
-                    .containsExactlyInAnyOrder("user1", "user2");
+                    .containsExactlyInAnyOrder(
+                            "user1",
+                            "user2"
+                    );
+
+            assertThat(result)
+                    .extracting(User::getRole)
+                    .containsExactlyInAnyOrder(
+                            Role.USER,
+                            Role.CHANNEL_MANAGER
+                    );
         }
 
         @Test
@@ -200,6 +241,4 @@ class UserRepositoryTest {
             assertThat(result).isEmpty();
         }
     }
-
-
 }

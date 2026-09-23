@@ -6,12 +6,15 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -20,10 +23,11 @@ public class ChannelMapper {
     private final MessageRepository messageRepository;
     private final ReadStatusRepository readStatusRepository;
     private final UserMapper userMapper;
+    private final SessionRegistry sessionRegistry;
 
     public ChannelDto toDto(Channel channel) {
         List<UserDto> participants = readStatusRepository.findAllByChannelId(channel.getId()).stream()
-                .map(readStatus -> userMapper.toDto(readStatus.getUser()))
+                .map(readStatus -> userMapper.toDto(readStatus.getUser(), isOnline(readStatus.getUser().getId())))
                 .toList();
 
         Instant lastMessageAt = null;
@@ -43,6 +47,19 @@ public class ChannelMapper {
                 participants,
                 lastMessageAt
         );
+    }
+
+    // 로그인 여부 판단 메서드
+    private boolean isOnline(UUID userId) {
+        for (Object principal : sessionRegistry.getAllPrincipals()) {
+            if (principal instanceof DiscodeitUserDetails details && userId.equals(details.getUserDto().id())) {
+                if (!sessionRegistry.getAllSessions(principal, false).isEmpty()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
 }

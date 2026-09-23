@@ -16,6 +16,7 @@ CREATE TABLE users
     email      VARCHAR(100)             NOT NULL UNIQUE,
     password   VARCHAR(60)              NOT NULL,
     profile_id UUID UNIQUE,
+    role       VARCHAR(20)              NOT NULL,
 
     CONSTRAINT users_binary_contents_fk
         FOREIGN KEY (profile_id)
@@ -50,20 +51,6 @@ CREATE TABLE messages
         FOREIGN KEY (author_id)
             REFERENCES users (id)
             ON DELETE SET NULL
-);
-
-CREATE TABLE user_statuses
-(
-    id             UUID PRIMARY KEY,
-    created_at     TIMESTAMP WITH TIME ZONE NOT NULL,
-    updated_at     TIMESTAMP WITH TIME ZONE,
-    user_id        UUID                     NOT NULL UNIQUE,
-    last_active_at TIMESTAMP WITH TIME ZONE NOT NULL,
-
-    CONSTRAINT user_statuses_users
-        FOREIGN KEY (user_id)
-            REFERENCES users (id)
-            ON DELETE CASCADE
 );
 
 CREATE TABLE read_statuses

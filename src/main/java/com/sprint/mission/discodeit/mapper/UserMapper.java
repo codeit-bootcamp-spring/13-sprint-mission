@@ -11,6 +11,6 @@ import org.mapstruct.Mapping;
 )
 public interface UserMapper {
 
-    @Mapping(source = "status.online", target = "online")
-    UserDto toDto(User user);
+    @Mapping(source = "online", target = "online")
+    UserDto toDto(User user, Boolean online);
 }
