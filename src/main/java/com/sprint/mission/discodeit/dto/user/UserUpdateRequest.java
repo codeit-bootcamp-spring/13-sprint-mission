@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.dto.user;
 
-import com.sprint.mission.discodeit.entity.UserType;
+import com.sprint.mission.discodeit.entity.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
@@ -13,7 +13,7 @@ public record UserUpdateRequest(
     @Size(max = 50, message = "이메일은 50자 이하여야 합니다.")
     String newEmail,
     @Size(max = 30, message = "전화번호는 30자 이하여야 합니다.") String phoneNumber,
-    UserType userType
+    Role role
 ) {
 
 }

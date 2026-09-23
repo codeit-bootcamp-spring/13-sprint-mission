@@ -7,7 +7,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserType;
+import com.sprint.mission.discodeit.entity.Role;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,12 +38,12 @@ class MessageRepositoryTest {
   private Channel channel;
 
   @BeforeEach
-  void 테스트_데이터_저장() {
+  void setUp() {
     User author = User.builder()
         .username("neo")
         .email("neo@test.com")
         .password("password")
-        .userType(UserType.GENERAL)
+        .role(Role.USER)
         .build();
     channel = Channel.publicChannelBuilder()
         .type(ChannelType.PUBLIC)
@@ -65,7 +65,7 @@ class MessageRepositoryTest {
 
     @Test
     @DisplayName("채널에 등록된 메시지를 모두 조회한다")
-    void 채널메시지_전체_조회() {
+    void findChannelMessages() {
       assertThat(repository.findAllByChannelId(channel.getId()))
           .extracting(Message::getContent)
           .containsExactlyInAnyOrder("first", "second");
@@ -74,7 +74,7 @@ class MessageRepositoryTest {
 
     @Test
     @DisplayName("채널이 없는 메시지를 저장하면 예외가 발생")
-    void 존재하지_않는_채널_메시지저장() {
+    void rejectMissingChannel() {
       Message message = Message.builder()
           .content("invalid message")
           .channel(null)

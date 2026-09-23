@@ -14,7 +14,6 @@ public enum ErrorCode {
   PROFILE_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "프로필 이미지 크기 제한을 초과합니다."),
   UNSUPPORT_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "지원하지 않는 프로필 이미지 형식입니다."),
 
-  USER_STATUS_NOT_FOUND(HttpStatus.NOT_FOUND, "유저 상태를 찾을 수 없습니다."),
 
   INVALID_CHANNEL_INPUT(HttpStatus.BAD_REQUEST, "채널 입력값이 올바르지 않습니다."),
   CHANNEL_NOT_FOUND(HttpStatus.NOT_FOUND, "채널을 찾을 수 없습니다."),

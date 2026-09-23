@@ -46,7 +46,7 @@ class BasicChannelServiceTest {
 
   @Test
   @DisplayName("공개 채널을 생성")
-  void 공개_채널_생성() {
+  void createPublicChannel() {
     ChannelResponse response = mock(ChannelResponse.class);
     given(repository.findAll()).willReturn(List.of());
     given(mapper.toDto(any(Channel.class), eq(List.of()), isNull())).willReturn(response);
@@ -60,7 +60,7 @@ class BasicChannelServiceTest {
 
   @Test
   @DisplayName("채널명이 중복되면 공개 채널 생성에 실패")
-  void 채널명_중복채널_생성_실패() {
+  void rejectDuplicateName() {
     Channel channel = Channel.publicChannelBuilder()
         .type(ChannelType.PUBLIC)
         .name("중복채널")

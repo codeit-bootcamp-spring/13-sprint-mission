@@ -4,21 +4,21 @@ import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserResponse;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentStorageException;
 import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
-import com.sprint.mission.discodeit.exception.userstatus.UserStatusNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,10 +34,10 @@ import java.util.UUID;
 public class BasicUserService implements UserService {
 
   private final UserRepository repository;
-  private final UserStatusRepository userStatusRepository;
   private final BinaryContentRepository binaryContentRepository;
   private final BinaryContentStorage binaryContentStorage;
   private final UserMapper userMapper;
+  private final PasswordEncoder passwordEncoder;
 
   @Override
   @Transactional
@@ -52,6 +52,10 @@ public class BasicUserService implements UserService {
     validateDuplicateUser(userName, email, phoneNumber);
 
     User user = request.toEntity();
+
+    //유저 비밀번호 암호화
+    String hashedPassword = passwordEncoder.encode(user.getPassword());
+    user.updatePassword(hashedPassword);
 
     //프로필 생성
     if (profile != null && !profile.isEmpty()) {
@@ -75,13 +79,6 @@ public class BasicUserService implements UserService {
       log.info("유저 프로필에 첨부파일이 없습니다.");
     }
 
-    //userStatus 생성
-    UserStatus userStatus = new UserStatus(user);
-    user.updateStatus(userStatus);
-
-    // 회원가입 직후 바로 로그인 상태가 되도록 온라인으로 설정 (로그인 흐름과 동일)
-    user.updateOnline(true);
-
     repository.save(user);
     log.info("유저 생성 - {}", user.getUsername());
     return userMapper.toDto(user);
@@ -91,9 +88,6 @@ public class BasicUserService implements UserService {
   @Transactional(readOnly = true)
   public UserResponse findUserById(UUID userId) {
     User user = getUserOrThrow(userId);
-    UserStatus userStatus = userStatusRepository.findById(user.getUserStatus().getId())
-        .orElseThrow(() -> new UserStatusNotFoundException(user.getUserStatus().getId()));
-    user.updateOnline(userStatus.isOnline());
     log.info("유저 조회 - {}", user.getUsername());
     return userMapper.toDto(user);
   }
@@ -108,6 +102,7 @@ public class BasicUserService implements UserService {
 
   @Override
   @Transactional
+  @PreAuthorize("#userId == principal.userDto.id")
   public UserResponse updateUser(UUID userId, UserUpdateRequest request, MultipartFile profile) {
     log.info("사용자 수정 시작: userId={}, profileAttached={}",
         userId, profile != null && !profile.isEmpty());
@@ -166,16 +161,26 @@ public class BasicUserService implements UserService {
 
   @Override
   @Transactional
-  public void deleteUser(UUID userid) {
-    log.info("사용자 삭제 시작: userId={}", userid);
-    User user = getUserOrThrow(userid);
-    userStatusRepository.deleteById(user.getUserStatus().getId());
+  @PreAuthorize("#userId == principal.userDto.id")
+  public void deleteUser(UUID userId) {
+    log.info("사용자 삭제 시작: userId={}", userId);
+    User user = getUserOrThrow(userId);
     if (user.getProfile() != null && user.getProfile().getId() != null) {
       binaryContentRepository.deleteById(user.getProfile().getId());
     }
-    repository.deleteById(userid);
+    repository.deleteById(userId);
 
-    log.info("사용자 삭제 완료: userId={}", userid);
+    log.info("사용자 삭제 완료: userId={}", userId);
+  }
+
+  @Override
+  public UserResponse changeRole(UUID userid, Role role) {
+
+    User user = getUserOrThrow(userid);
+    user.updateRole(role);
+    repository.save(user);
+
+    return userMapper.toDto(user);
   }
 
 

@@ -34,21 +34,16 @@ public class User extends BaseUpdatableEntity {
   private String phoneNumber;
 
   @Enumerated(EnumType.STRING)
-  private UserType userType;
+  private Role role;
 
   @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   private BinaryContent profile;
-
-  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-  private UserStatus userStatus;
 
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<ReadStatus> readStatuses = new ArrayList<>();
 
   @OneToMany(mappedBy = "author")
   private List<Message> messages = new ArrayList<>();
-
-  private boolean isOnline;
 
   protected User() {
   }
@@ -71,21 +66,14 @@ public class User extends BaseUpdatableEntity {
     this.phoneNumber = phoneNumber;
   }
 
-  public void updateUserType(UserType userType) {
-    this.userType = userType;
-  }
-
-  public void updateStatus(UserStatus userStatus) {
-    this.userStatus = userStatus;
+  public void updateRole(Role role) {
+    this.role = role;
   }
 
   public void updateProfile(BinaryContent profile) {
     this.profile = profile;
   }
 
-  public void updateOnline(boolean online) {
-    isOnline = online;
-  }
 
 
 }

@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -118,6 +119,7 @@ public class BasicMessageService implements MessageService {
 
   @Override
   @Transactional
+  @PreAuthorize("@resourceOwnership.isMessageAuthor(#messageId, principal)")
   public MessageResponse updateMessage(UUID messageId, MessageUpdateRequest request) {
     log.info("메시지 수정 시작: messageId={}", messageId);
     Message message = getMessageOrThrow(messageId);
@@ -132,16 +134,17 @@ public class BasicMessageService implements MessageService {
 
   @Override
   @Transactional
-  public void deleteMessage(UUID id) {
-    log.info("메시지 삭제 시작: messageId={}", id);
-    Message message = getMessageOrThrow(id);
+  @PreAuthorize("@resourceOwnership.isMessageAuthor(#messageId, principal)")
+  public void deleteMessage(UUID messageId) {
+    log.info("메시지 삭제 시작: messageId={}", messageId);
+    Message message = getMessageOrThrow(messageId);
     if (message.getAttachment() != null && !message.getAttachment().isEmpty()) {
       List<BinaryContent> attachments = message.getAttachment();
       attachments.removeIf(binaryContent -> binaryContent.getId() != null);
       log.info("첨부파일 삭제");
     }
-    repository.deleteById(id);
-    log.info("메시지 삭제 완료: messageId={}", id);
+    repository.deleteById(messageId);
+    log.info("메시지 삭제 완료: messageId={}", messageId);
   }
 
   private Message getMessageOrThrow(UUID messageId) {
@@ -166,7 +169,7 @@ public class BasicMessageService implements MessageService {
         return false;
       }
     } else if (channel.getType() == ChannelType.MANAGER) {
-      if (user.getUserType() != UserType.MANAGER) {
+      if (user.getRole() != Role.CHANNEL_MANAGER) {
         System.out.println("매니저 전용 채널 - 생성할 수 없습니다.");
         return false;
       }

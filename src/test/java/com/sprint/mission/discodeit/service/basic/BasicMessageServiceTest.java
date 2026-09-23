@@ -12,7 +12,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserType;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
@@ -53,7 +53,7 @@ class BasicMessageServiceTest {
 
   @Test
   @DisplayName("메시지를 정상적으로 생성한다")
-  void 메시지_생성() {
+  void createMessage() {
     Channel channel = Channel.publicChannelBuilder()
         .type(ChannelType.PUBLIC)
         .name("공개 채널")
@@ -62,7 +62,7 @@ class BasicMessageServiceTest {
         .username("김김김")
         .email("asdf@test.com")
         .password("password")
-        .userType(UserType.GENERAL)
+        .role(Role.USER)
         .build();
     MessageCreateRequest request =
         new MessageCreateRequest("안녕하세요", author.getId(), channel.getId());
@@ -80,7 +80,7 @@ class BasicMessageServiceTest {
 
   @Test
   @DisplayName("채널이 없으면 메시지 생성에 실패한다")
-  void 채널이_없으면_메시지_생성에_실패() {
+  void rejectMissingChannel() {
     java.util.UUID channelId = java.util.UUID.randomUUID();
     MessageCreateRequest request =
         new MessageCreateRequest("안녕하세요", java.util.UUID.randomUUID(), channelId);

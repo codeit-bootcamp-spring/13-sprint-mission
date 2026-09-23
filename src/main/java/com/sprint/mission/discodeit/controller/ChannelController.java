@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -33,6 +34,7 @@ public class ChannelController implements ChannelApi {
 
   @Override
   @PostMapping("/public")
+  @PreAuthorize("hasRole('CHANNEL_MANAGER')")
   public ResponseEntity<ChannelResponse> createPublicChannel(
       @Valid @RequestBody ChannelPublicCreateRequest request) {
     log.debug("공개 채널 생성 요청: name={}", request.name());
@@ -55,6 +57,7 @@ public class ChannelController implements ChannelApi {
 
   @Override
   @PatchMapping("/{channelId}")
+  @PreAuthorize("hasRole('CHANNEL_MANAGER')")
   public ResponseEntity<ChannelResponse> updateChannel(
       @PathVariable UUID channelId,
       @Valid @RequestBody ChannelUpdateRequest request) {
@@ -67,6 +70,7 @@ public class ChannelController implements ChannelApi {
 
   @Override
   @DeleteMapping("/{channelId}")
+  @PreAuthorize("hasRole('CHANNEL_MANAGER')")
   public ResponseEntity<Void> deleteChannel(@PathVariable("channelId") UUID channelId) {
     log.debug("채널 삭제 요청: channelId={}", channelId);
     channelService.deleteChannel(channelId);

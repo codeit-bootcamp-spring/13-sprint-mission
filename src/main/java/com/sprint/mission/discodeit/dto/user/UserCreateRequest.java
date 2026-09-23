@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.dto.user;
 
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserType;
+import com.sprint.mission.discodeit.entity.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -20,7 +20,7 @@ public record UserCreateRequest(
     String email,
     @Size(max = 30, message = "전화번호는 30자 이하여야 합니다.")
     String phoneNumber,
-    UserType userType
+    Role role
 ) {
 
   public User toEntity() {
@@ -29,7 +29,7 @@ public record UserCreateRequest(
         .username(username)
         .email(email)
         .phoneNumber(phoneNumber)
-        .userType(userType)
+        .role(Role.USER) // 회원가입 시 모든 사용자는 USER 권한을 기본으로
         .build();
   }
 }

@@ -41,7 +41,7 @@ class MessageControllerTest {
 
   @Test
   @DisplayName("올바른 메시지 생성 요청이면 201과 메시지 정보를 반환한다")
-  void 메시지_생성_요청_201() throws Exception {
+  void createMessage() throws Exception {
     // given
     UUID messageId = UUID.randomUUID();
     UUID authorId = UUID.randomUUID();
@@ -50,7 +50,7 @@ class MessageControllerTest {
         new MessageCreateRequest("안녕하세요", authorId, channelId);
     MessageResponse response = new MessageResponse(
         messageId, null, null, "안녕하세요", channelId, null, List.of());
-    MockMultipartFile requestPart = 제이슨_파트_생성("messageCreateRequest", request);
+    MockMultipartFile requestPart = jsonPart("messageCreateRequest", request);
 
     given(messageService.createMessage(any(MessageCreateRequest.class), isNull()))
         .willReturn(response);
@@ -65,12 +65,12 @@ class MessageControllerTest {
 
   @Test
   @DisplayName("메시지 내용이 비어 있으면 400과 검증 오류를 반환한다")
-  void 내용없는메시지_400과_검증_오류() throws Exception {
+  void rejectBlankContent() throws Exception {
     // given
     MessageCreateRequest invalidRequest =
         new MessageCreateRequest("", UUID.randomUUID(), UUID.randomUUID());
     MockMultipartFile requestPart =
-        제이슨_파트_생성("messageCreateRequest", invalidRequest);
+        jsonPart("messageCreateRequest", invalidRequest);
 
     // when & then
     mockMvc.perform(multipart("/api/messages").file(requestPart))
@@ -81,7 +81,7 @@ class MessageControllerTest {
     then(messageService).shouldHaveNoInteractions();
   }
 
-  private MockMultipartFile 제이슨_파트_생성(String name, Object value) throws Exception {
+  private MockMultipartFile jsonPart(String name, Object value) throws Exception {
     return new MockMultipartFile(
         name,
         "",

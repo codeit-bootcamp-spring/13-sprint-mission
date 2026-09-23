@@ -4,10 +4,7 @@ import com.sprint.mission.discodeit.controller.swagger.UserApi;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserResponse;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.userstatus.UserStatusResponse;
-import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.UserStatusService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -21,7 +18,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,7 +30,6 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController implements UserApi {
 
   private final UserService userService;
-  private final UserStatusService userStatusService;
 
   @Override
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -47,7 +42,7 @@ public class UserController implements UserApi {
     UserResponse response = userService.createUser(request, profile);
 
     log.info("사용자 생성 응답: userId={}", response.id());
-    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    return ResponseEntity.status(HttpStatus.OK).body(response); //200 UserDto
   }
 
   @Override
@@ -82,12 +77,4 @@ public class UserController implements UserApi {
     return ResponseEntity.status(HttpStatus.OK).body(userService.findAllUser());
   }
 
-  @Override
-  @PatchMapping("/{userId}/userStatus")
-  public ResponseEntity<UserStatusResponse> updateUserStatusByUserId(
-      @PathVariable UUID userId,
-      @Valid @RequestBody UserStatusUpdateRequest request) {
-    return ResponseEntity.status(HttpStatus.OK)
-        .body(userStatusService.updateUserStatusByUserId(userId, request));
-  }
 }

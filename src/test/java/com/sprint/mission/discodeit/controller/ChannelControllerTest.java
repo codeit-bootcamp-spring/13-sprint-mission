@@ -40,7 +40,7 @@ class ChannelControllerTest {
 
   @Test
   @DisplayName("올바른 공개 채널 생성 요청이면 201과 채널 정보를 반환한다")
-  void 공개채널_생성_요청_201() throws Exception {
+  void createPublicChannel() throws Exception {
     // given
     UUID channelId = UUID.randomUUID();
     ChannelPublicCreateRequest request =
@@ -63,7 +63,7 @@ class ChannelControllerTest {
 
   @Test
   @DisplayName("채널명이 비어 있으면 400과 검증 오류를 반환한다")
-  void 채널명이_비어_있으면_400과_검증_오류를_반환한다() throws Exception {
+  void rejectBlankName() throws Exception {
     // given
     ChannelPublicCreateRequest invalidRequest =
         new ChannelPublicCreateRequest("", "공개 채널 입니다");
