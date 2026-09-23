@@ -1,10 +1,9 @@
 package com.sprint.mission.discodeit.service;
 
-import com.sprint.mission.discodeit.dto.request.LoginRequest;
+import com.sprint.mission.discodeit.dto.request.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserResponse;
 
 public interface AuthService {
 
-    UserResponse login(LoginRequest dto);
-
+    UserResponse updateRole(UserRoleUpdateRequest request);
 }

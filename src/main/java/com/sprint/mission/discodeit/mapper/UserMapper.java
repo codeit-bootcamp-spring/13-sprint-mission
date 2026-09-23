@@ -16,14 +16,17 @@ public class UserMapper {
             return null;
         }
 
-        Boolean online = user.getStatus() != null && user.getStatus().isOnline();
+        Boolean online =
+                user.getStatus() != null
+                        && user.getStatus().isOnline();
 
         return new UserResponse(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 online,
-                binaryContentMapper.toDto(user.getProfile())
+                binaryContentMapper.toDto(user.getProfile()),
+                user.getRole()
         );
     }
 }

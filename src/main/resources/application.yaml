@@ -24,6 +24,12 @@ logging:
     org.hibernate.orm.jdbc.bind: trace
 
 discodeit:
+  admin:
+    enabled: ${DISCODEIT_ADMIN_ENABLED:true}
+    username: ${DISCODEIT_ADMIN_USERNAME:admin}
+    email: ${DISCODEIT_ADMIN_EMAIL:admin@discodeit.com}
+    password: ${DISCODEIT_ADMIN_PASSWORD:admin1234}
+
   storage:
     type: ${STORAGE_TYPE:local} # local | s3 (기본값: local)
     local:
