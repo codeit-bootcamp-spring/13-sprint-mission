@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.channel.PublicChannelRequest;
 import com.sprint.mission.discodeit.dto.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,12 +14,15 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -26,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
+@WithMockUser(roles = {"ADMIN", "CHANNEL_MANAGER"})
 public class DiscodeitApplicationTest {
 
     @Autowired
@@ -44,6 +50,7 @@ public class DiscodeitApplicationTest {
 
         mockMvc.perform(multipart("/api/users")
                         .file(jsonPart)
+                        .with(csrf())
                         .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.username").value("박경석"))
@@ -78,25 +85,18 @@ public class DiscodeitApplicationTest {
     @Test
     @DisplayName("사용자 수정 - 생성 후 수정하면 200")
     void updateUser_통합() throws Exception {
-        // 생성
-        UserCreateRequest createReq = new UserCreateRequest("수정전", "before@gmail.com", "0000");
-        MockMultipartFile createPart = new MockMultipartFile(
-                "userCreateRequest", "", "application/json",
-                objectMapper.writeValueAsBytes(createReq));
-        String responseBody = mockMvc.perform(multipart("/api/users").file(createPart)
-                        .contentType(MediaType.MULTIPART_FORM_DATA))
-                .andReturn().getResponse().getContentAsString();
-        String userId = objectMapper.readTree(responseBody).get("id").asText();
+        UserDto me = createUser("수정전", "before@gmail.com");
 
-        // 수정 (이름 변경)
         UserUpdateRequest updateReq = new UserUpdateRequest("수정후", null, null);
         MockMultipartFile updatePart = new MockMultipartFile(
                 "userUpdateRequest", "", "application/json",
                 objectMapper.writeValueAsBytes(updateReq));
-        mockMvc.perform(multipart("/api/users/{userId}", userId)
+        mockMvc.perform(multipart("/api/users/{userId}", me.id())
                         .file(updatePart)
                         .contentType(MediaType.MULTIPART_FORM_DATA)
-                        .with(req -> { req.setMethod("PATCH"); return req; }))
+                        .with(req -> { req.setMethod("PATCH"); return req; })
+                        .with(user(loginAs(me)))
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("수정후"));
     }
@@ -104,18 +104,11 @@ public class DiscodeitApplicationTest {
     @Test
     @DisplayName("사용자 삭제 - 생성 후 삭제하면 204")
     void deleteUser_통합() throws Exception {
-        // 생성
-        UserCreateRequest createReq = new UserCreateRequest("삭제대상", "del@gmail.com", "0000");
-        MockMultipartFile createPart = new MockMultipartFile(
-                "userCreateRequest", "", "application/json",
-                objectMapper.writeValueAsBytes(createReq));
-        String responseBody = mockMvc.perform(multipart("/api/users").file(createPart)
-                        .contentType(MediaType.MULTIPART_FORM_DATA))
-                .andReturn().getResponse().getContentAsString();
-        String userId = objectMapper.readTree(responseBody).get("id").asText();
+        UserDto me = createUser("삭제대상", "del@gmail.com");
 
-        // 삭제
-        mockMvc.perform(delete("/api/users/{userId}", userId))
+        mockMvc.perform(delete("/api/users/{userId}", me.id())
+                        .with(user(loginAs(me)))
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
     }
 
@@ -124,6 +117,7 @@ public class DiscodeitApplicationTest {
     private String createChannel() throws Exception {
         PublicChannelRequest req = new PublicChannelRequest("공지" + UUID.randomUUID(), "설명");
         String body = mockMvc.perform(post("/api/channels/public")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andReturn().getResponse().getContentAsString();
@@ -135,6 +129,7 @@ public class DiscodeitApplicationTest {
         MockMultipartFile part = new MockMultipartFile(
                 "userCreateRequest", "", "application/json", objectMapper.writeValueAsBytes(req));
         String body = mockMvc.perform(multipart("/api/users").file(part)
+                        .with(csrf())
                         .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andReturn().getResponse().getContentAsString();
         return objectMapper.readTree(body).get("id").asText();
@@ -146,6 +141,7 @@ public class DiscodeitApplicationTest {
         MockMultipartFile part = new MockMultipartFile(
                 "messageCreateRequest", "", "application/json", objectMapper.writeValueAsBytes(req));
         String body = mockMvc.perform(multipart("/api/messages").file(part)
+                        .with(csrf())
                         .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andReturn().getResponse().getContentAsString();
         return objectMapper.readTree(body).get("id").asText();
@@ -157,6 +153,7 @@ public class DiscodeitApplicationTest {
     void createChannel_통합() throws Exception {
         PublicChannelRequest req = new PublicChannelRequest("공지", "공지 채널");
         mockMvc.perform(post("/api/channels/public")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated())
@@ -167,7 +164,8 @@ public class DiscodeitApplicationTest {
     @DisplayName("채널 삭제 - 생성 후 삭제하면 204")
     void deleteChannel_통합() throws Exception {
         String channelId = createChannel();
-        mockMvc.perform(delete("/api/channels/{channelId}", channelId))
+        mockMvc.perform(delete("/api/channels/{channelId}", channelId)
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
     }
 
@@ -184,6 +182,7 @@ public class DiscodeitApplicationTest {
                 "messageCreateRequest", "", "application/json", objectMapper.writeValueAsBytes(req));
 
         mockMvc.perform(multipart("/api/messages").file(part)
+                        .with(csrf())
                         .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.content").value("안녕하세요"));
@@ -192,11 +191,30 @@ public class DiscodeitApplicationTest {
     @Test
     @DisplayName("메시지 삭제 - 생성 후 삭제하면 204")
     void deleteMessage_통합() throws Exception {
-        String authorId = createUserAndGetId("작성자2", "author2@gmail.com");
+        UserDto author = createUser("작성자2", "author2@gmail.com");
         String channelId = createChannel();
-        String messageId = createMessage(channelId, authorId);
+        String messageId = createMessage(channelId, author.id().toString());
 
-        mockMvc.perform(delete("/api/messages/{messageId}", messageId))
+        mockMvc.perform(delete("/api/messages/{messageId}", messageId)
+                        .with(user(loginAs(author)))
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
+    }
+
+
+    private UserDto createUser(String name, String email) throws Exception {
+        UserCreateRequest req = new UserCreateRequest(name, email, "0000");
+        MockMultipartFile part = new MockMultipartFile(
+                "userCreateRequest", "", "application/json", objectMapper.writeValueAsBytes(req));
+        String body = mockMvc.perform(multipart("/api/users").file(part)
+                .with(csrf())
+                .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readValue(body, UserDto.class);
+    }
+
+    private DiscodeitUserDetails loginAs(UserDto userDto) {
+        return new DiscodeitUserDetails(userDto, "0000");
     }
 }

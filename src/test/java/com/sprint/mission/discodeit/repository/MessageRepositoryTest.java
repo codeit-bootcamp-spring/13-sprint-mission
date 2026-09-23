@@ -1,10 +1,7 @@
 package com.sprint.mission.discodeit.repository;
 
 import com.sprint.mission.discodeit.config.JpaAuditingConfig;
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.ChannelType;
-import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.entity.*;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,7 +37,7 @@ class MessageRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        User user = new User("박경석", "park@gmailcom", "0000", null, null);
+        User user = new User("박경석", "park@gmail.com", "0000", Role.USER, null);
         Channel channel = new Channel(ChannelType.PUBLIC, "공지", "설명");
         em.persist(user);
         em.persist(channel);

@@ -3,8 +3,6 @@ package com.sprint.mission.discodeit.controller.docs;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.userstatus.UserStatusDto;
-import com.sprint.mission.discodeit.dto.userstatus.UserStatusUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -62,13 +60,5 @@ public interface UserControllerDocs {
             @ApiResponse(responseCode = "404", description = "존재하지 않음")
     })
     public ResponseEntity<List<UserDto>> findAllUser();
-
-    @Operation(summary = "User 온라인 상태 업데이트 API")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "성공"),
-            @ApiResponse(responseCode = "404", description = "존재하지 않음")
-    })
-    public ResponseEntity<UserStatusDto> updateUserStatus(@PathVariable UUID userId,
-                                                          @Valid @RequestBody UserStatusUpdateRequest request);
 
 }

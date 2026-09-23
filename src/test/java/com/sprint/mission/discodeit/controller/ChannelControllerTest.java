@@ -13,12 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
@@ -29,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(ChannelController.class)
 @Import(GlobalExceptionHandler.class)
+@WithMockUser(roles = "CHANNEL_MANAGER")
 class ChannelControllerTest {
 
     @Autowired
@@ -52,7 +54,7 @@ class ChannelControllerTest {
 
         PublicChannelRequest request = new PublicChannelRequest("공지", "공지 채널");
 
-        mockMvc.perform(post("/api/channels/public")
+        mockMvc.perform(post("/api/channels/public").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -66,7 +68,8 @@ class ChannelControllerTest {
         willThrow(ChannelNotFoundException.withId(channelId))
                 .given(channelService).deleteChannel(channelId);
 
-        mockMvc.perform(delete("/api/channels/{channelId}", channelId.toString()))
+        mockMvc.perform(delete("/api/channels/{channelId}", channelId.toString())
+                        .with(csrf()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("CHANNEL_NOT_FOUND"));
     }

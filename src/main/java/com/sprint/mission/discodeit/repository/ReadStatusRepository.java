@@ -2,6 +2,9 @@ package com.sprint.mission.discodeit.repository;
 
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,8 +19,10 @@ public interface ReadStatusRepository extends JpaRepository<ReadStatus, UUID> {
 
     Optional<ReadStatus> findByUserIdAndChannelId(UUID userId, UUID ChannelId);
 
-    //삭제
-    void deleteByChannelId(UUID channelId);
+    @Modifying
+    @Query("DELETE FROM ReadStatus rs where rs.channel.id = :channelId")
+    void deleteByChannelId(@Param("channelId") UUID channelId);
+
     void deleteByUserId (UUID userId);
 
 }

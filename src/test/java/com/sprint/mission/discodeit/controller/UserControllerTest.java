@@ -3,10 +3,10 @@ package com.sprint.mission.discodeit.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.exception.GlobalExceptionHandler;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.UserStatusService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +14,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import java.util.UUID;
 
@@ -28,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(UserController.class)
 @Import(GlobalExceptionHandler.class)
+@WithMockUser
 class UserControllerTest {
 
     @Autowired
@@ -39,13 +42,10 @@ class UserControllerTest {
     @MockitoBean
     private UserService userService;
 
-    @MockitoBean
-    private UserStatusService userStatusService;
-
     @Test
     @DisplayName("사용자 생성 성공 - 201")
     void createUser_성공() throws Exception {
-        UserDto response = new UserDto(UUID.randomUUID(), "박경석", "park@gmail.com", null, false);
+        UserDto response = new UserDto(UUID.randomUUID(), "박경석", "park@gmail.com", Role.USER, null, false);
         given(userService.createUser(any(), any())).willReturn(response);
 
         // JSON 파트 준비
@@ -56,6 +56,7 @@ class UserControllerTest {
 
         mockMvc.perform(multipart("/api/users")
                         .file(jsonPart)
+                        .with(csrf())
                         .contentType(MediaType.MULTIPART_FORM_DATA))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.username").value("박경석"))
