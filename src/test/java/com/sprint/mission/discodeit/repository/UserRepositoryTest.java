@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ class UserRepositoryTest {
   @DisplayName("findByUserName 성공 - 존재하는 username이면 User를 반환한다")
   void findByUserName_success() {
     // given
-    User user = new User("testuser", "password123!", "test@example.com");
+    User user = new User("testuser", "password123!", "test@example.com", Role.USER);
     entityManager.persist(user);
     entityManager.flush();
 
@@ -54,7 +55,7 @@ class UserRepositoryTest {
   @DisplayName("findByEmail 성공 - 존재하는 email이면 User를 반환한다")
   void findByEmail_success() {
     // given
-    User user = new User("emailuser", "password123!", "email@example.com");
+    User user = new User("emailuser", "password123!", "email@example.com", Role.USER);
     entityManager.persist(user);
     entityManager.flush();
 

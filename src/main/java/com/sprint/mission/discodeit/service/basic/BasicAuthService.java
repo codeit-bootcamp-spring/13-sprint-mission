@@ -1,14 +1,17 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.auth.InvalidCredentialsException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.AuthService;
-import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,21 +23,18 @@ public class BasicAuthService implements AuthService {
   private final UserRepository userRepository;
   private final UserMapper userMapper;
 
+
   @Override
+  @PreAuthorize("hasRole('ADMIN')")
   @Transactional
-  public UserDto login(String username, String password) { //validation으로 유효성 검증 완.
-    log.info("로그인 요청 - username: {}", username);
+  public UserDto updateRole(UUID userId, Role newRole) {
 
-    User user = userRepository.findByUserName(username)
-        .orElseThrow(() -> new InvalidCredentialsException(username));
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new UserNotFoundException(userId));
 
-    if (!user.getPassword().equals(password)) {
-      throw new InvalidCredentialsException(username);
-    }
+    user.updateRole(newRole);
 
-    user.getUserStatus().updateLastActiveAt(Instant.now());
-
-    log.info("로그인 성공 - username: {}", username);
     return userMapper.toDto(user);
   }
+
 }

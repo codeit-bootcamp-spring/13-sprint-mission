@@ -21,6 +21,9 @@ spring:
       max-request-size: 10MB
 
 discodeit:
+  admin:
+    email: ${ADMIN_EMAIL}
+    password: ${ADMIN_PASSWORD}
   repository:
     type: file
     file-directory: .discodeit
@@ -67,3 +70,4 @@ management:
 logging:
   level:
     root: info # 기본 로깅 레벨
+    org.springframework.security: trace

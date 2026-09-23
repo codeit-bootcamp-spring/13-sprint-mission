@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import java.time.Instant;
 import java.util.List;
@@ -32,7 +33,7 @@ class MessageRepositoryTest {
   @DisplayName("findAllByChannel_Id 성공 - 채널에 속한 메시지를 최신순으로 페이징 조회한다")
   void findAllByChannelId_success() {
     // given
-    User author = new User("writer", "pw123456789!", "writer@example.com");
+    User author = new User("writer", "pw123456789!", "writer@example.com", Role.USER);
     entityManager.persist(author);
     Channel channel = new Channel(ChannelType.PUBLIC, "공지", "설명");
     entityManager.persist(channel);
@@ -69,7 +70,7 @@ class MessageRepositoryTest {
   @DisplayName("findAllByChannel_IdAndCreatedAtBefore 성공 - 커서 이전 메시지만 조회한다")
   void findAllByChannelIdAndCreatedAtBefore_success() throws InterruptedException {
     // given
-    User author = new User("writer2", "pw123456789!", "writer2@example.com");
+    User author = new User("writer2", "pw123456789!", "writer2@example.com", Role.USER);
     entityManager.persist(author);
     Channel channel = new Channel(ChannelType.PUBLIC, "공지2", "설명");
     entityManager.persist(channel);
@@ -99,7 +100,7 @@ class MessageRepositoryTest {
   @DisplayName("findAllByChannel_IdAndCreatedAtBefore 실패 - 커서보다 이전 메시지가 없으면 빈 결과를 반환한다")
   void findAllByChannelIdAndCreatedAtBefore_fail_empty() {
     // given
-    User author = new User("writer3", "pw123456789!", "writer3@example.com");
+    User author = new User("writer3", "pw123456789!", "writer3@example.com", Role.USER);
     entityManager.persist(author);
     Channel channel = new Channel(ChannelType.PUBLIC, "공지3", "설명");
     entityManager.persist(channel);

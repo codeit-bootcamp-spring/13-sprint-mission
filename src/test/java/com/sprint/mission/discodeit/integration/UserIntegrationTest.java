@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import java.util.UUID;
@@ -59,7 +60,7 @@ class UserIntegrationTest {
   @DisplayName("사용자 목록 조회 API - 저장된 사용자를 조회한다")
   void findAllUsers_success() throws Exception {
     // given
-    userRepository.save(new User("listUser", "password1234!", "listuser@example.com"));
+    userRepository.save(new User("listUser", "password1234!", "listuser@example.com", Role.USER));
 
     // when & then
     mockMvc.perform(get("/api/users"))
@@ -72,7 +73,7 @@ class UserIntegrationTest {
   void deleteUser_success() throws Exception {
     // given
     User user = userRepository.save(
-        new User("deleteUser", "password1234!", "deleteuser@example.com"));
+        new User("deleteUser", "password1234!", "deleteuser@example.com", Role.USER));
     UUID userId = user.getId();
 
     // when & then

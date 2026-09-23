@@ -5,6 +5,8 @@ package com.sprint.mission.discodeit.entity;
 import com.sprint.mission.discodeit.entity.base.BaseUpdatableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -27,13 +29,17 @@ public class User extends BaseUpdatableEntity {
   @OneToOne(mappedBy = "user")//FK주인은 UserStatus의 user필드
   private UserStatus userStatus;
 
+  @Enumerated(EnumType.STRING)
+  private Role role;
+
   public User() {
   }
 
-  public User(String username, String password, String email) {//유저가 입력한 문자열을 받아서 {}를 실행
+  public User(String username, String password, String email, Role role) {//유저가 입력한 문자열을 받아서 {}를 실행
     this.userName = username;//(String username)로 받은 정보를 할당
     this.password = password;
     this.email = email;
+    this.role = role;
   }
 
   public void updateProfileId(BinaryContent profileId) {
@@ -50,8 +56,13 @@ public class User extends BaseUpdatableEntity {
       this.email = newEmail;
 
     }
+
     if (newPassword != null && !newPassword.equals(this.password)) {
       this.password = newPassword;
     }
+  }
+
+  public void  updateRole(Role newRole) {
+    this.role = newRole;
   }
 }

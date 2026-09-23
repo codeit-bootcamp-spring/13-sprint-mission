@@ -9,6 +9,7 @@ import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
@@ -51,7 +52,7 @@ class MessageIntegrationTest {
   void createMessage_success() throws Exception {
     // given
     User author = userRepository.save(
-        new User("msgAuthor", "password1234!", "msgauthor@example.com"));
+        new User("msgAuthor", "password1234!", "msgauthor@example.com", Role.USER));
     Channel channel = channelRepository.save(new Channel(ChannelType.PUBLIC, "메시지채널", "설명"));
     MessageCreateRequest request = new MessageCreateRequest(
         "통합테스트 메시지", channel.getId(), author.getId(), List.of());
@@ -72,7 +73,7 @@ class MessageIntegrationTest {
   void updateMessage_success() throws Exception {
     // given
     User author = userRepository.save(
-        new User("editAuthor", "password1234!", "editauthor@example.com"));
+        new User("editAuthor", "password1234!", "editauthor@example.com", Role.USER));
     Channel channel = channelRepository.save(new Channel(ChannelType.PUBLIC, "채널", "설명"));
     Message message = messageRepository.save(new Message("원본내용", author, channel));
     MessageUpdateRequest request = new MessageUpdateRequest("수정된내용");
@@ -91,7 +92,7 @@ class MessageIntegrationTest {
   void deleteMessage_success() throws Exception {
     // given
     User author = userRepository.save(
-        new User("delAuthor", "password1234!", "delauthor@example.com"));
+        new User("delAuthor", "password1234!", "delauthor@example.com", Role.USER));
     Channel channel = channelRepository.save(new Channel(ChannelType.PUBLIC, "채널2", "설명"));
     Message message = messageRepository.save(new Message("삭제될메시지", author, channel));
     UUID messageId = message.getId();
@@ -109,7 +110,7 @@ class MessageIntegrationTest {
   void findAllByChannelId_success() throws Exception {
     // given
     User author = userRepository.save(
-        new User("listAuthor", "password1234!", "listauthor@example.com"));
+        new User("listAuthor", "password1234!", "listauthor@example.com", Role.USER));
     Channel channel = channelRepository.save(new Channel(ChannelType.PUBLIC, "채널3", "설명"));
     messageRepository.save(new Message("메시지1", author, channel));
 
