@@ -56,6 +56,8 @@ logging:
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.batch: trace
     org.hibernate.orm.jdbc.bind: off
+    # security
+    org.springframework.security: trace
 
 management:
   endpoints:

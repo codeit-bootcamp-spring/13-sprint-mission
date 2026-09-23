@@ -2,9 +2,7 @@ package com.sprint.mission.discodeit.controller.swagger;
 
 import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.request.userStatus.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.exception.ApiErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,7 +16,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -53,7 +50,7 @@ public interface UserApi {
             )
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "User가 성공적으로 생성됨"),
+            @ApiResponse(responseCode = "200", description = "User가 성공적으로 생성됨"),
             @ApiResponse(
                     responseCode = "400",
                     description = "같은 email 또는 username을 사용하는 User가 이미 존재함",
@@ -141,24 +138,4 @@ public interface UserApi {
     ResponseEntity<Void> delete(
             @Parameter(description = "삭제할 User ID", required = true)
             UUID userId);
-
-    @Operation(summary = "User 온라인 상태 업데이트")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "User 온라인 상태가 성공적으로 업데이트됨"),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "해당 User의 UserStatus를 찾을 수 없음",
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = ApiErrorResponse.class),
-                            examples = @ExampleObject(value = "{\"message\":\"유저 상태가 존재하지 않습니다.\",\"fields\":null}")
-                    )
-            )
-    })
-    ResponseEntity<UserStatusDto> statusUpdate(
-            @Parameter(description = "상태를 변경할 User ID", required = true)
-            UUID userId,
-
-            @Valid @RequestBody UserStatusUpdateRequest request
-    );
 }

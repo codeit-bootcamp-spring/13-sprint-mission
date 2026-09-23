@@ -20,6 +20,7 @@ import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +42,7 @@ public class BasicChannelService implements ChannelService {
     private final MessageReader messageReader;
 
     @LogAction(value = "채널 생성")
+    @PreAuthorize("hasRole('CHANNEL_MANAGER') or #command.isPrivate()")
     @Override
     public ChannelDto save(ChannelCreateCommand command) {
 
@@ -94,6 +96,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @LogAction(value = "채널 수정")
+    @PreAuthorize("hasRole('CHANNEL_MANAGER')")
     @Override
     public ChannelDto update(UUID channelId, ChannelUpdateCommand command) {
         Channel channel = getChannelRequireThrow(channelId);
@@ -110,6 +113,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @LogAction(value = "채널 삭제", idName = "channelId", idParamIndex = 0)
+    @PreAuthorize("hasRole('CHANNEL_MANAGER') or @channelGuard.isChannelPrivate(#channelId)")
     @Override
     public void delete(UUID channelId) {
 

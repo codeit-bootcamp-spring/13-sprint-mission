@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.dto.command.channel.ChannelCreatePublicCommand;
 import com.sprint.mission.discodeit.dto.request.channel.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
@@ -9,35 +10,33 @@ import com.sprint.mission.discodeit.dto.request.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.readStatus.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
-import com.sprint.mission.discodeit.dto.request.user.UserLoginRequest;
+import com.sprint.mission.discodeit.dto.request.user.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.request.userStatus.UserStatusUpdateRequest;
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.ChannelType;
-import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.MessageFile;
-import com.sprint.mission.discodeit.entity.ReadStatus;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
-import com.sprint.mission.discodeit.repository.BinaryContentRepository;
-import com.sprint.mission.discodeit.repository.ChannelRepository;
-import com.sprint.mission.discodeit.repository.MessageFileRepository;
-import com.sprint.mission.discodeit.repository.MessageRepository;
-import com.sprint.mission.discodeit.repository.ReadStatusRepository;
-import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.repository.*;
 import jakarta.persistence.EntityManager;
+import jakarta.servlet.http.Cookie;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.mock.web.MockServletContext;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.session.SessionInformation;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -45,15 +44,11 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
+import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -70,9 +65,6 @@ class DiscodeitApiIntegrationTest {
 
     @Autowired
     UserRepository userRepository;
-
-    @Autowired
-    UserStatusRepository userStatusRepository;
 
     @Autowired
     ChannelRepository channelRepository;
@@ -92,13 +84,34 @@ class DiscodeitApiIntegrationTest {
     @Autowired
     EntityManager em;
 
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
+    @Autowired
+    SessionRegistry sessionRegistry;
+
+    @Autowired
+    HttpSessionEventPublisher httpSessionEventPublisher;
+
+    @Autowired
+    WebApplicationContext webApplicationContext;
+
+    @AfterEach
+    void clearSessionRegistry() {
+        sessionRegistry.getAllPrincipals().forEach(principal ->
+                sessionRegistry.getAllSessions(principal, true).forEach(sessionInformation ->
+                        sessionRegistry.removeSessionInformation(sessionInformation.getSessionId())
+                )
+        );
+    }
+
     @Test
-    @DisplayName("사용자 생성, 로그인, 상태 수정 통합 성공 - 실제 DB에 사용자와 상태가 반영")
-    void userCreateLoginAndStatusUpdate_flowPersistsUserAndStatus() throws Exception {
+    @DisplayName("사용자 생성 및 로그인 통합 성공 - 실제 DB 사용자로 인증")
+    void userCreateAndLogin_authenticatesPersistedUser() throws Exception {
         // given
         // 통합 테스트는 Controller 슬라이스 테스트와 달리 Service, Repository, Mapper, DB를 모두 실제 Bean으로 사용한다.
-        // 이 테스트는 사용자 생성 요청이 User, BinaryContent, UserStatus 저장까지 이어지고,
-        // 이후 로그인과 상태 수정 API가 같은 사용자 상태 row를 갱신하는지 확인한다.
+        // 이 테스트는 사용자 생성 요청이 User와 BinaryContent 저장까지 이어지고,
+        // 이후 저장된 계정으로 로그인할 수 있는지 확인한다.
         String suffix = uniqueSuffix();
         UserCreateRequest createRequest = new UserCreateRequest(
                 "integrationUser-" + suffix,
@@ -118,11 +131,12 @@ class DiscodeitApiIntegrationTest {
         MvcResult createResult = mockMvc.perform(multipart("/api/users")
                         .file(userCreateRequestPart)
                         .file(profilePart)
+                        .with(csrf())
                         .accept(MediaType.APPLICATION_JSON))
 
                 // then
-                // HTTP 응답은 201 Created이며, 생성된 사용자와 프로필 메타데이터를 JSON으로 내려줘야 한다.
-                .andExpect(status().isCreated())
+                // HTTP 응답은 200 OK이며, 생성된 사용자와 프로필 메타데이터를 JSON으로 내려줘야 한다.
+                .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.username").value(createRequest.username()))
@@ -131,7 +145,8 @@ class DiscodeitApiIntegrationTest {
                 .andExpect(jsonPath("$.profile.fileName").value(profilePart.getOriginalFilename()))
                 .andExpect(jsonPath("$.profile.size").value(profilePart.getSize()))
                 .andExpect(jsonPath("$.profile.contentType").value(profilePart.getContentType()))
-                .andExpect(jsonPath("$.online").value(true))
+                .andExpect(jsonPath("$.online").value(false))
+                .andExpect(jsonPath("$.role").value(Role.USER.name()))
                 .andReturn();
 
         JsonNode createBody = readBody(createResult);
@@ -142,54 +157,344 @@ class DiscodeitApiIntegrationTest {
         // 영속성 컨텍스트를 비워 API 호출 결과가 1차 캐시가 아니라 DB에 flush된 상태인지 확인한다.
         flushAndClear();
         User savedUser = userRepository.findById(userId).orElseThrow(AssertionError::new);
-        UserStatus savedStatus = userStatusRepository.findByUserId(userId).orElseThrow(AssertionError::new);
 
         assertThat(savedUser.getUsername()).isEqualTo(createRequest.username());
+        assertThat(savedUser.getPassword()).isNotEqualTo(createRequest.password());
+        assertThat(passwordEncoder.matches(createRequest.password(), savedUser.getPassword())).isTrue();
         assertThat(savedUser.getEmail()).isEqualTo(createRequest.email());
         assertThat(savedUser.getProfileId()).isEqualTo(profileId);
-        assertThat(savedStatus.getUserId()).isEqualTo(userId);
         assertThat(binaryContentRepository.findById(profileId)).isPresent();
 
         // when
         // 생성한 사용자 계정으로 실제 로그인 API를 호출한다.
-        UserLoginRequest loginRequest = new UserLoginRequest(
-                createRequest.username(),
-                createRequest.password()
-        );
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequest)))
+        MvcResult loginResult = performLogin(createRequest.username(), createRequest.password())
 
                 // then
-                // AuthService, UserReader, UserStatusService, UserMapper가 함께 동작해 로그인 응답을 내려줘야 한다.
+                // 폼 로그인 필터와 커스텀 인증 컴포넌트가 함께 동작해 사용자 정보를 내려줘야 한다.
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(userId.toString()))
                 .andExpect(jsonPath("$.username").value(createRequest.username()))
-                .andExpect(jsonPath("$.online").value(true));
+                .andExpect(jsonPath("$.online").value(true))
+                .andExpect(jsonPath("$.role").value(Role.USER.name()))
+                .andExpect(authenticated().withUsername(createRequest.username()))
+                .andReturn();
 
-        // when
-        // 사용자 상태 수정 API로 lastActiveAt을 명시적으로 갱신한다.
-        Instant updatedLastActiveAt = Instant.parse("2026-07-28T01:40:30Z");
-        UserStatusUpdateRequest statusUpdateRequest = new UserStatusUpdateRequest(updatedLastActiveAt);
-        mockMvc.perform(patch("/api/users/{userId}/userStatus", userId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(statusUpdateRequest)))
-
-                // then
-                // 상태 수정 응답은 같은 userId를 포함해야 한다.
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userId").value(userId.toString()))
-                .andExpect(jsonPath("$.lastActiveAt").exists());
-
-        // DB에 저장된 UserStatus.lastActiveAt이 요청값으로 갱신됐는지 확인한다.
-        flushAndClear();
-        UserStatus updatedStatus = userStatusRepository.findByUserId(userId).orElseThrow(AssertionError::new);
-        assertThat(updatedStatus.getLastActiveAt()).isEqualTo(updatedLastActiveAt);
+        MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
+        assertThat(session).isNotNull();
     }
 
     @Test
+    @DisplayName("현재 사용자 조회 성공 - 로그인 세션으로 동일한 사용자 정보 반환")
+    void getMe_returnsCurrentUser_whenSessionIsAuthenticated() throws Exception {
+        // given
+        // 실제 사용자 생성 및 폼 로그인을 통해 SecurityContext가 저장된 HTTP 세션을 준비한다.
+        String suffix = uniqueSuffix();
+        String username = "sessionUser-" + suffix;
+        String email = "session-user-" + suffix + "@gmail.com";
+        UUID userId = createUser(username, email);
+
+        // 실제로 분리된 HTTP 요청처럼 로그인에서 사용자와 상태를 DB로부터 다시 조회하도록 한다.
+        flushAndClear();
+
+        MvcResult loginResult = performLogin(username, "integrationPassword")
+                .andExpect(status().isOk())
+                .andExpect(authenticated().withUsername(username))
+                .andReturn();
+
+        MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
+        assertThat(session).isNotNull();
+
+        // when & then
+        // 브라우저가 JSESSIONID 쿠키를 자동으로 전달하는 동작을 동일한 MockHttpSession 재사용으로 검증한다.
+        mockMvc.perform(get("/api/auth/me")
+                        .session(session)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(authenticated().withUsername(username))
+                .andExpect(jsonPath("$.id").value(userId.toString()))
+                .andExpect(jsonPath("$.username").value(username))
+                .andExpect(jsonPath("$.email").value(email))
+                .andExpect(jsonPath("$.online").value(true));
+    }
+
+    @Test
+    @DisplayName("로그아웃 성공 - 인증과 세션을 제거하고 204 응답 반환")
+    void logout_invalidatesSessionAndReturnsNoContent() throws Exception {
+        // given
+        // 실제 사용자 생성 및 폼 로그인을 통해 SecurityContext가 저장된 HTTP 세션을 준비한다.
+        String suffix = uniqueSuffix();
+        String username = "logoutUser-" + suffix;
+        createUser(username, "logout-user-" + suffix + "@gmail.com");
+
+        // 실제로 분리된 HTTP 요청처럼 로그인에서 사용자를 DB로부터 다시 조회하도록 한다.
+        flushAndClear();
+
+        MvcResult loginResult = performLogin(username, "integrationPassword")
+                .andExpect(status().isOk())
+                .andExpect(authenticated().withUsername(username))
+                .andReturn();
+
+        MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
+        assertThat(session).isNotNull();
+        assertThat(sessionRegistry.getSessionInformation(session.getId())).isNotNull();
+
+        // when & then
+        // 동일한 세션과 CSRF 토큰으로 로그아웃하면 인증 및 세션과 JSESSIONID 쿠키가 제거되어야 한다.
+        mockMvc.perform(post("/api/auth/logout")
+                        .session(session)
+                        .with(csrf()))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""))
+                .andExpect(unauthenticated())
+                .andExpect(cookie().maxAge("JSESSIONID", 0));
+
+        assertThat(session.isInvalid()).isTrue();
+    }
+
+    @Test
+    @DisplayName("HTTP 세션 만료 이벤트가 발생하면 세션 레지스트리에서도 제거한다")
+    void sessionDestroyedEvent_removesSessionFromRegistry() {
+        MockServletContext servletContext = new MockServletContext();
+        servletContext.setAttribute(
+                WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE,
+                webApplicationContext
+        );
+        MockHttpSession session = new MockHttpSession(servletContext);
+        String principal = "session-event-user";
+        sessionRegistry.registerNewSession(session.getId(), principal);
+        assertThat(sessionRegistry.getSessionInformation(session.getId())).isNotNull();
+
+        httpSessionEventPublisher.sessionDestroyed(new jakarta.servlet.http.HttpSessionEvent(session));
+
+        assertThat(sessionRegistry.getSessionInformation(session.getId())).isNull();
+    }
+
+    @Test
+    @DisplayName("동일한 계정으로 다시 로그인하면 기존 세션을 만료하고 새 세션을 유지한다")
+    void login_expiresPreviousSession_whenSameAccountLogsInAgain() throws Exception {
+        String suffix = uniqueSuffix();
+        String username = "concurrentUser-" + suffix;
+        UUID userId = createUser(username, "concurrent-user-" + suffix + "@gmail.com");
+        flushAndClear();
+
+        MvcResult firstLogin = performLogin(username, "integrationPassword")
+                .andExpect(status().isOk())
+                .andReturn();
+        MockHttpSession firstSession = (MockHttpSession) firstLogin.getRequest().getSession(false);
+        assertThat(firstSession).isNotNull();
+
+        MvcResult secondLogin = performLogin(username, "integrationPassword")
+                .andExpect(status().isOk())
+                .andReturn();
+        MockHttpSession secondSession = (MockHttpSession) secondLogin.getRequest().getSession(false);
+        assertThat(secondSession).isNotNull();
+        assertThat(secondSession.getId()).isNotEqualTo(firstSession.getId());
+
+        SessionInformation firstSessionInformation =
+                sessionRegistry.getSessionInformation(firstSession.getId());
+        SessionInformation secondSessionInformation =
+                sessionRegistry.getSessionInformation(secondSession.getId());
+
+        assertThat(firstSessionInformation).isNotNull();
+        assertThat(firstSessionInformation.isExpired()).isTrue();
+        assertThat(secondSessionInformation).isNotNull();
+        assertThat(secondSessionInformation.isExpired()).isFalse();
+
+        mockMvc.perform(get("/api/auth/me").session(secondSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(userId.toString()))
+                .andExpect(jsonPath("$.online").value(true));
+    }
+
+    @Test
+    @DisplayName("로그인 유지 성공 - 세션 쿠키 없이 Remember-Me 쿠키로 자동 로그인")
+    void rememberMe_autoLogsIn_whenSessionCookieIsMissing() throws Exception {
+        String suffix = uniqueSuffix();
+        String username = "rememberMeUser-" + suffix;
+        UUID userId = createUser(username, "remember-me-" + suffix + "@gmail.com");
+        flushAndClear();
+
+        MvcResult loginResult = performRememberMeLogin(username, "integrationPassword")
+                .andExpect(status().isOk())
+                .andExpect(authenticated().withUsername(username))
+                .andExpect(cookie().exists("remember-me"))
+                .andExpect(cookie().maxAge("remember-me", 60 * 60 * 24 * 30))
+                .andReturn();
+
+        Cookie rememberMeCookie = loginResult.getResponse().getCookie("remember-me");
+        MockHttpSession loginSession = (MockHttpSession) loginResult.getRequest().getSession(false);
+        assertThat(rememberMeCookie).isNotNull();
+        assertThat(loginSession).isNotNull();
+
+        MvcResult autoLoginResult = mockMvc.perform(get("/api/auth/me")
+                        .cookie(rememberMeCookie)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(authenticated().withUsername(username))
+                .andExpect(jsonPath("$.id").value(userId.toString()))
+                .andExpect(jsonPath("$.username").value(username))
+                .andExpect(jsonPath("$.online").value(true))
+                .andReturn();
+
+        MockHttpSession autoLoginSession =
+                (MockHttpSession) autoLoginResult.getRequest().getSession(false);
+        assertThat(autoLoginSession).isNotNull();
+        assertThat(autoLoginSession.getId()).isNotEqualTo(loginSession.getId());
+    }
+
+    @Test
+    @DisplayName("로그인 유지 미선택 - Remember-Me 쿠키를 발급하지 않는다")
+    void rememberMe_doesNotIssueCookie_whenParameterIsMissing() throws Exception {
+        String suffix = uniqueSuffix();
+        String username = "noRememberMeUser-" + suffix;
+        createUser(username, "no-remember-me-" + suffix + "@gmail.com");
+        flushAndClear();
+
+        MvcResult loginResult = performLogin(username, "integrationPassword")
+                .andExpect(status().isOk())
+                .andExpect(authenticated().withUsername(username))
+                .andExpect(cookie().doesNotExist("remember-me"))
+                .andReturn();
+
+        assertThat(loginResult.getResponse().getCookie("remember-me")).isNull();
+    }
+
+    @Test
+    @DisplayName("로그인 유지 해제 - remember-me가 false이면 쿠키를 발급하지 않는다")
+    void rememberMe_doesNotIssueCookie_whenParameterIsFalse() throws Exception {
+        String suffix = uniqueSuffix();
+        String username = "falseRememberMeUser-" + suffix;
+        createUser(username, "false-remember-me-" + suffix + "@gmail.com");
+        flushAndClear();
+
+        MvcResult loginResult = performLoginWithRememberMe(
+                        username,
+                        "integrationPassword",
+                        false
+                )
+                .andExpect(status().isOk())
+                .andExpect(authenticated().withUsername(username))
+                .andExpect(cookie().doesNotExist("remember-me"))
+                .andReturn();
+
+        assertThat(loginResult.getResponse().getCookie("remember-me")).isNull();
+    }
+
+    @Test
+    @DisplayName("로그인 유지 로그아웃 성공 - 세션과 Remember-Me 쿠키를 제거한다")
+    void rememberMe_logoutInvalidatesSessionAndCookie() throws Exception {
+        String suffix = uniqueSuffix();
+        String username = "rememberMeLogoutUser-" + suffix;
+        createUser(username, "remember-me-logout-" + suffix + "@gmail.com");
+        flushAndClear();
+
+        MvcResult loginResult = performRememberMeLogin(username, "integrationPassword")
+                .andExpect(status().isOk())
+                .andReturn();
+        Cookie rememberMeCookie = loginResult.getResponse().getCookie("remember-me");
+        MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
+        assertThat(rememberMeCookie).isNotNull();
+        assertThat(session).isNotNull();
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .session(session)
+                        .cookie(rememberMeCookie)
+                        .with(csrf()))
+                .andExpect(status().isNoContent())
+                .andExpect(unauthenticated())
+                .andExpect(cookie().maxAge("JSESSIONID", 0))
+                .andExpect(cookie().maxAge("remember-me", 0));
+
+        assertThat(session.isInvalid()).isTrue();
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("사용자 역할을 변경하면 대상 사용자의 세션만 만료한다")
+    void updateUserRole_expiresOnlyTargetUserSession() throws Exception {
+        String suffix = uniqueSuffix();
+        String targetUsername = "roleSessionTarget-" + suffix;
+        String otherUsername = "roleSessionOther-" + suffix;
+        UUID targetUserId = createUser(
+                targetUsername,
+                "role-session-target-" + suffix + "@gmail.com"
+        );
+        createUser(otherUsername, "role-session-other-" + suffix + "@gmail.com");
+        flushAndClear();
+
+        MvcResult targetLogin = performLogin(targetUsername, "integrationPassword")
+                .andExpect(status().isOk())
+                .andReturn();
+        MvcResult otherLogin = performLogin(otherUsername, "integrationPassword")
+                .andExpect(status().isOk())
+                .andReturn();
+        MockHttpSession targetSession = (MockHttpSession) targetLogin.getRequest().getSession(false);
+        MockHttpSession otherSession = (MockHttpSession) otherLogin.getRequest().getSession(false);
+        assertThat(targetSession).isNotNull();
+        assertThat(otherSession).isNotNull();
+
+        UserRoleUpdateRequest request = new UserRoleUpdateRequest(
+                targetUserId,
+                Role.CHANNEL_MANAGER
+        );
+        mockMvc.perform(put("/api/auth/role")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(targetUserId.toString()))
+                .andExpect(jsonPath("$.role").value(Role.CHANNEL_MANAGER.name()))
+                .andExpect(jsonPath("$.online").value(false));
+
+        SessionInformation targetSessionInformation =
+                sessionRegistry.getSessionInformation(targetSession.getId());
+        SessionInformation otherSessionInformation =
+                sessionRegistry.getSessionInformation(otherSession.getId());
+
+        assertThat(targetSessionInformation).isNotNull();
+        assertThat(targetSessionInformation.isExpired()).isTrue();
+        assertThat(otherSessionInformation).isNotNull();
+        assertThat(otherSessionInformation.isExpired()).isFalse();
+    }
+
+    @Test
+    @DisplayName("로그인 실패 - 비밀번호가 일치하지 않으면 표준 401 오류 응답 반환")
+    void login_returnsUnauthorized_whenPasswordIsIncorrect() throws Exception {
+        String suffix = uniqueSuffix();
+        String username = "wrongPasswordUser-" + suffix;
+        createUser(username, "wrong-password-" + suffix + "@gmail.com");
+
+        performLogin(username, "incorrectPassword")
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.exceptionType").value("UserLoginFailedException"))
+                .andExpect(jsonPath("$.code").value("USER_LOGIN_FAILED"))
+                .andExpect(jsonPath("$.message").value("아이디 또는 비밀번호가 일치하지 않습니다."))
+                .andExpect(jsonPath("$.details").isEmpty())
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(unauthenticated());
+    }
+
+    @Test
+    @DisplayName("로그인 실패 - 사용자가 존재하지 않으면 표준 401 오류 응답 반환")
+    void login_returnsUnauthorized_whenUserDoesNotExist() throws Exception {
+        performLogin("unknownUser-" + uniqueSuffix(), "integrationPassword")
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.exceptionType").value("UserLoginFailedException"))
+                .andExpect(jsonPath("$.code").value("USER_LOGIN_FAILED"))
+                .andExpect(jsonPath("$.message").value("아이디 또는 비밀번호가 일치하지 않습니다."))
+                .andExpect(jsonPath("$.details").isEmpty())
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(unauthenticated());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     @DisplayName("공개 채널, 메시지, 첨부 파일 통합 성공 - 메시지 저장 후 목록 조회와 다운로드 가능")
     void publicChannelMessageAndAttachment_flowPersistsAndDownloadsAttachment() throws Exception {
         // given
@@ -203,6 +508,7 @@ class DiscodeitApiIntegrationTest {
                 "integration public channel"
         );
         MvcResult channelCreateResult = mockMvc.perform(post("/api/channels/public")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(channelCreateRequest)))
@@ -232,6 +538,7 @@ class DiscodeitApiIntegrationTest {
         MvcResult messageCreateResult = mockMvc.perform(multipart("/api/messages")
                         .file(messageCreateRequestPart)
                         .file(attachmentPart)
+                        .with(csrf())
                         .accept(MediaType.APPLICATION_JSON))
 
                 // then
@@ -298,6 +605,7 @@ class DiscodeitApiIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     @DisplayName("비공개 채널과 읽음 상태 통합 성공 - 참여자별 ReadStatus 생성 후 수정 가능")
     void privateChannelAndReadStatus_flowCreatesAndUpdatesParticipantReadStatuses() throws Exception {
         // given
@@ -314,6 +622,7 @@ class DiscodeitApiIntegrationTest {
         // when
         // POST /api/channels/private 요청을 전송한다.
         MvcResult createResult = mockMvc.perform(post("/api/channels/private")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -359,6 +668,7 @@ class DiscodeitApiIntegrationTest {
         Instant newLastReadAt = Instant.parse("2026-07-28T02:30:30Z");
         ReadStatusUpdateRequest updateRequest = new ReadStatusUpdateRequest(newLastReadAt);
         mockMvc.perform(patch("/api/readStatuses/{readStatusId}", readStatusId)
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
@@ -395,12 +705,16 @@ class DiscodeitApiIntegrationTest {
         // 사용자 관련 주요 API 중 기존 생성 흐름에서 다루지 않은 목록 조회, 수정, 삭제를 한 흐름에서 검증한다.
         // 모든 호출은 실제 Controller, Service, Repository, DB를 거친다.
         String suffix = uniqueSuffix();
-        UUID firstUserId = createUser("userListA-" + suffix, "user-list-a-" + suffix + "@gmail.com");
+        String firstUsername = "userListA-" + suffix;
+        UUID firstUserId = createUser(firstUsername, "user-list-a-" + suffix + "@gmail.com");
         UUID secondUserId = createUser("userListB-" + suffix, "user-list-b-" + suffix + "@gmail.com");
+        flushAndClear();
+        MockHttpSession firstUserSession = loginSession(firstUsername);
 
         // when
         // 사용자 목록 API를 호출한다.
         MvcResult listResult = mockMvc.perform(get("/api/users")
+                        .session(firstUserSession)
                         .accept(MediaType.APPLICATION_JSON))
 
                 // then
@@ -432,10 +746,12 @@ class DiscodeitApiIntegrationTest {
         MvcResult updateResult = mockMvc.perform(multipart("/api/users/{userId}", firstUserId)
                         .file(updateRequestPart)
                         .file(profilePart)
+                        .session(firstUserSession)
                         .with(request -> {
                             request.setMethod("PATCH");
                             return request;
                         })
+                        .with(csrf())
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(firstUserId.toString()))
@@ -450,25 +766,74 @@ class DiscodeitApiIntegrationTest {
         flushAndClear();
         User updatedUser = userRepository.findById(firstUserId).orElseThrow(AssertionError::new);
         assertThat(updatedUser.getUsername()).isEqualTo(updateRequest.newUsername());
-        assertThat(updatedUser.getPassword()).isEqualTo(updateRequest.newPassword());
+        assertThat(updatedUser.getPassword()).isNotEqualTo(updateRequest.newPassword());
+        assertThat(passwordEncoder.matches(updateRequest.newPassword(), updatedUser.getPassword())).isTrue();
         assertThat(updatedUser.getEmail()).isEqualTo(updateRequest.newEmail());
         assertThat(updatedUser.getProfileId()).isEqualTo(updatedProfileId);
         assertThat(binaryContentRepository.findById(updatedProfileId)).isPresent();
 
         // when
         // 수정한 사용자를 삭제한다.
-        mockMvc.perform(delete("/api/users/{userId}", firstUserId))
+        mockMvc.perform(delete("/api/users/{userId}", firstUserId)
+                        .session(firstUserSession)
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
 
         // then
-        // User와 UserStatus가 실제 DB에서 제거되고, 대조군 사용자는 남아 있어야 한다.
+        // User가 실제 DB에서 제거되고, 대조군 사용자는 남아 있어야 한다.
         flushAndClear();
         assertThat(userRepository.findById(firstUserId)).isEmpty();
-        assertThat(userStatusRepository.findByUserId(firstUserId)).isEmpty();
         assertThat(userRepository.findById(secondUserId)).isPresent();
     }
 
     @Test
+    @DisplayName("사용자 수정, 삭제 인가 실패 - 다른 사용자의 정보는 변경할 수 없다")
+    void userUpdateAndDelete_returnsForbidden_whenRequesterIsNotOwner() throws Exception {
+        String suffix = uniqueSuffix();
+        String targetUsername = "userTarget-" + suffix;
+        String targetEmail = "user-target-" + suffix + "@gmail.com";
+        UUID targetUserId = createUser(targetUsername, targetEmail);
+        String requesterUsername = "userRequester-" + suffix;
+        createUser(requesterUsername, "user-requester-" + suffix + "@gmail.com");
+        flushAndClear();
+        MockHttpSession requesterSession = loginSession(requesterUsername);
+
+        UserUpdateRequest updateRequest = new UserUpdateRequest(
+                "forbidden-update-" + suffix,
+                "forbiddenPassword",
+                "forbidden-update-" + suffix + "@gmail.com"
+        );
+
+        mockMvc.perform(multipart("/api/users/{userId}", targetUserId)
+                        .file(jsonPart("userUpdateRequest", updateRequest))
+                        .session(requesterSession)
+                        .with(request -> {
+                            request.setMethod("PATCH");
+                            return request;
+                        })
+                        .with(csrf())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpectAll(
+                        status().isForbidden(),
+                        jsonPath("$.code").value("AUTH_403")
+                );
+
+        mockMvc.perform(delete("/api/users/{userId}", targetUserId)
+                        .session(requesterSession)
+                        .with(csrf()))
+                .andExpectAll(
+                        status().isForbidden(),
+                        jsonPath("$.code").value("AUTH_403")
+                );
+
+        flushAndClear();
+        User targetUser = userRepository.findById(targetUserId).orElseThrow(AssertionError::new);
+        assertThat(targetUser.getUsername()).isEqualTo(targetUsername);
+        assertThat(targetUser.getEmail()).isEqualTo(targetEmail);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     @DisplayName("채널 수정, 삭제 통합 성공 - 실제 DB에 변경사항 반영")
     void channelUpdateAndDelete_flowPersistsUpdatesAndRemovesChannel() throws Exception {
         // given
@@ -486,6 +851,7 @@ class DiscodeitApiIntegrationTest {
                 "updated channel description"
         );
         mockMvc.perform(patch("/api/channels/{channelId}", channelId)
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
@@ -502,7 +868,8 @@ class DiscodeitApiIntegrationTest {
 
         // when
         // 수정한 채널을 삭제한다.
-        mockMvc.perform(delete("/api/channels/{channelId}", channelId))
+        mockMvc.perform(delete("/api/channels/{channelId}", channelId)
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
 
         // then
@@ -518,24 +885,30 @@ class DiscodeitApiIntegrationTest {
         // 메시지 생성과 목록 조회는 기존 통합 테스트에서 검증한다.
         // 여기서는 생성된 메시지를 수정하고 삭제하는 API 흐름을 실제 DB와 함께 확인한다.
         String suffix = uniqueSuffix();
-        UUID authorId = createUser("messageUpdateAuthor-" + suffix, "message-update-author-" + suffix + "@gmail.com");
-        UUID channelId = createPublicChannel(
+        String authorUsername = "messageUpdateAuthor-" + suffix;
+        UUID authorId = createUser(authorUsername, "message-update-author-" + suffix + "@gmail.com");
+        Channel channel = channelRepository.saveAndFlush(new Channel(new ChannelCreatePublicCommand(
                 "message-update-channel-" + suffix,
-                "message update channel description"
-        );
-        UUID messageId = createMessage("message before update", channelId, authorId);
+                "message update channel description",
+                ChannelType.PUBLIC
+        )));
+        flushAndClear();
+        MockHttpSession authorSession = loginSession(authorUsername);
+        UUID messageId = createMessage("message before update", channel.getId(), authorId, authorSession);
 
         // when
         // 메시지 내용을 수정한다.
         MessageUpdateRequest updateRequest = new MessageUpdateRequest("message after update");
         mockMvc.perform(patch("/api/messages/{messageId}", messageId)
+                        .session(authorSession)
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(messageId.toString()))
                 .andExpect(jsonPath("$.content").value(updateRequest.newContent()))
-                .andExpect(jsonPath("$.channelId").value(channelId.toString()))
+                .andExpect(jsonPath("$.channelId").value(channel.getId().toString()))
                 .andExpect(jsonPath("$.author.id").value(authorId.toString()));
 
         flushAndClear();
@@ -544,7 +917,9 @@ class DiscodeitApiIntegrationTest {
 
         // when
         // 수정한 메시지를 삭제한다.
-        mockMvc.perform(delete("/api/messages/{messageId}", messageId))
+        mockMvc.perform(delete("/api/messages/{messageId}", messageId)
+                        .session(authorSession)
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
 
         // then
@@ -552,6 +927,89 @@ class DiscodeitApiIntegrationTest {
         flushAndClear();
         assertThat(messageRepository.findById(messageId)).isEmpty();
         assertThat(messageFileRepository.findAllByMessage_Id(messageId)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("메시지 수정, 삭제 인가 실패 - 작성자가 아니면 메시지를 변경할 수 없다")
+    void messageUpdateAndDelete_returnsForbidden_whenRequesterIsNotAuthor() throws Exception {
+        String suffix = uniqueSuffix();
+        String authorUsername = "messageAuthor-" + suffix;
+        UUID authorId = createUser(authorUsername, "message-author-" + suffix + "@gmail.com");
+        String requesterUsername = "messageRequester-" + suffix;
+        createUser(requesterUsername, "message-requester-" + suffix + "@gmail.com");
+        Channel channel = channelRepository.saveAndFlush(new Channel(new ChannelCreatePublicCommand(
+                "message-authorization-channel-" + suffix,
+                "message authorization channel description",
+                ChannelType.PUBLIC
+        )));
+        flushAndClear();
+
+        MockHttpSession authorSession = loginSession(authorUsername);
+        UUID messageId = createMessage("protected message", channel.getId(), authorId, authorSession);
+        MockHttpSession requesterSession = loginSession(requesterUsername);
+        MessageUpdateRequest updateRequest = new MessageUpdateRequest("forbidden message update");
+
+        mockMvc.perform(patch("/api/messages/{messageId}", messageId)
+                        .session(requesterSession)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpectAll(
+                        status().isForbidden(),
+                        jsonPath("$.code").value("AUTH_403")
+                );
+
+        mockMvc.perform(delete("/api/messages/{messageId}", messageId)
+                        .session(requesterSession)
+                        .with(csrf()))
+                .andExpectAll(
+                        status().isForbidden(),
+                        jsonPath("$.code").value("AUTH_403")
+                );
+
+        flushAndClear();
+        Message message = messageRepository.findById(messageId).orElseThrow(AssertionError::new);
+        assertThat(message.getContent()).isEqualTo("protected message");
+        assertThat(message.getAuthor().getId()).isEqualTo(authorId);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("사용자 역할 변경 통합 성공 - 응답과 DB에 변경된 역할이 반영")
+    void updateUserRole_updatesResponseAndDatabase() throws Exception {
+        String suffix = uniqueSuffix();
+        UUID userId = createUser(
+                "roleUser-" + suffix,
+                "role-user-" + suffix + "@gmail.com"
+        );
+        UserRoleUpdateRequest request = new UserRoleUpdateRequest(userId, Role.CHANNEL_MANAGER);
+
+        mockMvc.perform(put("/api/auth/role")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(userId.toString()))
+                .andExpect(jsonPath("$.role").value(Role.CHANNEL_MANAGER.name()));
+
+        flushAndClear();
+        User updatedUser = userRepository.findById(userId).orElseThrow(AssertionError::new);
+        assertThat(updatedUser.getRole()).isEqualTo(Role.CHANNEL_MANAGER);
+    }
+
+    @Test
+    @DisplayName("애플리케이션 실행 시 관리자 계정이 한 번 초기화된다")
+    void applicationStartup_initializesSingleAdminUser() {
+        List<User> adminUsers = userRepository.findAll().stream()
+                .filter(user -> user.getRole() == Role.ADMIN)
+                .toList();
+
+        assertThat(adminUsers).hasSize(1);
+        User adminUser = adminUsers.get(0);
+        assertThat(adminUser.getUsername()).isEqualTo("test-admin");
+        assertThat(adminUser.getEmail()).isEqualTo("test-admin@discodeit.local");
+        assertThat(passwordEncoder.matches("test-admin-password", adminUser.getPassword())).isTrue();
     }
 
     private UUID createUser(String username, String email) throws Exception {
@@ -563,18 +1021,58 @@ class DiscodeitApiIntegrationTest {
 
         MvcResult result = mockMvc.perform(multipart("/api/users")
                         .file(jsonPart("userCreateRequest", request))
+                        .with(csrf())
                         .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isCreated())
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.role").value(Role.USER.name()))
                 .andReturn();
 
         return uuidAt(readBody(result), "/id");
+    }
+
+    private ResultActions performLogin(String username, String password) throws Exception {
+        return mockMvc.perform(post("/api/auth/login")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .accept(MediaType.APPLICATION_JSON)
+                .param("username", username)
+                .param("password", password));
+    }
+
+    private MockHttpSession loginSession(String username) throws Exception {
+        MvcResult loginResult = performLogin(username, "integrationPassword")
+                .andExpect(status().isOk())
+                .andExpect(authenticated().withUsername(username))
+                .andReturn();
+        MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
+        assertThat(session).isNotNull();
+        return session;
+    }
+
+    private ResultActions performRememberMeLogin(String username, String password) throws Exception {
+        return performLoginWithRememberMe(username, password, true);
+    }
+
+    private ResultActions performLoginWithRememberMe(
+            String username,
+            String password,
+            boolean rememberMe
+    ) throws Exception {
+        return mockMvc.perform(post("/api/auth/login")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .accept(MediaType.APPLICATION_JSON)
+                .param("username", username)
+                .param("password", password)
+                .param("remember-me", Boolean.toString(rememberMe)));
     }
 
     private UUID createPublicChannel(String name, String description) throws Exception {
         PublicChannelCreateRequest request = new PublicChannelCreateRequest(name, description);
 
         MvcResult result = mockMvc.perform(post("/api/channels/public")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -587,11 +1085,25 @@ class DiscodeitApiIntegrationTest {
     }
 
     private UUID createMessage(String content, UUID channelId, UUID authorId) throws Exception {
-        MessageCreateRequest request = new MessageCreateRequest(content, channelId, authorId);
+        return createMessage(content, channelId, authorId, null);
+    }
 
-        MvcResult result = mockMvc.perform(multipart("/api/messages")
-                        .file(jsonPart("messageCreateRequest", request))
-                        .accept(MediaType.APPLICATION_JSON))
+    private UUID createMessage(
+            String content,
+            UUID channelId,
+            UUID authorId,
+            MockHttpSession session
+    ) throws Exception {
+        MessageCreateRequest request = new MessageCreateRequest(content, channelId, authorId);
+        var requestBuilder = multipart("/api/messages")
+                .file(jsonPart("messageCreateRequest", request))
+                .with(csrf())
+                .accept(MediaType.APPLICATION_JSON);
+        if (session != null) {
+            requestBuilder.session(session);
+        }
+
+        MvcResult result = mockMvc.perform(requestBuilder)
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andReturn();

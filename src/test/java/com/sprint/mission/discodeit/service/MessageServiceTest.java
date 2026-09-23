@@ -10,6 +10,7 @@ import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.MessageFile;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.ErrorCode;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
@@ -1249,7 +1250,7 @@ class MessageServiceTest {
                 null,
                 content,
                 channelId,
-                new UserDto(userId, null, null, null, false, null, null),
+                new UserDto(userId, null, null, null, false, Role.USER, null, null),
                 binaryContentDtos
         );
     }

@@ -68,6 +68,14 @@ logging:
     org.hibernate.orm.jdbc.batch: trace
     org.hibernate.orm.jdbc.bind: off
 discodeit:
+  security:
+    remember-me:
+      key: test-remember-me-key
+  admin:
+    user:
+      username: test-admin
+      password: test-admin-password
+      email: test-admin@discodeit.local
   storage:
     # 파일 저장 방식과 경로를 환경변수로 설정
     type: ${STORAGE_TYPE:local}

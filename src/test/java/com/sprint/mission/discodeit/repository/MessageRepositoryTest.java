@@ -6,7 +6,6 @@ import com.sprint.mission.discodeit.config.QuerydslTestConfig;
 import com.sprint.mission.discodeit.dto.command.channel.ChannelCreatePublicCommand;
 import com.sprint.mission.discodeit.dto.command.message.MessageCreateCommand;
 import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
-import com.sprint.mission.discodeit.dto.command.userStatus.UserStatusCreateCommand;
 import com.sprint.mission.discodeit.dto.repository.MessagePagingCondition;
 import com.sprint.mission.discodeit.entity.*;
 import jakarta.persistence.EntityManager;
@@ -40,8 +39,6 @@ class MessageRepositoryTest {
     @Autowired
     UserRepository userRepository;
 
-    @Autowired
-    UserStatusRepository userStatusRepository;
 
     @Autowired
     ChannelRepository channelRepository;
@@ -58,10 +55,8 @@ class MessageRepositoryTest {
         // given
         // 이 테스트의 대상은 MessageRepository.findById(...)다.
         // MessageRepository.findById(...)에는 EntityGraph가 선언되어 있고,
-        // Message.author, Message.channel, author.userStatus, author.profile을 함께 조회해야 한다.
         //
         // 단순히 Message row만 저장하고 content만 확인하면 findById의 fetch 계약을 검증할 수 없다.
-        // 그래서 작성자 프로필(BinaryContent), 작성자 상태(UserStatus), 채널까지 모두 실제 엔티티로 저장한 뒤
         // 영속성 컨텍스트를 비우고 DB에서 다시 조회해 EntityGraph 적용 여부를 확인한다.
         AuthorFixture authorFixture = saveAuthorFixture("testUser", "test@gmail.com");
         ChannelFixture channelFixture = savePublicChannelFixture(
@@ -87,7 +82,6 @@ class MessageRepositoryTest {
 
         UUID savedProfileId = authorFixture.profile().getId();
         UUID savedAuthorId = authorFixture.user().getId();
-        UUID savedAuthorStatusId = authorFixture.userStatus().getId();
         UUID savedMessageId = messageFixture.message().getId();
         UUID savedOtherMessageId = otherMessageFixture.message().getId();
         UUID savedChannelId = channelFixture.channel().getId();
@@ -96,7 +90,6 @@ class MessageRepositoryTest {
         // 여기서 id가 null이면 findById 검증 실패 원인을 Repository 문제가 아니라 given 구성 문제로 봐야 한다.
         assertThat(savedProfileId).isNotNull();
         assertThat(savedAuthorId).isNotNull();
-        assertThat(savedAuthorStatusId).isNotNull();
         assertThat(savedMessageId).isNotNull();
         assertThat(savedOtherMessageId).isNotNull();
         assertThat(savedChannelId).isNotNull();
@@ -122,7 +115,6 @@ class MessageRepositoryTest {
                 messageFixture.command(),
                 savedAuthorId,
                 authorFixture.command(),
-                savedAuthorStatusId,
                 authorFixture.profile(),
                 channelFixture.command(),
                 savedChannelId
@@ -140,7 +132,6 @@ class MessageRepositoryTest {
         // "id 조건이 정확히 적용됐다"는 근거가 약하다. 그래서 조회 대상이 아닌 Message row를 실제로 저장해
         // messages 테이블에는 데이터가 있지만 요청한 id의 row만 없는 상황을 만든다.
         // Message.author는 nullable이지만 실제 서비스 흐름의 메시지는 작성자를 가진다.
-        // findById(...)에는 author, author.userStatus, author.profile EntityGraph도 걸려 있으므로,
         // 성공 조회가 가능한 완전한 메시지 fixture를 만들어 두면 음성 케이스의 전제도 더 선명해진다.
         AuthorFixture authorFixture = saveAuthorFixture("testUser", "test@gmail.com");
 
@@ -169,7 +160,6 @@ class MessageRepositoryTest {
 
         UUID savedProfileId = authorFixture.profile().getId();
         UUID savedAuthorId = authorFixture.user().getId();
-        UUID savedAuthorStatusId = authorFixture.userStatus().getId();
         UUID savedMessageId = messageFixture.message().getId();
         UUID savedOtherMessageId = otherMessageFixture.message().getId();
         UUID savedChannelId = channelFixture.channel().getId();
@@ -184,7 +174,6 @@ class MessageRepositoryTest {
         // given fixture 구성 실패인지 구분하기 어렵다.
         assertThat(savedProfileId).isNotNull();
         assertThat(savedAuthorId).isNotNull();
-        assertThat(savedAuthorStatusId).isNotNull();
         assertThat(savedMessageId).isNotNull();
         assertThat(savedOtherMessageId).isNotNull();
         assertThat(savedChannelId).isNotNull();
@@ -214,6 +203,53 @@ class MessageRepositoryTest {
         // 같은 작성자와 채널에 연결된 다른 메시지 row가 존재하더라도,
         // 요청한 id와 일치하는 메시지가 없으면 Optional.empty가 반환되어야 한다.
         assertThat(optionalMessage).isEmpty();
+    }
+
+    @Test
+    @DisplayName("작성자 포함 메시지 조회 성공 - 작성자를 함께 조회한다")
+    void findWithAuthor_fetchesAuthor_whenMessageExists() {
+        AuthorFixture authorFixture = saveAuthorFixture("ownerUser", "owner-user@gmail.com");
+        ChannelFixture channelFixture = savePublicChannelFixture(
+                "ownerChannel",
+                "owner channel description"
+        );
+        MessageFixture messageFixture = saveMessageFixture(
+                authorFixture.user(),
+                channelFixture.channel(),
+                "owner message"
+        );
+        UUID messageId = messageFixture.message().getId();
+        UUID authorId = authorFixture.user().getId();
+        em.clear();
+
+        Message foundMessage = messageRepository.findWithAuthor(messageId)
+                .orElseThrow(AssertionError::new);
+
+        PersistenceUnitUtil persistenceUnitUtil = getPersistenceUnitUtil();
+        assertThat(persistenceUnitUtil.isLoaded(foundMessage, "author")).isTrue();
+        assertThat(foundMessage.getId()).isEqualTo(messageId);
+        assertThat(foundMessage.getAuthor().getId()).isEqualTo(authorId);
+    }
+
+    @Test
+    @DisplayName("작성자 포함 메시지 조회 성공 - 메시지가 없으면 빈 결과를 반환한다")
+    void findWithAuthor_returnsEmpty_whenMessageDoesNotExist() {
+        AuthorFixture authorFixture = saveAuthorFixture("existingUser", "existing-user@gmail.com");
+        ChannelFixture channelFixture = savePublicChannelFixture("existingChannel");
+        MessageFixture messageFixture = saveMessageFixture(
+                authorFixture.user(),
+                channelFixture.channel(),
+                "existing message"
+        );
+        UUID missingMessageId;
+        do {
+            missingMessageId = UUID.randomUUID();
+        } while (missingMessageId.equals(messageFixture.message().getId()));
+        em.clear();
+
+        Optional<Message> result = messageRepository.findWithAuthor(missingMessageId);
+
+        assertThat(result).isEmpty();
     }
 
 
@@ -277,7 +313,6 @@ class MessageRepositoryTest {
 
         UUID savedProfileId = authorFixture.profile().getId();
         UUID savedAuthorId = authorFixture.user().getId();
-        UUID savedAuthorStatusId = authorFixture.userStatus().getId();
         UUID savedMessageId = messageFixture.message().getId();
         UUID savedOtherMessageId = otherMessageFixture.message().getId();
         UUID savedChannelId = channelFixture.channel().getId();
@@ -288,7 +323,6 @@ class MessageRepositoryTest {
         // 여기서 id나 createdAt이 비정상이면 최신 메시지 조회 실패인지 fixture 구성 실패인지 구분하기 어렵다.
         assertThat(savedProfileId).isNotNull();
         assertThat(savedAuthorId).isNotNull();
-        assertThat(savedAuthorStatusId).isNotNull();
         assertThat(savedMessageId).isNotNull();
         assertThat(savedOtherMessageId).isNotNull();
         assertThat(savedChannelId).isNotNull();
@@ -374,7 +408,6 @@ class MessageRepositoryTest {
 
         UUID savedProfileId = authorFixture.profile().getId();
         UUID savedAuthorId = authorFixture.user().getId();
-        UUID savedAuthorStatusId = authorFixture.userStatus().getId();
         UUID savedChannelId = channelFixture.channel().getId();
         UUID savedOtherChannelId = otherChannelFixture.channel().getId();
         UUID savedOtherChannelMessageId = otherChannelMessageFixture.message().getId();
@@ -384,7 +417,6 @@ class MessageRepositoryTest {
         // given fixture 구성 실패인지 구분하기 어렵다.
         assertThat(savedProfileId).isNotNull();
         assertThat(savedAuthorId).isNotNull();
-        assertThat(savedAuthorStatusId).isNotNull();
         assertThat(savedChannelId).isNotNull();
         assertThat(savedOtherChannelId).isNotNull();
         assertThat(savedOtherChannelMessageId).isNotNull();
@@ -476,7 +508,6 @@ class MessageRepositoryTest {
 
         UUID savedProfileId = authorFixture.profile().getId();
         UUID savedAuthorId = authorFixture.user().getId();
-        UUID savedAuthorStatusId = authorFixture.userStatus().getId();
         UUID savedOldestMessageId = savedOldestMessage.getId();
         UUID savedMiddleMessageId = savedMiddleMessage.getId();
         UUID savedNewestMessageId = savedNewestMessage.getId();
@@ -488,7 +519,6 @@ class MessageRepositoryTest {
         // 여기서 id나 createdAt이 비정상이면 Slice 조회 실패인지 fixture 구성 실패인지 구분하기 어렵다.
         assertThat(savedProfileId).isNotNull();
         assertThat(savedAuthorId).isNotNull();
-        assertThat(savedAuthorStatusId).isNotNull();
         assertThat(savedOldestMessageId).isNotNull();
         assertThat(savedMiddleMessageId).isNotNull();
         assertThat(savedNewestMessageId).isNotNull();
@@ -614,7 +644,6 @@ class MessageRepositoryTest {
 
         UUID savedProfileId = authorFixture.profile().getId();
         UUID savedAuthorId = authorFixture.user().getId();
-        UUID savedAuthorStatusId = authorFixture.userStatus().getId();
         UUID savedOtherChannelMessageId = savedOtherChannelMessage.getId();
         UUID savedOldestMessageId = savedOldestMessage.getId();
         UUID savedMiddleMessageId = savedMiddleMessage.getId();
@@ -626,7 +655,6 @@ class MessageRepositoryTest {
         // 여기서 id나 createdAt 순서가 비정상이면 cursor 조건 검증 실패인지 fixture 구성 실패인지 구분하기 어렵다.
         assertThat(savedProfileId).isNotNull();
         assertThat(savedAuthorId).isNotNull();
-        assertThat(savedAuthorStatusId).isNotNull();
         assertThat(savedOtherChannelMessageId).isNotNull();
         assertThat(savedOldestMessageId).isNotNull();
         assertThat(savedMiddleMessageId).isNotNull();
@@ -857,7 +885,6 @@ class MessageRepositoryTest {
 
         UUID savedProfileId = authorFixture.profile().getId();
         UUID savedAuthorId = authorFixture.user().getId();
-        UUID savedAuthorStatusId = authorFixture.userStatus().getId();
         UUID savedOldestMessageId = savedOldestMessage.getId();
         UUID savedMiddleMessageId = savedMiddleMessage.getId();
         UUID savedNewestMessageId = savedNewestMessage.getId();
@@ -867,7 +894,6 @@ class MessageRepositoryTest {
         // 여기서 id나 createdAt 순서가 비정상이면 hasNext 계산 실패인지 fixture 구성 실패인지 구분하기 어렵다.
         assertThat(savedProfileId).isNotNull();
         assertThat(savedAuthorId).isNotNull();
-        assertThat(savedAuthorStatusId).isNotNull();
         assertThat(savedOldestMessageId).isNotNull();
         assertThat(savedMiddleMessageId).isNotNull();
         assertThat(savedNewestMessageId).isNotNull();
@@ -977,7 +1003,6 @@ class MessageRepositoryTest {
 
         UUID savedProfileId = authorFixture.profile().getId();
         UUID savedAuthorId = authorFixture.user().getId();
-        UUID savedAuthorStatusId = authorFixture.userStatus().getId();
         UUID savedOlderMessageId = savedOlderMessage.getId();
         UUID savedNewerMessageId = savedNewerMessage.getId();
         UUID savedOtherChannelMessageId = savedOtherChannelMessage.getId();
@@ -988,7 +1013,6 @@ class MessageRepositoryTest {
         // 여기서 id나 createdAt 순서가 비정상이면 hasNext=false 검증 실패인지 fixture 구성 실패인지 구분하기 어렵다.
         assertThat(savedProfileId).isNotNull();
         assertThat(savedAuthorId).isNotNull();
-        assertThat(savedAuthorStatusId).isNotNull();
         assertThat(savedOlderMessageId).isNotNull();
         assertThat(savedNewerMessageId).isNotNull();
         assertThat(savedOtherChannelMessageId).isNotNull();
@@ -1055,7 +1079,6 @@ class MessageRepositoryTest {
         // 1. message.channel
         // 2. message.author
         // 3. author.profile
-        // 4. author.userStatus
         //
         // 단순히 Message content나 channelId만 확인하면 fetch join이 적용됐는지 검증할 수 없다.
         // 따라서 영속성 컨텍스트를 비운 뒤 다시 조회하고,
@@ -1078,7 +1101,6 @@ class MessageRepositoryTest {
         Channel savedOtherChannel = otherChannelFixture.channel();
 
         // 조회 대상 메시지다.
-        // 이 메시지를 다시 조회했을 때 channel, author, author.profile, author.userStatus가 모두 로딩되어 있어야 한다.
         MessageFixture messageFixture = saveMessageFixture(authorFixture.user(), savedChannel, "messageContent");
         Message savedMessage = messageFixture.message();
 
@@ -1089,7 +1111,6 @@ class MessageRepositoryTest {
 
         UUID savedProfileId = authorFixture.profile().getId();
         UUID savedAuthorId = authorFixture.user().getId();
-        UUID savedAuthorStatusId = authorFixture.userStatus().getId();
         UUID savedMessageId = savedMessage.getId();
         UUID savedOtherChannelMessageId = savedOtherChannelMessage.getId();
         UUID savedChannelId = savedChannel.getId();
@@ -1099,7 +1120,6 @@ class MessageRepositoryTest {
         // 여기서 id가 null이거나 대조군과 조회 대상이 구분되지 않으면 fetch join 검증 실패인지 fixture 구성 실패인지 구분하기 어렵다.
         assertThat(savedProfileId).isNotNull();
         assertThat(savedAuthorId).isNotNull();
-        assertThat(savedAuthorStatusId).isNotNull();
         assertThat(savedMessageId).isNotNull();
         assertThat(savedOtherChannelMessageId).isNotNull();
         assertThat(savedChannelId).isNotNull();
@@ -1144,13 +1164,9 @@ class MessageRepositoryTest {
         User author = foundMessage.getAuthor();
         Channel channel = foundMessage.getChannel();
 
-        // author.profile과 author.userStatus도 Querydsl fetch join 대상이다.
-        // 이 검증 역시 author.getProfile(), author.getUserStatus() 접근 전에 수행한다.
         assertThat(persistenceUnitUtil.isLoaded(author, "profile")).isTrue();
-        assertThat(persistenceUnitUtil.isLoaded(author, "userStatus")).isTrue();
 
         BinaryContent profile = author.getProfile();
-        UserStatus userStatus = author.getUserStatus();
 
         // 조회된 Message가 given에서 저장한 대상 메시지인지 식별자와 주요 필드로 확인한다.
         assertThat(foundMessage.getId()).isEqualTo(savedMessageId);
@@ -1175,11 +1191,6 @@ class MessageRepositoryTest {
         assertThat(profile.getSize()).isEqualTo(authorFixture.profile().getSize());
         assertThat(author.getProfileId()).isEqualTo(savedProfileId);
 
-        // fetch join으로 함께 조회된 UserStatus가 실제 작성자 상태 row인지 확인한다.
-        assertThat(userStatus.getId()).isEqualTo(savedAuthorStatusId);
-        assertThat(userStatus.getUserId()).isEqualTo(savedAuthorId);
-        assertThat(Duration.between(authorFixture.userStatus().getLastActiveAt(), userStatus.getLastActiveAt()).abs())
-                .isLessThanOrEqualTo(Duration.ofNanos(1_000));
     }
 
     @Test
@@ -1189,7 +1200,7 @@ class MessageRepositoryTest {
         // 이 테스트의 대상은 Spring Data JPA derived query인 MessageRepository.existsByChannel_Id(...)다.
         // Repository 테스트이므로 실제 User, Channel, Message 엔티티를 테스트 DB에 저장한 뒤,
         // channel_id 조건으로 메시지 존재 여부를 판단하는지 확인한다.
-        User savedAuthor = saveUserWithProfileAndStatus("channelMessageAuthor", "channel-message-author@gmail.com");
+        User savedAuthor = saveUserWithProfile("channelMessageAuthor", "channel-message-author@gmail.com");
         Channel savedChannel = savePublicChannel("channelWithMessages");
         Channel savedOtherChannel = savePublicChannel("channelWithoutMessagesForExistsTrue");
         Message savedMessage = saveMessage(savedAuthor, savedChannel, "channelMessageContent");
@@ -1234,7 +1245,7 @@ class MessageRepositoryTest {
         //
         // 그래서 조회 대상 채널은 실제로 저장하되 메시지는 연결하지 않고,
         // 다른 채널에는 메시지를 저장해 messages 테이블이 비어 있지 않은 상황을 만든다.
-        User savedAuthor = saveUserWithProfileAndStatus("otherChannelMessageAuthor", "other-channel-message-author@gmail.com");
+        User savedAuthor = saveUserWithProfile("otherChannelMessageAuthor", "other-channel-message-author@gmail.com");
         Channel savedChannel = savePublicChannel("channelWithoutMessages");
         Channel savedOtherChannel = savePublicChannel("otherChannelWithMessages");
         Message savedOtherChannelMessage = saveMessage(savedAuthor, savedOtherChannel, "otherChannelMessageContent");
@@ -1274,7 +1285,7 @@ class MessageRepositoryTest {
         // 이 테스트의 대상은 MessageRepository.deleteAllByChannel_Id(...)다.
         // 삭제 메서드는 channel.id 조건과 일치하는 메시지만 삭제해야 하고,
         // 다른 채널에 연결된 메시지는 그대로 남겨야 한다.
-        User savedAuthor = saveUserWithProfileAndStatus("deleteMessageAuthor", "delete-message-author@gmail.com");
+        User savedAuthor = saveUserWithProfile("deleteMessageAuthor", "delete-message-author@gmail.com");
         Channel savedChannel = savePublicChannel("deleteTargetChannel");
         Channel savedOtherChannel = savePublicChannel("deleteOtherChannel");
         Message savedMessage = saveMessage(savedAuthor, savedChannel, "deleteTargetMessageContent");
@@ -1345,8 +1356,8 @@ class MessageRepositoryTest {
         // given
         // 이 테스트의 대상은 MessageRepository.existsByAuthor_Id(...)다.
         // 실제 작성자와 메시지를 저장해 author_id 조건으로 존재 여부를 판단하는지 확인한다.
-        User savedAuthor = saveUserWithProfileAndStatus("authorWithMessages", "author-with-messages@gmail.com");
-        User savedOtherAuthor = saveUserWithProfileAndStatus("authorWithoutMessagesForExistsTrue", "author-without-messages-for-exists-true@gmail.com");
+        User savedAuthor = saveUserWithProfile("authorWithMessages", "author-with-messages@gmail.com");
+        User savedOtherAuthor = saveUserWithProfile("authorWithoutMessagesForExistsTrue", "author-without-messages-for-exists-true@gmail.com");
         Channel savedChannel = savePublicChannel("authorExistsChannel");
         Message savedMessage = saveMessage(savedAuthor, savedChannel, "authorMessageContent");
 
@@ -1390,8 +1401,8 @@ class MessageRepositoryTest {
         //
         // 그래서 조회 대상 작성자는 실제로 저장하되 메시지는 연결하지 않고,
         // 다른 작성자에게 메시지를 저장해 messages 테이블이 비어 있지 않은 상황을 만든다.
-        User savedAuthor = saveUserWithProfileAndStatus("authorWithoutMessages", "author-without-messages@gmail.com");
-        User savedOtherAuthor = saveUserWithProfileAndStatus("otherAuthorWithMessages", "other-author-with-messages@gmail.com");
+        User savedAuthor = saveUserWithProfile("authorWithoutMessages", "author-without-messages@gmail.com");
+        User savedOtherAuthor = saveUserWithProfile("otherAuthorWithMessages", "other-author-with-messages@gmail.com");
         Channel savedChannel = savePublicChannel("authorFalseChannel");
         Message savedOtherAuthorMessage = saveMessage(savedOtherAuthor, savedChannel, "otherAuthorMessageContent");
 
@@ -1433,8 +1444,8 @@ class MessageRepositoryTest {
         //
         // 대상 작성자의 메시지 2건과 대조군 작성자의 메시지 1건을 저장해,
         // update 범위가 author_id 조건으로 정확히 제한되는지 확인한다.
-        User savedAuthor = saveUserWithProfileAndStatus("detachTargetAuthor", "detach-target-author@gmail.com");
-        User savedOtherAuthor = saveUserWithProfileAndStatus("detachOtherAuthor", "detach-other-author@gmail.com");
+        User savedAuthor = saveUserWithProfile("detachTargetAuthor", "detach-target-author@gmail.com");
+        User savedOtherAuthor = saveUserWithProfile("detachOtherAuthor", "detach-other-author@gmail.com");
         Channel savedChannel = savePublicChannel("detachChannel");
         Message savedMessage = saveMessage(savedAuthor, savedChannel, "detachMessageContent");
         Message savedOtherMessage = saveMessage(savedAuthor, savedChannel, "detachOtherMessageContent");
@@ -1511,7 +1522,6 @@ class MessageRepositoryTest {
             MessageCreateCommand expectedMessageCommand,
             UUID expectedAuthorId,
             UserCreateCommand expectedAuthorCommand,
-            UUID expectedAuthorStatusId,
             BinaryContent expectedProfile,
             ChannelCreatePublicCommand expectedChannelCommand,
             UUID expectedChannelId
@@ -1526,13 +1536,9 @@ class MessageRepositoryTest {
         User author = foundMessage.getAuthor();
         Channel channel = foundMessage.getChannel();
 
-        // EntityGraph에 중첩 선언된 author.userStatus와 author.profile도 조회 직후 로딩되어 있어야 한다.
-        // UserStatus는 User의 mappedBy OneToOne 관계이고, profile은 User가 직접 참조하는 OneToOne 관계다.
-        assertThat(persistenceUnitUtil.isLoaded(author, "userStatus")).isTrue();
         assertThat(persistenceUnitUtil.isLoaded(author, "profile")).isTrue();
 
         BinaryContent profile = author.getProfile();
-        UserStatus userStatus = author.getUserStatus();
 
         // Message 자체가 요청한 id의 row인지 확인한다.
         assertThat(foundMessage.getId()).isEqualTo(expectedMessageId);
@@ -1543,9 +1549,6 @@ class MessageRepositoryTest {
         assertThat(author.getUsername()).isEqualTo(expectedAuthorCommand.username());
         assertThat(author.getEmail()).isEqualTo(expectedAuthorCommand.email());
 
-        // 작성자 상태가 함께 조회된 실제 UserStatus row인지 확인한다.
-        assertThat(userStatus.getId()).isEqualTo(expectedAuthorStatusId);
-        assertThat(userStatus.getUserId()).isEqualTo(expectedAuthorId);
 
         // 작성자 프로필이 함께 조회된 실제 BinaryContent row인지 확인한다.
         assertThat(profile.getId()).isEqualTo(expectedProfile.getId());
@@ -1570,10 +1573,8 @@ class MessageRepositoryTest {
                 });
     }
 
-    // MessageRepository는 author, author.profile, author.userStatus를 함께 조회하는 메서드를 가진다.
-    // 따라서 단순히 User만 저장하지 않고 실제 BinaryContent와 UserStatus까지 함께 저장해
     // Repository 쿼리가 실제 서비스 데이터 형태에 가까운 row를 대상으로 실행되게 한다.
-    private User saveUserWithProfileAndStatus(String username, String email) {
+    private User saveUserWithProfile(String username, String email) {
         return saveAuthorFixture(username, email).user();
     }
 
@@ -1583,11 +1584,8 @@ class MessageRepositoryTest {
         );
         UserCreateCommand command = new UserCreateCommand(username, "testPassword", email);
         User savedUser = userRepository.saveAndFlush(new User(command, savedProfile));
-        UserStatus savedUserStatus = userStatusRepository.saveAndFlush(
-                new UserStatus(savedUser, new UserStatusCreateCommand(Instant.now()))
-        );
 
-        return new AuthorFixture(savedUser, command, savedUserStatus, savedProfile);
+        return new AuthorFixture(savedUser, command, savedProfile);
     }
 
     // Message.channel은 nullable = false 연관관계다.
@@ -1681,7 +1679,6 @@ class MessageRepositoryTest {
     private record AuthorFixture(
             User user,
             UserCreateCommand command,
-            UserStatus userStatus,
             BinaryContent profile
     ) {
     }
