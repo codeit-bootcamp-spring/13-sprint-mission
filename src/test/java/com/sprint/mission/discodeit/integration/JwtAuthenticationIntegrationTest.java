@@ -773,10 +773,7 @@ class JwtAuthenticationIntegrationTest {
                 .singleElement()
                 .satisfies(header -> assertThat(header)
                         .contains("SameSite=" + refreshCookieProperties.sameSite()));
-        // 기존 JSESSIONID 삭제 응답은 허용하되 새 세션 쿠키를 발급해서는 안 된다.
-        assertThat(cookies(response))
-                .filteredOn(cookie -> "JSESSIONID".equals(cookie.getName()))
-                .allSatisfy(cookie -> assertThat(cookie.getMaxAge()).isZero());
+        assertNoSessionCookie(response);
         return deletedCookie;
     }
 

@@ -29,19 +29,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.mock.web.MockServletContext;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -105,23 +100,9 @@ class DiscodeitApiIntegrationTest {
     @Autowired
     PasswordEncoder passwordEncoder;
 
-    @Autowired
-    SessionRegistry sessionRegistry;
-
-    @Autowired
-    HttpSessionEventPublisher httpSessionEventPublisher;
-
-    @Autowired
-    WebApplicationContext webApplicationContext;
-
     @AfterEach
-    void clearAuthenticationRegistries() {
+    void clearJwtRegistry() {
         createdUserIds.forEach(jwtRegistry::invalidateJwtInformationByUserId);
-        sessionRegistry.getAllPrincipals().forEach(principal ->
-                sessionRegistry.getAllSessions(principal, true).forEach(sessionInformation ->
-                        sessionRegistry.removeSessionInformation(sessionInformation.getSessionId())
-                )
-        );
     }
 
     @Test
@@ -270,28 +251,10 @@ class DiscodeitApiIntegrationTest {
                 .andExpect(unauthenticated())
                 .andExpect(cookie().value("REFRESH_TOKEN", ""))
                 .andExpect(cookie().maxAge("REFRESH_TOKEN", 0))
-                .andExpect(cookie().maxAge("JSESSIONID", 0))
+                .andExpect(cookie().doesNotExist("JSESSIONID"))
                 .andReturn();
 
         assertThat(logoutResult.getRequest().getSession(false)).isNull();
-    }
-
-    @Test
-    @DisplayName("HTTP 세션 만료 이벤트가 발생하면 세션 레지스트리에서도 제거한다")
-    void sessionDestroyedEvent_removesSessionFromRegistry() {
-        MockServletContext servletContext = new MockServletContext();
-        servletContext.setAttribute(
-                WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE,
-                webApplicationContext
-        );
-        MockHttpSession session = new MockHttpSession(servletContext);
-        String principal = "session-event-user";
-        sessionRegistry.registerNewSession(session.getId(), principal);
-        assertThat(sessionRegistry.getSessionInformation(session.getId())).isNotNull();
-
-        httpSessionEventPublisher.sessionDestroyed(new jakarta.servlet.http.HttpSessionEvent(session));
-
-        assertThat(sessionRegistry.getSessionInformation(session.getId())).isNull();
     }
 
     @Test
@@ -1012,7 +975,6 @@ class DiscodeitApiIntegrationTest {
 
         assertThat(result.getRequest().getSession(false)).isNull();
         assertThat(result.getResponse().getCookie("JSESSIONID")).isNull();
-        assertThat(sessionRegistry.getAllPrincipals()).isEmpty();
     }
 
     private ResultActions performLogin(String username, String password) throws Exception {
