@@ -27,6 +27,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
@@ -660,12 +661,12 @@ class DiscodeitApiIntegrationTest {
         UUID firstUserId = createUser(firstUsername, "user-list-a-" + suffix + "@gmail.com");
         UUID secondUserId = createUser("userListB-" + suffix, "user-list-b-" + suffix + "@gmail.com");
         flushAndClear();
-        MockHttpSession firstUserSession = loginSession(firstUsername);
+        String firstUserAccessToken = loginAccessToken(firstUsername, "integrationPassword");
 
         // when
         // 사용자 목록 API를 호출한다.
         MvcResult listResult = mockMvc.perform(get("/api/users")
-                        .session(firstUserSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + firstUserAccessToken)
                         .accept(MediaType.APPLICATION_JSON))
 
                 // then
@@ -697,7 +698,7 @@ class DiscodeitApiIntegrationTest {
         MvcResult updateResult = mockMvc.perform(multipart("/api/users/{userId}", firstUserId)
                         .file(updateRequestPart)
                         .file(profilePart)
-                        .session(firstUserSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + firstUserAccessToken)
                         .with(request -> {
                             request.setMethod("PATCH");
                             return request;
@@ -724,9 +725,10 @@ class DiscodeitApiIntegrationTest {
         assertThat(binaryContentRepository.findById(updatedProfileId)).isPresent();
 
         // when
-        // 수정한 사용자를 삭제한다.
+        // 사용자명이 바뀌었으므로 변경된 자격 증명으로 다시 로그인한 뒤 삭제한다.
+        String updatedUserAccessToken = loginAccessToken(updateRequest.newUsername(), updateRequest.newPassword());
         mockMvc.perform(delete("/api/users/{userId}", firstUserId)
-                        .session(firstUserSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + updatedUserAccessToken)
                         .with(csrf()))
                 .andExpect(status().isNoContent());
 
@@ -747,7 +749,7 @@ class DiscodeitApiIntegrationTest {
         String requesterUsername = "userRequester-" + suffix;
         createUser(requesterUsername, "user-requester-" + suffix + "@gmail.com");
         flushAndClear();
-        MockHttpSession requesterSession = loginSession(requesterUsername);
+        String requesterAccessToken = loginAccessToken(requesterUsername, "integrationPassword");
 
         UserUpdateRequest updateRequest = new UserUpdateRequest(
                 "forbidden-update-" + suffix,
@@ -757,7 +759,7 @@ class DiscodeitApiIntegrationTest {
 
         mockMvc.perform(multipart("/api/users/{userId}", targetUserId)
                         .file(jsonPart("userUpdateRequest", updateRequest))
-                        .session(requesterSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + requesterAccessToken)
                         .with(request -> {
                             request.setMethod("PATCH");
                             return request;
@@ -770,7 +772,7 @@ class DiscodeitApiIntegrationTest {
                 );
 
         mockMvc.perform(delete("/api/users/{userId}", targetUserId)
-                        .session(requesterSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + requesterAccessToken)
                         .with(csrf()))
                 .andExpectAll(
                         status().isForbidden(),
@@ -844,14 +846,14 @@ class DiscodeitApiIntegrationTest {
                 ChannelType.PUBLIC
         )));
         flushAndClear();
-        MockHttpSession authorSession = loginSession(authorUsername);
-        UUID messageId = createMessage("message before update", channel.getId(), authorId, authorSession);
+        String authorAccessToken = loginAccessToken(authorUsername, "integrationPassword");
+        UUID messageId = createMessage("message before update", channel.getId(), authorId, authorAccessToken);
 
         // when
         // 메시지 내용을 수정한다.
         MessageUpdateRequest updateRequest = new MessageUpdateRequest("message after update");
         mockMvc.perform(patch("/api/messages/{messageId}", messageId)
-                        .session(authorSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authorAccessToken)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -869,7 +871,7 @@ class DiscodeitApiIntegrationTest {
         // when
         // 수정한 메시지를 삭제한다.
         mockMvc.perform(delete("/api/messages/{messageId}", messageId)
-                        .session(authorSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authorAccessToken)
                         .with(csrf()))
                 .andExpect(status().isNoContent());
 
@@ -895,13 +897,13 @@ class DiscodeitApiIntegrationTest {
         )));
         flushAndClear();
 
-        MockHttpSession authorSession = loginSession(authorUsername);
-        UUID messageId = createMessage("protected message", channel.getId(), authorId, authorSession);
-        MockHttpSession requesterSession = loginSession(requesterUsername);
+        String authorAccessToken = loginAccessToken(authorUsername, "integrationPassword");
+        UUID messageId = createMessage("protected message", channel.getId(), authorId, authorAccessToken);
+        String requesterAccessToken = loginAccessToken(requesterUsername, "integrationPassword");
         MessageUpdateRequest updateRequest = new MessageUpdateRequest("forbidden message update");
 
         mockMvc.perform(patch("/api/messages/{messageId}", messageId)
-                        .session(requesterSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + requesterAccessToken)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -912,7 +914,7 @@ class DiscodeitApiIntegrationTest {
                 );
 
         mockMvc.perform(delete("/api/messages/{messageId}", messageId)
-                        .session(requesterSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + requesterAccessToken)
                         .with(csrf()))
                 .andExpectAll(
                         status().isForbidden(),
@@ -1022,14 +1024,16 @@ class DiscodeitApiIntegrationTest {
                 .param("password", password));
     }
 
-    private MockHttpSession loginSession(String username) throws Exception {
-        MvcResult loginResult = performLogin(username, "integrationPassword")
+    private String loginAccessToken(String username, String password) throws Exception {
+        MvcResult loginResult = performLogin(username, password)
                 .andExpect(status().isOk())
                 .andExpect(authenticated().withUsername(username))
+                .andExpect(cookie().doesNotExist("JSESSIONID"))
                 .andReturn();
-        MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
-        assertThat(session).isNotNull();
-        return session;
+        assertThat(loginResult.getRequest().getSession(false)).isNull();
+        String accessToken = readBody(loginResult).path("accessToken").asText();
+        assertThat(accessToken).isNotBlank();
+        return accessToken;
     }
 
     private ResultActions performLoginWithRememberMe(
@@ -1062,24 +1066,18 @@ class DiscodeitApiIntegrationTest {
         return uuidAt(readBody(result), "/id");
     }
 
-    private UUID createMessage(String content, UUID channelId, UUID authorId) throws Exception {
-        return createMessage(content, channelId, authorId, null);
-    }
-
     private UUID createMessage(
             String content,
             UUID channelId,
             UUID authorId,
-            MockHttpSession session
+            String accessToken
     ) throws Exception {
         MessageCreateRequest request = new MessageCreateRequest(content, channelId, authorId);
         var requestBuilder = multipart("/api/messages")
                 .file(jsonPart("messageCreateRequest", request))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                 .with(csrf())
                 .accept(MediaType.APPLICATION_JSON);
-        if (session != null) {
-            requestBuilder.session(session);
-        }
 
         MvcResult result = mockMvc.perform(requestBuilder)
                 .andExpect(status().isCreated())
