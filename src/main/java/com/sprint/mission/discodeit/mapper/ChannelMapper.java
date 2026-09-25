@@ -6,9 +6,8 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.security.JwtRegistry;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -23,7 +22,7 @@ public class ChannelMapper {
     private final MessageRepository messageRepository;
     private final ReadStatusRepository readStatusRepository;
     private final UserMapper userMapper;
-    private final SessionRegistry sessionRegistry;
+    private final JwtRegistry jwtRegistry;
 
     public ChannelDto toDto(Channel channel) {
         List<UserDto> participants = readStatusRepository.findAllByChannelId(channel.getId()).stream()
@@ -51,15 +50,7 @@ public class ChannelMapper {
 
     // 로그인 여부 판단 메서드
     private boolean isOnline(UUID userId) {
-        for (Object principal : sessionRegistry.getAllPrincipals()) {
-            if (principal instanceof DiscodeitUserDetails details && userId.equals(details.getUserDto().id())) {
-                if (!sessionRegistry.getAllSessions(principal, false).isEmpty()) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return jwtRegistry.hasActiveJwtInformationByUserId(userId);
     }
 
 }

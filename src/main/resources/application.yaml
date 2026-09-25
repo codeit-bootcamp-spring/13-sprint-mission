@@ -53,6 +53,17 @@ discodeit:
       bucket: ${AWS_S3_BUCKET}
       presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600}
 
+  jwt:
+    secret: ${JWT_SECRET:discodeit-jwt-secret-key-32bytes!}
+    access-token-validity: 10m
+    refresh-token-validity: 14d
+    issuer: discodeit
+
+  admin:
+    username: ${ADMIN_USERNAME:Admin}
+    email: ${ADMIN_EMAIL:admin@gmail.com}
+    password: ${ADMIN_PASSWORD}
+
 logging:
   level:
     com.sprint.mission.discodeit: info
