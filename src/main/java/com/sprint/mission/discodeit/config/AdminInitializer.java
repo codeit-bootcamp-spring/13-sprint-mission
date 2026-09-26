@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,10 +14,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @RequiredArgsConstructor
 public class AdminInitializer implements ApplicationRunner {
-  
-  private static final String ADMIN_EMAIL = "admin@discodeit.com";
-  private static final String ADMIN_USERNAME = "admin";
-  private static final String ADMIN_PASSWORD = "admin1234";
+
+  @Value("${discodeit.admin.email}")
+  private String adminEmail;
+
+  @Value("${discodeit.admin.username}")
+  private String adminUsername;
+
+  @Value("${discodeit.admin.password}")
+  private String adminPassword;
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
@@ -29,9 +35,9 @@ public class AdminInitializer implements ApplicationRunner {
     }
 
     User admin = new User(
-        ADMIN_EMAIL,
-        ADMIN_USERNAME,
-        passwordEncoder.encode(ADMIN_PASSWORD)
+        adminEmail,
+        adminUsername,
+        passwordEncoder.encode(adminPassword)
     );
 
     admin.updateRole(Role.ADMIN);
