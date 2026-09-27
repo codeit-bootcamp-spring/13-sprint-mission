@@ -105,6 +105,8 @@ public class JwtTokenProvider {
     /*
     별도 페이로드 정보 추출 매서드.
      */
-
+    public Role getRole(Claims claims){
+        return claims.get(CLAIM_ROLE,Role.class);
+    }
 
 }
