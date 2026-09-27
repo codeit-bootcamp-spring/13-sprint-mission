@@ -103,10 +103,7 @@ public class BasicMessageService implements MessageService {
 
     @LogAction(value = "메시지 수정")
     @Override
-    @PreAuthorize("""
-        hasRole('CHANNEL_MANAGER')
-        or @messageGuard.isOwner(#messageId, authentication.principal.userDto.id)
-    """)
+    @PreAuthorize("@messageGuard.isOwner(#messageId, authentication.principal.userDto.id)")
     public MessageDto update(UUID messageId, MessageUpdateCommand command) {
 
         Message message = getMessageRequireThrow(messageId);
@@ -118,10 +115,7 @@ public class BasicMessageService implements MessageService {
 
     @LogAction(value = "메시지 삭제", idName = "messageId", idParamIndex = 0)
     @Override
-    @PreAuthorize("""
-        hasRole('CHANNEL_MANAGER')
-        or @messageGuard.isOwner(#messageId, authentication.principal.userDto.id)
-    """)
+    @PreAuthorize("@messageGuard.isOwner(#messageId, authentication.principal.userDto.id)")
     public void delete(UUID messageId) {
         if (!messageRepository.existsById(messageId)) throw new MessageNotFoundException(messageId);
 

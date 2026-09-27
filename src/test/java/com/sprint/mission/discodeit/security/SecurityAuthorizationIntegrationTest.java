@@ -540,8 +540,8 @@ class SecurityAuthorizationIntegrationTest {
     @CsvSource({"USER, AUTHOR", "USER, PARTICIPANT", "USER, OUTSIDER",
             "CHANNEL_MANAGER, AUTHOR", "CHANNEL_MANAGER, PARTICIPANT", "CHANNEL_MANAGER, OUTSIDER",
             "ADMIN, AUTHOR", "ADMIN, PARTICIPANT", "ADMIN, OUTSIDER"})
-    @DisplayName("메시지 수정·삭제는 작성자 또는 관리 역할에게만 허용한다")
-    void messageManagement_requiresOwnershipOrManagementRole(Role role, String requesterType) throws Exception {
+    @DisplayName("메시지 수정·삭제는 모든 역할에서 작성자에게만 허용한다")
+    void messageManagement_requiresOwnershipRegardlessOfRole(Role role, String requesterType) throws Exception {
         PrivateChannelFixture fixture = savePrivateChannelWithData(2);
         User requester = switch (requesterType) {
             case "AUTHOR" -> userRepository.findById(fixture.participantIds().get(0)).orElseThrow();
@@ -551,7 +551,7 @@ class SecurityAuthorizationIntegrationTest {
         };
         requester.updateRole(new UserRoleUpdateCommand(role));
         flushAndClear();
-        boolean allowed = role != Role.USER || requesterType.equals("AUTHOR");
+        boolean allowed = requesterType.equals("AUTHOR");
 
         var updateResult = mockMvc.perform(patch("/api/messages/{messageId}", fixture.messageId())
                 .with(user(userDetails(requester))).with(csrf())
