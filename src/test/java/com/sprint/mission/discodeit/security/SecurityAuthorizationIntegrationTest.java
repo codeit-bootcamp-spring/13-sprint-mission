@@ -9,6 +9,7 @@ import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
 import com.sprint.mission.discodeit.dto.command.user.UserRoleUpdateCommand;
 import com.sprint.mission.discodeit.dto.request.channel.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.readStatus.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
@@ -290,6 +291,41 @@ class SecurityAuthorizationIntegrationTest {
                 );
 
         assertPrivateChannelDataPreserved(fixture);
+    }
+
+    @ParameterizedTest(name = "권한 {0}, 생성자 참여 {1}")
+    @CsvSource({"USER, true", "USER, false", "CHANNEL_MANAGER, true", "CHANNEL_MANAGER, false",
+            "ADMIN, true", "ADMIN, false"})
+    @DisplayName("관리 역할은 참여하지 않아도 비공개 채널을 생성하고 일반 사용자는 본인을 포함해야 한다")
+    void createPrivateChannel_appliesRoleAndMembershipPolicy(Role role, boolean included) throws Exception {
+        User requester = saveUser(role);
+        User first = included ? requester : saveUser(Role.USER);
+        User second = saveUser(Role.USER);
+        List<UUID> participants = List.of(first.getId(), second.getId());
+        long channelsBefore = channelRepository.count();
+        long readStatusesBefore = readStatusRepository.count();
+
+        var result = mockMvc.perform(post("/api/channels/private")
+                .with(user(userDetails(requester))).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new PrivateChannelCreateRequest(participants))));
+
+        if (role == Role.USER && !included) {
+            result.andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
+            flushAndClear();
+            assertThat(channelRepository.count()).isEqualTo(channelsBefore);
+            assertThat(readStatusRepository.count()).isEqualTo(readStatusesBefore);
+        } else {
+            String body = result.andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+            UUID channelId = UUID.fromString(objectMapper.readTree(body).path("id").asText());
+            flushAndClear();
+            assertThat(readStatusRepository.findByChannelId(channelId)).extracting(ReadStatus::getUserId)
+                    .containsExactlyInAnyOrderElementsOf(participants);
+            // 생성 권한만으로 비공개 메시지 조회 권한까지 얻지는 않는다.
+            mockMvc.perform(get("/api/messages").param("channelId", channelId.toString())
+                            .with(user(userDetails(requester))))
+                    .andExpect(included ? status().isOk() : status().isForbidden());
+        }
     }
 
     @ParameterizedTest

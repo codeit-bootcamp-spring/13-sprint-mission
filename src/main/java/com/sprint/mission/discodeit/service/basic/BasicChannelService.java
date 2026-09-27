@@ -42,7 +42,7 @@ public class BasicChannelService implements ChannelService {
     private final MessageReader messageReader;
 
     @LogAction(value = "채널 생성")
-    @PreAuthorize("hasRole('CHANNEL_MANAGER') or #command.isPrivate()")
+    @PreAuthorize("hasRole('CHANNEL_MANAGER') or @channelGuard.isUserInPrivateChannelParticipants(#command, authentication.principal.userDto.id)")
     @Override
     public ChannelDto save(ChannelCreateCommand command) {
 
