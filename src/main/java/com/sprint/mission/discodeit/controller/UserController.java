@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -51,6 +52,7 @@ public class UserController {
         return ResponseEntity.ok(responses);
     }
 
+    @PreAuthorize("#userId == authentication.principal.userId")
     @PatchMapping(
             value = "/{userId}",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
@@ -77,6 +79,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("#userId == authentication.principal.userId")
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteUser(
             @PathVariable("userId") UUID userId
@@ -87,6 +90,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("#userId == authentication.principal.userId")
     @PatchMapping("/{userId}/userStatus")
     public ResponseEntity<UserResponse> updateUserStatus(
             @PathVariable("userId") UUID userId,
@@ -109,17 +113,10 @@ public class UserController {
         }
 
         try {
-            String fileName = file.getOriginalFilename();
-            String contentType = file.getContentType();
-
             return new BinaryContentRequest(
-                    fileName == null || fileName.isBlank()
-                            ? "profile"
-                            : fileName,
+                    resolveFileName(file),
                     file.getSize(),
-                    contentType == null
-                            ? MediaType.APPLICATION_OCTET_STREAM_VALUE
-                            : contentType,
+                    resolveContentType(file),
                     file.getBytes()
             );
         } catch (IOException e) {
@@ -134,5 +131,25 @@ public class UserController {
                     e
             );
         }
+    }
+
+    private String resolveFileName(MultipartFile file) {
+        String originalFileName = file.getOriginalFilename();
+
+        if (originalFileName == null || originalFileName.isBlank()) {
+            return "profile";
+        }
+
+        return originalFileName;
+    }
+
+    private String resolveContentType(MultipartFile file) {
+        String contentType = file.getContentType();
+
+        if (contentType == null) {
+            return MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        }
+
+        return contentType;
     }
 }

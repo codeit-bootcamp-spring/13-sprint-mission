@@ -7,6 +7,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 public class DiscodeitUserDetails implements UserDetails {
 
@@ -23,6 +24,10 @@ public class DiscodeitUserDetails implements UserDetails {
 
     public UserResponse getUser() {
         return user;
+    }
+
+    public UUID getUserId() {
+        return user.id();
     }
 
     @Override
