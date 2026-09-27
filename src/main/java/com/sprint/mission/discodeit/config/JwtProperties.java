@@ -12,7 +12,14 @@ import java.time.Duration;
 public class JwtProperties {
     // signature 용 salt
     private String secret;
+
+    private Integer refreshExpireDate;
+
     // 시간간격을 나타내는 자료형
     private Duration accessTokenValidate = Duration.ofMinutes(15);
+
     private String issuer = "discodeit";
+
+    private Duration refreshTokenValidity = Duration.ofDays(refreshExpireDate);
+
 }

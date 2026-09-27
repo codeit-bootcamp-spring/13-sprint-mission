@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.security;
+package com.sprint.mission.discodeit.security.jwt;
 
 
 import com.sprint.mission.discodeit.config.JwtProperties;
@@ -92,6 +92,14 @@ public class JwtTokenProvider {
                 // 제작된 파서 객체로 실제 토큰 파싱(검사)
                 .parseEncryptedClaims(token)
                 .getPayload();
+    }
+
+    /*
+    기타 면의 매서드
+     */
+
+    public Integer refreshTokenExpire(){
+        return 60 * 60 * 24 * properties.getRefreshExpireDate();
     }
 
     /*
