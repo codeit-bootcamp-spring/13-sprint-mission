@@ -128,7 +128,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void logout_로그인한_사용자의_세션을_종료하고_204를_반환한다()
+    void logout_리프레시_토큰_쿠키를_삭제하고_204를_반환한다()
             throws Exception {
         UUID userId = UUID.randomUUID();
 
@@ -138,12 +138,30 @@ class AuthControllerTest {
                         "encoded-password"
                 );
 
+        Cookie refreshTokenCookie = new Cookie(
+                JwtTokenProvider.REFRESH_TOKEN_COOKIE_NAME,
+                jwtTokenProvider.generateRefreshToken(userDetails)
+        );
+
         mockMvc.perform(
                         post("/api/auth/logout")
                                 .with(csrf())
                                 .with(user(userDetails))
+                                .cookie(refreshTokenCookie)
                 )
-                .andExpect(status().isNoContent());
+                .andExpect(status().isNoContent())
+                .andExpect(
+                        cookie().value(
+                                JwtTokenProvider.REFRESH_TOKEN_COOKIE_NAME,
+                                ""
+                        )
+                )
+                .andExpect(
+                        cookie().maxAge(
+                                JwtTokenProvider.REFRESH_TOKEN_COOKIE_NAME,
+                                0
+                        )
+                );
     }
 
     private UserResponse createUserResponse(UUID userId) {

@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.config;
 
 import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
 import com.sprint.mission.discodeit.security.JwtLoginSuccessHandler;
+import com.sprint.mission.discodeit.security.JwtLogoutHandler;
 import com.sprint.mission.discodeit.security.LoginFailureHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -33,6 +34,7 @@ public class SecurityConfig {
     private final JwtLoginSuccessHandler jwtLoginSuccessHandler;
     private final LoginFailureHandler loginFailureHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtLogoutHandler jwtLogoutHandler;
 
     @Bean
     public SecurityFilterChain filterChain(
@@ -104,6 +106,7 @@ public class SecurityConfig {
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
                         .deleteCookies("JSESSIONID")
+                        .addLogoutHandler(jwtLogoutHandler)
                         .logoutSuccessHandler(
                                 new HttpStatusReturningLogoutSuccessHandler(
                                         HttpStatus.NO_CONTENT
