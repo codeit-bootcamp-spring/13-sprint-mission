@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.security;
 
+import com.sprint.mission.discodeit.dto.command.message.MessageCreateCommand;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.service.basic.MessageReader;
@@ -35,4 +36,24 @@ public class MessageGuard {
 
         return true;
     }
+
+    public boolean isOwner(MessageCreateCommand command, UUID authenticatedUserId) {
+
+        if (command == null || authenticatedUserId == null) {
+            // MessageCreateCommand의 내용이 없다.
+            return false;
+        }
+        if (command.userId() == null) {
+            // MessageCreateCommand의 작성자의 아이디가 없다.
+            return false;
+        }
+
+        if (!command.userId().equals(authenticatedUserId)) {
+            log.warn("사용자 {}는 메시지 {}의 작성자가 아닙니다.", authenticatedUserId, command.userId());
+            return false;
+        }
+
+        return true;
+    }
+
 }

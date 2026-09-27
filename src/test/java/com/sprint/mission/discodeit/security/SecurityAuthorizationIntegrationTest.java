@@ -10,6 +10,7 @@ import com.sprint.mission.discodeit.dto.command.user.UserRoleUpdateCommand;
 import com.sprint.mission.discodeit.dto.request.channel.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.readStatus.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
@@ -34,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -54,6 +56,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -426,6 +429,35 @@ class SecurityAuthorizationIntegrationTest {
                         .with(user(userDetails(requester))))
                 .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
         assertPrivateChannelDataPreserved(fixture);
+    }
+
+    @ParameterizedTest
+    @EnumSource(Role.class)
+    @DisplayName("메시지는 본인 명의로만 생성할 수 있고 사칭 요청은 저장되지 않는다")
+    void messageCreation_requiresMatchingAuthor(Role role) throws Exception {
+        User requester = saveUser(role);
+        User other = saveUser(Role.USER);
+        Channel channel = savePublicChannel();
+        long before = messageRepository.count();
+        for (boolean spoofed : List.of(true, false)) {
+            var request = new MessageCreateRequest("identity test", channel.getId(),
+                    spoofed ? other.getId() : requester.getId());
+            var result = mockMvc.perform(multipart("/api/messages")
+                    .file(new MockMultipartFile("messageCreateRequest", "", MediaType.APPLICATION_JSON_VALUE,
+                            objectMapper.writeValueAsBytes(request)))
+                    .with(user(userDetails(requester))).with(csrf()));
+            if (spoofed) {
+                result.andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
+                flushAndClear();
+                assertThat(messageRepository.count()).isEqualTo(before);
+            } else {
+                String body = result.andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+                UUID messageId = UUID.fromString(objectMapper.readTree(body).path("id").asText());
+                flushAndClear();
+                assertThat(messageRepository.findById(messageId)).hasValueSatisfying(message ->
+                        assertThat(message.getAuthor().getId()).isEqualTo(requester.getId()));
+            }
+        }
     }
 
     @Test

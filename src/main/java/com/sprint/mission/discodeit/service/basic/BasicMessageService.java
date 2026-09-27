@@ -42,6 +42,7 @@ public class BasicMessageService implements MessageService {
 
     @LogAction(value = "메시지 생성")
     @Override
+    @PreAuthorize("@messageGuard.isOwner(#command, authentication.principal.userDto.id)")
     public MessageDto save(MessageCreateCommand command, List<MultipartFile> files) {
         Channel channel = getChannelRequireThrow(command.channelId());
         User author = getUserRequireThrow(command.userId());
