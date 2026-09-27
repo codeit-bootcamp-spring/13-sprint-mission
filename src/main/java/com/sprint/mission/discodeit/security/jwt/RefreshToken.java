@@ -34,13 +34,15 @@ public class RefreshToken extends BaseEntity {
 
     public enum State {
         ROTATED,
-        REVOKED
+        REVOKED,
+        GRANTED
     }
 
     public RefreshToken(String hash, Instant expire, User user) {
         this.hash = hash;
         this.expire = expire;
         this.user = user;
+        this.state = State.GRANTED;
     }
 
     public void revoke(){ state = State.REVOKED; }

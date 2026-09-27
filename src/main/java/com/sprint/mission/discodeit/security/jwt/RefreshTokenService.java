@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.config.JwtProperties;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,18 @@ public class RefreshTokenService {
 
     private final SecureRandom random = new SecureRandom();
 
+    public enum Result{
+        REVOKED,
+        ROTATED,
+        EXPIRED,
+        NOT_FOUND,
+        SUCCESS
+    }
+
+    public record Output(
+            String username, // tmp
+            Result result
+    ){}
 
     /**
      * Refresh 토큰을 저장소에 저장, 발급하는 매서드
@@ -43,7 +56,7 @@ public class RefreshTokenService {
      * @return
      */
     @Transactional
-    public String grant(UUID userId){
+    public String grant(UUID userId) {
 
         byte[] salt = new byte[32];
         random.nextBytes(salt);
@@ -57,7 +70,7 @@ public class RefreshTokenService {
 
         Instant expire = clock.instant().plus(properties.getRefreshTokenValidity());
 
-        RefreshToken newRefreshToken = new RefreshToken(hash(token),expire,user);
+        RefreshToken newRefreshToken = new RefreshToken(hash(token), expire, user);
 
         tokenRepository.save(newRefreshToken);
 
@@ -70,7 +83,7 @@ public class RefreshTokenService {
      * @return
      */
     @Transactional
-    public void rotate(String key){
+    public Output rotate(String key){
         /*
         로테이팅 시 가능한 이벤트 목록
         1. 알 수 없는 토큰
@@ -82,12 +95,12 @@ public class RefreshTokenService {
         RefreshToken token = tokenRepository.findByHash(hash(key)).orElse(null);
 
         // 1.
-        if (token == null) return;
+        if (token == null) return notFound(token);
         // 2.
-        switch (token.getState()){
+        return switch (token.getState()){
             case ROTATED -> rotated(token);
             case REVOKED -> revoked(token);
-            default -> checkExpire(token);
+            case GRANTED -> checkExpire(token);
         };
     }
 
@@ -125,15 +138,16 @@ public class RefreshTokenService {
     }
 
 
-    private void revoked(RefreshToken token){
+    private Output revoked(RefreshToken token){
         User currnetUser = token.getUser();
         log.info("[{}] - 제거된 토큰 재 발급. user = {}",
                 SERVICE_NAME,
                 currnetUser.getUsername()
         );
+        return new Output(currnetUser.getUsername(),Result.REVOKED);
     }
 
-    private void rotated(RefreshToken token){
+    private Output rotated(RefreshToken token){
         // 토큰 탈취 의심.
         // 1. 현재 사용자 기준 모든 토큰 삭제.
         User currnetUser = token.getUser();
@@ -144,22 +158,25 @@ public class RefreshTokenService {
                 token.getUser().getUsername(),
                 revokeCount
         );
+
+        return new Output(currnetUser.getUsername(), Result.ROTATED);
     }
 
-    private void expired(RefreshToken token){
+
+    private Output notFound(RefreshToken token){
         User currnetUser = token.getUser();
-        log.info("[{}] - 만료된 토큰 재 발급. user = {}",
-                SERVICE_NAME,
-                currnetUser.getUsername()
-        );
+        return new Output(currnetUser.getUsername(), Result.NOT_FOUND);
     }
 
-    private void checkExpire(RefreshToken token){
+    private Output checkExpire(RefreshToken token){
         Instant now = clock.instant();
+        User currnetUser = token.getUser();
         if (token.getExpire().isBefore(now))
-            expired(token);
-        else
+            return new Output(currnetUser.getUsername(), Result.EXPIRED);
+        else {
             token.revoke();
+            return new Output(currnetUser.getUsername(), Result.SUCCESS);
+        }
     }
 
 }

@@ -31,7 +31,6 @@ public class DiscodeitUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // UserDto, password
-        // username 을 통해 username (email) 을 가져온다.
 
         UserProjection projection = userRepository.getUserFromUsername(username)
                 .orElseThrow(() -> {
