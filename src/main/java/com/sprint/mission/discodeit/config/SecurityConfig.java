@@ -28,6 +28,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
@@ -46,11 +47,9 @@ public class SecurityConfig {
             HttpSecurity http,
             AuthenticationEntryPoint authenticationEntryPoint,
             AccessDeniedHandler accessDeniedHandler,
-//            PersistentTokenRepository tokenRepository,
-            UserDetailsService userDetailsService,
             AuthenticationSuccessHandler loginSuccessHandler,
-            AuthenticationFailureHandler loginFailureHandler
-//            SessionRegistry sessionRegistry
+            AuthenticationFailureHandler loginFailureHandler,
+            LogoutHandler logoutHandler
 
     ) throws Exception {
         http
@@ -91,7 +90,7 @@ public class SecurityConfig {
                 // 로그아웃 설정
                 .logout( logout -> logout
                         .logoutUrl("/api/auth/logout")
-                        .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT))
+                        .addLogoutHandler(logoutHandler)
                 );
 
         return http.build();    // security 설정 적용(build)
