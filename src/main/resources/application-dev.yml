@@ -1,3 +1,10 @@
+discodeit:
+  admin:
+    user:
+      username: ${ADMIN_USER_NAME:디스코드잇_관리자}
+      password: ${ADMIN_USER_PASSWORD:admin1234}
+      email: ${ADMIN_USER_EMAIL:admin@discodeit.com}
+
 server:
   port: 8080
 

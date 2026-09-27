@@ -93,9 +93,10 @@ discodeit:
       presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600} # (기본값: 10분)
   admin:
     user:
-      username: ${ADMIN_USER_NAME}
-      password: ${ADMIN_USER_PASSWORD}
-      email: ${ADMIN_USER_EMAIL}
+      # 개발용 기본값은 dev 프로파일에만 둔다. 누락된 운영 값은 @NotBlank로 검증한다.
+      username: ${ADMIN_USER_NAME:}
+      password: ${ADMIN_USER_PASSWORD:}
+      email: ${ADMIN_USER_EMAIL:}
 
 info:
   application:
