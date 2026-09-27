@@ -1,15 +1,17 @@
 package com.sprint.mission.discodeit.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.exception.ErrorResponse;
 import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
 import com.sprint.mission.discodeit.security.JwtLoginSuccessHandler;
 import com.sprint.mission.discodeit.security.JwtLogoutHandler;
 import com.sprint.mission.discodeit.security.LoginFailureHandler;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
@@ -26,6 +28,8 @@ import org.springframework.security.web.authentication.logout.HttpStatusReturnin
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 import java.time.Clock;
+import java.time.Instant;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
@@ -39,7 +43,8 @@ public class SecurityConfig {
             JwtLoginSuccessHandler jwtLoginSuccessHandler,
             LoginFailureHandler loginFailureHandler,
             JwtAuthenticationFilter jwtAuthenticationFilter,
-            JwtLogoutHandler jwtLogoutHandler
+            JwtLogoutHandler jwtLogoutHandler,
+            ObjectMapper objectMapper
     ) throws Exception {
 
         http
@@ -105,18 +110,40 @@ public class SecurityConfig {
                 )
 
                 .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint((request, response, exception1) ->
-                                response.sendError(
-                                        HttpServletResponse.SC_UNAUTHORIZED,
-                                        "인증이 필요합니다."
-                                )
-                        )
-                        .accessDeniedHandler((request, response, exception1) ->
-                                response.sendError(
-                                        HttpServletResponse.SC_FORBIDDEN,
-                                        "접근 권한이 없습니다."
-                                )
-                        )
+                        .authenticationEntryPoint((request, response, ex) -> {
+                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding("UTF-8");
+
+                            objectMapper.writeValue(
+                                    response.getWriter(),
+                                    new ErrorResponse(
+                                            Instant.now(),
+                                            "AUTHENTICATION_REQUIRED",
+                                            "인증이 필요합니다.",
+                                            Map.of(),
+                                            ex.getClass().getName(),
+                                            HttpStatus.UNAUTHORIZED.value()
+                                    )
+                            );
+                        })
+                        .accessDeniedHandler((request, response, ex) -> {
+                            response.setStatus(HttpStatus.FORBIDDEN.value());
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding("UTF-8");
+
+                            objectMapper.writeValue(
+                                    response.getWriter(),
+                                    new ErrorResponse(
+                                            Instant.now(),
+                                            "ACCESS_DENIED",
+                                            "접근 권한이 없습니다.",
+                                            Map.of(),
+                                            ex.getClass().getName(),
+                                            HttpStatus.FORBIDDEN.value()
+                                    )
+                            );
+                        })
                 )
 
                 .addFilterBefore(
