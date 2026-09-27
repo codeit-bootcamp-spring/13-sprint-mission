@@ -12,6 +12,8 @@ import java.text.ParseException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -83,6 +85,7 @@ public class JwtTokenProvider {
 
         JWTClaimsSet claims = new JWTClaimsSet.Builder()
                 .subject(username)
+                .jwtID(UUID.randomUUID().toString())
                 .issueTime(Date.from(issuedAt))
                 .expirationTime(Date.from(expiresAt))
                 .claim(TOKEN_TYPE_CLAIM, tokenType)
