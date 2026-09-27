@@ -113,7 +113,7 @@ public class BasicChannelService implements ChannelService {
     }
 
     @LogAction(value = "채널 삭제", idName = "channelId", idParamIndex = 0)
-    @PreAuthorize("hasRole('CHANNEL_MANAGER') or @channelGuard.isChannelPrivate(#channelId)")
+    @PreAuthorize("hasRole('CHANNEL_MANAGER')")
     @Override
     public void delete(UUID channelId) {
 

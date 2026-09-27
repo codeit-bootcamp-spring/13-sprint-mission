@@ -1,17 +1,32 @@
 package com.sprint.mission.discodeit.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.dto.command.channel.ChannelCreatePrivateCommand;
 import com.sprint.mission.discodeit.dto.command.channel.ChannelCreatePublicCommand;
+import com.sprint.mission.discodeit.dto.command.message.MessageCreateCommand;
+import com.sprint.mission.discodeit.dto.command.readStatus.ReadStatusCreateCommand;
+import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
 import com.sprint.mission.discodeit.dto.command.user.UserRoleUpdateCommand;
 import com.sprint.mission.discodeit.dto.request.channel.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
+import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.Role;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.ReadStatusRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.UserRoleUpdater;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,12 +39,15 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -45,6 +63,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Security 인증·인가 통합 테스트")
 class SecurityAuthorizationIntegrationTest {
 
+    private static final String PRIVATE_MESSAGE_CONTENT = "private channel message";
+
     @Autowired
     MockMvc mockMvc;
 
@@ -56,6 +76,21 @@ class SecurityAuthorizationIntegrationTest {
 
     @Autowired
     ChannelRepository channelRepository;
+
+    @Autowired
+    UserRepository userRepository;
+
+    @Autowired
+    ReadStatusRepository readStatusRepository;
+
+    @Autowired
+    MessageRepository messageRepository;
+
+    @Autowired
+    UserMapper userMapper;
+
+    @Autowired
+    EntityManager entityManager;
 
     @Autowired
     UserRoleUpdater userRoleUpdater;
@@ -191,6 +226,73 @@ class SecurityAuthorizationIntegrationTest {
         assertThat(channelRepository.existsById(channel.getId())).isFalse();
     }
 
+    @ParameterizedTest(name = "참여자 {0}명, 요청자 참여 여부 {1}")
+    @CsvSource({"2, true", "2, false", "3, true", "3, false"})
+    @DisplayName("일반 사용자는 참여 여부와 관계없이 DM과 그룹 DM을 삭제할 수 없다")
+    void deletePrivateChannel_returnsForbidden_whenRequesterIsUser(
+            int participantCount, boolean requesterIsParticipant
+    ) throws Exception {
+        PrivateChannelFixture fixture = savePrivateChannelWithData(participantCount);
+        User requester = requesterIsParticipant
+                ? userRepository.findById(fixture.participantIds().get(0)).orElseThrow()
+                : saveUser(Role.USER);
+        flushAndClear();
+        assertThat(readStatusRepository.existsByChannel_IdAndUser_Id(fixture.channelId(), requester.getId()))
+                .isEqualTo(requesterIsParticipant);
+
+        mockMvc.perform(delete("/api/channels/{channelId}", fixture.channelId())
+                        .with(user(userDetails(requester)))
+                        .with(csrf()))
+                .andExpectAll(
+                        status().isForbidden(),
+                        jsonPath("$.status").value(403),
+                        jsonPath("$.code").value("AUTH_403")
+                );
+
+        assertPrivateChannelDataPreserved(fixture);
+    }
+
+    @ParameterizedTest(name = "참여자 {0}명, 요청자 권한 {1}")
+    @CsvSource({"2, CHANNEL_MANAGER", "3, CHANNEL_MANAGER", "2, ADMIN", "3, ADMIN"})
+    @DisplayName("채널 매니저와 관리자는 참여하지 않은 DM과 그룹 DM도 삭제할 수 있다")
+    void deletePrivateChannel_succeeds_whenRequesterHasManagementRole(
+            int participantCount, Role role
+    ) throws Exception {
+        PrivateChannelFixture fixture = savePrivateChannelWithData(participantCount);
+        User requester = saveUser(role);
+        flushAndClear();
+        assertThat(readStatusRepository.existsByChannel_IdAndUser_Id(fixture.channelId(), requester.getId()))
+                .isFalse();
+
+        mockMvc.perform(delete("/api/channels/{channelId}", fixture.channelId())
+                        .with(user(userDetails(requester)))
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
+
+        flushAndClear();
+        assertThat(channelRepository.existsById(fixture.channelId())).isFalse();
+        assertThat(readStatusRepository.findByChannelId(fixture.channelId())).isEmpty();
+        assertThat(messageRepository.existsByChannel_Id(fixture.channelId())).isFalse();
+        assertThat(messageRepository.findById(fixture.messageId())).isEmpty();
+    }
+
+    @ParameterizedTest(name = "참여자 {0}명")
+    @ValueSource(ints = {2, 3})
+    @DisplayName("미인증 사용자는 DM과 그룹 DM을 삭제할 수 없다")
+    void deletePrivateChannel_returnsUnauthorized_whenUnauthenticated(int participantCount) throws Exception {
+        PrivateChannelFixture fixture = savePrivateChannelWithData(participantCount);
+
+        mockMvc.perform(delete("/api/channels/{channelId}", fixture.channelId())
+                        .with(csrf()))
+                .andExpectAll(
+                        status().isUnauthorized(),
+                        jsonPath("$.status").value(401),
+                        jsonPath("$.code").value("AUTH_401")
+                );
+
+        assertPrivateChannelDataPreserved(fixture);
+    }
+
     @Test
     @WithMockUser(roles = "USER")
     @DisplayName("일반 사용자가 역할 변경 Service를 직접 호출하면 인가가 거부된다")
@@ -240,5 +342,76 @@ class SecurityAuthorizationIntegrationTest {
                 "security authorization test",
                 ChannelType.PUBLIC
         )));
+    }
+
+    private User saveUser(Role role) {
+        String suffix = UUID.randomUUID().toString();
+        User user = new User(new UserCreateCommand(
+                "user-" + suffix,
+                "unused-password",
+                suffix + "@security.test"
+        ), null);
+        user.updateRole(new UserRoleUpdateCommand(role));
+        return userRepository.save(user);
+    }
+
+    private DiscodeitUserDetails userDetails(User user) {
+        return new DiscodeitUserDetails(userMapper.toDto(user), user.getPassword());
+    }
+
+    private PrivateChannelFixture savePrivateChannelWithData(int participantCount) {
+        List<User> participants = new ArrayList<>();
+        for (int i = 0; i < participantCount; i++) {
+            participants.add(saveUser(Role.USER));
+        }
+        List<UUID> participantIds = participants.stream().map(User::getId).toList();
+        Channel channel = channelRepository.save(new Channel(new ChannelCreatePrivateCommand(
+                participantIds, ChannelType.PRIVATE
+        )));
+        Instant readAt = Instant.parse("2026-09-25T00:00:00Z");
+        List<UUID> readStatusIds = participants.stream()
+                .map(participant -> readStatusRepository.save(new ReadStatus(
+                        channel, participant, new ReadStatusCreateCommand(participant.getId(), readAt)
+                )).getId())
+                .toList();
+        User author = participants.get(0);
+        Message message = messageRepository.save(new Message(author, channel, new MessageCreateCommand(
+                PRIVATE_MESSAGE_CONTENT, author.getId(), channel.getId()
+        )));
+        flushAndClear();
+
+        return new PrivateChannelFixture(channel.getId(), participantIds, readStatusIds, message.getId(), readAt);
+    }
+
+    private void assertPrivateChannelDataPreserved(PrivateChannelFixture fixture) {
+        flushAndClear();
+        assertThat(channelRepository.findById(fixture.channelId()))
+                .hasValueSatisfying(channel -> assertThat(channel.isPrivate()).isTrue());
+        List<ReadStatus> readStatuses = readStatusRepository.findByChannelId(fixture.channelId());
+        assertThat(readStatuses).extracting(ReadStatus::getId)
+                .containsExactlyInAnyOrderElementsOf(fixture.readStatusIds());
+        assertThat(readStatuses).extracting(ReadStatus::getUserId)
+                .containsExactlyInAnyOrderElementsOf(fixture.participantIds());
+        assertThat(readStatuses).allSatisfy(readStatus ->
+                assertThat(readStatus.getLastReadAt()).isEqualTo(fixture.readAt()));
+        assertThat(messageRepository.findById(fixture.messageId())).hasValueSatisfying(message -> {
+            assertThat(message.getContent()).isEqualTo(PRIVATE_MESSAGE_CONTENT);
+            assertThat(message.getChannelId()).isEqualTo(fixture.channelId());
+            assertThat(message.getAuthor().getId()).isEqualTo(fixture.participantIds().get(0));
+        });
+    }
+
+    private void flushAndClear() {
+        entityManager.flush();
+        entityManager.clear();
+    }
+
+    private record PrivateChannelFixture(
+            UUID channelId,
+            List<UUID> participantIds,
+            List<UUID> readStatusIds,
+            UUID messageId,
+            Instant readAt
+    ) {
     }
 }
