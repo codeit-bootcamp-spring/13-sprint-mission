@@ -43,6 +43,15 @@ public class InMemoryJwtRegistry implements JwtRegistry{
     }
 
     @Override
+    public void invalidateJwtInformationByRefreshToken(UUID userId, String refreshToken) {
+        // 등록·로테이션과 같은 사용자별 잠금 안에서 비교와 삭제를 완료한다.
+        origin.computeIfPresent(userId, (key, queue) -> {
+            queue.removeIf(info -> info.refreshToken().equals(refreshToken));
+            return queue.isEmpty() ? null : queue;
+        });
+    }
+
+    @Override
     public boolean hasActiveJwtInformationByUserId(UUID userId) {
         Queue<JwtInformation> jwtInformations = origin.get(userId);
         if (jwtInformations == null) return false;

@@ -9,6 +9,12 @@ public interface JwtRegistry {
 
     void invalidateJwtInformationByUserId(UUID userId);
 
+    /**
+     * 해당 사용자의 리프레시 토큰이 일치하는 경우에만 토큰 쌍을 원자적으로 삭제한다.
+     * 사용자나 토큰이 등록되어 있지 않으면 아무것도 변경하지 않는다.
+     */
+    void invalidateJwtInformationByRefreshToken(UUID userId, String refreshToken);
+
     boolean hasActiveJwtInformationByUserId(UUID userId);
 
     boolean hasActiveJwtInformationByAccessToken(String accessToken);

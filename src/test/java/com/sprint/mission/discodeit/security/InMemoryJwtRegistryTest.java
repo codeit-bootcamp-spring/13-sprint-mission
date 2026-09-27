@@ -84,6 +84,78 @@ class InMemoryJwtRegistryTest {
     }
 
     @Test
+    @DisplayName("일치하는 리프레시 토큰의 무효화는 사용자와 토큰 쌍을 제거하고 반복해도 다른 사용자를 유지한다")
+    void invalidateByRefreshToken_removesMatchingPairAndAllowsRepeatedRequests() {
+        JwtInformation target = information(UUID.randomUUID());
+        JwtInformation other = information(UUID.randomUUID());
+        registry.registerJwtInformation(target);
+        registry.registerJwtInformation(other);
+
+        registry.invalidateJwtInformationByRefreshToken(target.userDto().id(), target.refreshToken());
+        registry.invalidateJwtInformationByRefreshToken(target.userDto().id(), target.refreshToken());
+
+        assertActive(target, false);
+        assertActive(other, true);
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 리프레시 토큰으로 무효화를 요청해도 두 사용자 모두 유지한다")
+    void invalidateByRefreshToken_preservesUsersWhenTokenDoesNotMatch() {
+        JwtInformation target = information(UUID.randomUUID());
+        JwtInformation other = information(UUID.randomUUID());
+        registry.registerJwtInformation(target);
+        registry.registerJwtInformation(other);
+
+        registry.invalidateJwtInformationByRefreshToken(target.userDto().id(), other.refreshToken());
+
+        assertActive(target, true);
+        assertActive(other, true);
+    }
+
+    @Test
+    @DisplayName("이전 로그인 토큰의 무효화 요청은 새 로그인 정보를 삭제하지 않는다")
+    void invalidateByRefreshToken_preservesNewLogin() {
+        JwtInformation old = information(UUID.randomUUID());
+        JwtInformation current = information(old.userDto().id());
+        registry.registerJwtInformation(old);
+        registry.registerJwtInformation(current);
+
+        registry.invalidateJwtInformationByRefreshToken(old.userDto().id(), old.refreshToken());
+
+        assertTokensActive(old, false);
+        assertActive(current, true);
+    }
+
+    @Test
+    @DisplayName("갱신 전 토큰의 무효화 요청은 갱신된 토큰 쌍을 삭제하지 않는다")
+    void invalidateByRefreshToken_preservesRotatedTokens() {
+        JwtInformation old = information(UUID.randomUUID());
+        JwtInformation current = information(old.userDto().id());
+        registry.registerJwtInformation(old);
+        registry.rotateJwtInformation(old.refreshToken(), current);
+
+        registry.invalidateJwtInformationByRefreshToken(old.userDto().id(), old.refreshToken());
+
+        assertTokensActive(old, false);
+        assertActive(current, true);
+    }
+
+    @Test
+    @DisplayName("로그아웃이 먼저 완료되면 해당 토큰의 갱신은 실패하고 사용자를 다시 등록하지 않는다")
+    void rotate_rejectsTokenInvalidatedByLogout() {
+        JwtInformation old = information(UUID.randomUUID());
+        JwtInformation replacement = information(old.userDto().id());
+        registry.registerJwtInformation(old);
+        registry.invalidateJwtInformationByRefreshToken(old.userDto().id(), old.refreshToken());
+
+        assertThatThrownBy(() -> registry.rotateJwtInformation(old.refreshToken(), replacement))
+                .isInstanceOf(TokenRenewalFailedException.class);
+
+        assertActive(old, false);
+        assertActive(replacement, false);
+    }
+
+    @Test
     @DisplayName("로테이션은 이전 두 토큰을 제거하고 새 토큰만 활성화한다")
     void rotate_replacesMatchingTokenPair() {
         JwtInformation old = information(UUID.randomUUID());
