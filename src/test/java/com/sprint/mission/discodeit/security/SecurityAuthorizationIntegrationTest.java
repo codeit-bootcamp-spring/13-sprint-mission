@@ -11,6 +11,7 @@ import com.sprint.mission.discodeit.dto.request.channel.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.message.MessageCreateRequest;
+import com.sprint.mission.discodeit.dto.request.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.readStatus.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
@@ -325,10 +326,13 @@ class SecurityAuthorizationIntegrationTest {
             flushAndClear();
             assertThat(readStatusRepository.findByChannelId(channelId)).extracting(ReadStatus::getUserId)
                     .containsExactlyInAnyOrderElementsOf(participants);
-            // 생성 권한만으로 비공개 메시지 조회 권한까지 얻지는 않는다.
+            // 관리 역할은 참여하지 않아도 조회할 수 있지만 참여자로 등록되지는 않는다.
             mockMvc.perform(get("/api/messages").param("channelId", channelId.toString())
                             .with(user(userDetails(requester))))
-                    .andExpect(included ? status().isOk() : status().isForbidden());
+                    .andExpect(status().isOk());
+            flushAndClear();
+            assertThat(readStatusRepository.findByChannelId(channelId)).extracting(ReadStatus::getUserId)
+                    .containsExactlyInAnyOrderElementsOf(participants);
         }
     }
 
@@ -393,10 +397,10 @@ class SecurityAuthorizationIntegrationTest {
 
     @ParameterizedTest
     @EnumSource(Role.class)
-    @DisplayName("메시지는 공개 채널 또는 참여 중인 비공개 채널에서만 조회한다")
-    void messageLists_requireAccessToRequestedChannel(Role role) throws Exception {
+    @DisplayName("관리 역할은 비참여 채널도 조회하고 일반 사용자는 공개·참여 채널만 조회한다")
+    void messageLists_applyRoleAndChannelAccess(Role role) throws Exception {
         PrivateChannelFixture accessible = savePrivateChannelWithData(2);
-        PrivateChannelFixture inaccessible = savePrivateChannelWithData(2);
+        PrivateChannelFixture inaccessible = savePrivateChannelWithData(3);
         User requester = userRepository.findById(accessible.participantIds().get(0)).orElseThrow();
         requester.updateRole(new UserRoleUpdateCommand(role));
         Channel publicChannel = savePublicChannel();
@@ -409,10 +413,28 @@ class SecurityAuthorizationIntegrationTest {
         mockMvc.perform(get("/api/messages").param("channelId", publicChannel.getId().toString())
                         .with(user(userDetails(requester))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.content").isEmpty());
-        for (UUID deniedChannel : List.of(inaccessible.channelId(), UUID.randomUUID())) {
-            mockMvc.perform(get("/api/messages").param("channelId", deniedChannel.toString())
-                            .with(user(userDetails(requester))))
-                    .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
+        var result = mockMvc.perform(get("/api/messages").param("channelId", inaccessible.channelId().toString())
+                .with(user(userDetails(requester))));
+        if (role == Role.USER) {
+            result.andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
+        } else {
+            result.andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content[0].id").value(inaccessible.messageId().toString()));
+        }
+        assertPrivateChannelDataPreserved(inaccessible);
+    }
+
+    @ParameterizedTest
+    @EnumSource(Role.class)
+    @DisplayName("존재하지 않는 채널의 메시지 조회는 일반 사용자에게 거부되고 관리 역할에는 빈 목록을 반환한다")
+    void messageLists_handleMissingChannelAccordingToRole(Role role) throws Exception {
+        User requester = saveUser(role);
+        var result = mockMvc.perform(get("/api/messages").param("channelId", UUID.randomUUID().toString())
+                .with(user(userDetails(requester))));
+        if (role == Role.USER) {
+            result.andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
+        } else {
+            result.andExpect(status().isOk()).andExpect(jsonPath("$.content").isEmpty());
         }
     }
 
@@ -447,9 +469,6 @@ class SecurityAuthorizationIntegrationTest {
             assertThat(readStatusRepository.existsByChannel_IdAndUser_Id(request.channelId(), request.userId()))
                     .isFalse();
         }
-        mockMvc.perform(get("/api/messages").param("channelId", fixture.channelId().toString())
-                        .with(user(userDetails(requester))))
-                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
         assertPrivateChannelDataPreserved(fixture);
     }
 
@@ -479,6 +498,89 @@ class SecurityAuthorizationIntegrationTest {
                 assertThat(messageRepository.findById(messageId)).hasValueSatisfying(message ->
                         assertThat(message.getAuthor().getId()).isEqualTo(requester.getId()));
             }
+        }
+    }
+
+    @ParameterizedTest(name = "권한 {0}, 참여 여부 {1}")
+    @CsvSource({"USER, true", "USER, false", "CHANNEL_MANAGER, true", "CHANNEL_MANAGER, false",
+            "ADMIN, true", "ADMIN, false"})
+    @DisplayName("비공개 메시지 작성은 관리 역할 또는 참여자에게 허용하며 참여 상태는 변경하지 않는다")
+    void privateMessageCreation_appliesRoleAndMembershipPolicy(Role role, boolean participating) throws Exception {
+        PrivateChannelFixture fixture = savePrivateChannelWithData(3);
+        User requester = participating
+                ? userRepository.findById(fixture.participantIds().get(0)).orElseThrow()
+                : saveUser(role);
+        requester.updateRole(new UserRoleUpdateCommand(role));
+        flushAndClear();
+        long messagesBefore = messageRepository.count();
+        var request = new MessageCreateRequest("private message", fixture.channelId(), requester.getId());
+        var result = mockMvc.perform(multipart("/api/messages")
+                .file(new MockMultipartFile("messageCreateRequest", "", MediaType.APPLICATION_JSON_VALUE,
+                        objectMapper.writeValueAsBytes(request)))
+                .with(user(userDetails(requester))).with(csrf()));
+
+        if (role == Role.USER && !participating) {
+            result.andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
+            flushAndClear();
+            assertThat(messageRepository.count()).isEqualTo(messagesBefore);
+        } else {
+            String body = result.andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+            UUID messageId = UUID.fromString(objectMapper.readTree(body).path("id").asText());
+            flushAndClear();
+            assertThat(messageRepository.count()).isEqualTo(messagesBefore + 1);
+            assertThat(messageRepository.findById(messageId)).hasValueSatisfying(message -> {
+                assertThat(message.getAuthor().getId()).isEqualTo(requester.getId());
+                assertThat(message.getChannelId()).isEqualTo(fixture.channelId());
+            });
+        }
+        assertPrivateChannelDataPreserved(fixture);
+    }
+
+    @ParameterizedTest(name = "권한 {0}, 요청자 {1}")
+    @CsvSource({"USER, AUTHOR", "USER, PARTICIPANT", "USER, OUTSIDER",
+            "CHANNEL_MANAGER, AUTHOR", "CHANNEL_MANAGER, PARTICIPANT", "CHANNEL_MANAGER, OUTSIDER",
+            "ADMIN, AUTHOR", "ADMIN, PARTICIPANT", "ADMIN, OUTSIDER"})
+    @DisplayName("메시지 수정·삭제는 작성자 또는 관리 역할에게만 허용한다")
+    void messageManagement_requiresOwnershipOrManagementRole(Role role, String requesterType) throws Exception {
+        PrivateChannelFixture fixture = savePrivateChannelWithData(2);
+        User requester = switch (requesterType) {
+            case "AUTHOR" -> userRepository.findById(fixture.participantIds().get(0)).orElseThrow();
+            case "PARTICIPANT" -> userRepository.findById(fixture.participantIds().get(1)).orElseThrow();
+            case "OUTSIDER" -> saveUser(role);
+            default -> throw new IllegalArgumentException(requesterType);
+        };
+        requester.updateRole(new UserRoleUpdateCommand(role));
+        flushAndClear();
+        boolean allowed = role != Role.USER || requesterType.equals("AUTHOR");
+
+        var updateResult = mockMvc.perform(patch("/api/messages/{messageId}", fixture.messageId())
+                .with(user(userDetails(requester))).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new MessageUpdateRequest("managed content"))));
+        if (allowed) {
+            updateResult.andExpect(status().isOk()).andExpect(jsonPath("$.content").value("managed content"));
+            flushAndClear();
+            assertThat(messageRepository.findById(fixture.messageId())).hasValueSatisfying(message -> {
+                assertThat(message.getContent()).isEqualTo("managed content");
+                assertThat(message.getAuthor().getId()).isEqualTo(fixture.participantIds().get(0));
+            });
+        } else {
+            updateResult.andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
+            assertPrivateChannelDataPreserved(fixture);
+        }
+
+        var deleteResult = mockMvc.perform(delete("/api/messages/{messageId}", fixture.messageId())
+                .with(user(userDetails(requester))).with(csrf()));
+        if (allowed) {
+            deleteResult.andExpect(status().isNoContent());
+            flushAndClear();
+            assertThat(messageRepository.existsById(fixture.messageId())).isFalse();
+            assertThat(channelRepository.existsById(fixture.channelId())).isTrue();
+            assertThat(readStatusRepository.findByChannelId(fixture.channelId())).extracting(ReadStatus::getUserId)
+                    .containsExactlyInAnyOrderElementsOf(fixture.participantIds());
+        } else {
+            deleteResult.andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
+            assertPrivateChannelDataPreserved(fixture);
         }
     }
 

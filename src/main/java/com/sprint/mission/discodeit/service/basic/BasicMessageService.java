@@ -42,7 +42,14 @@ public class BasicMessageService implements MessageService {
 
     @LogAction(value = "메시지 생성")
     @Override
-    @PreAuthorize("@messageGuard.isOwner(#command, authentication.principal.userDto.id)")
+    @PreAuthorize("""
+        @messageGuard.isOwner(#command, authentication.principal.userDto.id)
+        and
+        (
+            hasRole('CHANNEL_MANAGER')
+            or @channelGuard.isAccess(#command.channelId(), authentication.principal.userDto.id)
+        )
+    """)
     public MessageDto save(MessageCreateCommand command, List<MultipartFile> files) {
         Channel channel = getChannelRequireThrow(command.channelId());
         User author = getUserRequireThrow(command.userId());
@@ -63,7 +70,11 @@ public class BasicMessageService implements MessageService {
 
     @Transactional(readOnly = true)
     @Override
-    @PreAuthorize("@channelGuard.isAccess(#channelId, authentication.principal.userDto.id)")
+    @PreAuthorize("""
+        hasRole('CHANNEL_MANAGER')
+        or
+        @channelGuard.isAccess(#channelId, authentication.principal.userDto.id)
+    """)
     public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Pageable pageable, UUID cursor) {
 
         MessagePagingCondition condition = new MessagePagingCondition(channelId, pageable, cursor);
@@ -92,7 +103,10 @@ public class BasicMessageService implements MessageService {
 
     @LogAction(value = "메시지 수정")
     @Override
-    @PreAuthorize("@messageGuard.isOwner(#messageId, authentication.principal.userDto.id)")
+    @PreAuthorize("""
+        hasRole('CHANNEL_MANAGER')
+        or @messageGuard.isOwner(#messageId, authentication.principal.userDto.id)
+    """)
     public MessageDto update(UUID messageId, MessageUpdateCommand command) {
 
         Message message = getMessageRequireThrow(messageId);
@@ -104,7 +118,10 @@ public class BasicMessageService implements MessageService {
 
     @LogAction(value = "메시지 삭제", idName = "messageId", idParamIndex = 0)
     @Override
-    @PreAuthorize("@messageGuard.isOwner(#messageId, authentication.principal.userDto.id)")
+    @PreAuthorize("""
+        hasRole('CHANNEL_MANAGER')
+        or @messageGuard.isOwner(#messageId, authentication.principal.userDto.id)
+    """)
     public void delete(UUID messageId) {
         if (!messageRepository.existsById(messageId)) throw new MessageNotFoundException(messageId);
 
