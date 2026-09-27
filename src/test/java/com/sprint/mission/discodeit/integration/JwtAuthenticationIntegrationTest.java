@@ -683,7 +683,7 @@ class JwtAuthenticationIntegrationTest {
 
     private ResponseEntity<String> login(User user) {
         ResponseEntity<String> csrfResponse = restTemplate.getForEntity("/api/auth/csrf-token", String.class);
-        assertThat(csrfResponse.getStatusCode()).isEqualTo(HttpStatus.NON_AUTHORITATIVE_INFORMATION);
+        assertThat(csrfResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         HttpCookie csrfCookie = cookie(csrfResponse, "XSRF-TOKEN");
 
         // TestRestTemplate의 자동 쿠키 저장은 활성화하지 않고 로그인에 필요한 CSRF 쿠키만 전달한다.
@@ -717,7 +717,7 @@ class JwtAuthenticationIntegrationTest {
     private ResponseEntity<String> refresh(String refreshToken, String accessToken) {
         // 로그인에서 사용한 CSRF 쿠키를 재사용하지 않고 갱신 요청용 쿠키·헤더를 명시적으로 준비한다.
         ResponseEntity<String> csrfResponse = restTemplate.getForEntity("/api/auth/csrf-token", String.class);
-        assertThat(csrfResponse.getStatusCode()).isEqualTo(HttpStatus.NON_AUTHORITATIVE_INFORMATION);
+        assertThat(csrfResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         HttpCookie csrfCookie = cookie(csrfResponse, "XSRF-TOKEN");
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
@@ -739,7 +739,7 @@ class JwtAuthenticationIntegrationTest {
         List<String> requestCookies = new ArrayList<>();
         if (withCsrf) {
             ResponseEntity<String> csrfResponse = restTemplate.getForEntity("/api/auth/csrf-token", String.class);
-            assertThat(csrfResponse.getStatusCode()).isEqualTo(HttpStatus.NON_AUTHORITATIVE_INFORMATION);
+            assertThat(csrfResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
             HttpCookie csrfCookie = cookie(csrfResponse, "XSRF-TOKEN");
             requestCookies.add(csrfCookie.getName() + "=" + csrfCookie.getValue());
             headers.set("X-XSRF-TOKEN", csrfCookie.getValue());

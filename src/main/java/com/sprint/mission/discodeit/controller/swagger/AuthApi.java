@@ -20,6 +20,10 @@ import org.springframework.security.web.csrf.CsrfToken;
 public interface AuthApi {
 
     @Operation(summary = "csrf-token 발급")
+    @ApiResponse(responseCode = "204", description = "CSRF 토큰 쿠키 발급 성공. 응답 본문은 없습니다.",
+            content = @Content,
+            headers = @Header(name = "Set-Cookie", description = "XSRF-TOKEN 쿠키",
+                    schema = @Schema(type = "string")))
     ResponseEntity<Void> getCsrfToken(@Parameter(hidden = true) CsrfToken csrfToken);
 
     @Operation(

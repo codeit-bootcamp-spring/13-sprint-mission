@@ -45,6 +45,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -124,12 +125,13 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("CSRF 토큰 발급 요청 시 203 응답과 쿠키를 반환한다")
+    @DisplayName("CSRF 토큰 발급 요청 시 204 응답과 쿠키를 반환한다")
     void getCsrfToken_returnsCookie() throws Exception {
         String csrfTokenName = "XSRF-TOKEN";
 
         mockMvc.perform(get("/api/auth/csrf-token"))
-                .andExpect(status().isNonAuthoritativeInformation())
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""))
                 .andExpect(cookie().exists(csrfTokenName))
                 .andExpect(cookie().httpOnly(csrfTokenName, false))
                 .andExpect(cookie().path(csrfTokenName, "/"));
@@ -194,7 +196,7 @@ class AuthControllerTest {
 
     private MockHttpServletRequestBuilder withCsrf(MockHttpServletRequestBuilder request) throws Exception {
         MvcResult csrfResult = mockMvc.perform(get("/api/auth/csrf-token"))
-                .andExpect(status().isNonAuthoritativeInformation())
+                .andExpect(status().isNoContent())
                 .andReturn();
         Cookie csrfCookie = csrfResult.getResponse().getCookie("XSRF-TOKEN");
 
