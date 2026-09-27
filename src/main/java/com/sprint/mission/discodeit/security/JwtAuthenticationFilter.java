@@ -27,6 +27,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final JwtRegistry jwtRegistry;
     private final UserDetailsService userDetailsService;
 
     @Override
@@ -58,6 +59,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             JWTClaimsSet claims =
                     jwtTokenProvider.parseAccessToken(accessToken);
 
+            if (!jwtRegistry.hasActiveJwtInformationByAccessToken(
+                    accessToken
+            )) {
+                throw new IllegalArgumentException(
+                        "등록되지 않았거나 무효화된 액세스 토큰입니다."
+                );
+            }
+
             String username =
                     jwtTokenProvider.getUsername(claims);
 
@@ -86,11 +95,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (IllegalArgumentException
                  | UsernameNotFoundException e) {
 
-            log.warn(
-                    "[JWT] 인증 실패: {}",
-                    e.getMessage()
-            );
-
+            log.warn("[JWT] 인증 실패: {}", e.getMessage());
             SecurityContextHolder.clearContext();
         }
 

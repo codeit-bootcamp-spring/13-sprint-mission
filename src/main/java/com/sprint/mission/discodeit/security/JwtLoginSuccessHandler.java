@@ -24,7 +24,9 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
     private static final String REFRESH_TOKEN_COOKIE = "REFRESH_TOKEN";
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final JwtRegistry jwtRegistry;
     private final ObjectMapper objectMapper;
+
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -46,6 +48,14 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
                 userDto.id(),
                 userDto.username()
         );
+
+        JwtInformation jwtInformation = new JwtInformation(
+                userDto,
+                accessToken,
+                refreshToken
+        );
+
+        jwtRegistry.registerJwtInformation(jwtInformation);
 
         ResponseCookie refreshTokenCookie =
                 ResponseCookie.from(REFRESH_TOKEN_COOKIE, refreshToken)
