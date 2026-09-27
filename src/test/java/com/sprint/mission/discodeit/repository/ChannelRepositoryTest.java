@@ -85,6 +85,31 @@ class ChannelRepositoryTest {
     }
 
     @Test
+    @DisplayName("공개·비공개 타입을 모두 요청하면 참여 여부와 관계없이 모든 채널을 중복 없이 반환한다")
+    void findVisibleChannels_returnsAllChannels_whenAllTypesAreRequested() {
+        User requester = saveUser("managerRequester");
+        User other = saveUser("otherParticipant");
+        Channel publicChannel = savePublicChannel().channel();
+        Channel participating = savePrivateChannelFor(requester).channel();
+        joinChannel(participating, requester);
+        Channel otherPrivate = savePrivateChannelFor(other).channel();
+        joinChannel(otherPrivate, other);
+        Channel withoutParticipants = savePrivateChannelFor(other).channel();
+        saveMessage(other, otherPrivate, "first message");
+        saveMessage(other, otherPrivate, "second message");
+        em.flush();
+        em.clear();
+
+        List<ChannelSummary> channels = channelRepository.findVisibleChannels(
+                requester.getId(), List.of(ChannelType.PUBLIC, ChannelType.PRIVATE));
+
+        assertThat(channels).extracting(ChannelSummary::id).containsExactlyInAnyOrder(
+                publicChannel.getId(), participating.getId(), otherPrivate.getId(), withoutParticipants.getId());
+        assertThat(readStatusRepository.existsByChannel_IdAndUser_Id(otherPrivate.getId(), requester.getId()))
+                .isFalse();
+    }
+
+    @Test
     @DisplayName("사용자별 채널 목록 조회 성공 - 공개 채널과 참여 중인 비공개 채널 반환")
     void findVisibleChannels_returnsPublicAndParticipatingPrivateChannels_whenUserExists() {
         // given
@@ -101,7 +126,7 @@ class ChannelRepositoryTest {
         User otherUser = saveUser("otherUser");
 
         // PUBLIC 채널은 ReadStatus 없이도 조회되어야 한다.
-        // 이 구성이 있어야 publicType 조건(c.type = PUBLIC)이 실제로 적용되는지 확인할 수 있다.
+        // 이 구성이 있어야 types 조건(c.type in :types)이 실제로 적용되는지 확인할 수 있다.
         PublicChannelFixture publicChannelFixture = savePublicChannel();
         ChannelCreatePublicCommand createPublicCommand = publicChannelFixture.command();
         Channel publicChannel = publicChannelFixture.channel();
@@ -153,8 +178,8 @@ class ChannelRepositoryTest {
 
         // when
         // 조회 대상 사용자 기준으로 visible channel 목록을 조회한다.
-        // 두 번째 인자는 PUBLIC 채널을 항상 포함하기 위한 publicType 조건 값이다.
-        List<ChannelSummary> visibleChannels = channelRepository.findVisibleChannels(userId, ChannelType.PUBLIC);
+        // 두 번째 인자는 참여 여부와 무관하게 포함할 채널 타입 목록이다.
+        List<ChannelSummary> visibleChannels = channelRepository.findVisibleChannels(userId, List.of(ChannelType.PUBLIC));
 
         // then
         // 결과에는 PUBLIC 채널과 조회 대상 사용자가 참여한 PRIVATE 채널만 있어야 한다.
@@ -206,7 +231,7 @@ class ChannelRepositoryTest {
         User otherUser = saveUser("otherUser");
 
         // PUBLIC 채널은 조회 대상 사용자의 참여 여부와 관계없이 반환되어야 한다.
-        // 이 채널까지 제외되면 publicType 조건(c.type = PUBLIC)이 깨진 것이다.
+        // 이 채널까지 제외되면 types 조건(c.type in :types)이 깨진 것이다.
         PublicChannelFixture publicChannelFixture = savePublicChannel();
         ChannelCreatePublicCommand createPublicCommand = publicChannelFixture.command();
         Channel publicChannel = publicChannelFixture.channel();
@@ -258,7 +283,7 @@ class ChannelRepositoryTest {
         // when
         // PRIVATE 채널에 참여하지 않은 otherUser 기준으로 visible channel 목록을 조회한다.
         // PUBLIC 채널은 포함되어야 하지만, user만 참여한 PRIVATE 채널은 제외되어야 한다.
-        List<ChannelSummary> visibleChannels = channelRepository.findVisibleChannels(otherUserId, ChannelType.PUBLIC);
+        List<ChannelSummary> visibleChannels = channelRepository.findVisibleChannels(otherUserId, List.of(ChannelType.PUBLIC));
 
         // then
         // 결과에는 PUBLIC 채널 하나만 있어야 한다.
@@ -309,7 +334,7 @@ class ChannelRepositoryTest {
         User otherUser = saveUser("otherUser");
 
         // PUBLIC 채널은 ReadStatus 없이도 결과에 포함되어야 한다.
-        // 이 채널이 빠지면 publicType 조건(c.type = PUBLIC)이 깨진 것이다.
+        // 이 채널이 빠지면 types 조건(c.type in :types)이 깨진 것이다.
         PublicChannelFixture publicChannelFixture = savePublicChannel();
         ChannelCreatePublicCommand createPublicCommand = publicChannelFixture.command();
         Channel publicChannel = publicChannelFixture.channel();
@@ -372,7 +397,7 @@ class ChannelRepositoryTest {
         // when
         // ReadStatus가 없는 otherUser 기준으로 visible channel 목록을 조회한다.
         // PUBLIC 채널만 반환되고, DB에 존재하는 모든 PRIVATE 채널은 제외되어야 한다.
-        List<ChannelSummary> visibleChannels = channelRepository.findVisibleChannels(otherUserId, ChannelType.PUBLIC);
+        List<ChannelSummary> visibleChannels = channelRepository.findVisibleChannels(otherUserId, List.of(ChannelType.PUBLIC));
 
         // then
         // 결과에는 PUBLIC 채널 하나만 있어야 한다.
@@ -489,7 +514,7 @@ class ChannelRepositoryTest {
         // when
         // user 기준으로 visible channel 목록을 조회한다.
         // PUBLIC 채널과 user가 ReadStatus로 참여 중인 PRIVATE 채널이 반환 대상이다.
-        List<ChannelSummary> visibleChannels = channelRepository.findVisibleChannels(userId, ChannelType.PUBLIC);
+        List<ChannelSummary> visibleChannels = channelRepository.findVisibleChannels(userId, List.of(ChannelType.PUBLIC));
 
         // then
         // 쿼리에는 order by가 없으므로 반환 순서를 고정하지 않는다.
@@ -607,7 +632,7 @@ class ChannelRepositoryTest {
         // when
         // user 기준 visible channel 목록을 조회한다.
         // PUBLIC 채널과 user가 ReadStatus로 참여 중인 PRIVATE 채널이 모두 반환되어야 한다.
-        List<ChannelSummary> visibleChannels = channelRepository.findVisibleChannels(userId, ChannelType.PUBLIC);
+        List<ChannelSummary> visibleChannels = channelRepository.findVisibleChannels(userId, List.of(ChannelType.PUBLIC));
 
         // then
         // 결과에는 메시지가 없는 PUBLIC 채널과 메시지가 없는 참여 PRIVATE 채널이 모두 있어야 한다.

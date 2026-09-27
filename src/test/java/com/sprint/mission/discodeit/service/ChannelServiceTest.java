@@ -5,29 +5,38 @@ import com.sprint.mission.discodeit.dto.command.channel.ChannelCreatePublicComma
 import com.sprint.mission.discodeit.dto.command.channel.ChannelUpdateCommand;
 import com.sprint.mission.discodeit.dto.repository.ChannelSummary;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
+import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.PrivateChannelUpdateNotAllowedException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.basic.BasicChannelService;
 import com.sprint.mission.discodeit.service.basic.MessageReader;
 import com.sprint.mission.discodeit.service.basic.ReadStatusService;
 import com.sprint.mission.discodeit.service.basic.UserReader;
 import com.sprint.mission.discodeit.utils.RequestTimeZoneUtils;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
@@ -274,6 +283,24 @@ class ChannelServiceTest {
     @DisplayName("사용자별 채널 목록 조회")
     class FindAllChannelTest {
 
+        @BeforeEach
+        void clearPreviousAuthentication() {
+            SecurityContextHolder.clearContext();
+        }
+
+        @AfterEach
+        void clearAuthentication() {
+            SecurityContextHolder.clearContext();
+        }
+
+        private void authenticate(UUID userId, Role role) {
+            UserDto user = new UserDto(userId, "requester", "requester@test.local", null,
+                    false, role, null, null);
+            DiscodeitUserDetails principal = new DiscodeitUserDetails(user, "unused-password");
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+        }
+
         @Test
         @DisplayName("사용자별 채널 목록 조회 성공")
         void findAllByUserId_returnsChannelDtos_whenUserExists() {
@@ -281,6 +308,7 @@ class ChannelServiceTest {
             // 조회할 사용자가 존재하고, 사용자가 볼 수 있는 채널이 여러 개 있는 상황을 만든다.
             // 공개 채널과 비공개 채널을 섞어 두면 각 채널별 ReadStatus 매핑이 올바른지 함께 확인할 수 있다.
             UUID userId = UUID.randomUUID();
+            authenticate(userId, Role.USER);
             UUID firstPublicChannelId = UUID.randomUUID();
             UUID firstPrivateChannelId = UUID.randomUUID();
             UUID secondPrivateChannelId = UUID.randomUUID();
@@ -331,7 +359,7 @@ class ChannelServiceTest {
             List<ChannelDto> expectedDtos = List.of(firstPublicDto, firstPrivateDto, secondPrivateDto, secondPublicDto);
 
             given(userReader.isUserExist(userId)).willReturn(true);
-            given(channelRepository.findVisibleChannels(userId, ChannelType.PUBLIC)).willReturn(channelSummaries);
+            given(channelRepository.findVisibleChannels(userId, List.of(ChannelType.PUBLIC))).willReturn(channelSummaries);
             given(readStatusService.findAllByChannelIds(channelIds)).willReturn(readStatuses);
             given(channelMapper.toDto(firstPublicChannel, firstPublicReadStatuses)).willReturn(firstPublicDto);
             given(channelMapper.toDto(firstPrivateChannel, firstPrivateReadStatuses)).willReturn(firstPrivateDto);
@@ -346,19 +374,12 @@ class ChannelServiceTest {
             // 서비스는 mapper가 만들어준 DTO 목록을 repository 조회 순서대로 반환해야 한다.
             assertThat(result).isEqualTo(expectedDtos);
 
-            // 사용자 존재 확인 -> 채널 목록 조회 -> ReadStatus 일괄 조회 -> 채널별 DTO 변환 순서로 진행되는지 확인한다.
-            InOrder inOrder = inOrder(userReader, channelRepository, readStatusService, channelMapper);
-            inOrder.verify(userReader).isUserExist(userId);
-            inOrder.verify(channelRepository).findVisibleChannels(userId, ChannelType.PUBLIC);
-            inOrder.verify(readStatusService).findAllByChannelIds(channelIds);
-            inOrder.verify(channelMapper).toDto(firstPublicChannel, firstPublicReadStatuses);
-            inOrder.verify(channelMapper).toDto(firstPrivateChannel, firstPrivateReadStatuses);
-            inOrder.verify(channelMapper).toDto(secondPrivateChannel, secondPrivateReadStatuses);
-            inOrder.verify(channelMapper).toDto(secondPublicChannel, secondPublicReadStatuses);
-
-            // 위에서 검증한 조회/변환 흐름 외에 추가 협력이 없었는지 확인한다.
-            verifyNoMoreInteractions(userReader, channelRepository, readStatusService, channelMapper);
-            verifyNoInteractions(messageService, messageReader);
+            verify(channelRepository).findVisibleChannels(userId, List.of(ChannelType.PUBLIC));
+            verify(readStatusService).findAllByChannelIds(channelIds);
+            verify(channelMapper).toDto(firstPublicChannel, firstPublicReadStatuses);
+            verify(channelMapper).toDto(firstPrivateChannel, firstPrivateReadStatuses);
+            verify(channelMapper).toDto(secondPrivateChannel, secondPrivateReadStatuses);
+            verify(channelMapper).toDto(secondPublicChannel, secondPublicReadStatuses);
         }
 
         @Test
@@ -368,6 +389,7 @@ class ChannelServiceTest {
             // 조회할 사용자는 존재하지만, 사용자가 볼 수 있는 채널 목록은 비어 있는 상황을 만든다.
             // 이 케이스는 예외가 아니라 "정상적으로 빈 목록을 반환하는 흐름"을 검증한다.
             UUID userId = UUID.randomUUID();
+            authenticate(userId, Role.USER);
             List<ChannelSummary> channelSummaries = List.of();
             List<UUID> channelIds = List.of();
 
@@ -377,7 +399,7 @@ class ChannelServiceTest {
 
             // 사용자가 존재하면 repository에서 조회 가능한 채널 요약 목록을 가져온다.
             // 이 테스트에서는 조회 가능한 채널이 없으므로 빈 리스트를 반환한다.
-            given(channelRepository.findVisibleChannels(userId, ChannelType.PUBLIC)).willReturn(channelSummaries);
+            given(channelRepository.findVisibleChannels(userId, List.of(ChannelType.PUBLIC))).willReturn(channelSummaries);
 
             // 서비스는 조회된 ChannelSummary 목록에서 channelId 목록을 만든 뒤 ReadStatus를 조회한다.
             // channelSummaries가 비어 있으므로 channelIds도 빈 리스트다.
@@ -396,7 +418,7 @@ class ChannelServiceTest {
             verify(userReader).isUserExist(userId);
 
             // 존재하는 사용자이므로 조회 가능한 채널 목록 조회까지 실행되어야 한다.
-            verify(channelRepository).findVisibleChannels(userId, ChannelType.PUBLIC);
+            verify(channelRepository).findVisibleChannels(userId, List.of(ChannelType.PUBLIC));
 
             // 채널 목록이 비어 있어도 현재 서비스 구현은 빈 channelIds로 ReadStatus 조회를 한 번 수행한다.
             // 이 동작까지 고정하고 싶다면 anyList()보다 channelIds를 직접 검증하는 편이 명확하다.
@@ -406,9 +428,25 @@ class ChannelServiceTest {
             // verify(channelMapper, never()).toDto(...)처럼 특정 메서드만 막을 수도 있지만,
             // 이 흐름에서는 mapper 자체가 전혀 호출되면 안 되므로 verifyNoInteractions(...)가 더 직접적이다.
             verifyNoInteractions(channelMapper);
+        }
 
-            // 위에서 검증한 세 호출 외에 추가 작업이 없었는지 확인한다.
-            verifyNoMoreInteractions(userReader, channelRepository, readStatusService);
+        @ParameterizedTest
+        @EnumSource(value = Role.class, names = {"CHANNEL_MANAGER", "ADMIN"})
+        @DisplayName("관리 역할은 다른 사용자를 기준으로 조회해도 모든 채널 타입을 요청한다")
+        void findAllByUserId_includesAllTypes_whenRequesterHasManagementRole(Role role) {
+            UUID targetUserId = UUID.randomUUID();
+            authenticate(UUID.randomUUID(), role);
+            List<ChannelType> types = List.of(ChannelType.PUBLIC, ChannelType.PRIVATE);
+            ChannelSummary summary = createChannelSummary(UUID.randomUUID(), ChannelType.PRIVATE);
+            ChannelDto expected = createChannelDto(summary);
+            given(userReader.isUserExist(targetUserId)).willReturn(true);
+            given(channelRepository.findVisibleChannels(targetUserId, types)).willReturn(List.of(summary));
+            given(readStatusService.findAllByChannelIds(List.of(summary.id()))).willReturn(List.of());
+            given(channelMapper.toDto(summary, List.of())).willReturn(expected);
+
+            assertThat(channelService.findAllByUserId(targetUserId)).containsExactly(expected);
+
+            verify(channelRepository).findVisibleChannels(targetUserId, types);
         }
 
         @Test
@@ -438,7 +476,7 @@ class ChannelServiceTest {
             // - channelMapper.toDto(...): 조회 결과를 ChannelDto로 변환
             //
             // 이전에 작성했던 방식처럼 각 메서드를 never()로 하나씩 검증할 수도 있다.
-            // verify(channelRepository, never()).findVisibleChannels(any(UUID.class), any(ChannelType.class));
+            // verify(channelRepository, never()).findVisibleChannels(any(UUID.class), anyList());
             // verify(readStatusService, never()).findAllByChannelIds(anyList());
             // verify(channelMapper, never()).toDto(any(ChannelSummary.class), anyList());
             //

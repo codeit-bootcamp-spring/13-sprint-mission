@@ -18,7 +18,7 @@ public interface ChannelRepository extends JpaRepository<Channel, UUID> {
                             )
                 from Channel c
                 left join Message m on m.channel = c
-                where c.type = :publicType or exists (
+                where c.type in :types or exists (
                     select 1
                     from ReadStatus r
                     where r.user.id = :userId
@@ -27,7 +27,7 @@ public interface ChannelRepository extends JpaRepository<Channel, UUID> {
                 group by c.id, c.type, c.name, c.description
             """)
     List<ChannelSummary> findVisibleChannels(@Param("userId") UUID userId,
-                                             @Param("publicType") ChannelType publicType);
+                                             @Param("types") List<ChannelType> types);
     @Query("""
                 select new com.sprint.mission.discodeit.dto.repository.ChannelSummary(
                             c.id, c.type, c.name, c.description, max(m.createdAt)

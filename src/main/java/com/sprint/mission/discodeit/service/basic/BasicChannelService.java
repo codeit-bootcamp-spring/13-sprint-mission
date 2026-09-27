@@ -10,17 +10,20 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.PrivateChannelUpdateNotAllowedException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.ChannelMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -73,11 +76,20 @@ public class BasicChannelService implements ChannelService {
 
     @Transactional(readOnly = true)
     @Override
-    @PreAuthorize("#userId == authentication.principal.userDto.id")
+    @PreAuthorize("hasRole('CHANNEL_MANAGER') or #userId == authentication.principal.userDto.id")
     public List<ChannelDto> findAllByUserId(UUID userId) {
         if (!userReader.isUserExist(userId)) throw new UserNotFoundException(userId);
 
-        List<ChannelSummary> channelSummaries = channelRepository.findVisibleChannels(userId, ChannelType.PUBLIC);
+        DiscodeitUserDetails principal = (DiscodeitUserDetails) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+        Role role = principal.getUserDto().role();
+        List<ChannelType> types = List.of(ChannelType.PUBLIC);
+
+        if (role == Role.ADMIN || role == Role.CHANNEL_MANAGER) {
+            types = List.of(ChannelType.PUBLIC, ChannelType.PRIVATE);
+        }
+
+        List<ChannelSummary> channelSummaries = channelRepository.findVisibleChannels(userId, types);
 
         List<UUID> channelIds = channelSummaries
                 .stream()

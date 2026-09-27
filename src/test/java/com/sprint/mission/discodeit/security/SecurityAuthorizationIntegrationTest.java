@@ -51,6 +51,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -333,34 +334,55 @@ class SecurityAuthorizationIntegrationTest {
 
     @ParameterizedTest
     @EnumSource(Role.class)
-    @DisplayName("관리 역할도 사용자별 채널 및 읽음 상태 목록은 본인 것만 조회한다")
-    void userLists_requireRequesterIdentity(Role role) throws Exception {
+    @DisplayName("일반 사용자는 본인의 공개·참여 채널을 조회하고 관리 역할은 모든 채널을 조회한다")
+    void channelLists_applyRequesterRoleAndIdentity(Role role) throws Exception {
+        PrivateChannelFixture fixture = savePrivateChannelWithData(2);
+        PrivateChannelFixture otherPrivate = savePrivateChannelWithData(3);
+        Channel publicChannel = savePublicChannel();
+        User requester = userRepository.findById(fixture.participantIds().get(0)).orElseThrow();
+        requester.updateRole(new UserRoleUpdateCommand(role));
+        flushAndClear();
+
+        String[] expectedIds = role == Role.USER
+                ? new String[]{publicChannel.getId().toString(), fixture.channelId().toString()}
+                : new String[]{publicChannel.getId().toString(), fixture.channelId().toString(),
+                        otherPrivate.channelId().toString()};
+        for (UUID targetUserId : List.of(requester.getId(), otherPrivate.participantIds().get(0))) {
+            var result = mockMvc.perform(get("/api/channels").param("userId", targetUserId.toString())
+                    .with(user(userDetails(requester))));
+            if (role == Role.USER && !requester.getId().equals(targetUserId)) {
+                result.andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
+            } else {
+                result.andExpect(status().isOk())
+                        .andExpect(jsonPath("$[*].id", containsInAnyOrder(expectedIds)));
+            }
+        }
+        assertPrivateChannelDataPreserved(otherPrivate);
+    }
+
+    @ParameterizedTest
+    @EnumSource(Role.class)
+    @DisplayName("관리 역할도 읽음 상태 목록은 본인 것만 조회한다")
+    void readStatusLists_requireRequesterIdentity(Role role) throws Exception {
         PrivateChannelFixture fixture = savePrivateChannelWithData(2);
         User requester = userRepository.findById(fixture.participantIds().get(0)).orElseThrow();
         requester.updateRole(new UserRoleUpdateCommand(role));
         flushAndClear();
 
-        mockMvc.perform(get("/api/channels").param("userId", requester.getId().toString())
-                        .with(user(userDetails(requester))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(fixture.channelId().toString()));
         mockMvc.perform(get("/api/readStatuses").param("userId", requester.getId().toString())
                         .with(user(userDetails(requester))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].userId").value(requester.getId().toString()));
 
-        for (String path : List.of("/api/channels", "/api/readStatuses")) {
-            mockMvc.perform(get(path).param("userId", fixture.participantIds().get(1).toString())
-                            .with(user(userDetails(requester))))
-                    .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
-        }
+        mockMvc.perform(get("/api/readStatuses").param("userId", fixture.participantIds().get(1).toString())
+                        .with(user(userDetails(requester))))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
     }
 
     @ParameterizedTest
     @EnumSource(Role.class)
-    @DisplayName("본인의 목록 조회는 참여 기록이 없어도 빈 목록으로 성공한다")
+    @DisplayName("조회 대상 채널과 읽음 상태가 없으면 모든 역할이 빈 목록을 조회한다")
     void userLists_allowEmptyResults(Role role) throws Exception {
-        savePrivateChannelWithData(2);
         User requester = saveUser(role);
         for (String path : List.of("/api/channels", "/api/readStatuses")) {
             mockMvc.perform(get(path).param("userId", requester.getId().toString())
