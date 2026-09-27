@@ -20,4 +20,8 @@ public class ChannelReader {
         return channelRepository.findById(channelId)
                 .orElseThrow(() -> new ChannelNotFoundException(channelId));
     }
+
+    public boolean isChannelAccessible(UUID channelId, UUID userId) {
+        return channelRepository.isChannelAccessible(channelId, userId);
+    }
 }

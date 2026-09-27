@@ -9,6 +9,7 @@ import com.sprint.mission.discodeit.dto.command.user.UserCreateCommand;
 import com.sprint.mission.discodeit.dto.command.user.UserRoleUpdateCommand;
 import com.sprint.mission.discodeit.dto.request.channel.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
+import com.sprint.mission.discodeit.dto.request.readStatus.ReadStatusCreateRequest;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -147,10 +149,9 @@ class SecurityAuthorizationIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     @DisplayName("일반 사용자는 공개 채널을 생성할 수 없다")
     void createPublicChannel_returnsForbidden_whenUserHasUserRole() throws Exception {
-        performPublicChannelCreate()
+        performPublicChannelCreate(saveUser(Role.USER))
                 .andExpectAll(
                         status().isForbidden(),
                         jsonPath("$.status").value(403),
@@ -159,18 +160,16 @@ class SecurityAuthorizationIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "CHANNEL_MANAGER")
     @DisplayName("채널 매니저는 공개 채널을 생성할 수 있다")
     void createPublicChannel_returnsCreated_whenUserIsChannelManager() throws Exception {
-        performPublicChannelCreate()
+        performPublicChannelCreate(saveUser(Role.CHANNEL_MANAGER))
                 .andExpect(status().isCreated());
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     @DisplayName("관리자는 권한 계층을 통해 공개 채널을 생성할 수 있다")
     void createPublicChannel_returnsCreated_whenUserIsAdmin() throws Exception {
-        performPublicChannelCreate()
+        performPublicChannelCreate(saveUser(Role.ADMIN))
                 .andExpect(status().isCreated());
     }
 
@@ -293,6 +292,106 @@ class SecurityAuthorizationIntegrationTest {
         assertPrivateChannelDataPreserved(fixture);
     }
 
+    @ParameterizedTest
+    @EnumSource(Role.class)
+    @DisplayName("관리 역할도 사용자별 채널 및 읽음 상태 목록은 본인 것만 조회한다")
+    void userLists_requireRequesterIdentity(Role role) throws Exception {
+        PrivateChannelFixture fixture = savePrivateChannelWithData(2);
+        User requester = userRepository.findById(fixture.participantIds().get(0)).orElseThrow();
+        requester.updateRole(new UserRoleUpdateCommand(role));
+        flushAndClear();
+
+        mockMvc.perform(get("/api/channels").param("userId", requester.getId().toString())
+                        .with(user(userDetails(requester))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(fixture.channelId().toString()));
+        mockMvc.perform(get("/api/readStatuses").param("userId", requester.getId().toString())
+                        .with(user(userDetails(requester))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].userId").value(requester.getId().toString()));
+
+        for (String path : List.of("/api/channels", "/api/readStatuses")) {
+            mockMvc.perform(get(path).param("userId", fixture.participantIds().get(1).toString())
+                            .with(user(userDetails(requester))))
+                    .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(Role.class)
+    @DisplayName("본인의 목록 조회는 참여 기록이 없어도 빈 목록으로 성공한다")
+    void userLists_allowEmptyResults(Role role) throws Exception {
+        savePrivateChannelWithData(2);
+        User requester = saveUser(role);
+        for (String path : List.of("/api/channels", "/api/readStatuses")) {
+            mockMvc.perform(get(path).param("userId", requester.getId().toString())
+                            .with(user(userDetails(requester))))
+                    .andExpect(status().isOk()).andExpect(content().json("[]"));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(Role.class)
+    @DisplayName("메시지는 공개 채널 또는 참여 중인 비공개 채널에서만 조회한다")
+    void messageLists_requireAccessToRequestedChannel(Role role) throws Exception {
+        PrivateChannelFixture accessible = savePrivateChannelWithData(2);
+        PrivateChannelFixture inaccessible = savePrivateChannelWithData(2);
+        User requester = userRepository.findById(accessible.participantIds().get(0)).orElseThrow();
+        requester.updateRole(new UserRoleUpdateCommand(role));
+        Channel publicChannel = savePublicChannel();
+        flushAndClear();
+
+        mockMvc.perform(get("/api/messages").param("channelId", accessible.channelId().toString())
+                        .with(user(userDetails(requester))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(accessible.messageId().toString()));
+        mockMvc.perform(get("/api/messages").param("channelId", publicChannel.getId().toString())
+                        .with(user(userDetails(requester))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.content").isEmpty());
+        for (UUID deniedChannel : List.of(inaccessible.channelId(), UUID.randomUUID())) {
+            mockMvc.perform(get("/api/messages").param("channelId", deniedChannel.toString())
+                            .with(user(userDetails(requester))))
+                    .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(Role.class)
+    @DisplayName("읽음 상태 생성으로 다른 사람을 사칭하거나 비공개 채널에 임의로 참여할 수 없다")
+    void readStatusCreation_preventsMembershipBypass(Role role) throws Exception {
+        User requester = saveUser(role);
+        User other = saveUser(Role.USER);
+        Channel publicChannel = savePublicChannel();
+        PrivateChannelFixture fixture = savePrivateChannelWithData(2);
+        Instant readAt = Instant.parse("2026-09-25T00:00:00Z");
+
+        mockMvc.perform(post("/api/readStatuses").with(user(userDetails(requester))).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new ReadStatusCreateRequest(
+                                requester.getId(), publicChannel.getId(), readAt))))
+                .andExpect(status().isCreated());
+        flushAndClear();
+        assertThat(readStatusRepository.existsByChannel_IdAndUser_Id(publicChannel.getId(), requester.getId()))
+                .isTrue();
+
+        List<ReadStatusCreateRequest> denied = List.of(
+                new ReadStatusCreateRequest(other.getId(), publicChannel.getId(), readAt),
+                new ReadStatusCreateRequest(requester.getId(), fixture.channelId(), readAt),
+                new ReadStatusCreateRequest(requester.getId(), UUID.randomUUID(), readAt));
+        for (ReadStatusCreateRequest request : denied) {
+            mockMvc.perform(post("/api/readStatuses").with(user(userDetails(requester))).with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
+            flushAndClear();
+            assertThat(readStatusRepository.existsByChannel_IdAndUser_Id(request.channelId(), request.userId()))
+                    .isFalse();
+        }
+        mockMvc.perform(get("/api/messages").param("channelId", fixture.channelId().toString())
+                        .with(user(userDetails(requester))))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_403"));
+        assertPrivateChannelDataPreserved(fixture);
+    }
+
     @Test
     @WithMockUser(roles = "USER")
     @DisplayName("일반 사용자가 역할 변경 Service를 직접 호출하면 인가가 거부된다")
@@ -324,13 +423,14 @@ class SecurityAuthorizationIntegrationTest {
                 .doesNotContain("ROLE_ADMIN");
     }
 
-    private org.springframework.test.web.servlet.ResultActions performPublicChannelCreate() throws Exception {
+    private org.springframework.test.web.servlet.ResultActions performPublicChannelCreate(User requester) throws Exception {
         PublicChannelCreateRequest request = new PublicChannelCreateRequest(
                 "security-public-channel",
                 "security authorization test"
         );
 
         return mockMvc.perform(post("/api/channels/public")
+                .with(user(userDetails(requester)))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));

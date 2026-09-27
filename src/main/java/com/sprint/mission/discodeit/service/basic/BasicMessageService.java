@@ -62,6 +62,7 @@ public class BasicMessageService implements MessageService {
 
     @Transactional(readOnly = true)
     @Override
+    @PreAuthorize("@channelGuard.isAccess(#channelId, authentication.principal.userDto.id)")
     public PageResponse<MessageDto> findAllByChannelId(UUID channelId, Pageable pageable, UUID cursor) {
 
         MessagePagingCondition condition = new MessagePagingCondition(channelId, pageable, cursor);

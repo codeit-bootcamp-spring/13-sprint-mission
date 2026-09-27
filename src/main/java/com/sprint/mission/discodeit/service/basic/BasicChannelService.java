@@ -73,6 +73,7 @@ public class BasicChannelService implements ChannelService {
 
     @Transactional(readOnly = true)
     @Override
+    @PreAuthorize("#userId == authentication.principal.userDto.id")
     public List<ChannelDto> findAllByUserId(UUID userId) {
         if (!userReader.isUserExist(userId)) throw new UserNotFoundException(userId);
 

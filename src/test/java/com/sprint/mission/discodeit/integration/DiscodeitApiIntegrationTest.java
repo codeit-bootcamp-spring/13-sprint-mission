@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.config.JwtProperties;
 import com.sprint.mission.discodeit.security.JwtTokenProvider;
 import com.sprint.mission.discodeit.security.JwtRegistry;
 import com.sprint.mission.discodeit.dto.command.channel.ChannelCreatePublicCommand;
+import com.sprint.mission.discodeit.dto.command.user.UserRoleUpdateCommand;
 import com.sprint.mission.discodeit.dto.request.channel.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
@@ -409,20 +410,28 @@ class DiscodeitApiIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     @DisplayName("공개 채널, 메시지, 첨부 파일 통합 성공 - 메시지 저장 후 목록 조회와 다운로드 가능")
     void publicChannelMessageAndAttachment_flowPersistsAndDownloadsAttachment() throws Exception {
         // given
         // 실제 사용자와 공개 채널을 API로 만든 뒤, 그 사용자와 채널을 참조하는 메시지를 첨부 파일과 함께 생성한다.
         // 이 흐름은 Controller, Service, Repository, Mapper, Querydsl 목록 조회, 로컬 파일 스토리지를 함께 검증한다.
         String suffix = uniqueSuffix();
-        UUID authorId = createUser("messageAuthor-" + suffix, "message-author-" + suffix + "@gmail.com");
+        String authorUsername = "messageAuthor-" + suffix;
+        UUID authorId = createUser(authorUsername, "message-author-" + suffix + "@gmail.com");
+        String authorAccessToken = loginAccessToken(authorUsername, "integrationPassword");
+        String managerUsername = "channelManager-" + suffix;
+        UUID managerId = createUser(managerUsername, "manager-" + suffix + "@gmail.com");
+        User manager = userRepository.findById(managerId).orElseThrow();
+        manager.updateRole(new UserRoleUpdateCommand(Role.CHANNEL_MANAGER));
+        userRepository.saveAndFlush(manager);
+        String managerAccessToken = loginAccessToken(managerUsername, "integrationPassword");
 
         PublicChannelCreateRequest channelCreateRequest = new PublicChannelCreateRequest(
                 "public-channel-" + suffix,
                 "integration public channel"
         );
         MvcResult channelCreateResult = mockMvc.perform(post("/api/channels/public")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerAccessToken)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -453,6 +462,7 @@ class DiscodeitApiIntegrationTest {
         MvcResult messageCreateResult = mockMvc.perform(multipart("/api/messages")
                         .file(messageCreateRequestPart)
                         .file(attachmentPart)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authorAccessToken)
                         .with(csrf())
                         .accept(MediaType.APPLICATION_JSON))
 
@@ -492,6 +502,7 @@ class DiscodeitApiIntegrationTest {
         // when
         // 채널별 메시지 목록 API를 호출해 방금 만든 메시지가 Querydsl 목록 조회 경로로 조회되는지 확인한다.
         mockMvc.perform(get("/api/messages")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authorAccessToken)
                         .param("channelId", channelId.toString())
                         .param("page", "0")
                         .param("size", "10")
@@ -509,7 +520,8 @@ class DiscodeitApiIntegrationTest {
 
         // when
         // 첨부 파일 다운로드 API를 호출한다.
-        mockMvc.perform(get("/api/binaryContents/{binaryContentId}/download", attachmentId))
+        mockMvc.perform(get("/api/binaryContents/{binaryContentId}/download", attachmentId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authorAccessToken))
 
                 // then
                 // BinaryContentService와 LocalBinaryContentStorage가 실제 저장 파일을 읽어 응답해야 한다.
@@ -520,14 +532,15 @@ class DiscodeitApiIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     @DisplayName("비공개 채널과 읽음 상태 통합 성공 - 참여자별 ReadStatus 생성 후 수정 가능")
     void privateChannelAndReadStatus_flowCreatesAndUpdatesParticipantReadStatuses() throws Exception {
         // given
         // 비공개 채널 생성은 Channel 저장뿐 아니라 참여자별 ReadStatus bulk insert까지 수행한다.
         // 두 사용자를 실제 API로 만든 뒤 PRIVATE 채널 생성 API를 호출한다.
         String suffix = uniqueSuffix();
-        UUID firstUserId = createUser("privateUserA-" + suffix, "private-a-" + suffix + "@gmail.com");
+        String firstUsername = "privateUserA-" + suffix;
+        UUID firstUserId = createUser(firstUsername, "private-a-" + suffix + "@gmail.com");
+        String firstUserAccessToken = loginAccessToken(firstUsername, "integrationPassword");
         UUID secondUserId = createUser("privateUserB-" + suffix, "private-b-" + suffix + "@gmail.com");
 
         PrivateChannelCreateRequest request = new PrivateChannelCreateRequest(
@@ -537,6 +550,7 @@ class DiscodeitApiIntegrationTest {
         // when
         // POST /api/channels/private 요청을 전송한다.
         MvcResult createResult = mockMvc.perform(post("/api/channels/private")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + firstUserAccessToken)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -565,6 +579,7 @@ class DiscodeitApiIntegrationTest {
         // when
         // 특정 사용자의 읽음 상태 목록을 조회한다.
         MvcResult readStatusListResult = mockMvc.perform(get("/api/readStatuses")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + firstUserAccessToken)
                         .param("userId", firstUserId.toString())
                         .accept(MediaType.APPLICATION_JSON))
 
@@ -583,6 +598,7 @@ class DiscodeitApiIntegrationTest {
         Instant newLastReadAt = Instant.parse("2026-07-28T02:30:30Z");
         ReadStatusUpdateRequest updateRequest = new ReadStatusUpdateRequest(newLastReadAt);
         mockMvc.perform(patch("/api/readStatuses/{readStatusId}", readStatusId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + firstUserAccessToken)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -603,6 +619,7 @@ class DiscodeitApiIntegrationTest {
         // when
         // 사용자별 채널 목록 API를 호출한다.
         mockMvc.perform(get("/api/channels")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + firstUserAccessToken)
                         .param("userId", firstUserId.toString())
                         .accept(MediaType.APPLICATION_JSON))
 

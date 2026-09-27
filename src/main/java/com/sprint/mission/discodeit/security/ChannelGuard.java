@@ -22,4 +22,10 @@ public class ChannelGuard {
         return channelReader.getChannel(channelId);
     }
 
+    public boolean isAccess(UUID channelId, UUID userId) {
+        if (channelId == null || userId == null) {
+            return false;
+        }
+        return channelReader.isChannelAccessible(channelId, userId);
+    }
 }

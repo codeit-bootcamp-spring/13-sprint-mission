@@ -13,6 +13,7 @@ import com.sprint.mission.discodeit.mapper.ReadStatusMapper;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +42,8 @@ public class ReadStatusService {
         if (insertedRowsCount != distinctUserIds.size()) throw new UserNotFoundException();
     }
 
+    @PreAuthorize("#command.userId() == authentication.principal.userDto.id "
+            + "and @channelGuard.isAccess(#channelId, authentication.principal.userDto.id)")
     public ReadStatusDto save(UUID channelId, ReadStatusCreateCommand command) {
         User user = getUserRequireThrow(command.userId());
         Channel channel = validateChannelAndReadStatus(command.userId(), channelId);
@@ -75,6 +78,7 @@ public class ReadStatusService {
     }
 
     @Transactional(readOnly = true)
+    @PreAuthorize("#userId == authentication.principal.userDto.id")
     public List<ReadStatusDto> findAllByUserId(UUID userId) {
         return readStatusRepository.findByUserId(userId)
                 .stream()

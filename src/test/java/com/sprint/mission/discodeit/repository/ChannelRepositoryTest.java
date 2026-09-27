@@ -46,6 +46,45 @@ class ChannelRepositoryTest {
     EntityManager em;
 
     @Test
+    @DisplayName("여러 채널이 있어도 지정한 공개 채널은 참여 기록 없이 접근할 수 있다")
+    void isChannelAccessible_allowsPublicChannelWithoutMembership() {
+        User requester = saveUser("accessRequester");
+        Channel target = savePublicChannel().channel();
+        savePublicChannel();
+        Channel participating = savePrivateChannelFor(requester).channel();
+        joinChannel(participating, requester);
+        em.flush();
+        em.clear();
+
+        assertThat(channelRepository.isChannelAccessible(target.getId(), requester.getId())).isTrue();
+    }
+
+    @Test
+    @DisplayName("비공개 채널은 대상 채널의 참여 기록으로만 접근을 판단한다")
+    void isChannelAccessible_requiresMembershipInTheRequestedPrivateChannel() {
+        User requester = saveUser("accessRequester");
+        User other = saveUser("accessOther");
+        Channel participating = savePrivateChannelFor(requester).channel();
+        joinChannel(participating, requester);
+        Channel target = savePrivateChannelFor(other).channel();
+        joinChannel(target, other);
+        savePublicChannel();
+        em.flush();
+        em.clear();
+
+        assertThat(channelRepository.isChannelAccessible(participating.getId(), requester.getId())).isTrue();
+        assertThat(channelRepository.isChannelAccessible(target.getId(), requester.getId())).isFalse();
+        assertThat(channelRepository.isChannelAccessible(target.getId(), other.getId())).isTrue();
+        assertThat(channelRepository.isChannelAccessible(UUID.randomUUID(), requester.getId())).isFalse();
+    }
+
+    @Test
+    @DisplayName("채널이 없으면 접근 결과는 false다")
+    void isChannelAccessible_returnsFalseWhenNoChannelsExist() {
+        assertThat(channelRepository.isChannelAccessible(UUID.randomUUID(), UUID.randomUUID())).isFalse();
+    }
+
+    @Test
     @DisplayName("사용자별 채널 목록 조회 성공 - 공개 채널과 참여 중인 비공개 채널 반환")
     void findVisibleChannels_returnsPublicAndParticipatingPrivateChannels_whenUserExists() {
         // given

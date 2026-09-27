@@ -1,7 +1,6 @@
 package com.sprint.mission.discodeit.repository;
 
 import com.sprint.mission.discodeit.dto.repository.ChannelSummary;
-import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -39,4 +38,17 @@ public interface ChannelRepository extends JpaRepository<Channel, UUID> {
                 group by c.id, c.type, c.name, c.description
             """)
     Optional<ChannelSummary> findByDetail(@Param("channelId") UUID channelId);
+
+    @Query("""
+        select (count(c) > 0)
+        from Channel c
+        where c.id = :channelId
+            and (c.type = com.sprint.mission.discodeit.entity.ChannelType.PUBLIC or exists (
+                select 1
+                from ReadStatus r
+                where r.channel.id = c.id
+                    and r.user.id = :userId
+                ))
+    """)
+    boolean isChannelAccessible(@Param("channelId") UUID channelId, @Param("userId") UUID userId);
 }
