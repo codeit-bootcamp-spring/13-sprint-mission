@@ -465,6 +465,19 @@ class JwtAuthenticationIntegrationTest {
     }
 
     @Test
+    @DisplayName("리프레시 쿠키에 ACCESS 토큰을 넣어 로그아웃해도 현재 로그인은 유지한다")
+    void logout_preservesLoginWhenRefreshCookieContainsAccessToken() throws Exception {
+        User user = createUser();
+        ResponseEntity<String> loginResponse = login(user);
+
+        assertLogoutResponse(logout(accessToken(loginResponse), true));
+
+        assertUserOnline(getUsers(accessToken(loginResponse)), user, true);
+        assertThat(refresh(cookie(loginResponse, "REFRESH_TOKEN").getValue()).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
     @DisplayName("정상 리프레시 쿠키가 있어도 CSRF 정보 없는 로그아웃은 쿠키 삭제 없이 403으로 거부한다")
     void logout_rejectsRequestWithoutCsrf() throws Exception {
         String refreshToken = cookie(login(createUser()), "REFRESH_TOKEN").getValue();
@@ -514,8 +527,8 @@ class JwtAuthenticationIntegrationTest {
     }
 
     @Test
-    @DisplayName("재로그인은 기존 ACCESS·REFRESH를 폐기하고 새 로그인만 유지한다")
-    void login_invalidatesPreviousTokenPair() throws Exception {
+    @DisplayName("재로그인은 기존 토큰을 폐기하고 이전 브라우저가 로그아웃을 반복해도 새 로그인만 유지한다")
+    void login_preservesNewLoginAfterPreviousBrowserLogsOut() throws Exception {
         User user = createUser();
         ResponseEntity<String> first = login(user);
         ResponseEntity<String> second = login(user);
@@ -526,13 +539,16 @@ class JwtAuthenticationIntegrationTest {
         assertThat(newRefresh).isNotEqualTo(oldRefresh);
         assertUnauthorized(getUsers(accessToken(first)));
         assertRenewalFailure(refresh(oldRefresh));
+        // 인증 갱신 실패 후 이전 브라우저가 보내는 자동 로그아웃 요청을 재현한다.
+        assertLogoutResponse(logout(oldRefresh, true));
+        assertLogoutResponse(logout(oldRefresh, true));
         assertUserOnline(getUsers(accessToken(second)), user, true);
         assertThat(refresh(newRefresh).getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
-    @DisplayName("갱신 성공 후 이전 토큰 쌍은 재사용할 수 없고 새 토큰 쌍만 사용할 수 있다")
-    void refresh_rotatesBothTokensAndRejectsReplay() throws Exception {
+    @DisplayName("갱신 성공 후 이전 토큰의 재사용과 로그아웃 요청이 새 토큰 쌍에 영향을 주지 않는다")
+    void refresh_preservesRotatedTokensAfterPreviousTokenLogsOut() throws Exception {
         User user = createUser();
         ResponseEntity<String> initial = login(user);
         String oldRefresh = cookie(initial, "REFRESH_TOKEN").getValue();
@@ -545,6 +561,7 @@ class JwtAuthenticationIntegrationTest {
         assertThat(newRefresh).isNotEqualTo(oldRefresh);
         assertUnauthorized(getUsers(accessToken(initial)));
         assertRenewalFailure(refresh(oldRefresh));
+        assertLogoutResponse(logout(oldRefresh, true));
         assertUserOnline(getUsers(accessToken(rotated)), user, true);
         assertThat(refresh(newRefresh).getStatusCode()).isEqualTo(HttpStatus.OK);
     }

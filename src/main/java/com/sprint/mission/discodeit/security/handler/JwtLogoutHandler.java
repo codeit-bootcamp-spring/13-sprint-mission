@@ -19,9 +19,14 @@ public class JwtLogoutHandler implements LogoutHandler {
 
     @Override
     public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
-        refreshTokenCookieManager.readRefreshToken()
-                .flatMap(jwtTokenProvider::validateToken)
-                .ifPresent(claims -> jwtRegistry.invalidateJwtInformationByUserId(jwtTokenProvider.getUserId(claims)));
+        refreshTokenCookieManager.readRefreshToken().ifPresent(this::invalidateRefreshToken);
         refreshTokenCookieManager.clearRefreshTokenCookie();
+    }
+
+    private void invalidateRefreshToken(String refreshToken) {
+        jwtTokenProvider.validateToken(refreshToken)
+                .filter(claims -> JwtTokenProvider.TokenType.REFRESH.name().equals(jwtTokenProvider.getTokenType(claims)))
+                .ifPresent(claims -> jwtRegistry.invalidateJwtInformationByRefreshToken(
+                        jwtTokenProvider.getUserId(claims), refreshToken));
     }
 }
