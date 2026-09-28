@@ -12,6 +12,7 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 
 import com.sprint.mission.discodeit.security.SessionService;
+import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
 import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import com.sprint.mission.discodeit.security.jwt.RefreshTokenService;
 import com.sprint.mission.discodeit.security.role.Role;
@@ -36,6 +37,8 @@ public class BasicAuthService implements AuthService {
     private final RefreshTokenService refreshTokenService;
     private final JwtTokenProvider jwtTokenProvider;
 
+    private final JwtRegistry jwtRegistry;
+
     public record JwtOutput(
             JwtDto access,
             Cookie refresh
@@ -53,6 +56,9 @@ public class BasicAuthService implements AuthService {
         // find after update
         UserProjection projection = userRepository.getUserFromId(userId)
                 .orElseThrow(RuntimeException::new);
+
+        // 롤 변경시 기존 로그인 토큰 파기(로그아웃)
+        jwtRegistry.invalidateJwtInformationByUserId(user.getId());
 
         return mapper.toDto(
                 projection,

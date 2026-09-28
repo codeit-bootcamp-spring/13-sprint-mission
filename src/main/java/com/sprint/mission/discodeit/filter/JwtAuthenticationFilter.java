@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.filter;
 
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
+import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
 import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import com.sprint.mission.discodeit.security.role.Role;
 import io.jsonwebtoken.Claims;
@@ -45,38 +46,54 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider provider;
     private final DiscodeitUserDetailsService userDetailsService;
 
+    private final JwtRegistry jwtRegistry;
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
+        /*
+        요청 헤더에서 토큰을 파싱, 토큰에서 authentication 정보 생성.
+        jwtRegistry 사용
+        1. 없다면? -> 허용된 토큰이 아님.
+        2. 있다면?
+            - 만료됨
+            - 허용됨.
+         */
         String token = resolveToken(request);   // AccessToken(Bearer)
 
         if (token != null) {
             try {
                 Claims claims = provider.parseClaims(token);
-                String username = claims.getSubject();
-                Role role = provider.getRole(claims);
+                if (
+                        jwtRegistry.hasActiveJwtInformationByAccessToken(token)
+                                && (!provider.isExpired(claims))
+                ) {
+                    String username = claims.getSubject();  // user.id or user.email(login)
+                    Role role = provider.getRole(claims);
 
+                    // principal 은 인가를 확인할 때 필요. -> UserDetail
+                    UserDetails principal = userDetailsService.loadUserByUsername(username);
 
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            principal,
+                            null,
+                            getAuthority(role)
+                    );
 
-                // principal 은 인가를 확인할 때 필요. -> UserDetail
-                // todo - id 로 변경된다면 기준 변경.
-                UserDetails principal = userDetailsService.loadUserByUsername(username);
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        principal,
-                        null,
-                        getAuthority(role)
-                );
-
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // 현재 스레드의 SecurityContext 에 인증정보 추가.
-                SecurityContext context = SecurityContextHolder.createEmptyContext();
-                context.setAuthentication(authentication);
-                SecurityContextHolder.setContext(context);
+                    // 현재 스레드의 SecurityContext 에 인증정보 추가.
+                    SecurityContext context = SecurityContextHolder.createEmptyContext();
+                    context.setAuthentication(authentication);
+                    SecurityContextHolder.setContext(context);
+                } else {
+                    /*
+                    토큰이 없거나, 토큰이 만료된 경우. -> 에러 응답 반환?
+                     */
+                }
             } catch (ExpiredJwtException e) {
                 request.setAttribute(ATTR_JWT_ERROR, ERROR_EXPIRED);
                 log.debug("[JWT] 만료된 토큰으로 접근 - {}", e.getMessage());
@@ -88,6 +105,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+
+    /*
+    로직 매서드
+     */
+
+
 
     /*
     유틸리티 매서드

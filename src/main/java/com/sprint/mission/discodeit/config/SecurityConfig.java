@@ -2,9 +2,8 @@ package com.sprint.mission.discodeit.config;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sprint.mission.discodeit.security.CsrfTokenHandler;
 import com.sprint.mission.discodeit.security.LoginFailureHandler;
-import com.sprint.mission.discodeit.security.LoginSuccessHandler;
+import com.sprint.mission.discodeit.security.jwt.*;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,12 +13,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -27,9 +26,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 import java.io.IOException;
@@ -39,7 +36,7 @@ import java.io.IOException;
 // @PreAuthor 를 위함.
 // AOP 를 통한 매핑이라, Mvc 테스트에서 프록시 객체가 컨트롤러를 향하는 요청을 가로챈다.
 // 다만, JDK 프록시는 인터페이스 매핑이라 ControllerDoc 으로 요청을 보내서 404 에러(요청 매핑이 없음 -> 구현체에 존재) 가 생긴다.
-//@EnableMethodSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
@@ -123,16 +120,6 @@ public class SecurityConfig {
     }
 
     @Bean
-    AuthenticationSuccessHandler loginSuccessHandler(ObjectMapper objectMapper) {
-        return new LoginSuccessHandler(objectMapper);
-    }
-
-    @Bean
-    AuthenticationFailureHandler loginFailureHandler(ObjectMapper objectMapper) {
-        return new LoginFailureHandler(objectMapper);
-    }
-
-    @Bean
     AccessDeniedHandler restAccessDeniedHandler(ObjectMapper objectMapper) {
         return (request, response, deniedException) ->
                 writeProblem(objectMapper, response, HttpStatus.FORBIDDEN, "A_403", "권한이 없습니다.");
@@ -152,5 +139,9 @@ public class SecurityConfig {
     @Bean
     HttpSessionEventPublisher httpSessionEventPublisher() { return new HttpSessionEventPublisher(); }
 
-
+    @Bean
+    JwtRegistry jwtRegistry(
+            JwtTokenProvider jwtTokenProvider,
+            RefreshTokenService refreshTokenService
+    ){ return new InMemoryJwtRegistry(1,jwtTokenProvider,refreshTokenService); }
 }

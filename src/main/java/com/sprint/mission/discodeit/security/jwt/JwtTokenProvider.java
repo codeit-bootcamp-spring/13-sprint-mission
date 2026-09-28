@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 
 @Component
 @Slf4j
@@ -97,9 +98,13 @@ public class JwtTokenProvider {
     /*
     기타 면의 매서드
      */
-
     public Integer refreshTokenExpire(){
         return 60 * 60 * 24 * properties.getRefreshExpireDate();
+    }
+
+    public boolean isValidate(String token){
+        Claims claims = parseClaims(token);
+        return isExpired(claims);
     }
 
     /*
@@ -107,6 +112,12 @@ public class JwtTokenProvider {
      */
     public Role getRole(Claims claims){
         return claims.get(CLAIM_ROLE,Role.class);
+    }
+
+    public UUID getIssuer(Claims claims) { return UUID.fromString(claims.getIssuer()); }
+
+    public Boolean isExpired(Claims claims) {
+        return claims.getExpiration().before(Date.from(clock.instant()));
     }
 
 }

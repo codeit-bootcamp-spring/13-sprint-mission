@@ -5,7 +5,6 @@ import com.sprint.mission.discodeit.config.JwtProperties;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,6 +18,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -117,6 +117,13 @@ public class RefreshTokenService {
 
         Integer killCount = tokenRepository.revokeAllByUser(user);
         log.info("[{}] - 토큰 전체 무효화. user = {}, {}개",SERVICE_NAME,user.getUsername(),killCount);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<User> getUserFrom(String key){
+        RefreshToken token = tokenRepository.findByHash(hash(key)).orElse(null);
+        if (token == null) return Optional.empty();
+        else return Optional.of(token.getUser());
     }
 
 

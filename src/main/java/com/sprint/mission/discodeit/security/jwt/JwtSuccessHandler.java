@@ -9,6 +9,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -16,16 +17,22 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.UUID;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtSuccessHandler implements AuthenticationSuccessHandler {
+
+    private String SERVICE_NAME = "JWT_LOGIN";
 
     private final ObjectMapper objectMapper;
 
     private final JwtTokenProvider jwtTokenProvider;
 
     private final RefreshTokenService refreshTokenService;
+
+    private final JwtRegistry jwtRegistry;
 
     /**
      * 로그인에 성공하면 UserDetail 에 존재하는 유저 정보 반환.
@@ -42,19 +49,32 @@ public class JwtSuccessHandler implements AuthenticationSuccessHandler {
             HttpServletResponse response,
             Authentication authentication
     ) throws IOException, ServletException {
+        /*
+        Authentication.principal(DaoAuthenticationProvider 가 세팅한 객체) == DiscodeitUserDetails
+        를 이용, 토큰을 세팅하고 클라이언트에게 반환.
+         */
+
+        log.debug(
+                "{} - 로그인 요청 들어옴.\nprincipal(id): {}\ncredential(pw):{}",
+                SERVICE_NAME,
+                authentication.getPrincipal(),
+                authentication.getCredentials() // maybe null
+        );
+
         DiscodeitUserDetails principal = (DiscodeitUserDetails) authentication.getPrincipal();
 
-        String AccessToken = jwtTokenProvider.createAccessToken(
-                principal.getUsername(),
+        String accessToken = jwtTokenProvider.createAccessToken(
+                principal.getUsername(),    // user.id
                 principal.getUserDto().role()
         );
 
-        // todo - principal.getUsername 을 UUID(PK) 가 반환하도록 변경 후, 적용
-        String RefreshToken = refreshTokenService.grant(principal.getUsername());
+        String refreshToken = refreshTokenService.grant(
+                UUID.fromString(principal.getUsername())
+        );
 
 
         // refresh token 쿠키 세팅
-        Cookie cookie = new Cookie("REFRESH_TOKEN", RefreshToken);
+        Cookie cookie = new Cookie("REFRESH_TOKEN", refreshToken);
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
         cookie.setPath("/");
@@ -67,11 +87,23 @@ public class JwtSuccessHandler implements AuthenticationSuccessHandler {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
 
+        // jwt 레지스트리에 등록 (동시 로그인 세션을 제어.)
+        jwtRegistry.registerJwtInformation(
+                new JwtInformation(
+                        principal.getUserDto(),
+                        accessToken,
+                        refreshToken
+                )
+        );
+
+        // todo - 읍답 반환시, 에러 생기면 Error Response 로 반환.
+
+        // 클라이언트에 응답 반환.
         objectMapper.writeValue(
                 response.getWriter(),
                 new JwtDto(
                         principal.getUserDto(),
-                        AccessToken
+                        accessToken
                 )
         );
     }
