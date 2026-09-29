@@ -2,32 +2,34 @@ package com.sprint.mission.discodeit.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.request.ChannelPublicRequest;
+import com.sprint.mission.discodeit.dto.request.UserRequest;
 import com.sprint.mission.discodeit.dto.request.UserRoleUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserRole;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 import static org.springframework.security.test.web.servlet.request
         .SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request
         .SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request
-        .MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request
-        .MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request
-        .MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result
         .MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result
@@ -123,6 +125,79 @@ class AuthorizationIntegrationTest {
                         jsonPath("$.role")
                                 .value("CHANNEL_MANAGER")
                 );
+    }
+
+    @Test
+    void 다른_사용자의_정보는_수정할_수_없다()
+            throws Exception {
+        User target = saveTargetUser();
+
+        UserRequest request = new UserRequest(
+                "hacked-user",
+                "hacked@example.com",
+                "hacked-password"
+        );
+
+        MockMultipartFile requestPart = new MockMultipartFile(
+                "userUpdateRequest",
+                "",
+                MediaType.APPLICATION_JSON_VALUE,
+                objectMapper.writeValueAsBytes(request)
+        );
+
+        mockMvc.perform(
+                        multipart(
+                                HttpMethod.PATCH,
+                                "/api/users/{userId}",
+                                target.getId()
+                        )
+                                .file(requestPart)
+                                .with(csrf())
+                                .with(user(createOtherUserDetails()))
+                )
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(
+                        jsonPath("$.code")
+                                .value("ACCESS_DENIED")
+                );
+    }
+
+    @Test
+    void 다른_사용자는_삭제할_수_없다()
+            throws Exception {
+        User target = saveTargetUser();
+
+        mockMvc.perform(
+                        delete(
+                                "/api/users/{userId}",
+                                target.getId()
+                        )
+                                .with(csrf())
+                                .with(user(createOtherUserDetails()))
+                )
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(
+                        jsonPath("$.code")
+                                .value("ACCESS_DENIED")
+                );
+    }
+
+    private DiscodeitUserDetails createOtherUserDetails() {
+        UserResponse userResponse = new UserResponse(
+                UUID.randomUUID(),
+                "requester",
+                "requester@example.com",
+                false,
+                null,
+                UserRole.USER
+        );
+
+        return new DiscodeitUserDetails(
+                userResponse,
+                "encoded-password"
+        );
     }
 
     private ResultActions createPublicChannelAs(

@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.entity.enums.ChannelType;
 import com.sprint.mission.discodeit.exception.ErrorCodeStatusMapper;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.service.ChannelService;
+import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -42,6 +43,9 @@ class ChannelControllerTest {
 
     @MockitoBean
     private ChannelService channelService;
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Test
     void createPublicChannel_유효한_요청이면_201과_채널_JSON을_반환한다()

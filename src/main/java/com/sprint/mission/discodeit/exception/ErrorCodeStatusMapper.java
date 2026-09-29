@@ -22,7 +22,8 @@ public class ErrorCodeStatusMapper {
                  USER_STATUS_ALREADY_EXISTS ->
                     HttpStatus.CONFLICT;
 
-            case INVALID_CREDENTIALS ->
+            case INVALID_CREDENTIALS,
+                 INVALID_REFRESH_TOKEN ->
                     HttpStatus.UNAUTHORIZED;
 
             case ACCESS_DENIED ->

@@ -24,6 +24,11 @@ logging:
     org.hibernate.orm.jdbc.bind: trace
 
 discodeit:
+  jwt:
+    secret: ${JWT_SECRET:discodeit-jwt-secret-key-must-be-at-least-32-bytes}
+    access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:30m}
+    refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:7d}
+
   admin:
     enabled: ${DISCODEIT_ADMIN_ENABLED:true}
     username: ${DISCODEIT_ADMIN_USERNAME:admin}

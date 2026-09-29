@@ -3,6 +3,8 @@ package com.sprint.mission.discodeit.controller;
 import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
+import com.sprint.mission.discodeit.security.JwtTokenProvider;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -17,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.not;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -33,6 +36,9 @@ class AuthControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
 
     @MockitoBean
     private DiscodeitUserDetailsService userDetailsService;
@@ -72,12 +78,20 @@ class AuthControllerTest {
                                 .param("password", "password123")
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(userId.toString()))
-                .andExpect(jsonPath("$.username").value("codeit"))
+                .andExpect(cookie().exists("REFRESH_TOKEN"))
                 .andExpect(
-                        jsonPath("$.email")
+                        jsonPath("$.user.id")
+                                .value(userId.toString())
+                )
+                .andExpect(
+                        jsonPath("$.user.username")
+                                .value("codeit")
+                )
+                .andExpect(
+                        jsonPath("$.user.email")
                                 .value("codeit@example.com")
-                );
+                )
+                .andExpect(jsonPath("$.accessToken").isNotEmpty());
     }
 
     @Test
@@ -114,7 +128,54 @@ class AuthControllerTest {
     }
 
     @Test
-    void getCurrentUser_로그인한_사용자_정보를_반환한다()
+    void logout_리프레시_토큰_쿠키를_삭제하고_204를_반환한다()
+            throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        DiscodeitUserDetails userDetails =
+                new DiscodeitUserDetails(
+                        createUserResponse(userId),
+                        "encoded-password"
+                );
+
+        Cookie refreshTokenCookie = new Cookie(
+                JwtTokenProvider.REFRESH_TOKEN_COOKIE_NAME,
+                jwtTokenProvider.generateRefreshToken(userDetails)
+        );
+
+        mockMvc.perform(
+                        post("/api/auth/logout")
+                                .with(csrf())
+                                .with(user(userDetails))
+                                .cookie(refreshTokenCookie)
+                )
+                .andExpect(status().isNoContent())
+                .andExpect(
+                        cookie().value(
+                                JwtTokenProvider.REFRESH_TOKEN_COOKIE_NAME,
+                                ""
+                        )
+                )
+                .andExpect(
+                        cookie().maxAge(
+                                JwtTokenProvider.REFRESH_TOKEN_COOKIE_NAME,
+                                0
+                        )
+                );
+    }
+
+    private UserResponse createUserResponse(UUID userId) {
+        return new UserResponse(
+                userId,
+                "codeit",
+                "codeit@example.com",
+                false,
+                null
+        );
+    }
+
+    @Test
+    void refresh_유효한_리프레시_토큰이면_토큰을_재발급한다()
             throws Exception {
         UUID userId = UUID.randomUUID();
 
@@ -126,52 +187,69 @@ class AuthControllerTest {
                         "encoded-password"
                 );
 
+        given(userDetailsService.loadUserByUsername("codeit"))
+                .willReturn(userDetails);
+
+        String refreshToken =
+                jwtTokenProvider.generateRefreshToken(userDetails);
+
+        Cookie refreshTokenCookie = new Cookie(
+                JwtTokenProvider.REFRESH_TOKEN_COOKIE_NAME,
+                refreshToken
+        );
+
         mockMvc.perform(
-                        get("/api/auth/me")
-                                .with(user(userDetails))
+                        post("/api/auth/refresh")
+                                .with(csrf())
+                                .cookie(refreshTokenCookie)
                 )
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(userId.toString()))
-                .andExpect(jsonPath("$.username").value("codeit"))
                 .andExpect(
-                        jsonPath("$.email")
-                                .value("codeit@example.com")
-                );
+                        cookie().exists(
+                                JwtTokenProvider.REFRESH_TOKEN_COOKIE_NAME
+                        )
+                )
+                .andExpect(
+                        cookie().value(
+                                JwtTokenProvider.REFRESH_TOKEN_COOKIE_NAME,
+                                not(refreshToken)
+                        )
+                )
+                .andExpect(
+                        jsonPath("$.user.id")
+                                .value(userId.toString())
+                )
+                .andExpect(
+                        jsonPath("$.user.username")
+                                .value("codeit")
+                )
+                .andExpect(jsonPath("$.accessToken").isNotEmpty());
     }
 
     @Test
-    void getCurrentUser_로그인하지_않으면_401을_반환한다()
+    void refresh_유효하지_않은_리프레시_토큰이면_401을_반환한다()
             throws Exception {
-        mockMvc.perform(get("/api/auth/me"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void logout_로그인한_사용자의_세션을_종료하고_204를_반환한다()
-            throws Exception {
-        UUID userId = UUID.randomUUID();
-
-        DiscodeitUserDetails userDetails =
-                new DiscodeitUserDetails(
-                        createUserResponse(userId),
-                        "encoded-password"
-                );
+        Cookie refreshTokenCookie = new Cookie(
+                JwtTokenProvider.REFRESH_TOKEN_COOKIE_NAME,
+                "invalid-refresh-token"
+        );
 
         mockMvc.perform(
-                        post("/api/auth/logout")
+                        post("/api/auth/refresh")
                                 .with(csrf())
-                                .with(user(userDetails))
+                                .cookie(refreshTokenCookie)
                 )
-                .andExpect(status().isNoContent());
-    }
-
-    private UserResponse createUserResponse(UUID userId) {
-        return new UserResponse(
-                userId,
-                "codeit",
-                "codeit@example.com",
-                false,
-                null
-        );
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(
+                        jsonPath("$.code")
+                                .value("INVALID_REFRESH_TOKEN")
+                )
+                .andExpect(
+                        jsonPath("$.message")
+                                .value(
+                                        "리프레시 토큰이 유효하지 않습니다."
+                                )
+                );
     }
 }

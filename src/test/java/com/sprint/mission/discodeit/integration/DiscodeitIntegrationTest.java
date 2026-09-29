@@ -6,6 +6,9 @@ import com.sprint.mission.discodeit.dto.request.ChannelPublicRequest;
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.UserRequest;
+import com.sprint.mission.discodeit.dto.response.UserResponse;
+import com.sprint.mission.discodeit.entity.UserRole;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -23,6 +26,7 @@ import java.util.UUID;
 
 import static org.springframework.security.test.web.servlet.request
         .SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request
         .MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request
@@ -60,6 +64,19 @@ class DiscodeitIntegrationTest {
                 "password123"
         );
 
+        DiscodeitUserDetails ownerDetails =
+                new DiscodeitUserDetails(
+                        new UserResponse(
+                                userId,
+                                "codeit",
+                                "codeit@example.com",
+                                true,
+                                null,
+                                UserRole.USER
+                        ),
+                        "encoded-password"
+                );
+
         mockMvc.perform(get("/api/users"))
                 .andExpect(status().isOk())
                 .andExpect(
@@ -93,6 +110,7 @@ class DiscodeitIntegrationTest {
                         )
                                 .file(updatePart)
                                 .with(csrf())
+                                .with(user(ownerDetails))
                                 .with(request -> {
                                     request.setMethod("PATCH");
                                     return request;
@@ -118,6 +136,7 @@ class DiscodeitIntegrationTest {
                                 userId
                         )
                                 .with(csrf())
+                                .with(user(ownerDetails))
                 )
                 .andExpect(status().isNoContent());
 
