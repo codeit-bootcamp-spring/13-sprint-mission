@@ -14,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -172,6 +173,41 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
+                .body(response);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatusException(
+            ResponseStatusException exception
+    ) {
+        int statusValue = exception.getStatusCode().value();
+        HttpStatus httpStatus = HttpStatus.resolve(statusValue);
+
+        String code = httpStatus != null
+                ? httpStatus.name()
+                : "HTTP_ERROR";
+
+        String message = exception.getReason() != null
+                ? exception.getReason()
+                : "요청을 처리할 수 없습니다.";
+
+        ErrorResponse response = new ErrorResponse(
+                Instant.now(),
+                code,
+                message,
+                Map.of(),
+                exception.getClass().getSimpleName(),
+                statusValue
+        );
+
+        log.warn(
+                "HTTP 상태 예외가 발생했습니다. status={}, message={}",
+                statusValue,
+                message
+        );
+
+        return ResponseEntity
+                .status(exception.getStatusCode())
                 .body(response);
     }
 

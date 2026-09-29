@@ -1,12 +1,17 @@
 package com.sprint.mission.discodeit.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.exception.ErrorResponse;
+import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
+import com.sprint.mission.discodeit.security.JwtLoginSuccessHandler;
+import com.sprint.mission.discodeit.security.JwtLogoutHandler;
 import com.sprint.mission.discodeit.security.LoginFailureHandler;
-import com.sprint.mission.discodeit.security.LoginSuccessHandler;
-import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
@@ -14,28 +19,32 @@ import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.core.session.SessionRegistryImpl;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.session.HttpSessionEventPublisher;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(
             HttpSecurity http,
-            LoginSuccessHandler loginSuccessHandler,
+            JwtLoginSuccessHandler jwtLoginSuccessHandler,
             LoginFailureHandler loginFailureHandler,
-            SessionRegistry sessionRegistry,
-            UserDetailsService userDetailsService
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            JwtLogoutHandler jwtLogoutHandler,
+            ObjectMapper objectMapper
     ) throws Exception {
 
         http
@@ -49,17 +58,14 @@ public class SecurityConfig {
                 )
 
                 .sessionManagement(session -> session
-                        .sessionConcurrency(concurrency -> concurrency
-                                .maximumSessions(1)
-                                .maxSessionsPreventsLogin(false)
-                                .sessionRegistry(sessionRegistry)
-                        )
-                )
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/csrf-token",
                                 "/api/auth/login",
-                                "/api/auth/logout"
+                                "/api/auth/logout",
+                                "/api/auth/refresh"
                         ).permitAll()
 
                         .requestMatchers(
@@ -86,24 +92,15 @@ public class SecurityConfig {
 
                 .formLogin(login -> login
                         .loginProcessingUrl("/api/auth/login")
-                        .successHandler(loginSuccessHandler)
+                        .successHandler(jwtLoginSuccessHandler)
                         .failureHandler(loginFailureHandler)
                         .permitAll()
                 )
 
-                .rememberMe(remember -> remember
-                        .userDetailsService((userDetailsService))
-                        .rememberMeParameter("remember-me")
-                        .rememberMeCookieName("remember-me")
-                        .tokenValiditySeconds(7 * 24 * 60 * 60)
-                        .key("discodeit-remember-me-key")
-                )
-
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
-                        .invalidateHttpSession(true)
                         .clearAuthentication(true)
-                        .deleteCookies("JSESSIONID", "remember-me")
+                        .addLogoutHandler(jwtLogoutHandler)
                         .logoutSuccessHandler(
                                 new HttpStatusReturningLogoutSuccessHandler(
                                         HttpStatus.NO_CONTENT
@@ -113,18 +110,45 @@ public class SecurityConfig {
                 )
 
                 .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint((request, response, exception1) ->
-                                response.sendError(
-                                        HttpServletResponse.SC_UNAUTHORIZED,
-                                        "인증이 필요합니다."
-                                )
-                        )
-                        .accessDeniedHandler((request, response, exception1) ->
-                                response.sendError(
-                                        HttpServletResponse.SC_FORBIDDEN,
-                                        "접근 권한이 없습니다."
-                                )
-                        )
+                        .authenticationEntryPoint((request, response, ex) -> {
+                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding("UTF-8");
+
+                            objectMapper.writeValue(
+                                    response.getWriter(),
+                                    new ErrorResponse(
+                                            Instant.now(),
+                                            "AUTHENTICATION_REQUIRED",
+                                            "인증이 필요합니다.",
+                                            Map.of(),
+                                            ex.getClass().getName(),
+                                            HttpStatus.UNAUTHORIZED.value()
+                                    )
+                            );
+                        })
+                        .accessDeniedHandler((request, response, ex) -> {
+                            response.setStatus(HttpStatus.FORBIDDEN.value());
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding("UTF-8");
+
+                            objectMapper.writeValue(
+                                    response.getWriter(),
+                                    new ErrorResponse(
+                                            Instant.now(),
+                                            "ACCESS_DENIED",
+                                            "접근 권한이 없습니다.",
+                                            Map.of(),
+                                            ex.getClass().getName(),
+                                            HttpStatus.FORBIDDEN.value()
+                                    )
+                            );
+                        })
+                )
+
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
                 );
 
         return http.build();
@@ -155,12 +179,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SessionRegistry sessionRegistry() {
-        return new SessionRegistryImpl();
-    }
-
-    @Bean
-    public HttpSessionEventPublisher httpSessionEventPublisher() {
-        return new HttpSessionEventPublisher();
+    public Clock clock() {
+        return Clock.systemUTC();
     }
 }

@@ -20,11 +20,12 @@ public class AdminInitializer implements ApplicationRunner {
 
     @Value("${discodeit.admin.username}")
     private String username;
+
     @Value("${discodeit.admin.email}")
     private String email;
+
     @Value("${discodeit.admin.password}")
     private String password;
-
 
     @Override
     @Transactional
@@ -33,10 +34,20 @@ public class AdminInitializer implements ApplicationRunner {
             return;
         }
 
-        User admin = new User(username, email, passwordEncoder.encode(password));
+        if (userRepository.existsByUsername(username)
+                || userRepository.existsByEmail(email)) {
+            throw new IllegalStateException(
+                    "관리자 username 또는 email이 기존 사용자와 중복됩니다."
+            );
+        }
+
+        User admin = new User(
+                username,
+                email,
+                passwordEncoder.encode(password)
+        );
 
         admin.updateRole(Role.ADMIN);
         userRepository.save(admin);
-
     }
 }
