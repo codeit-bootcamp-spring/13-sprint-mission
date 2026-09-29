@@ -4,9 +4,9 @@ import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.security.JwtRegistry;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -18,14 +18,18 @@ public class MessageMapper {
 
     private final BinaryContentMapper binaryContentMapper;
     private final UserMapper userMapper;
-    private final SessionRegistry sessionRegistry;
+    private final JwtRegistry jwtRegistry;
 
     public MessageDto toDto(Message message) {
 
-        UserDto author = userMapper.toDto(
-                message.getAuthor(),
-                isOnline(message.getAuthor().getId())
-        );
+        User authorEntity = message.getAuthor();
+
+        UserDto author = authorEntity != null
+                ? userMapper.toDto(
+                authorEntity,
+                isOnline(authorEntity.getId())
+        )
+                : null;
 
         List<BinaryContentDto> attachments = message.getAttachments().stream()
                 .map(binaryContentMapper::toDto)
@@ -44,16 +48,6 @@ public class MessageMapper {
 
     // 로그인 여부 판단 메서드
     private boolean isOnline(UUID userId) {
-        for (Object principal : sessionRegistry.getAllPrincipals()) {
-            if (principal instanceof DiscodeitUserDetails details
-                    && userId.equals(details.getUserDto().id())) {
-
-                if (!sessionRegistry.getAllSessions(principal, false).isEmpty()) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return jwtRegistry.hasActiveJwtInformationByUserId(userId);
     }
 }

@@ -10,13 +10,12 @@ import com.sprint.mission.discodeit.exception.user.UserNameAlreadyExistsExceptio
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.*;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.security.JwtRegistry;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +38,7 @@ public class BasicUserService implements UserService {
     private final UserMapper userMapper;
     private final BinaryContentStorage binaryContentStorage;
     private final PasswordEncoder passwordEncoder;
-    private final SessionRegistry sessionRegistry;
+    private final JwtRegistry jwtRegistry;
 
     //interface
     @Override
@@ -235,15 +234,7 @@ public class BasicUserService implements UserService {
 
     // 로그인 여부 판단 메서드
     private boolean isOnline(UUID userId) {
-        for (Object principal : sessionRegistry.getAllPrincipals()) {
-            if (principal instanceof DiscodeitUserDetails details && userId.equals(details.getUserDto().id())) {
-                if (!sessionRegistry.getAllSessions(principal, false).isEmpty()) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return jwtRegistry.hasActiveJwtInformationByUserId(userId);
     }
 
     // 들어온 이름 필드가 레포지터리에 존재하는지 검증하는 메서드

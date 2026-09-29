@@ -59,6 +59,9 @@ dependencies {
 
 	// Adobe S3Mock - 로컬에서 진짜 S3 API 를 흉내내는 컨테이너.
 	testImplementation 'com.adobe.testing:s3mock-testcontainers:4.11.0'
+
+	// JWT 라이브러리 nimbus
+	implementation 'com.nimbusds:nimbus-jose-jwt:10.3'
 }
 
 tasks.named('test') {
