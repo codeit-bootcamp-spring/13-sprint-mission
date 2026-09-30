@@ -12,10 +12,12 @@ import com.sprint.mission.discodeit.security.role.Role;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Repository;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Repository
 @RequiredArgsConstructor
 @Slf4j
 public class UserQueryDslImpl implements UserQueryDsl {
@@ -34,32 +36,40 @@ public class UserQueryDslImpl implements UserQueryDsl {
         public final String password;
         public final Role role;
         public final UUID profileId;
-        public final String fileName;
-        public final Long size;
-        public final String contentType;
     }
 
 
     @Override
     public Optional<UserProjection> getUserFromId(UUID id){
-        List<QueryDto> result = query(user.id.eq(id));
-        return convertProjectionFromDto(result).stream().findFirst();
+
+        return id == null
+                ? Optional.empty()
+                : convertProjectionFromDto(query(user.id.eq(id))).values().stream().findFirst();
     }
 
     @Override
     public Optional<UserProjection> getUserFromUsername(String username){
-        List<QueryDto> result = query(user.email.eq(username));
-        return convertProjectionFromDto(result).stream().findFirst();
+        return username.isBlank()
+                ? Optional.empty()
+                : convertProjectionFromDto(query(user.email.eq(username))).values().stream().findFirst();
     }
 
     @Override
-    public Collection<UserProjection> getUserInfoFromIds(UUID... id){
-        List<QueryDto> result = query(user.id.in(id));
+    public Map<UUID,UserProjection> getUsersFromIds(List<UUID> id){
+
+        return id.isEmpty()
+                ? new HashMap<>()
+                : convertProjectionFromDto(query(user.id.in(id)));
+    }
+
+    @Override
+    public Map<UUID,UserProjection> getAllUsers(){
+        List<QueryDto> result = query();
         return convertProjectionFromDto(result);
     }
 
 
-    private Collection<UserProjection> convertProjectionFromDto(List<QueryDto> list){
+    private Map<UUID,UserProjection> convertProjectionFromDto(List<QueryDto> list){
         return list.stream().collect(
                 Collectors.groupingBy(
                         q -> q.id,
@@ -76,15 +86,12 @@ public class UserQueryDslImpl implements UserQueryDsl {
                                             target.email,
                                             target.password,
                                             target.role,
-                                            target.profileId,
-                                            target.fileName,
-                                            target.size,
-                                            target.contentType
+                                            target.profileId
                                     );
                                 }
                         )
                 )
-        ).values();
+        );
     }
 
 
@@ -108,10 +115,7 @@ public class UserQueryDslImpl implements UserQueryDsl {
                 user.email,
                 user.password,
                 user.role,
-                binaryContent.id,
-                binaryContent.fileName,
-                binaryContent.size,
-                binaryContent.contentType
+                binaryContent.id
         );
     }
 

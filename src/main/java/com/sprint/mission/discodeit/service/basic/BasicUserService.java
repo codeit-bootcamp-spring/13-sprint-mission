@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.request.BinaryContentCreate;
+import com.sprint.mission.discodeit.dto.projection.UserProjection;
+import com.sprint.mission.discodeit.dto.request.MultipartFileDto;
 import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
@@ -14,6 +15,7 @@ import com.sprint.mission.discodeit.mapper.MapperMethod;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.security.SessionService;
 import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.UserService;
 
@@ -41,85 +43,76 @@ public class BasicUserService implements UserService {
 
     private final PasswordEncoder passwordEncoder;
 
-    private final SessionRegistry sessionRegistry;
-
-    private BinaryContent profileIdFromOBCC(Optional<BinaryContentCreate> obcc){
-        // duble running?
-        return obcc.map(bcc -> {
-            // add for Compatibility DB with localstorage.
-            byte[] dummy = {0x40};
-            BinaryContent bc = new BinaryContent(
-                    bcc.filename(),
-                    bcc.contentType(),
-                    bcc.size(),
-                    dummy
-            );
-
-            binaryContentRepository.save(bc);
-
-            binaryContentStorage.put(bc.getId(),obcc.get().content());
-            log.info("Storage - file saved - {}",bc.getId());
-            return bc;
-        }).orElse(null);
-    }
+    private final SessionService sessionService;
 
     @Override
     @Transactional
-    public UserDto create(UserCreateRequest userCreateRequest, Optional<BinaryContentCreate> obcc){
+    public UserDto create(UserCreateRequest userCreateRequest, Optional<MultipartFileDto> multiFileDto){
         String username = nameCheck(userCreateRequest.username());
         String email = emailCheck(userCreateRequest.email());
         String password = passwordEncoder.encode(userCreateRequest.password());
-        BinaryContent bc = profileIdFromOBCC(obcc);
+        BinaryContent bc = multiFileDto.map(binaryContentRepository::saveWithMultipartCommand).orElse(null);
 
         User user = new User(
                 username,
                 email,
-                password,   // password save at encoding data.
+                password,
                 bc,
-                Role.USER
+                Role.USER   // default role is User.
         );
-
-        log.debug("created User - username : {}, email : {}, password - {}", username, email, password);
 
         userRepository.save(user);
 
-        // online 정보 설정.
-        return mapStructMapper.toDto(user,toBinaryDto(user),userOnline(user.getUsername()));
+        // userDto from User
+        return mapStructMapper.toDto(
+                user,
+                getProfileToDto(user.getProfile()),
+                sessionService.userOnline(username)
+        );
     }
 
     @Override
     @Transactional
     public List<UserDto> getUserList(){
-        return userRepository.findAllWithProfile()
-                .stream()
-                .map(u -> mapStructMapper.toDto(u,toBinaryDto(u),userOnline(u.getUsername())))
-                .toList();
+        List<UserProjection> users = userRepository.getAllUsers().values().stream().toList();
+        Map<UUID, BinaryContentDto> profiles = binaryContentRepository.getBinaryContentsInIdList(
+                users.stream()
+                        .map(UserProjection::profileId)
+                        .filter(Objects::nonNull)   // null Point Exception 방지.
+                        .toList()
+        );
+
+        // userDto from UserProfile
+        return users.stream().map(
+                user -> mapStructMapper.toDto(
+                            user,
+                            profiles.get(user.profileId()),
+                            sessionService.userOnline(user.username())
+                    )
+        ).toList();
+
     }
 
 
     @Override
     @Transactional
-    public UserDto update(UUID id, UserUpdateRequest uui, Optional<BinaryContentCreate> obcc){
+    public UserDto update(UUID id, UserUpdateRequest uui, Optional<MultipartFileDto> multiFileDto){
         User user = getUserOrException(id);
 
         String newName = nameCheck(uui.newUsername());
         String newEmail = emailCheck(uui.newEmail());
+        String newPassword = !uui.newPassword().isBlank()
+                ? passwordEncoder.encode(uui.newPassword())
+                : null;
+        BinaryContent newProfile = multiFileDto.map(binaryContentRepository::saveWithMultipartCommand).orElse(null);
 
-        if (uui.newUsername() != null) user.setUsername(uui.newUsername());
-        if (uui.newEmail() != null) user.setEmail(uui.newEmail());
-        if (uui.newPassword() != null) user.setPassword(uui.newPassword());
-        if (obcc.isPresent()) {
-            // db save check
-            user.setProfile(profileIdFromOBCC(obcc));
-        }
-
-        user = userRepository.save(user);
-        log.info("user with id - {} updated", id);
+        // JPA DirtyCheck 으로 별도 save 없이 유저 정보 업데이트
+        user.update(newName, newEmail, newPassword, newProfile);
 
         return mapStructMapper.toDto(
-                user
-                , toBinaryDto(user)
-                , userOnline(user.getUsername())
+                user,
+                getProfileToDto(user.getProfile()),
+                sessionService.userOnline(user.getUsername())
         );
     }
 
@@ -129,13 +122,9 @@ public class BasicUserService implements UserService {
     public void delete(UUID id){
         User user =  getUserOrException(id);
 
+        if (user.getProfile() != null) binaryContentRepository.deleteBinaryContent(user.getProfile());
+
         userRepository.delete(user);
-        if (user.getProfile() != null) {
-            binaryContentStorage.delete(user.getProfile().getId());
-        }
-
-        log.info("user with id - {} deleted", id);
-
     }
 
     private User getUserOrException(UUID id){
@@ -161,23 +150,9 @@ public class BasicUserService implements UserService {
         return email;
     }
 
-    private BinaryContentDto toBinaryDto(User user){
-        if (user.getProfile() == null) return null;
-        BinaryContent bc = user.getProfile();
-        return mapStructMapper.toDto(bc, mapperMethod.getByteFrom(bc.getId()));
-    }
-
-
-    private Boolean userOnline(String username){
-        for (Object principal : sessionRegistry.getAllPrincipals()) {
-            if (
-                    principal instanceof DiscodeitUserDetails details
-                            && details.getUsername().equals(username)
-            ){
-                return true;
-            }
-        }
-        return false;
+    private BinaryContentDto getProfileToDto(BinaryContent profile){
+        if (profile == null) return null;
+        return binaryContentRepository.getBinaryContentById(profile.getId()).orElse(null);
     }
 
 }

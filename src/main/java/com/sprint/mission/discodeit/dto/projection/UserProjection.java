@@ -11,11 +11,7 @@ public record UserProjection(
         String email,
         String password,
         Role role,
-
         // binaryContent info => user profile
-        UUID profileId,
-        String fileName,
-        Long size,
-        String contentType
+        UUID profileId
 ) {
 }

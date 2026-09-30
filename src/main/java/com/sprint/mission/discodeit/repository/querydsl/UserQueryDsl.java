@@ -2,9 +2,7 @@ package com.sprint.mission.discodeit.repository.querydsl;
 
 import com.sprint.mission.discodeit.dto.projection.UserProjection;
 
-import java.util.Collection;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public interface UserQueryDsl {
 
@@ -27,5 +25,7 @@ public interface UserQueryDsl {
      * @param id UUID...
      * @return UserProjection
      */
-    Collection<UserProjection> getUserInfoFromIds(UUID... id);
+    Map<UUID,UserProjection> getUsersFromIds(List<UUID> id);
+
+    Map<UUID,UserProjection> getAllUsers();
 }

@@ -9,6 +9,7 @@ import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import java.time.Instant;
 import java.util.List;
 
 @Getter
@@ -37,16 +38,24 @@ public class Message extends BaseUpdatableEntity {
    )
    private List<BinaryContent> attachment;
 
-   public  Message(
+   public Message(
            String content,
            Channel channel,
            User user,
            List<BinaryContent> attachment
    ){
+       super();
        this.content = content;
        this.channel = channel;
        this.author = user;
        this.attachment = attachment;
+   }
+
+   public void update(
+           String content
+   ){
+       this.setUpdatedAt(Instant.now());
+       if (content != null) this.content = content;
    }
 
 }

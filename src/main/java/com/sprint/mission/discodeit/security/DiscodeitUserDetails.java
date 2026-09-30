@@ -46,16 +46,18 @@ public class DiscodeitUserDetails implements UserDetails {
         );
     }
 
+    /*
+    DaoAuthenticationProvider 에서 비밀번호를 검증할 때
+    Encoding 된 비밀번호 정보를 반환할 때 쓰이는 매서드.
+     */
     @Override
     public String getPassword() {
         return password;
     }
 
-    // email 을 반환. username 은 변경 가능한 값이기 때문.
+    // 유저 pk(id) 를 반환.
     @Override
-    public String getUsername() {
-        return userDto.email();
-    }
+    public String getUsername() { return userDto.id().toString(); }
 
 
     /*

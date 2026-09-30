@@ -2,10 +2,8 @@ package com.sprint.mission.discodeit.config;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sprint.mission.discodeit.security.CsrfTokenHandler;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
 import com.sprint.mission.discodeit.security.LoginFailureHandler;
-import com.sprint.mission.discodeit.security.LoginSuccessHandler;
+import com.sprint.mission.discodeit.security.jwt.*;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,22 +19,23 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
-import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
-import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity  // 정확하게 어떤 부분을 건드리나?
+// @PreAuthor 를 위함.
+// AOP 를 통한 매핑이라, Mvc 테스트에서 프록시 객체가 컨트롤러를 향하는 요청을 가로챈다.
+// 다만, JDK 프록시는 인터페이스 매핑이라 ControllerDoc 으로 요청을 보내서 404 에러(요청 매핑이 없음 -> 구현체에 존재) 가 생긴다.
 @EnableMethodSecurity
 public class SecurityConfig {
 
@@ -45,24 +44,21 @@ public class SecurityConfig {
             HttpSecurity http,
             AuthenticationEntryPoint authenticationEntryPoint,
             AccessDeniedHandler accessDeniedHandler,
-//            PersistentTokenRepository tokenRepository,
-            UserDetailsService userDetailsService,
-            LoginSuccessHandler loginSuccessHandler,
-            LoginFailureHandler loginFailureHandler,
-            SessionRegistry sessionRegistry
+            AuthenticationSuccessHandler loginSuccessHandler,
+            AuthenticationFailureHandler loginFailureHandler,
+            LogoutHandler logoutHandler
 
     ) throws Exception {
         http
                 .csrf( csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(new CsrfTokenHandler())
+                        .disable()
                 )
 
                 .authorizeHttpRequests( auth -> auth
                         // 특정 경로 인증 안함.
                         .requestMatchers(HttpMethod.GET,"/api/auth/csrf-token").permitAll() // csrf 토큰 발급
                         .requestMatchers(HttpMethod.POST,"/api/users").permitAll() // 유저 생성 (회원가입)
-                        .requestMatchers("/api/auth/login","/api/auth/logout","/api/auth/me").permitAll() //csrf 토큰 발급
+                        .requestMatchers("/api/auth/login","/api/auth/logout").permitAll()
                         .requestMatchers("/", "/login.html", "/index.html", "/favicon.ico", "/assets/**").permitAll() // 정적 리소스
                         .requestMatchers("/h2-console/**", "/swagger-doc").permitAll() // h2 인메모리 데이터베이스, swagger
                         // 권한 기반 페이지 인가
@@ -72,17 +68,7 @@ public class SecurityConfig {
                 )
 
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                        .invalidSessionUrl("/")
-                        // 세션 갱신
-                        .sessionFixation(fix -> fix.changeSessionId())
-                        // 동시 세션 관리
-                        .sessionConcurrency(concur -> concur
-                                .maximumSessions(1)
-                                .maxSessionsPreventsLogin(false)
-                                .expiredUrl("/")
-                                .sessionRegistry(sessionRegistry)
-                        )
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
                 // 에러 핸들러
@@ -91,27 +77,17 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler)
                 )
 
-                // 로그인 설정
+                // 로그인 설정 - 클라이언트가 로그인을 폼 로그인을 사용해서 시도.
                 .formLogin( login -> login
                         .loginProcessingUrl("/api/auth/login")
                         .successHandler(loginSuccessHandler)
                         .failureHandler(loginFailureHandler)
                 )
 
-
-                .rememberMe(
-                        r -> r
-                                .key("discodeit-remember-me")
-                                .rememberMeParameter("remember-me")
-                                .tokenValiditySeconds(60*60*24*365)
-                                .tokenRepository(null) // 영구적용시, TokenRepository 상속 클래스 생성 후 작성.
-                                .userDetailsService(userDetailsService)
-                )
-
                 // 로그아웃 설정
                 .logout( logout -> logout
                         .logoutUrl("/api/auth/logout")
-                        .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT))
+                        .addLogoutHandler(logoutHandler)
                 );
 
         return http.build();    // security 설정 적용(build)
@@ -163,5 +139,9 @@ public class SecurityConfig {
     @Bean
     HttpSessionEventPublisher httpSessionEventPublisher() { return new HttpSessionEventPublisher(); }
 
-
+    @Bean
+    JwtRegistry jwtRegistry(
+            JwtTokenProvider jwtTokenProvider,
+            RefreshTokenService refreshTokenService
+    ){ return new InMemoryJwtRegistry(1,jwtTokenProvider,refreshTokenService); }
 }

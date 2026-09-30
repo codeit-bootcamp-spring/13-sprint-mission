@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.controller;
 
 
 import com.sprint.mission.discodeit.controller.docs.MessageControllerDoc;
-import com.sprint.mission.discodeit.dto.request.BinaryContentCreate;
+import com.sprint.mission.discodeit.dto.request.MultipartFileDto;
 import com.sprint.mission.discodeit.dto.request.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
@@ -25,7 +25,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -56,24 +55,25 @@ public class MessageController implements MessageControllerDoc {
     )
     public ResponseEntity<MessageDto> create(
             @Valid @RequestPart(value = "messageCreateRequest") MessageCreateRequest mcr,
-            @RequestPart(value = "attachments", required = false) List<MultipartFile> att
+            @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
     ) {
-        Optional<List<BinaryContentCreate>> lbcc =  Optional.ofNullable(att).map( mp ->
-                mp.stream().map(m -> {
+        List<MultipartFileDto> multifileList =  attachments.stream().map(
+                mp -> {
                     try {
-                        return new BinaryContentCreate(
-                                m.getOriginalFilename(),
-                                m.getContentType(),
-                                m.getSize(),
-                                m.getBytes()
+                        return new MultipartFileDto(
+                                mp.getOriginalFilename(),
+                                mp.getContentType(),
+                                mp.getSize(),
+                                mp.getBytes()
                         );
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-        }).toList());
+                })
+                .toList();
 
 
-        MessageDto res = messageService.createMessage(mcr,lbcc);
+        MessageDto res = messageService.createMessage(mcr,multifileList);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 

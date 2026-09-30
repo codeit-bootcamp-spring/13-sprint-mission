@@ -2,21 +2,15 @@ package com.sprint.mission.discodeit.service.basic;
 
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
-import com.sprint.mission.discodeit.entity.BinaryContent;
-import com.sprint.mission.discodeit.exception.DiscodeitException;
-import com.sprint.mission.discodeit.exception.ExceptionCode;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -27,47 +21,25 @@ public class BasicBinaryContentService implements BinaryContentService {
     private final MapStructMapper mapStructMapper;
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public BinaryContentDto findByID(UUID id){
-        BinaryContent bc = binaryContentRepository.findById(id).stream().findFirst().orElseThrow(
-                () -> new DiscodeitException(ExceptionCode.REQUEST_VALUE_ERROR,"Binary content not found")
-        );
-
-        return mapStructMapper.toDto(bc,getDataFromId(id));
+        // todo - BinaryContentException 작성, ㅅㅓㄹ정.
+        return binaryContentRepository.getBinaryContentById(id)
+                .orElseThrow(RuntimeException::new);
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<BinaryContentDto> findAllByIdIn(List<UUID> ids){
-        return ids.stream()
-                .map(id -> {
-                    BinaryContent bc = binaryContentRepository.findById(id).orElse(null);
-                    if (bc != null){
-                        return mapStructMapper.toDto(bc,getDataFromId(id));
-                    }
-                    return null;
-                })
-                .filter(Objects::nonNull)
-                .toList();
+        return binaryContentRepository.getBinaryContentsInIdList(ids).values().stream().toList();
     }
 
     @Override
     @Transactional
     public void delete(UUID id){
-        binaryContentStorage.delete(id);
-        binaryContentRepository.deleteById(id);
-    }
-
-    private byte[] getDataFromId(UUID id){
-        byte[] data;
-        try{
-            InputStream in = binaryContentStorage.get(id);
-            data = in.readAllBytes();
-            in.close();
-        } catch(IOException e){
-            throw new RuntimeException(e);
-        }
-        return data;
+        binaryContentRepository.deleteBinaryContent(
+                binaryContentRepository.findById(id).orElseThrow(RuntimeException::new)
+        );
     }
 
 }

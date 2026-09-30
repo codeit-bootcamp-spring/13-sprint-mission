@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.config;
+package com.sprint.mission.discodeit.config.storage;
 
 
 import lombok.extern.slf4j.Slf4j;

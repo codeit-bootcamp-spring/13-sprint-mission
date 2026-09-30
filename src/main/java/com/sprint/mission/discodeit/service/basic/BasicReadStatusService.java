@@ -5,7 +5,6 @@ import com.sprint.mission.discodeit.dto.request.readstatus.ReadStatusCreateReque
 import com.sprint.mission.discodeit.dto.request.readstatus.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.ReadStatusDto;
 import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.*;
@@ -14,13 +13,13 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ReadStatusService;
-import jakarta.transaction.Transactional;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -31,50 +30,47 @@ public class BasicReadStatusService implements ReadStatusService {
     private final MapStructMapper mapStructMapper;
 
     @Override
-    @Transactional
-    public ReadStatusDto create(ReadStatusCreateRequest rscr){
+    @Transactional(readOnly = true)
+    public ReadStatusDto create(ReadStatusCreateRequest request){
 
         // not found exception
-        Channel channel = channelRepository.findById(rscr.channelId()).stream().findFirst().orElseThrow(
-                () -> new ChannelNotFoundException("Channel with id - {} was not found", rscr.channelId())
+        Channel channel = channelRepository.findById(request.channelId()).stream().findFirst().orElseThrow(
+                () -> new ChannelNotFoundException("Channel with id - {} was not found", request.channelId())
         );
-        User user = userRepository.findById(rscr.userId()).stream().findFirst().orElseThrow(
-                () -> new UserNotFoundException("User with Id - {} was not founded", rscr.userId())
+        User user = userRepository.findById(request.userId()).stream().findFirst().orElseThrow(
+                () -> new UserNotFoundException("User with Id - {} was not founded", request.userId())
         );
 
 
         // already exist exception
-        if (
-                !readStatusRepository.findByUserId(rscr.userId()).isEmpty() | !readStatusRepository.findByChannelId(rscr.channelId()).isEmpty()
-        ) throw new ReadStatusDuplicatedException("Read Status with user - {}, channel - {} was already existed", rscr.userId(), rscr.channelId());
-
+        if (readStatusRepository.existsByUserOrChannel(user,channel))
+            throw new ReadStatusDuplicatedException("Read Status with user - {}, channel - {} was already existed", request.userId(), request.channelId());
 
 
         return mapStructMapper.toDto(
-                readStatusRepository.save(new ReadStatus(user, channel, rscr.lastReadAt()))
+                readStatusRepository.save(new ReadStatus(user, channel, request.lastReadAt()))
         );
     }
 
+
+    // todo - 유저가 볼 수 있는 거 전부? 혹은 유저 id 에 대해서?
+    // 아마 후자? public 은 read status 가 바로 생성되지 않기 때문.
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<ReadStatusDto> findAllByUserID(UUID userID){
-        Stream<ReadStatusDto> rspb = readStatusRepository.findByChannelType(ChannelType.PUBLIC)
-                .stream()
-                .map(mapStructMapper::toDto);
-        Stream<ReadStatusDto> rspv = readStatusRepository.findByUserId(userID)
-                .stream().map(
-                        mapStructMapper::toDto
-                );
-        return Stream.concat(rspb, rspv).toList();
+        return readStatusRepository.findAllByUserId(userID).stream()
+                .map(mapStructMapper::toDto)
+                .toList();
     }
 
+    // todo - Instant 시간을 클라이언트가 보내주나? 확인.
     @Override
     @Transactional
-    public ReadStatusDto update(UUID id, ReadStatusUpdateRequest rsur){
+    public ReadStatusDto update(UUID id, ReadStatusUpdateRequest request){
         ReadStatus readStatus = readStatusRepository.findById(id).stream().findFirst().orElseThrow(
                 () -> new ReadStatusNotFoundException("ReadStatus with id - {} was not found", id)
         );
-        readStatus.setLastReadAt(rsur.newLastReadAt());
+        readStatus.update();
         return mapStructMapper.toDto(readStatus);
     }
     @Override

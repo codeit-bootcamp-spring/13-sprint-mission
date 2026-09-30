@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.storage;
 
-import com.sprint.mission.discodeit.config.S3Property;
+import com.sprint.mission.discodeit.config.storage.S3Property;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.exception.FileStorageException;
 import lombok.RequiredArgsConstructor;

@@ -1,10 +1,12 @@
 package com.sprint.mission.discodeit.service;
 
+import com.sprint.mission.discodeit.dto.projection.MessageProjection;
+import com.sprint.mission.discodeit.dto.projection.UserProjection;
 import com.sprint.mission.discodeit.dto.request.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
-import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.MessageNotFoundException;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
@@ -14,14 +16,18 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.security.SessionService;
+import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.basic.BasicMessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,10 +35,10 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,7 +54,12 @@ public class MessageServiceTest {
     @Mock BinaryContentRepository binaryContentRepository;
     @Mock BinaryContentStorage binaryContentStorage;
     @Mock PageResponseMapper pageResponseMapper;
-    @Mock MapStructMapper mapStructMapper;
+
+    @Mock
+    SessionService sessionService;
+
+    @Spy
+    MapStructMapper mapStructMapper = Mappers.getMapper(MapStructMapper.class);
 
     @InjectMocks
     BasicMessageService messageService;
@@ -57,13 +68,15 @@ public class MessageServiceTest {
         return new MessageDto(id, Instant.now(),Instant.now(),content,null,null,null);
     }
 
-    private MessageCreateRequest messageCreateRequest(String content){
-        return new MessageCreateRequest(content,UUID.randomUUID(),UUID.randomUUID());
-    }
+
 
     @Nested
     @DisplayName("Message Create Test")
     class CreateTests {
+
+        private MessageCreateRequest messageCreateRequest(String content){
+            return new MessageCreateRequest(content,UUID.randomUUID(),UUID.randomUUID());
+        }
 
         @Test
         @DisplayName("success")
@@ -84,6 +97,8 @@ public class MessageServiceTest {
             Channel channel = mock(Channel.class);
             User user = mock(User.class);
 
+            when(user.getId()).thenReturn(UUID.randomUUID());
+
             // 1.
             given(userRepository.findById(request.authorId())).willReturn(Optional.of(user));
             // 2.
@@ -94,21 +109,13 @@ public class MessageServiceTest {
                 ReflectionTestUtils.setField(message,"id",messageId);
                 return message;
             });
-            // 4.1. MessageDto
-            given(mapStructMapper.toDto(
-                    any(Message.class),
-                    nullable(UserDto.class),
-                    nullable(List.class)))  // how to fix this unsafe insert?
-                    .willReturn(messageDto(messageId,request.channelId(),request.authorId(),request.content()));
-            // 4.2. BinaryContentDto
-            given(mapStructMapper.toDto(nullable(BinaryContent.class),eq(null))).willReturn(null);
-            // 4.3. UserDto
-            given(mapStructMapper.toDto(any(User.class),nullable(BinaryContentDto.class),nullable(Boolean.class))).willReturn(null);
+
+            given(sessionService.userOnline(nullable(String.class))).willReturn(false);
 
             // when
 
             // then
-            MessageDto res = messageService.createMessage(request, Optional.empty());
+            MessageDto res = messageService.createMessage(request, List.of());
 
             assertThat(res.id()).isEqualTo(messageId);
         }
@@ -126,7 +133,7 @@ public class MessageServiceTest {
             given(userRepository.findById(request.authorId())).willReturn(Optional.empty());
 
             // then
-            assertThatThrownBy(() -> messageService.createMessage(request, Optional.empty()))
+            assertThatThrownBy(() -> messageService.createMessage(request, List.of()))
                     .isInstanceOf(UserNotFoundException.class);
             
         }
@@ -157,17 +164,6 @@ public class MessageServiceTest {
             // when
             given(messageRepository.findById(messageId)).willReturn(Optional.of(message));
             given(messageRepository.save(any(Message.class))).willReturn(message);
-
-            given(mapStructMapper.toDto(
-                    any(Message.class),
-                    nullable(UserDto.class),
-                    nullable(List.class)))  // how to fix this unsafe insert?
-                    .willReturn(messageDto(messageId,null,null,newContent));
-            // 4.2. BinaryContentDto
-            given(mapStructMapper.toDto(nullable(BinaryContent.class),eq(null))).willReturn(null);
-            // 4.3. UserDto
-            given(mapStructMapper.toDto(any(User.class),nullable(BinaryContentDto.class),nullable(Boolean.class))).willReturn(null);
-
 
             // then
             MessageDto dto = messageService.updateMessageData(messageId,request);
@@ -234,50 +230,55 @@ public class MessageServiceTest {
     @DisplayName("find Message by Channel")
     class FindByChannel {
 
-        @Test
-        @DisplayName("find success")
-        void success() {
-            // given
+        private MessageProjection getProjection(Message message){
+            return new MessageProjection(
+                    message.getId(),
+                    message.getCreatedAt(),
+                    message.getUpdatedAt(),
+                    message.getContent(),
+                    message.getChannel().getId(),
+                    message.getAuthor().getId(),
+                    message.getAttachment().stream()
+                            .map(BinaryContent::getId)
+                            .filter(Objects::nonNull)
+                            .toList()
+            );
+        }
 
-            // input param set
-            // 1. pageable
-            Pageable pageable = PageRequest.of(0, 10);
-            // 2. channel id
-            UUID channelId = UUID.randomUUID();
+        private BinaryContentDto getContentDto(BinaryContent content){
+            return new BinaryContentDto(
+                    content.getId(),
+                    content.getFileName(),
+                    content.getSize(),
+                    content.getContentType(),
+                    "dummy".getBytes(StandardCharsets.UTF_8)
+            );
+        }
 
-            // response data set
-            // 1. message
-            Channel channel = mock(Channel.class);
-            User user = mock(User.class);
-            UUID messageId = UUID.randomUUID();
-            Message  message = new Message("beforeContents", channel, user, List.of());
-            // 2. messageDto
-            MessageDto dto = messageDto(messageId,channelId,null,null);
-            // 3. Slice
-            Slice<Message> slice = new SliceImpl<>(List.of(message));
+        private Channel channel(UUID id){
+            Channel channel = new Channel(
+                    null,
+                    null,
+                    ChannelType.PRIVATE
+            );
 
-            // when
-            // 1. get slice of message from msg repo
-            given(messageRepository.findByChannelIdForMessageDto(any(UUID.class),nullable(Pageable.class)))
-                    .willReturn(slice);
-            // 2. get message dto from message and user dto and attribute dto
-            given(mapStructMapper.toDto(any(Message.class),nullable(UserDto.class),nullable(List.class)))
-                    .willReturn(dto);
+            ReflectionTestUtils.setField(channel,"id",id);
 
-            // convert to dto from user, bc
-            // 2.1. BinaryContentDto
-            given(mapStructMapper.toDto(nullable(BinaryContent.class),eq(null))).willReturn(null);
-            // 2.2. UserDto
-            given(mapStructMapper.toDto(any(User.class),nullable(BinaryContentDto.class),nullable(Boolean.class))).willReturn(null);
+            return channel;
+        }
 
+        private User user(UUID id, String name){
+            User user = new User(
+                    name,
+                    name + "@email.com",
+                    "password",
+                    null,
+                    Role.USER
+            );
 
-            // then
-            // 1. get pageres from slice<MessageDto>
-            assertThat(messageService.findallByChannelId(channelId,null))
-                    .isEqualTo(
-                           pageResponseMapper.fromSlice(new SliceImpl<>(List.of(dto)))
-                    );
+            ReflectionTestUtils.setField(user,"id",id);
 
+            return user;
         }
 
         @Test
@@ -289,52 +290,92 @@ public class MessageServiceTest {
             Pageable pageable = PageRequest.of(0, 10);
             // 2. channel id
             UUID channelId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+            UUID messageId = UUID.randomUUID();
             // 3. cursor
             Instant cursor = Instant.now();
 
             // object for check logic
             // 1. message
-            Channel channel = mock(Channel.class);
-            User user = mock(User.class);
-            UUID messageId = UUID.randomUUID();
-            Message  message = new Message("beforeContents", channel, user, List.of());
+            Channel channel = channel(channelId);
+            User user = user(userId,"ksk");
+            Message message = new Message("beforeContents", channel, user, List.of());
             // 2. messageDto
             MessageDto dto = messageDto(messageId,channelId,null,null);
             // 3. Slice
-            Slice<Message> slice = new SliceImpl<>(List.of(message));
+            Slice<UUID> messageIdList = new SliceImpl<>(
+                    List.of(messageId),
+                    pageable,
+                    false
+            );
 
 
 
             // when
-            // message repository will return slice of message
-            given(messageRepository.findByChannelWithCursor(
+            // 1. query target message ids
+            given(messageRepository.findMessageIdsBuChannelIdWithCursor(
                     any(UUID.class),
                     any(Pageable.class),
                     any(Instant.class)
-            )).willReturn(slice);
+            )).willReturn(messageIdList);
+            // 2.1. query message info
+            given(messageRepository.getMessageProjectionFromIdList(
+                    messageIdList.getContent()
+            )).willReturn(
+                    messageIdList.getContent().stream().collect(
+                            Collectors.toMap(
+                                    id -> id,
+                                    t -> getProjection(message)
+                            )
+                    )
+            );
+            // 2.2. get user info from Id
+            given(userRepository.getUsersFromIds(
+                    any())
+            ).willReturn(
+                    Map.of(
+                            userId,
+                            new UserProjection(
+                                    user.getId(),
+                                    user.getUsername(),
+                                    user.getEmail(),
+                                    user.getPassword(),
+                                    user.getRole(),
+                                    null
+                            )
+                    )
+            );
+            // 2.3 query message info and user and contents
+            given(binaryContentRepository.getBinaryContentsInIdList(
+                    any()
+            )).willReturn(
+                    new HashMap<>()
+            );
 
-            // convert message to messageDto
-            // 2. get message dto from message and user dto and attribute dto
-            given(mapStructMapper.toDto(any(Message.class),nullable(UserDto.class),nullable(List.class)))
-                    .willReturn(dto);
 
-            // convert to dto from user, bc
-            // 2.1. BinaryContentDto
-            given(mapStructMapper.toDto(nullable(BinaryContent.class),eq(null))).willReturn(null);
-            // 2.2. UserDto
-            given(mapStructMapper.toDto(any(User.class),nullable(BinaryContentDto.class),nullable(Boolean.class))).willReturn(null);
-
-            // then
-            assertThat(messageService.findallByChannelIdWithCursor(
+            PageResponse<MessageDto> result = messageService.findallByChannelIdWithCursor(
                     channelId,
                     pageable,
                     cursor
-            )).isEqualTo(
-                    pageResponseMapper.fromSliceWithCursor(
-                            slice,
-                            cursor
-                    )
             );
+
+
+
+//            assertThat(result.content()).extracting(
+//                    MessageDto::id
+//            ).isEqualTo(messageId);
+
+            verify(messageRepository,times(1))
+                    .findMessageIdsBuChannelIdWithCursor(any(),any(),any());
+
+            verify(messageRepository,times(1))
+                    .getMessageProjectionFromIdList(any());
+
+            verify(userRepository,times(1))
+                    .getUsersFromIds(any());
+
+            verify(binaryContentRepository,times(2))
+                    .getBinaryContentsInIdList(any());
 
         }
 

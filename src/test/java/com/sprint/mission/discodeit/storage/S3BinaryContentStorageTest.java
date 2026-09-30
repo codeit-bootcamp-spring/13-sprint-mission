@@ -2,8 +2,8 @@ package com.sprint.mission.discodeit.storage;
 
 
 import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
-import com.sprint.mission.discodeit.config.S3Config;
-import com.sprint.mission.discodeit.config.S3Property;
+import com.sprint.mission.discodeit.config.storage.S3Config;
+import com.sprint.mission.discodeit.config.storage.S3Property;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
@@ -18,9 +18,6 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.UUID;
 
 

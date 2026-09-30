@@ -6,20 +6,23 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.UserDuplicatedException;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
-import com.sprint.mission.discodeit.mapper.MapperMethod;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.security.SessionService;
 import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.basic.BasicUserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.Instant;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,16 +30,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.*;
 
     @ExtendWith(MockitoExtension.class)
-    @DisplayName("Service Test")
+    @DisplayName("User Service Test")
 public class UserServiceTest {
-    @Mock MapStructMapper mapStructMapper;
-    @Mock MapperMethod mapperMethod;
     @Mock
     UserRepository userRepository;
     @Mock
+    BinaryContentRepository binaryContentRepository;
+    @Mock
     UserCreateRequest userCreateRequest;
+    @Spy
+    MapStructMapper mapStructMapper = Mappers.getMapper(MapStructMapper.class);
+    @Spy
+    PasswordEncoder passwordEncoder;
     @InjectMocks
     BasicUserService userService;
+    @Mock
+    SessionService sessionService;
 
     @Nested
     class Create{
@@ -57,7 +66,6 @@ public class UserServiceTest {
             // then
             assertThat(saved.getUsername()).isEqualTo(req.username());
             assertThat(saved.getEmail()).isEqualTo(req.email());
-            assertThat(saved.getPassword()).isEqualTo(req.password());
         }
 
         @Test
@@ -101,7 +109,6 @@ public class UserServiceTest {
             List<User> ls = new ArrayList<>();
             // when
             given(userRepository.findById(id)).willReturn(Optional.of(user));
-            given(userRepository.save(any(User.class))).willReturn(user);
             given(userRepository.findByUsername("최둘리")).willReturn(ls);
             given(userRepository.findByEmail("cdr@email.com")).willReturn(ls);
 

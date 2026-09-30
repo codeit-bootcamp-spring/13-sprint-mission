@@ -46,5 +46,17 @@ public class User extends BaseUpdatableEntity {
         this.role = role;
     }
 
+    public void update(
+            String username,
+            String email,
+            String password,
+            BinaryContent profile
+    ){
+        if (username != null) this.username = username;
+        if (email != null) this.email = email;
+        if (password != null) this.password = password;
+        if (profile != null) this.profile = profile;
+    }
+
     public void updateRole(Role role){ this.role = role; }
 }

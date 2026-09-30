@@ -1,22 +1,24 @@
 package com.sprint.mission.discodeit.repository;
 
 
+import com.sprint.mission.discodeit.config.QueryDslTestConfig;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import jakarta.persistence.EntityManagerFactory;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
 
@@ -26,11 +28,13 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.mock;
 
 @DataJpaTest(showSql = false)
-@TestPropertySource(properties = {
-        "spring.jpa.properties.hibernate.generate_statistics=true"
+//@TestPropertySource(properties = {
+//        "spring.jpa.properties.hibernate.generate_statistics=true"
+//})
+@Import({
+        QueryDslTestConfig.class
 })
 @ActiveProfiles("test")
 @Slf4j
@@ -41,9 +45,10 @@ public class MessageRepositoryTest {
     @Autowired
     TestEntityManager em;
     @Autowired
-    EntityManagerFactory emf;
-    @Autowired
     private MessageRepository messageRepository;
+
+    @MockitoBean
+    BinaryContentStorage binaryContentStorage;
 
     private List<UUID> setup() {
         Channel channel = getTestChannel();
@@ -129,45 +134,6 @@ public class MessageRepositoryTest {
     }
 
     @Test
-    @DisplayName("test find by channel id with pagenation")
-    void testFindByChannelForMessageDto() {
-        // query message with pageable and entity graph.
-        // given
-        List<UUID> ids = setup();
-        log.info("id {}",ids.get(0));
-        Pageable page = PageRequest.of(0, 2);
-        // when
-        // then
-        Slice<Message> messages = messageRepository.findByChannelIdForMessageDto(ids.get(0),page);
-
-        // test page size = 2
-        assertThat(messages.getContent()).hasSize(2);
-        // test no order by DSC on ctime, message1 is first.
-        assertThat(messages.getContent().get(0)).extracting(Message::getContent).isEqualTo("message1");
-    }
-
-    @Test
-    @DisplayName("test find by channel id with cursor")
-    void testFindByChannelWithCursor() {
-        // query message with pageable and entity graph.
-        // given
-        List<UUID> ids = setup();
-        log.info("id {}",ids.get(0));
-        Pageable page = PageRequest.of(0, 4);
-
-        // make cursor for midline -> message1 will return
-        Instant cursor = Instant.parse("2026-06-10T09:00:00Z");
-        // when
-        // then
-        Slice<Message> messages = messageRepository.findByChannelWithCursor(ids.get(0),page,cursor);
-
-        // test page size = 1
-        assertThat(messages.getContent()).hasSize(1);
-        // test no order by DSC on ctime, message1 is first.s
-        assertThat(messages.getContent().get(0)).extracting(Message::getContent).isEqualTo("message1");
-    }
-
-    @Test
     @DisplayName("test find by channel id is fail")
     void testFindFail() {
         // given
@@ -180,19 +146,6 @@ public class MessageRepositoryTest {
 
     }
 
-    @Test
-    @DisplayName("query lastest message test")
-    void testLastestMessageQuery() {
-        // given
-        List<UUID> channelIds = setup();
-        // when
-        // then
-        List<Message> lastest = messageRepository.findLastestMessageByChannel(channelIds.get(0));
 
-        assertThat(lastest).hasSize(1);
-        assertThat(lastest.get(0).getCreatedAt()).isEqualTo("2026-08-02T09:00:00Z");
-
-
-    }
 
 }

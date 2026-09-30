@@ -4,10 +4,8 @@ package com.sprint.mission.discodeit.controller;
 import com.sprint.mission.discodeit.controller.docs.UserControllerDoc;
 import com.sprint.mission.discodeit.dto.request.*;
 import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
-import com.sprint.mission.discodeit.dto.request.user.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +45,7 @@ public class UserController implements UserControllerDoc {
             @Valid @RequestPart("userCreateRequest") UserCreateRequest uci,
             @RequestPart(value = "profile", required = false) MultipartFile tmb
     ) {
-        Optional<BinaryContentCreate> bcc = Optional.ofNullable(tmb).flatMap(this::thumbnailResolver);
+        Optional<MultipartFileDto> bcc = Optional.ofNullable(tmb).flatMap(this::thumbnailResolver);
         UserDto res = this.userService.create(uci, bcc);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
@@ -73,14 +71,14 @@ public class UserController implements UserControllerDoc {
             @Valid @RequestPart("userUpdateRequest") UserUpdateRequest uui,
             @RequestPart (value = "profile", required = false) MultipartFile tmb
     ){
-        Optional<BinaryContentCreate> bcc = Optional.ofNullable(tmb).flatMap(this::thumbnailResolver);
+        Optional<MultipartFileDto> bcc = Optional.ofNullable(tmb).flatMap(this::thumbnailResolver);
         UserDto res = this.userService.update(userId, uui, bcc);
         return ResponseEntity.ok(res);
     }
 
 
 
-    private Optional<BinaryContentCreate> thumbnailResolver(MultipartFile tmb) {
+    private Optional<MultipartFileDto> thumbnailResolver(MultipartFile tmb) {
         if (tmb.isEmpty()) return Optional.empty();
         try{
             String filename = tmb.getOriginalFilename();
@@ -88,7 +86,7 @@ public class UserController implements UserControllerDoc {
             Long fileSize = tmb.getSize();
             byte[] content = tmb.getBytes();
 
-            BinaryContentCreate bc = new BinaryContentCreate(
+            MultipartFileDto bc = new MultipartFileDto(
                     filename,
                     contentType,
                     fileSize,

@@ -13,11 +13,11 @@ import com.sprint.mission.discodeit.exception.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.ChannelTypeException;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
-import com.sprint.mission.discodeit.mapper.MapperMethod;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.security.SessionService;
 import com.sprint.mission.discodeit.service.ChannelService;
 
 import jakarta.transaction.Transactional;
@@ -27,14 +27,11 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -44,69 +41,88 @@ public class BasicChannelService implements ChannelService {
     private final ChannelRepository channelRepository;
     private final ReadStatusRepository readStatusRepository;
     private final UserRepository userRepository;
+    private final BinaryContentRepository binaryContentRepository;
+
+    private final SessionService sessionService;
+
     private final MapStructMapper mapStructMapper;
 
-    private final MapperMethod mapperMethod;
-
     private final RoleHierarchy roleHierarchy;
-
-    private final SessionRegistry sessionRegistry;
 
 
     /**
      * public 채널 생성
-     * @param cpb
+     * @param publicChannelCreate 채널 생성 요청 정보.
      * @return channelDto
      */
     @Override
     @Transactional
-    public ChannelDto createPublicChannel(PublicChannelCreateRequest cpb){
-        Channel channel = channelRepository.save(new Channel(cpb.name(), cpb.description(), ChannelType.PUBLIC));
+    public ChannelDto createPublicChannel(PublicChannelCreateRequest publicChannelCreate){
+        Channel channel = channelRepository.save(
+                new Channel(
+                        publicChannelCreate.name(),
+                        publicChannelCreate.description(),
+                        ChannelType.PUBLIC)
+        );
 
         log.debug("ChannelService - public 채널 생성 {}",channel.getId());
 
-        return channelDtoFrom(channel);
+        return getChannelDtoFromChannel(channel);
     }
 
     /**
      * private 채널 생성
-     * @param cpv
+     * @param publicChannelCreate 채널 생성 요청 정보. List - UUID 유저 id 정보.
      * @return channelDto
      */
     @Override
     @Transactional
-    public ChannelDto createPrivateChannel(PrivateChannelCreateRequest cpv){
-        Channel channel = channelRepository.save(new Channel("", "", ChannelType.PRIVATE));
+    public ChannelDto createPrivateChannel(PrivateChannelCreateRequest publicChannelCreate){
+        Channel channel = channelRepository.save(new Channel(null, null, ChannelType.PRIVATE));
 
         log.debug("ChannelService - private 채널 생성 {}",channel.getId());
 
-        // todo - request 를 command 레이어를 넣으면서 stream 으로 변경 예정.
-        // stream 을 쓰는게 좋다고 했다.
-        // 이유는 아마 가독성. 데이터 크기가 커지면 별도 이터레이터로 돌리는 stream 보단 for문을 활용하도록.
-        for (UUID pid : cpv.participantIds()){
-            User user = getUserOrException(pid);
-            readStatusRepository.save(new ReadStatus(user,channel, Instant.now()));
 
-            log.debug("User with id - {} is joined channel",pid);
-        }
+        publicChannelCreate.participantIds().forEach(
+                userId -> {
+                    User user = getUserOrException(userId);
+                    readStatusRepository.save(new ReadStatus(user,channel, Instant.now()));
 
-        return channelDtoFrom(channel);
+                    log.debug("User with id - {} is joined channel",userId);
+                }
+        );
+
+        return getChannelDtoFromChannel(channel);
     }
 
     /**
      * 유저가 조회 할 수 있는 모든 채널 정보 조회.
-     * @param userID UUID
+     * @param userId UUID
      * @return channelList List
      */
     @Override
     @Transactional
-    public List<ChannelDto> findAllByUserID(UUID userID) {
+    public List<ChannelDto> findAllByUserID(UUID userId) {
+        Map<UUID,ChannelProjection> channelMap = channelRepository.getChannelsFromUserId(userId);
 
-        List<ChannelProjection> channels = new ArrayList<>(channelRepository.getChannelsFromUserId(userID));
-
-        return channels.stream()
-                .map(this::getChannelDtoFrom)
+        // user List from queried channel has.
+        List<UUID> userIdList = channelMap.values().stream()
+                .map(ChannelProjection::userIds)
+                .flatMap(Collection::stream)
                 .toList();
+
+        // Map<userid, userDto> - set UserDto for construct channelDto
+        Map<UUID, UserDto> userDtos = getUserDtoFromUserIdList(userIdList);
+
+
+        // convert channel projection to channelDto
+        return channelMap.values().stream()
+                .map(
+                        channelProjection -> mapStructMapper.toDto(
+                                channelProjection,
+                                channelProjection.userIds().stream().map(userDtos::get).toList()
+                        )
+                ).toList();
     }
 
 
@@ -120,32 +136,40 @@ public class BasicChannelService implements ChannelService {
     @Override
     @Transactional
     public ChannelDto update(UUID id, PublicChannelUpdateRequest uci, Authentication authentication) {
-
-
         Channel channel = getChannelOrException(id);
 
-        // 권한검사
-        if (channel.getType().equals(ChannelType.PUBLIC))checkAuth(authentication);
+        checkUpdatable(channel, authentication);
 
-        checkPrivateChannel(channel);
+        // update and save
+        channel.update(
+                uci.newName(),
+                uci.newDescription()
+        );
+        channelRepository.save(channel);
 
-        channel.setName(uci.newName());
-        channel.setDescription(uci.newDescription());
-
-        return channelDtoFrom(channelRepository.save(channel));
+        return getChannelDtoFromChannel(channel);
     }
 
+    /**
+     * 채널 삭제 매서드
+     * @param id 채널 Id.
+     * @param authentication 현재 인증 사용자 인가정보.
+     */
     @Override
     @Transactional
     public void deleteChannel(UUID id,Authentication authentication) {
 
         Channel channel = getChannelOrException(id);
 
-        // 권한검사
+        // 퍼블릭 채널이라면 사용자 인가 검정
         if(channel.getType().equals(ChannelType.PUBLIC)) checkAuth(authentication);
+        // todo - 프라이베이트 라면, 채널 소유자 인지 체크?
 
+
+        // todo - channel 에 속한 message 전부 삭제.
         channelRepository.deleteById(id);
     }
+
 
     // id 에 해당하는 유저를 조회하고 없으면 에러.
     private User getUserOrException(UUID id){
@@ -155,11 +179,12 @@ public class BasicChannelService implements ChannelService {
     }
 
     // 채널 타입이 private 인지 체크
-    private void checkPrivateChannel(Channel channel){
+    private void checkUpdatable(Channel channel, Authentication authentication){
         if (channel.getType().equals(ChannelType.PRIVATE)) {
             log.warn("Private channel checked - id : {}, name : {}",channel.getId(), channel.getName());
             throw new ChannelTypeException("Channel with id - {} was private",channel.getId());
-        }
+        } else
+            checkAuth(authentication);
     }
 
     // id 에 해당하는 채널을 조회하고 없으면 에러.
@@ -169,47 +194,10 @@ public class BasicChannelService implements ChannelService {
         );
     }
 
-    // convert ChannelDto from Channel
-    private ChannelDto channelDtoFrom(Channel channel){
-        ChannelProjection projection = channelRepository.getChannelById(channel.getId())
-                .orElseThrow(RuntimeException::new);
-
-        return mapStructMapper.toDto(
-                projection,
-                getUserDtoFromId(projection.users())
-        );
-    }
-
-    // convert channel Dto from queried channel info.
-    private ChannelDto getChannelDtoFrom(ChannelProjection channel){
-        List<UserDto> users = getUserDtoFromId(channel.users());
-        return mapStructMapper.toDto(channel, users);
-    }
-
-    private List<UserDto> getUserDtoFromId(UUID... userId){
-
-        log.debug("ChannelService - 채널 유저 인수 : {},{}", userId.length, userId[0]);
-
-        // public 이라면 user == empty Array
-        if (userId.length == 1 && userId[0] == null) return List.of();
-
-        Collection<UserProjection> users = userRepository.getUserInfoFromIds(userId);
-
-        return users.stream().map(
-                userProjection ->
-                        mapStructMapper.toDto(
-                                userProjection,
-                                userProjection.profileId() != null ?
-                                        mapStructMapper.toDto(userProjection,mapperMethod)
-                                        : new BinaryContentDto(null,null,null,null,null), // 임시 사용. 추후 mapperMethod 분리
-                                userOnline(userProjection.username())
-                        )
-        ).toList();
-    }
-
-
+    // 현재 세션 사용자의 인가 체크. (channel manager)
     private void checkAuth(Authentication auth){
-        Collection<? extends GrantedAuthority> res = roleHierarchy.getReachableGrantedAuthorities(auth.getAuthorities());
+        Collection<? extends GrantedAuthority> res = roleHierarchy
+                .getReachableGrantedAuthorities(auth.getAuthorities());
 
         boolean has = res.stream()
                 .map(GrantedAuthority::getAuthority)
@@ -218,16 +206,44 @@ public class BasicChannelService implements ChannelService {
         if (!has) throw new AccessDeniedException("");
     }
 
-    private Boolean userOnline(String username){
-        for (Object principal : sessionRegistry.getAllPrincipals()) {
-            if (
-                    principal instanceof DiscodeitUserDetails details
-                            && details.getUsername().equals(username)
-            ){
-                return true;
-            }
-        }
-        return false;
+    /*
+    채널 Dto 변환 매서드. 단건.
+     */
+    private ChannelDto getChannelDtoFromChannel(Channel channel){
+        ChannelProjection channelProjection = channelRepository.getChannelById(channel.getId())
+                .orElseThrow(RuntimeException::new);
+
+        List<UserDto> users =
+                getUserDtoFromUserIdList(
+                        readStatusRepository.findUserIdsByChannelId(channelProjection.id())
+                ).values().stream().toList();
+
+        return mapStructMapper.toDto(
+                channelProjection,
+                users
+        );
+    }
+
+    // 채널에 포함된 유저 정보 반환
+    private Map<UUID, UserDto> getUserDtoFromUserIdList(List<UUID> userIdList){
+        List<UserProjection> users = userRepository.getUsersFromIds(userIdList).values().stream().toList();
+        Map<UUID,BinaryContentDto> profileList = binaryContentRepository.getBinaryContentsInIdList(
+                users.stream().map(UserProjection::profileId).filter(Objects::nonNull).toList()
+        );
+
+        return users.stream()
+                .map(
+                        userProjection -> mapStructMapper.toDto(
+                                userProjection,
+                                profileList.isEmpty()
+                                        ? null
+                                        : profileList.get(userProjection.profileId()),
+                                sessionService.userOnline(userProjection.username())
+                        )
+                ).collect(Collectors.toMap(
+                        UserDto::id,
+                        dto -> dto
+                ));
     }
 
 }

@@ -1,9 +1,6 @@
 package com.sprint.mission.discodeit.repository.querydsl;
 
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.Query;
-import com.querydsl.core.group.AbstractGroupExpression;
-import com.querydsl.core.group.GroupBy;
 import com.querydsl.core.types.ConstructorExpression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -14,6 +11,8 @@ import com.sprint.mission.discodeit.dto.projection.ChannelProjection;
 import com.sprint.mission.discodeit.entity.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.*;
@@ -22,6 +21,8 @@ import java.util.stream.Collectors;
 // todo - 파일 데이터 입출력 클래스를 adaptor 레이어로 바꾸어 쿼리 결과 데이터 측에 추가한다.
 
 @RequiredArgsConstructor
+@Repository
+@Slf4j
 public class ChannelQueryDslImpl implements ChannelQueryDsl {
 
     private final JPAQueryFactory jpaQueryFactory;
@@ -47,21 +48,25 @@ public class ChannelQueryDslImpl implements ChannelQueryDsl {
 
     @Override
     public Optional<ChannelProjection> getChannelById(UUID id){
+        if (id == null) return Optional.empty();
+
         List<QueryDto> result = jpaQuery(
                 channelQueryCondition(
                     channel.id.eq(id)
                 )
         );
 
-        return convertProjectionFromDto(result).stream().findFirst();
+        return convertProjectionFromDto(result).values().stream().findFirst();
     }
 
 
     @Override
-    public Collection<ChannelProjection> getChannelsFromUserId(UUID id) {
+    public Map<UUID,ChannelProjection> getChannelsFromUserId(UUID id) {
+        if (id == null) return new HashMap<>();
+
         List<QueryDto> result = jpaQuery(
                 channelQueryCondition(
-                        user.id.eq(id),
+                        readStatus.user.id.eq(id),
                         channel.type.eq(ChannelType.PUBLIC)
                 )
         );
@@ -98,7 +103,7 @@ public class ChannelQueryDslImpl implements ChannelQueryDsl {
     QueryDsl 라이브러리가 transform() 매서드 내부 버그가 있음.
     때문에 쿼리 후, 직접 데이터를 조립하는 로직으로 변환.
      */
-    private Collection<ChannelProjection> convertProjectionFromDto(List<QueryDto> dtoList){
+    private Map<UUID,ChannelProjection> convertProjectionFromDto(List<QueryDto> dtoList){
         return dtoList.stream()
                 .collect(
                         Collectors.groupingBy(
@@ -123,7 +128,7 @@ public class ChannelQueryDslImpl implements ChannelQueryDsl {
                                         }
                                 )
                         )
-                ).values();
+                );
     }
 
     // channel query condition.
@@ -137,11 +142,6 @@ public class ChannelQueryDslImpl implements ChannelQueryDsl {
         }
 
         return condition;
-    }
-
-
-    private AbstractGroupExpression<UUID, List<UUID>> userIdList(){
-        return GroupBy.list( user.id );
     }
 
 

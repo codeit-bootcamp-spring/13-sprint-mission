@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.request.BinaryContentCreate;
+import com.sprint.mission.discodeit.dto.projection.MessageProjection;
+import com.sprint.mission.discodeit.dto.projection.UserProjection;
+import com.sprint.mission.discodeit.dto.request.MultipartFileDto;
 import com.sprint.mission.discodeit.dto.request.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
@@ -20,24 +22,21 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.security.SessionService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,7 +50,7 @@ public class BasicMessageService implements MessageService {
     private final PageResponseMapper pageResponseMapper;
     private final MapStructMapper mapStructMapper;
 
-    private final SessionRegistry sessionRegistry;
+    private final SessionService sessionService;
 
     private User getUserOrException(UUID id){
         return userRepository.findById(id).orElseThrow(
@@ -68,78 +67,127 @@ public class BasicMessageService implements MessageService {
 
     @Override
     @Transactional
-    public MessageDto createMessage(MessageCreateRequest cmi, Optional<List<BinaryContentCreate>> olbcc){
-
-        User user = getUserOrException(cmi.authorId());
-        Channel channel = getChannelOrException(cmi.channelId());
-
-        log.debug("Message Create - author: {}, channel: {}", user.getId(), channel.getId());
-
-        List<BinaryContent> atts = olbcc.map(
-                lbcc -> lbcc.stream().map(
-                        bcc -> {
-                            byte[] dumi = {0x40};
-                            BinaryContent bc = new BinaryContent(
-                                    bcc.filename(),
-                                    bcc.contentType(),
-                                    bcc.size(),
-                                    dumi
-                            );
-                            binaryContentRepository.save(bc);
-                            binaryContentStorage.put(bc.getId(),bcc.content());
-                            return bc;
-                        }
-
-                ).toList()
-        ).orElse(null);
+    public MessageDto createMessage(MessageCreateRequest request, List<MultipartFileDto> attachments){
+        User user = getUserOrException(request.authorId());
+        Channel channel = getChannelOrException(request.channelId());
 
 
+        List<BinaryContent> attachFiles = binaryContentRepository.saveAllFromMultipartFileDtoList(attachments);
 
-        Message res = new Message(
-                cmi.content(),
+        Message message = new Message(
+                request.content(),
                 channel,
                 user,
-                atts
+                attachFiles
         );
 
-        res = messageRepository.save(res);
+        messageRepository.save(message);
 
-        log.info("Message Created - {}", res.getId());
+        log.debug("Message Created - {}", message.getId());
 
-        return mapStructMapper.toDto(res,userDto(res),attrDto(res));
+
+        List<BinaryContentDto> attachmentDtoList = binaryContentRepository
+                .getBinaryContentsInIdList(
+                        attachFiles.stream().map(BinaryContent::getId).toList()
+                )
+                .values()
+                .stream()
+                .toList();
+
+
+        return mapStructMapper.toDto(
+                message,
+                getUserDtoFromUser(user),
+                getBinaryContentDtoFromAttachments(attachFiles)
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<MessageDto> findallByChannelIdWithCursor(
+            UUID channelId,
+            Pageable pageable,
+            Instant cursor
+    ){
+        // 1. query target messages id
+        Slice<UUID> query =
+                messageRepository.findMessageIdsBuChannelIdWithCursor(
+                        channelId,
+                        pageable,
+                        Optional.of(cursor).orElse(Instant.now())
+                );
+
+
+        // 2. query required info about message.
+        List<MessageProjection> messageInfo = messageRepository
+                .getMessageProjectionFromIdList(query.getContent())
+                .values()
+                .stream()
+                .toList();
+
+        Map<UUID, UserDto> userList =
+                getUserDtoFromUserIdList(
+                        messageInfo.stream()
+                                .map(MessageProjection::userId)
+                                .toList()
+                );
+
+        Map<UUID, BinaryContentDto> attachmentList =
+                binaryContentRepository.getBinaryContentsInIdList(
+                        messageInfo.stream()
+                                .map(MessageProjection::attachments)
+                                .flatMap(List::stream)
+                                .toList()
+                );
+
+
+        // 3. construct MessageDto
+        List<MessageDto> contents = messageInfo.stream().map(
+                messageProjection -> mapStructMapper.toDto(
+                            messageProjection,
+                            userList.get(messageProjection.userId()),
+                            messageProjection.attachments().stream().map(attachmentList::get).toList()
+                )
+        ).toList();
+
+        // 4. create Slice Object from query
+        Slice<MessageDto> slice = new SliceImpl<>(contents,Pageable.ofSize(query.getSize()),query.hasNext());
+        Instant newCursor = contents.get(contents.size() - 1).createdAt();
+
+        return pageResponseMapper.fromSliceWithCursor(slice,newCursor);
+    }
+
+
+    @Override
+    @Transactional
+    public MessageDto updateMessageData(UUID id, MessageUpdateRequest request){
+        Message message = getMessageOrException(id);
+
+        message.update(request.newContent());
+        messageRepository.save(message);
+
+        log.info("Message Updated - {}", message.getId());
+
+        return mapStructMapper.toDto(
+                message,
+                getUserDtoFromUser(message.getAuthor()),
+                getBinaryContentDtoFromAttachments(message.getAttachment())
+        );
     }
 
     @Override
     @Transactional
-    public PageResponse<MessageDto> findallByChannelId(UUID cannelID, Pageable pageable){
-        return pageResponseMapper.fromSlice(messageRepository.findByChannelIdForMessageDto(cannelID,pageable)
-                .map(m -> mapStructMapper.toDto(m,userDto(m),attrDto(m))));
+    public void deleteMessage(UUID id){
+        Message message = getMessageOrException(id);
+
+        message.getAttachment().forEach(binaryContentRepository::deleteBinaryContent);
+        messageRepository.delete(message);
+
+        log.info("Message Deleted - {}", message.getId());
     }
 
-    @Transactional
-    @Override
-    public PageResponse<MessageDto> findallByChannelIdWithCursor(UUID cannelID, Pageable pageable, Instant cursor){
-        if (cursor == null) cursor = Instant.now();
-        Slice<Message> res = messageRepository.findByChannelWithCursor(cannelID,pageable,cursor);
-        List<Message> content = res.getContent();
-        Instant newCursor = content.isEmpty() ? null : content.get(content.size()-1).getCreatedAt();
-        return pageResponseMapper.fromSliceWithCursor(
-                res.map(m -> mapStructMapper.toDto(m,userDto(m),attrDto(m))),newCursor);
-    }
 
-    @Override
-    @Transactional
-    public MessageDto updateMessageData(UUID id, MessageUpdateRequest umi){
-        Message msg = getMessageOrException(id);
 
-        msg.setContent(umi.newContent());
-        msg.setUpdatedAt(Instant.now());
-        messageRepository.save(msg);
-
-        log.info("Message Updated - {}", msg.getId());
-
-        return mapStructMapper.toDto(msg,userDto(msg),attrDto(msg));
-    }
 
     private Message getMessageOrException(UUID id){
         return messageRepository.findById(id)
@@ -148,65 +196,50 @@ public class BasicMessageService implements MessageService {
                 );
     }
 
-    @Override
-    @Transactional
-    public void deleteMessage(UUID id){
-        Message msg = getMessageOrException(id);
-        List<BinaryContent> attachments = msg.getAttachment();
+    // convert userinfo to userDto
+    // duplicated in channel class.
+    private Map<UUID, UserDto> getUserDtoFromUserIdList(List<UUID> userIdList){
+        List<UserProjection> users = userRepository.getUsersFromIds(userIdList).values().stream().toList();
+        Map<UUID,BinaryContentDto> profileList = binaryContentRepository.getBinaryContentsInIdList(
+                users.stream().map(UserProjection::profileId).filter(Objects::nonNull).toList()
+        );
 
-        // delete attribute
-        if (!attachments.isEmpty()){
-            binaryContentRepository.deleteAll(attachments);
-        }
-
-        // real file delete logic need
-
-        messageRepository.delete(msg);
-
-        log.info("Message Deleted - {}", msg.getId());
+        return users.stream()
+                .map(
+                        userProjection -> mapStructMapper.toDto(
+                                userProjection,
+                                profileList.get(userProjection.profileId()),
+                                sessionService.userOnline(userProjection.username())
+                        )
+                ).collect(Collectors.toMap(
+                        UserDto::id,
+                        dto -> dto
+                ));
     }
 
-    private void deleteAttachment(List<BinaryContent> attachments){
-        for (BinaryContent attachment : attachments){
-            binaryContentStorage.delete(attachment.getId());
-        }
+    private UserDto getUserDtoFromUser(User user){
+        UUID profileId =
+                Optional.ofNullable(user.getProfile()).isEmpty()
+                ? null
+                : user.getProfile().getId();
+
+        return mapStructMapper.toDto(
+                user,
+                binaryContentRepository.getBinaryContentById(profileId).orElse(null),
+                sessionService.userOnline(user.getUsername())
+        );
     }
 
-    private List<BinaryContentDto> attrDto(Message msg){
-        if (msg.getAttachment() == null) return null;
-        return msg.getAttachment().stream().map(this::binaryContentDto).toList();
+    private List<BinaryContentDto> getBinaryContentDtoFromAttachments(List<BinaryContent> list){
+        return binaryContentRepository
+                .getBinaryContentsInIdList(
+                        list.stream().map(BinaryContent::getId).toList()
+                )
+                .values()
+                .stream()
+                .toList();
     }
 
-    private UserDto userDto(Message msg){
-        User user = msg.getAuthor();
-        BinaryContent profile = user.getProfile();
-        return mapStructMapper.toDto(user,binaryContentDto(profile),userOnline(user.getUsername()));
-    }
 
-    private BinaryContentDto binaryContentDto(BinaryContent bc){
-        return mapStructMapper.toDto(bc,bytesFromBinaryContent(bc));
-    }
-
-    private byte[] bytesFromBinaryContent(BinaryContent bc){
-        if (bc == null) return null; // null point exception 방지용. catch 에서 안 잡힘.
-        try (InputStream in = binaryContentStorage.get(bc.getId())){
-            return in.readAllBytes();
-        } catch (IOException e) {
-            log.error("read data error - {}",bc.getId().toString(), e);
-            return null;
-        }
-    }
-
-    private Boolean userOnline(String username){
-        for (Object principal : sessionRegistry.getAllPrincipals()) {
-            if (
-                    principal instanceof DiscodeitUserDetails details
-                            && details.getUsername().equals(username)
-            ){
-                return true;
-            }
-        }
-        return false;
-    }
 
 }
