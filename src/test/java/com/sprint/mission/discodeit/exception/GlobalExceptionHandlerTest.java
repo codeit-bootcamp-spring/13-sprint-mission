@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.exception;
 
+import com.sprint.mission.discodeit.exception.jwt.TokenRenewalFailedException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
@@ -18,6 +19,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 class GlobalExceptionHandlerTest {
 
     private final GlobalExceptionHandler exceptionHandler = new GlobalExceptionHandler();
+
+    @Test
+    @DisplayName("토큰 갱신 실패는 401 상태와 전용 오류 코드로 응답한다")
+    void handleDiscodeitException_returnsUnauthorizedForTokenRenewalFailure() {
+        TokenRenewalFailedException exception = new TokenRenewalFailedException();
+
+        ResponseEntity<ApiErrorResponse> response =
+                exceptionHandler.handleDiscodeitException(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().status()).isEqualTo(401);
+        assertThat(response.getBody().code()).isEqualTo("TOKEN_RENEWAL_FAILED");
+        assertThat(response.getBody().message()).isEqualTo("토큰 갱신에 실패했습니다.");
+    }
 
     @Test
     @DisplayName("validation details keep all messages for the same field")

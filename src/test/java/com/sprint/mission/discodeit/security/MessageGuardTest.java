@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.security;
 
+import com.sprint.mission.discodeit.dto.command.message.MessageCreateCommand;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
@@ -7,6 +8,8 @@ import com.sprint.mission.discodeit.service.basic.MessageReader;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -17,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("MessageGuard 단위 테스트")
@@ -33,6 +37,29 @@ class MessageGuardTest {
 
     @InjectMocks
     MessageGuard messageGuard;
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    @DisplayName("생성 요청의 작성자와 인증 사용자가 일치해야 한다")
+    void create_checksAuthorIdentity(boolean sameAuthor) {
+        UUID requester = UUID.randomUUID();
+        MessageCreateCommand command = new MessageCreateCommand(
+                "message", sameAuthor ? requester : UUID.randomUUID(), UUID.randomUUID());
+
+        assertThat(messageGuard.isOwner(command, requester)).isEqualTo(sameAuthor);
+    }
+
+    @Test
+    @DisplayName("생성 요청이나 사용자 식별자가 없으면 조회 없이 거부한다")
+    void create_rejectsMissingIdentity() {
+        UUID requester = UUID.randomUUID();
+        assertThat(messageGuard.isOwner((MessageCreateCommand) null, requester)).isFalse();
+        assertThat(messageGuard.isOwner(new MessageCreateCommand("message", null, UUID.randomUUID()), requester))
+                .isFalse();
+        assertThat(messageGuard.isOwner(new MessageCreateCommand("message", requester, UUID.randomUUID()), null))
+                .isFalse();
+        verifyNoInteractions(messageReader);
+    }
 
     @Test
     @DisplayName("메시지 작성자이면 소유권 확인에 성공한다")

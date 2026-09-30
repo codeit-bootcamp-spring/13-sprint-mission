@@ -69,8 +69,11 @@ logging:
     org.hibernate.orm.jdbc.bind: off
 discodeit:
   security:
-    remember-me:
-      key: test-remember-me-key
+    jwt:
+      secret: ${JWT_SECRET:secret-very-to-long-bytes32-has-sufficient-strength}
+      access-token-validity: ${JWT_ACCESS_TOKEN_VALIDITY:10m}
+      refresh-token-validity: ${JWT_REFRESH_TOKEN_VALIDITY:14d}
+      issuer: ${JWT_ISSUER:discodeit}
   admin:
     user:
       username: test-admin

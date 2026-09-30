@@ -1,14 +1,24 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sprint.mission.discodeit.config.RememberMeProperties;
+import com.sprint.mission.discodeit.config.RefreshCookieProperties;
 import com.sprint.mission.discodeit.config.SecurityConfig;
 import com.sprint.mission.discodeit.dto.request.user.UserRoleUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.JwtDto;
+import com.sprint.mission.discodeit.dto.response.JwtDtoWithRefresh;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Role;
+import com.sprint.mission.discodeit.exception.jwt.TokenRenewalFailedException;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
+import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
+import com.sprint.mission.discodeit.security.JwtTokenProvider;
+import com.sprint.mission.discodeit.security.JwtRegistry;
+import com.sprint.mission.discodeit.security.handler.JwtLoginSuccessHandler;
+import com.sprint.mission.discodeit.security.handler.JwtLogoutHandler;
 import com.sprint.mission.discodeit.security.handler.LoginFailureHandler;
-import com.sprint.mission.discodeit.security.handler.LoginSuccessHandler;
+import com.sprint.mission.discodeit.service.TokenService;
 import com.sprint.mission.discodeit.service.UserRoleUpdater;
+import com.sprint.mission.discodeit.service.basic.RefreshTokenCookieManagerImpl;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,14 +39,19 @@ import java.util.UUID;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@Import(SecurityConfig.class)
-@EnableConfigurationProperties(RememberMeProperties.class)
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtLoginSuccessHandler.class,
+        JwtLogoutHandler.class, RefreshTokenCookieManagerImpl.class})
+@EnableConfigurationProperties(RefreshCookieProperties.class)
 @WebMvcTest(AuthController.class)
 @ActiveProfiles("test")
 @DisplayName("AuthController 슬라이스 테스트")
@@ -49,7 +64,16 @@ class AuthControllerTest {
     ObjectMapper objectMapper;
 
     @MockitoBean
-    LoginSuccessHandler loginSuccessHandler;
+    TokenService tokenService;
+
+    @MockitoBean
+    JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    JwtRegistry jwtRegistry;
+
+    @MockitoBean
+    DiscodeitUserDetailsService userDetailsService;
 
     @MockitoBean
     LoginFailureHandler loginFailureHandler;
@@ -58,12 +82,56 @@ class AuthControllerTest {
     UserRoleUpdater userRoleUpdater;
 
     @Test
-    @DisplayName("CSRF 토큰 발급 요청 시 203 응답과 쿠키를 반환한다")
+    @DisplayName("인증 없이 CSRF 정보와 쿠키로 갱신하여 JwtDto를 반환한다")
+    void refresh_returnsJwtDtoWithoutAccessToken() throws Exception {
+        UserDto user = userDto(UUID.randomUUID(), Role.USER);
+        given(tokenService.rotateRefreshToken())
+                .willReturn(new JwtDtoWithRefresh(new JwtDto(user, "new-access"), "new-refresh"));
+
+        mockMvc.perform(withCsrf(post("/api/auth/refresh")
+                        .cookie(new Cookie("REFRESH_TOKEN", "existing-refresh"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userDto.id").value(user.id().toString()))
+                .andExpect(jsonPath("$.accessToken").value("new-access"))
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
+                .andExpect(jsonPath("$.userDto.password").doesNotExist());
+
+        // 쿠키의 실제 응답 헤더는 실제 TokenService를 사용하는 HTTP 통합 테스트에서 검증한다.
+        then(tokenService).should().addRefreshTokenCookie("new-refresh");
+    }
+
+    @Test
+    @DisplayName("갱신 실패는 401 오류 JSON으로 응답하고 쿠키를 설정하지 않는다")
+    void refresh_returnsUnauthorizedWhenRenewalFails() throws Exception {
+        given(tokenService.rotateRefreshToken()).willThrow(new TokenRenewalFailedException());
+
+        mockMvc.perform(withCsrf(post("/api/auth/refresh")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.code").value("TOKEN_RENEWAL_FAILED"))
+                .andExpect(cookie().doesNotExist("REFRESH_TOKEN"));
+
+        then(tokenService).should(never()).addRefreshTokenCookie(anyString());
+    }
+
+    @Test
+    @DisplayName("CSRF 정보 없이 갱신하면 서비스 호출 전에 403으로 거부한다")
+    void refresh_returnsForbiddenWithoutCsrf() throws Exception {
+        mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new Cookie("REFRESH_TOKEN", "existing-refresh")))
+                .andExpect(status().isForbidden());
+
+        then(tokenService).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("CSRF 토큰 발급 요청 시 204 응답과 쿠키를 반환한다")
     void getCsrfToken_returnsCookie() throws Exception {
         String csrfTokenName = "XSRF-TOKEN";
 
         mockMvc.perform(get("/api/auth/csrf-token"))
-                .andExpect(status().isNonAuthoritativeInformation())
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""))
                 .andExpect(cookie().exists(csrfTokenName))
                 .andExpect(cookie().httpOnly(csrfTokenName, false))
                 .andExpect(cookie().path(csrfTokenName, "/"));
@@ -128,7 +196,7 @@ class AuthControllerTest {
 
     private MockHttpServletRequestBuilder withCsrf(MockHttpServletRequestBuilder request) throws Exception {
         MvcResult csrfResult = mockMvc.perform(get("/api/auth/csrf-token"))
-                .andExpect(status().isNonAuthoritativeInformation())
+                .andExpect(status().isNoContent())
                 .andReturn();
         Cookie csrfCookie = csrfResult.getResponse().getCookie("XSRF-TOKEN");
 

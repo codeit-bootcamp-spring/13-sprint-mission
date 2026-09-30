@@ -2,7 +2,11 @@ package com.sprint.mission.discodeit.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.config.JwtProperties;
+import com.sprint.mission.discodeit.security.JwtTokenProvider;
+import com.sprint.mission.discodeit.security.JwtRegistry;
 import com.sprint.mission.discodeit.dto.command.channel.ChannelCreatePublicCommand;
+import com.sprint.mission.discodeit.dto.command.user.UserRoleUpdateCommand;
 import com.sprint.mission.discodeit.dto.request.channel.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
@@ -19,32 +23,31 @@ import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.mock.web.MockServletContext;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.core.session.SessionInformation;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -62,6 +65,17 @@ class DiscodeitApiIntegrationTest {
 
     @Autowired
     ObjectMapper objectMapper;
+
+    @Autowired
+    JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    JwtRegistry jwtRegistry;
+
+    private final List<UUID> createdUserIds = new ArrayList<>();
+
+    @Autowired
+    JwtProperties jwtProperties;
 
     @Autowired
     UserRepository userRepository;
@@ -87,26 +101,13 @@ class DiscodeitApiIntegrationTest {
     @Autowired
     PasswordEncoder passwordEncoder;
 
-    @Autowired
-    SessionRegistry sessionRegistry;
-
-    @Autowired
-    HttpSessionEventPublisher httpSessionEventPublisher;
-
-    @Autowired
-    WebApplicationContext webApplicationContext;
-
     @AfterEach
-    void clearSessionRegistry() {
-        sessionRegistry.getAllPrincipals().forEach(principal ->
-                sessionRegistry.getAllSessions(principal, true).forEach(sessionInformation ->
-                        sessionRegistry.removeSessionInformation(sessionInformation.getSessionId())
-                )
-        );
+    void clearJwtRegistry() {
+        createdUserIds.forEach(jwtRegistry::invalidateJwtInformationByUserId);
     }
 
     @Test
-    @DisplayName("사용자 생성 및 로그인 통합 성공 - 실제 DB 사용자로 인증")
+    @DisplayName("사용자 생성 및 로그인 통합 성공 - 실제 DB 사용자로 인증하고 세션 없이 JWT 발급")
     void userCreateAndLogin_authenticatesPersistedUser() throws Exception {
         // given
         // 통합 테스트는 Controller 슬라이스 테스트와 달리 Service, Repository, Mapper, DB를 모두 실제 Bean으로 사용한다.
@@ -151,6 +152,7 @@ class DiscodeitApiIntegrationTest {
 
         JsonNode createBody = readBody(createResult);
         UUID userId = uuidAt(createBody, "/id");
+        createdUserIds.add(userId);
         UUID profileId = uuidAt(createBody, "/profile/id");
 
         // 실제 DB 저장 여부를 Repository 재조회로 확인한다.
@@ -170,65 +172,66 @@ class DiscodeitApiIntegrationTest {
         MvcResult loginResult = performLogin(createRequest.username(), createRequest.password())
 
                 // then
-                // 폼 로그인 필터와 커스텀 인증 컴포넌트가 함께 동작해 사용자 정보를 내려줘야 한다.
+                // 폼 로그인 필터와 JWT 성공 핸들러가 함께 동작해 사용자 정보와 토큰을 내려줘야 한다.
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(userId.toString()))
-                .andExpect(jsonPath("$.username").value(createRequest.username()))
-                .andExpect(jsonPath("$.online").value(true))
-                .andExpect(jsonPath("$.role").value(Role.USER.name()))
+                .andExpect(content().encoding(StandardCharsets.UTF_8.name()))
+                .andExpect(jsonPath("$.userDto.id").value(userId.toString()))
+                .andExpect(jsonPath("$.userDto.username").value(createRequest.username()))
+                .andExpect(jsonPath("$.userDto.email").value(createRequest.email()))
+                .andExpect(jsonPath("$.userDto.profile.id").value(profileId.toString()))
+                .andExpect(jsonPath("$.userDto.online").value(true))
+                .andExpect(jsonPath("$.userDto.role").value(Role.USER.name()))
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
+                .andExpect(jsonPath("$.userDto.password").doesNotExist())
                 .andExpect(authenticated().withUsername(createRequest.username()))
                 .andReturn();
 
-        MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
-        assertThat(session).isNotNull();
+        assertJwtLoginResponse(loginResult, userId, createRequest.username());
     }
 
     @Test
-    @DisplayName("현재 사용자 조회 성공 - 로그인 세션으로 동일한 사용자 정보 반환")
-    void getMe_returnsCurrentUser_whenSessionIsAuthenticated() throws Exception {
-        // given
-        // 실제 사용자 생성 및 폼 로그인을 통해 SecurityContext가 저장된 HTTP 세션을 준비한다.
+    @DisplayName("새로고침 후 리프레시 쿠키로 사용자 정보와 액세스 토큰을 복원한다")
+    void refresh_restoresCurrentUserWithoutAccessTokenOrSession() throws Exception {
         String suffix = uniqueSuffix();
-        String username = "sessionUser-" + suffix;
-        String email = "session-user-" + suffix + "@gmail.com";
+        String username = "refreshUser-" + suffix;
+        String email = "refresh-user-" + suffix + "@gmail.com";
         UUID userId = createUser(username, email);
-
-        // 실제로 분리된 HTTP 요청처럼 로그인에서 사용자와 상태를 DB로부터 다시 조회하도록 한다.
         flushAndClear();
 
         MvcResult loginResult = performLogin(username, "integrationPassword")
                 .andExpect(status().isOk())
-                .andExpect(authenticated().withUsername(username))
                 .andReturn();
+        Cookie refreshCookie = loginResult.getResponse().getCookie("REFRESH_TOKEN");
+        assertThat(refreshCookie).isNotNull();
+        assertThat(loginResult.getRequest().getSession(false)).isNull();
 
-        MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
-        assertThat(session).isNotNull();
-
-        // when & then
-        // 브라우저가 JSESSIONID 쿠키를 자동으로 전달하는 동작을 동일한 MockHttpSession 재사용으로 검증한다.
-        mockMvc.perform(get("/api/auth/me")
-                        .session(session)
+        // 새 요청에는 ACCESS와 로그인 세션 없이 REFRESH 및 CSRF 정보만 전달한다.
+        MvcResult result = mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(refreshCookie)
+                        .with(csrf())
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(authenticated().withUsername(username))
-                .andExpect(jsonPath("$.id").value(userId.toString()))
-                .andExpect(jsonPath("$.username").value(username))
-                .andExpect(jsonPath("$.email").value(email))
-                .andExpect(jsonPath("$.online").value(true));
+                .andExpect(jsonPath("$.userDto.id").value(userId.toString()))
+                .andExpect(jsonPath("$.userDto.username").value(username))
+                .andExpect(jsonPath("$.userDto.email").value(email))
+                .andExpect(unauthenticated())
+                .andReturn();
+
+        assertJwtLoginResponse(result, userId, username);
+        assertThat(result.getRequest().getSession(false)).isNull();
+        // 새 ACCESS의 보호 API 접근과 요청 간 세션 미생성은 실제 HTTP 통합 테스트에서 검증한다.
     }
 
     @Test
-    @DisplayName("로그아웃 성공 - 인증과 세션을 제거하고 204 응답 반환")
-    void logout_invalidatesSessionAndReturnsNoContent() throws Exception {
-        // given
-        // 실제 사용자 생성 및 폼 로그인을 통해 SecurityContext가 저장된 HTTP 세션을 준비한다.
+    @DisplayName("로그아웃 성공 - 로그인에서 받은 리프레시 쿠키를 삭제하고 세션 없이 204를 반환한다")
+    void logout_clearsRefreshCookieAndReturnsNoContentWithoutSession() throws Exception {
         String suffix = uniqueSuffix();
         String username = "logoutUser-" + suffix;
         createUser(username, "logout-user-" + suffix + "@gmail.com");
 
-        // 실제로 분리된 HTTP 요청처럼 로그인에서 사용자를 DB로부터 다시 조회하도록 한다.
         flushAndClear();
 
         MvcResult loginResult = performLogin(username, "integrationPassword")
@@ -236,44 +239,28 @@ class DiscodeitApiIntegrationTest {
                 .andExpect(authenticated().withUsername(username))
                 .andReturn();
 
-        MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
-        assertThat(session).isNotNull();
-        assertThat(sessionRegistry.getSessionInformation(session.getId())).isNotNull();
+        Cookie refreshCookie = loginResult.getResponse().getCookie("REFRESH_TOKEN");
+        assertThat(refreshCookie).isNotNull();
+        assertThat(loginResult.getRequest().getSession(false)).isNull();
 
-        // when & then
-        // 동일한 세션과 CSRF 토큰으로 로그아웃하면 인증 및 세션과 JSESSIONID 쿠키가 제거되어야 한다.
-        mockMvc.perform(post("/api/auth/logout")
-                        .session(session)
+        // ACCESS 토큰과 로그인 세션 없이 REFRESH 및 CSRF 정보만으로 로그아웃한다.
+        MvcResult logoutResult = mockMvc.perform(post("/api/auth/logout")
+                        .cookie(refreshCookie)
                         .with(csrf()))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""))
                 .andExpect(unauthenticated())
-                .andExpect(cookie().maxAge("JSESSIONID", 0));
+                .andExpect(cookie().value("REFRESH_TOKEN", ""))
+                .andExpect(cookie().maxAge("REFRESH_TOKEN", 0))
+                .andExpect(cookie().doesNotExist("JSESSIONID"))
+                .andReturn();
 
-        assertThat(session.isInvalid()).isTrue();
+        assertThat(logoutResult.getRequest().getSession(false)).isNull();
     }
 
     @Test
-    @DisplayName("HTTP 세션 만료 이벤트가 발생하면 세션 레지스트리에서도 제거한다")
-    void sessionDestroyedEvent_removesSessionFromRegistry() {
-        MockServletContext servletContext = new MockServletContext();
-        servletContext.setAttribute(
-                WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE,
-                webApplicationContext
-        );
-        MockHttpSession session = new MockHttpSession(servletContext);
-        String principal = "session-event-user";
-        sessionRegistry.registerNewSession(session.getId(), principal);
-        assertThat(sessionRegistry.getSessionInformation(session.getId())).isNotNull();
-
-        httpSessionEventPublisher.sessionDestroyed(new jakarta.servlet.http.HttpSessionEvent(session));
-
-        assertThat(sessionRegistry.getSessionInformation(session.getId())).isNull();
-    }
-
-    @Test
-    @DisplayName("동일한 계정으로 다시 로그인하면 기존 세션을 만료하고 새 세션을 유지한다")
-    void login_expiresPreviousSession_whenSameAccountLogsInAgain() throws Exception {
+    @DisplayName("동일한 계정으로 반복 로그인해도 세션 없이 JWT를 발급한다")
+    void login_succeedsWithoutSession_whenSameAccountLogsInAgain() throws Exception {
         String suffix = uniqueSuffix();
         String username = "concurrentUser-" + suffix;
         UUID userId = createUser(username, "concurrent-user-" + suffix + "@gmail.com");
@@ -282,146 +269,69 @@ class DiscodeitApiIntegrationTest {
         MvcResult firstLogin = performLogin(username, "integrationPassword")
                 .andExpect(status().isOk())
                 .andReturn();
-        MockHttpSession firstSession = (MockHttpSession) firstLogin.getRequest().getSession(false);
-        assertThat(firstSession).isNotNull();
+        assertJwtLoginResponse(firstLogin, userId, username);
 
         MvcResult secondLogin = performLogin(username, "integrationPassword")
                 .andExpect(status().isOk())
                 .andReturn();
-        MockHttpSession secondSession = (MockHttpSession) secondLogin.getRequest().getSession(false);
-        assertThat(secondSession).isNotNull();
-        assertThat(secondSession.getId()).isNotEqualTo(firstSession.getId());
+        assertJwtLoginResponse(secondLogin, userId, username);
+        String firstAccess = readBody(firstLogin).path("accessToken").asText();
+        String secondAccess = readBody(secondLogin).path("accessToken").asText();
+        String firstRefresh = firstLogin.getResponse().getCookie("REFRESH_TOKEN").getValue();
+        String secondRefresh = secondLogin.getResponse().getCookie("REFRESH_TOKEN").getValue();
+        assertThat(secondAccess).isNotEqualTo(firstAccess);
+        assertThat(secondRefresh).isNotEqualTo(firstRefresh);
+        assertThat(jwtRegistry.hasActiveJwtInformationByAccessToken(firstAccess)).isFalse();
+        assertThat(jwtRegistry.hasActiveJwtInformationByRefreshToken(firstRefresh)).isFalse();
+        assertThat(jwtRegistry.hasActiveJwtInformationByAccessToken(secondAccess)).isTrue();
+        assertThat(jwtRegistry.hasActiveJwtInformationByRefreshToken(secondRefresh)).isTrue();
+    }
 
-        SessionInformation firstSessionInformation =
-                sessionRegistry.getSessionInformation(firstSession.getId());
-        SessionInformation secondSessionInformation =
-                sessionRegistry.getSessionInformation(secondSession.getId());
+    @ParameterizedTest(name = "remember-me={0}")
+    @ValueSource(strings = {"missing", "true", "false"})
+    @DisplayName("기존 RememberMe 파라미터와 무관하게 JWT만 발급하고 세션을 만들지 않는다")
+    void login_ignoresLegacyRememberMeParameter(String parameter) throws Exception {
+        String suffix = uniqueSuffix();
+        String username = "jwtRememberUser-" + suffix;
+        UUID userId = createUser(username, "jwt-remember-" + suffix + "@gmail.com");
+        flushAndClear();
 
-        assertThat(firstSessionInformation).isNotNull();
-        assertThat(firstSessionInformation.isExpired()).isTrue();
-        assertThat(secondSessionInformation).isNotNull();
-        assertThat(secondSessionInformation.isExpired()).isFalse();
-
-        mockMvc.perform(get("/api/auth/me").session(secondSession))
+        ResultActions login = "missing".equals(parameter)
+                ? performLogin(username, "integrationPassword")
+                : performLoginWithRememberMe(username, "integrationPassword", Boolean.parseBoolean(parameter));
+        MvcResult result = login
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(userId.toString()))
-                .andExpect(jsonPath("$.online").value(true));
+                .andExpect(authenticated().withUsername(username))
+                .andExpect(cookie().doesNotExist("remember-me"))
+                .andReturn();
+
+        assertJwtLoginResponse(result, userId, username);
     }
 
     @Test
-    @DisplayName("로그인 유지 성공 - 세션 쿠키 없이 Remember-Me 쿠키로 자동 로그인")
-    void rememberMe_autoLogsIn_whenSessionCookieIsMissing() throws Exception {
-        String suffix = uniqueSuffix();
-        String username = "rememberMeUser-" + suffix;
-        UUID userId = createUser(username, "remember-me-" + suffix + "@gmail.com");
-        flushAndClear();
-
-        MvcResult loginResult = performRememberMeLogin(username, "integrationPassword")
-                .andExpect(status().isOk())
-                .andExpect(authenticated().withUsername(username))
-                .andExpect(cookie().exists("remember-me"))
-                .andExpect(cookie().maxAge("remember-me", 60 * 60 * 24 * 30))
-                .andReturn();
-
-        Cookie rememberMeCookie = loginResult.getResponse().getCookie("remember-me");
-        MockHttpSession loginSession = (MockHttpSession) loginResult.getRequest().getSession(false);
-        assertThat(rememberMeCookie).isNotNull();
-        assertThat(loginSession).isNotNull();
-
-        MvcResult autoLoginResult = mockMvc.perform(get("/api/auth/me")
-                        .cookie(rememberMeCookie)
+    @DisplayName("기존 RememberMe 쿠키만으로 보호 API에 접근할 수 없다")
+    void legacyRememberMeCookie_doesNotAuthenticate() throws Exception {
+        mockMvc.perform(get("/api/users")
+                        .cookie(new Cookie("remember-me", "legacy-cookie"))
                         .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(authenticated().withUsername(username))
-                .andExpect(jsonPath("$.id").value(userId.toString()))
-                .andExpect(jsonPath("$.username").value(username))
-                .andExpect(jsonPath("$.online").value(true))
-                .andReturn();
-
-        MockHttpSession autoLoginSession =
-                (MockHttpSession) autoLoginResult.getRequest().getSession(false);
-        assertThat(autoLoginSession).isNotNull();
-        assertThat(autoLoginSession.getId()).isNotEqualTo(loginSession.getId());
-    }
-
-    @Test
-    @DisplayName("로그인 유지 미선택 - Remember-Me 쿠키를 발급하지 않는다")
-    void rememberMe_doesNotIssueCookie_whenParameterIsMissing() throws Exception {
-        String suffix = uniqueSuffix();
-        String username = "noRememberMeUser-" + suffix;
-        createUser(username, "no-remember-me-" + suffix + "@gmail.com");
-        flushAndClear();
-
-        MvcResult loginResult = performLogin(username, "integrationPassword")
-                .andExpect(status().isOk())
-                .andExpect(authenticated().withUsername(username))
-                .andExpect(cookie().doesNotExist("remember-me"))
-                .andReturn();
-
-        assertThat(loginResult.getResponse().getCookie("remember-me")).isNull();
-    }
-
-    @Test
-    @DisplayName("로그인 유지 해제 - remember-me가 false이면 쿠키를 발급하지 않는다")
-    void rememberMe_doesNotIssueCookie_whenParameterIsFalse() throws Exception {
-        String suffix = uniqueSuffix();
-        String username = "falseRememberMeUser-" + suffix;
-        createUser(username, "false-remember-me-" + suffix + "@gmail.com");
-        flushAndClear();
-
-        MvcResult loginResult = performLoginWithRememberMe(
-                        username,
-                        "integrationPassword",
-                        false
-                )
-                .andExpect(status().isOk())
-                .andExpect(authenticated().withUsername(username))
-                .andExpect(cookie().doesNotExist("remember-me"))
-                .andReturn();
-
-        assertThat(loginResult.getResponse().getCookie("remember-me")).isNull();
-    }
-
-    @Test
-    @DisplayName("로그인 유지 로그아웃 성공 - 세션과 Remember-Me 쿠키를 제거한다")
-    void rememberMe_logoutInvalidatesSessionAndCookie() throws Exception {
-        String suffix = uniqueSuffix();
-        String username = "rememberMeLogoutUser-" + suffix;
-        createUser(username, "remember-me-logout-" + suffix + "@gmail.com");
-        flushAndClear();
-
-        MvcResult loginResult = performRememberMeLogin(username, "integrationPassword")
-                .andExpect(status().isOk())
-                .andReturn();
-        Cookie rememberMeCookie = loginResult.getResponse().getCookie("remember-me");
-        MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
-        assertThat(rememberMeCookie).isNotNull();
-        assertThat(session).isNotNull();
-
-        mockMvc.perform(post("/api/auth/logout")
-                        .session(session)
-                        .cookie(rememberMeCookie)
-                        .with(csrf()))
-                .andExpect(status().isNoContent())
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTH_401"))
                 .andExpect(unauthenticated())
-                .andExpect(cookie().maxAge("JSESSIONID", 0))
-                .andExpect(cookie().maxAge("remember-me", 0));
-
-        assertThat(session.isInvalid()).isTrue();
+                .andExpect(cookie().doesNotExist("REFRESH_TOKEN"))
+                .andExpect(cookie().doesNotExist("JSESSIONID"));
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("사용자 역할을 변경하면 대상 사용자의 세션만 만료한다")
-    void updateUserRole_expiresOnlyTargetUserSession() throws Exception {
+    @DisplayName("사용자 역할을 변경하면 대상 사용자의 JWT만 무효화한다")
+    void updateUserRole_invalidatesOnlyTargetUserTokens() throws Exception {
         String suffix = uniqueSuffix();
-        String targetUsername = "roleSessionTarget-" + suffix;
-        String otherUsername = "roleSessionOther-" + suffix;
+        String targetUsername = "roleJwtTarget-" + suffix;
+        String otherUsername = "roleJwtOther-" + suffix;
         UUID targetUserId = createUser(
                 targetUsername,
-                "role-session-target-" + suffix + "@gmail.com"
+                "role-jwt-target-" + suffix + "@gmail.com"
         );
-        createUser(otherUsername, "role-session-other-" + suffix + "@gmail.com");
+        UUID otherUserId = createUser(otherUsername, "role-jwt-other-" + suffix + "@gmail.com");
         flushAndClear();
 
         MvcResult targetLogin = performLogin(targetUsername, "integrationPassword")
@@ -430,16 +340,15 @@ class DiscodeitApiIntegrationTest {
         MvcResult otherLogin = performLogin(otherUsername, "integrationPassword")
                 .andExpect(status().isOk())
                 .andReturn();
-        MockHttpSession targetSession = (MockHttpSession) targetLogin.getRequest().getSession(false);
-        MockHttpSession otherSession = (MockHttpSession) otherLogin.getRequest().getSession(false);
-        assertThat(targetSession).isNotNull();
-        assertThat(otherSession).isNotNull();
+        String targetAccess = readBody(targetLogin).path("accessToken").asText();
+        String otherAccess = readBody(otherLogin).path("accessToken").asText();
 
         UserRoleUpdateRequest request = new UserRoleUpdateRequest(
                 targetUserId,
                 Role.CHANNEL_MANAGER
         );
         mockMvc.perform(put("/api/auth/role")
+                        .with(user("admin").roles("ADMIN"))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -448,15 +357,16 @@ class DiscodeitApiIntegrationTest {
                 .andExpect(jsonPath("$.role").value(Role.CHANNEL_MANAGER.name()))
                 .andExpect(jsonPath("$.online").value(false));
 
-        SessionInformation targetSessionInformation =
-                sessionRegistry.getSessionInformation(targetSession.getId());
-        SessionInformation otherSessionInformation =
-                sessionRegistry.getSessionInformation(otherSession.getId());
-
-        assertThat(targetSessionInformation).isNotNull();
-        assertThat(targetSessionInformation.isExpired()).isTrue();
-        assertThat(otherSessionInformation).isNotNull();
-        assertThat(otherSessionInformation.isExpired()).isFalse();
+        assertThat(jwtRegistry.hasActiveJwtInformationByUserId(targetUserId)).isFalse();
+        assertThat(jwtRegistry.hasActiveJwtInformationByUserId(otherUserId)).isTrue();
+        assertThat(jwtRegistry.hasActiveJwtInformationByRefreshToken(
+                targetLogin.getResponse().getCookie("REFRESH_TOKEN").getValue())).isFalse();
+        assertThat(jwtRegistry.hasActiveJwtInformationByRefreshToken(
+                otherLogin.getResponse().getCookie("REFRESH_TOKEN").getValue())).isTrue();
+        mockMvc.perform(get("/api/users").header("Authorization", "Bearer " + targetAccess))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/users").header("Authorization", "Bearer " + otherAccess))
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -475,6 +385,9 @@ class DiscodeitApiIntegrationTest {
                 .andExpect(jsonPath("$.message").value("아이디 또는 비밀번호가 일치하지 않습니다."))
                 .andExpect(jsonPath("$.details").isEmpty())
                 .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.accessToken").doesNotExist())
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
+                .andExpect(cookie().doesNotExist("REFRESH_TOKEN"))
                 .andExpect(unauthenticated());
     }
 
@@ -490,24 +403,35 @@ class DiscodeitApiIntegrationTest {
                 .andExpect(jsonPath("$.message").value("아이디 또는 비밀번호가 일치하지 않습니다."))
                 .andExpect(jsonPath("$.details").isEmpty())
                 .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.accessToken").doesNotExist())
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
+                .andExpect(cookie().doesNotExist("REFRESH_TOKEN"))
                 .andExpect(unauthenticated());
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     @DisplayName("공개 채널, 메시지, 첨부 파일 통합 성공 - 메시지 저장 후 목록 조회와 다운로드 가능")
     void publicChannelMessageAndAttachment_flowPersistsAndDownloadsAttachment() throws Exception {
         // given
         // 실제 사용자와 공개 채널을 API로 만든 뒤, 그 사용자와 채널을 참조하는 메시지를 첨부 파일과 함께 생성한다.
         // 이 흐름은 Controller, Service, Repository, Mapper, Querydsl 목록 조회, 로컬 파일 스토리지를 함께 검증한다.
         String suffix = uniqueSuffix();
-        UUID authorId = createUser("messageAuthor-" + suffix, "message-author-" + suffix + "@gmail.com");
+        String authorUsername = "messageAuthor-" + suffix;
+        UUID authorId = createUser(authorUsername, "message-author-" + suffix + "@gmail.com");
+        String authorAccessToken = loginAccessToken(authorUsername, "integrationPassword");
+        String managerUsername = "channelManager-" + suffix;
+        UUID managerId = createUser(managerUsername, "manager-" + suffix + "@gmail.com");
+        User manager = userRepository.findById(managerId).orElseThrow();
+        manager.updateRole(new UserRoleUpdateCommand(Role.CHANNEL_MANAGER));
+        userRepository.saveAndFlush(manager);
+        String managerAccessToken = loginAccessToken(managerUsername, "integrationPassword");
 
         PublicChannelCreateRequest channelCreateRequest = new PublicChannelCreateRequest(
                 "public-channel-" + suffix,
                 "integration public channel"
         );
         MvcResult channelCreateResult = mockMvc.perform(post("/api/channels/public")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerAccessToken)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -538,6 +462,7 @@ class DiscodeitApiIntegrationTest {
         MvcResult messageCreateResult = mockMvc.perform(multipart("/api/messages")
                         .file(messageCreateRequestPart)
                         .file(attachmentPart)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authorAccessToken)
                         .with(csrf())
                         .accept(MediaType.APPLICATION_JSON))
 
@@ -577,6 +502,7 @@ class DiscodeitApiIntegrationTest {
         // when
         // 채널별 메시지 목록 API를 호출해 방금 만든 메시지가 Querydsl 목록 조회 경로로 조회되는지 확인한다.
         mockMvc.perform(get("/api/messages")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authorAccessToken)
                         .param("channelId", channelId.toString())
                         .param("page", "0")
                         .param("size", "10")
@@ -594,7 +520,8 @@ class DiscodeitApiIntegrationTest {
 
         // when
         // 첨부 파일 다운로드 API를 호출한다.
-        mockMvc.perform(get("/api/binaryContents/{binaryContentId}/download", attachmentId))
+        mockMvc.perform(get("/api/binaryContents/{binaryContentId}/download", attachmentId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authorAccessToken))
 
                 // then
                 // BinaryContentService와 LocalBinaryContentStorage가 실제 저장 파일을 읽어 응답해야 한다.
@@ -605,14 +532,15 @@ class DiscodeitApiIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     @DisplayName("비공개 채널과 읽음 상태 통합 성공 - 참여자별 ReadStatus 생성 후 수정 가능")
     void privateChannelAndReadStatus_flowCreatesAndUpdatesParticipantReadStatuses() throws Exception {
         // given
         // 비공개 채널 생성은 Channel 저장뿐 아니라 참여자별 ReadStatus bulk insert까지 수행한다.
         // 두 사용자를 실제 API로 만든 뒤 PRIVATE 채널 생성 API를 호출한다.
         String suffix = uniqueSuffix();
-        UUID firstUserId = createUser("privateUserA-" + suffix, "private-a-" + suffix + "@gmail.com");
+        String firstUsername = "privateUserA-" + suffix;
+        UUID firstUserId = createUser(firstUsername, "private-a-" + suffix + "@gmail.com");
+        String firstUserAccessToken = loginAccessToken(firstUsername, "integrationPassword");
         UUID secondUserId = createUser("privateUserB-" + suffix, "private-b-" + suffix + "@gmail.com");
 
         PrivateChannelCreateRequest request = new PrivateChannelCreateRequest(
@@ -622,6 +550,7 @@ class DiscodeitApiIntegrationTest {
         // when
         // POST /api/channels/private 요청을 전송한다.
         MvcResult createResult = mockMvc.perform(post("/api/channels/private")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + firstUserAccessToken)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -650,6 +579,7 @@ class DiscodeitApiIntegrationTest {
         // when
         // 특정 사용자의 읽음 상태 목록을 조회한다.
         MvcResult readStatusListResult = mockMvc.perform(get("/api/readStatuses")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + firstUserAccessToken)
                         .param("userId", firstUserId.toString())
                         .accept(MediaType.APPLICATION_JSON))
 
@@ -668,6 +598,7 @@ class DiscodeitApiIntegrationTest {
         Instant newLastReadAt = Instant.parse("2026-07-28T02:30:30Z");
         ReadStatusUpdateRequest updateRequest = new ReadStatusUpdateRequest(newLastReadAt);
         mockMvc.perform(patch("/api/readStatuses/{readStatusId}", readStatusId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + firstUserAccessToken)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -688,6 +619,7 @@ class DiscodeitApiIntegrationTest {
         // when
         // 사용자별 채널 목록 API를 호출한다.
         mockMvc.perform(get("/api/channels")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + firstUserAccessToken)
                         .param("userId", firstUserId.toString())
                         .accept(MediaType.APPLICATION_JSON))
 
@@ -709,12 +641,12 @@ class DiscodeitApiIntegrationTest {
         UUID firstUserId = createUser(firstUsername, "user-list-a-" + suffix + "@gmail.com");
         UUID secondUserId = createUser("userListB-" + suffix, "user-list-b-" + suffix + "@gmail.com");
         flushAndClear();
-        MockHttpSession firstUserSession = loginSession(firstUsername);
+        String firstUserAccessToken = loginAccessToken(firstUsername, "integrationPassword");
 
         // when
         // 사용자 목록 API를 호출한다.
         MvcResult listResult = mockMvc.perform(get("/api/users")
-                        .session(firstUserSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + firstUserAccessToken)
                         .accept(MediaType.APPLICATION_JSON))
 
                 // then
@@ -746,7 +678,7 @@ class DiscodeitApiIntegrationTest {
         MvcResult updateResult = mockMvc.perform(multipart("/api/users/{userId}", firstUserId)
                         .file(updateRequestPart)
                         .file(profilePart)
-                        .session(firstUserSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + firstUserAccessToken)
                         .with(request -> {
                             request.setMethod("PATCH");
                             return request;
@@ -773,9 +705,10 @@ class DiscodeitApiIntegrationTest {
         assertThat(binaryContentRepository.findById(updatedProfileId)).isPresent();
 
         // when
-        // 수정한 사용자를 삭제한다.
+        // 사용자명이 바뀌었으므로 변경된 자격 증명으로 다시 로그인한 뒤 삭제한다.
+        String updatedUserAccessToken = loginAccessToken(updateRequest.newUsername(), updateRequest.newPassword());
         mockMvc.perform(delete("/api/users/{userId}", firstUserId)
-                        .session(firstUserSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + updatedUserAccessToken)
                         .with(csrf()))
                 .andExpect(status().isNoContent());
 
@@ -796,7 +729,7 @@ class DiscodeitApiIntegrationTest {
         String requesterUsername = "userRequester-" + suffix;
         createUser(requesterUsername, "user-requester-" + suffix + "@gmail.com");
         flushAndClear();
-        MockHttpSession requesterSession = loginSession(requesterUsername);
+        String requesterAccessToken = loginAccessToken(requesterUsername, "integrationPassword");
 
         UserUpdateRequest updateRequest = new UserUpdateRequest(
                 "forbidden-update-" + suffix,
@@ -806,7 +739,7 @@ class DiscodeitApiIntegrationTest {
 
         mockMvc.perform(multipart("/api/users/{userId}", targetUserId)
                         .file(jsonPart("userUpdateRequest", updateRequest))
-                        .session(requesterSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + requesterAccessToken)
                         .with(request -> {
                             request.setMethod("PATCH");
                             return request;
@@ -819,7 +752,7 @@ class DiscodeitApiIntegrationTest {
                 );
 
         mockMvc.perform(delete("/api/users/{userId}", targetUserId)
-                        .session(requesterSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + requesterAccessToken)
                         .with(csrf()))
                 .andExpectAll(
                         status().isForbidden(),
@@ -893,14 +826,14 @@ class DiscodeitApiIntegrationTest {
                 ChannelType.PUBLIC
         )));
         flushAndClear();
-        MockHttpSession authorSession = loginSession(authorUsername);
-        UUID messageId = createMessage("message before update", channel.getId(), authorId, authorSession);
+        String authorAccessToken = loginAccessToken(authorUsername, "integrationPassword");
+        UUID messageId = createMessage("message before update", channel.getId(), authorId, authorAccessToken);
 
         // when
         // 메시지 내용을 수정한다.
         MessageUpdateRequest updateRequest = new MessageUpdateRequest("message after update");
         mockMvc.perform(patch("/api/messages/{messageId}", messageId)
-                        .session(authorSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authorAccessToken)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -918,7 +851,7 @@ class DiscodeitApiIntegrationTest {
         // when
         // 수정한 메시지를 삭제한다.
         mockMvc.perform(delete("/api/messages/{messageId}", messageId)
-                        .session(authorSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + authorAccessToken)
                         .with(csrf()))
                 .andExpect(status().isNoContent());
 
@@ -944,13 +877,13 @@ class DiscodeitApiIntegrationTest {
         )));
         flushAndClear();
 
-        MockHttpSession authorSession = loginSession(authorUsername);
-        UUID messageId = createMessage("protected message", channel.getId(), authorId, authorSession);
-        MockHttpSession requesterSession = loginSession(requesterUsername);
+        String authorAccessToken = loginAccessToken(authorUsername, "integrationPassword");
+        UUID messageId = createMessage("protected message", channel.getId(), authorId, authorAccessToken);
+        String requesterAccessToken = loginAccessToken(requesterUsername, "integrationPassword");
         MessageUpdateRequest updateRequest = new MessageUpdateRequest("forbidden message update");
 
         mockMvc.perform(patch("/api/messages/{messageId}", messageId)
-                        .session(requesterSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + requesterAccessToken)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -961,7 +894,7 @@ class DiscodeitApiIntegrationTest {
                 );
 
         mockMvc.perform(delete("/api/messages/{messageId}", messageId)
-                        .session(requesterSession)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + requesterAccessToken)
                         .with(csrf()))
                 .andExpectAll(
                         status().isForbidden(),
@@ -1028,7 +961,37 @@ class DiscodeitApiIntegrationTest {
                 .andExpect(jsonPath("$.role").value(Role.USER.name()))
                 .andReturn();
 
-        return uuidAt(readBody(result), "/id");
+        UUID userId = uuidAt(readBody(result), "/id");
+        createdUserIds.add(userId);
+        return userId;
+    }
+
+    private void assertJwtLoginResponse(MvcResult result, UUID userId, String username) throws Exception {
+        JsonNode body = readBody(result);
+        assertThat(uuidAt(body, "/userDto/id")).isEqualTo(userId);
+        assertThat(body.at("/userDto/username").asText()).isEqualTo(username);
+        String accessToken = body.path("accessToken").asText();
+        assertThat(accessToken).isNotBlank();
+        assertThat(jwtTokenProvider.validateToken(accessToken)).hasValueSatisfying(claims -> {
+            assertThat(claims.get("user_id", String.class)).isEqualTo(userId.toString());
+            assertThat(claims.getSubject()).isEqualTo(username);
+            assertThat(claims.get("token_type", String.class)).isEqualTo("ACCESS");
+            assertThat(claims.get("role", String.class)).isEqualTo(Role.USER.name());
+        });
+
+        Cookie refreshTokenCookie = result.getResponse().getCookie("REFRESH_TOKEN");
+        assertThat(refreshTokenCookie).isNotNull();
+        assertThat(refreshTokenCookie.isHttpOnly()).isTrue();
+        assertThat(refreshTokenCookie.getMaxAge())
+                .isEqualTo(Math.toIntExact(jwtProperties.refreshTokenValidity().getSeconds()));
+        assertThat(jwtTokenProvider.validateToken(refreshTokenCookie.getValue())).hasValueSatisfying(claims -> {
+            assertThat(claims.get("user_id", String.class)).isEqualTo(userId.toString());
+            assertThat(claims.getSubject()).isEqualTo(username);
+            assertThat(claims.get("token_type", String.class)).isEqualTo("REFRESH");
+        });
+
+        assertThat(result.getRequest().getSession(false)).isNull();
+        assertThat(result.getResponse().getCookie("JSESSIONID")).isNull();
     }
 
     private ResultActions performLogin(String username, String password) throws Exception {
@@ -1040,18 +1003,16 @@ class DiscodeitApiIntegrationTest {
                 .param("password", password));
     }
 
-    private MockHttpSession loginSession(String username) throws Exception {
-        MvcResult loginResult = performLogin(username, "integrationPassword")
+    private String loginAccessToken(String username, String password) throws Exception {
+        MvcResult loginResult = performLogin(username, password)
                 .andExpect(status().isOk())
                 .andExpect(authenticated().withUsername(username))
+                .andExpect(cookie().doesNotExist("JSESSIONID"))
                 .andReturn();
-        MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
-        assertThat(session).isNotNull();
-        return session;
-    }
-
-    private ResultActions performRememberMeLogin(String username, String password) throws Exception {
-        return performLoginWithRememberMe(username, password, true);
+        assertThat(loginResult.getRequest().getSession(false)).isNull();
+        String accessToken = readBody(loginResult).path("accessToken").asText();
+        assertThat(accessToken).isNotBlank();
+        return accessToken;
     }
 
     private ResultActions performLoginWithRememberMe(
@@ -1084,24 +1045,18 @@ class DiscodeitApiIntegrationTest {
         return uuidAt(readBody(result), "/id");
     }
 
-    private UUID createMessage(String content, UUID channelId, UUID authorId) throws Exception {
-        return createMessage(content, channelId, authorId, null);
-    }
-
     private UUID createMessage(
             String content,
             UUID channelId,
             UUID authorId,
-            MockHttpSession session
+            String accessToken
     ) throws Exception {
         MessageCreateRequest request = new MessageCreateRequest(content, channelId, authorId);
         var requestBuilder = multipart("/api/messages")
                 .file(jsonPart("messageCreateRequest", request))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                 .with(csrf())
                 .accept(MediaType.APPLICATION_JSON);
-        if (session != null) {
-            requestBuilder.session(session);
-        }
 
         MvcResult result = mockMvc.perform(requestBuilder)
                 .andExpect(status().isCreated())
