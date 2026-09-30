@@ -52,6 +52,13 @@ public enum ErrorCode {
             "파일 업로드에 실패했습니다."
     ),
 
+    // Authentication
+    INVALID_REFRESH_TOKEN(
+            HttpStatus.UNAUTHORIZED,
+            "INVALID_REFRESH_TOKEN",
+            "리프레시 토큰이 유효하지 않습니다."
+    ),
+
     // Validation
     INVALID_REQUEST(
             HttpStatus.BAD_REQUEST,

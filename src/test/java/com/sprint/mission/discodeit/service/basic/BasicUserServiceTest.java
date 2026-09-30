@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -35,6 +36,9 @@ class BasicUserServiceTest {
     @Mock
     private UserMapper userMapper;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private BasicUserService userService;
 
@@ -54,17 +58,23 @@ class BasicUserServiceTest {
                     UserDto.class
             );
 
-            UUID userId = UUID.randomUUID();
+            given(request.getUsername())
+                    .willReturn("user01");
 
-            given(request.getUsername()).willReturn("user01");
-            given(request.getEmail()).willReturn("user01@example.com");
-            given(request.getPassword()).willReturn("password123");
+            given(request.getEmail())
+                    .willReturn("user01@example.com");
+
+            given(request.getPassword())
+                    .willReturn("password123");
 
             given(userRepository.existsByUsername("user01"))
                     .willReturn(false);
 
             given(userRepository.existsByEmail("user01@example.com"))
                     .willReturn(false);
+
+            given(passwordEncoder.encode("password123"))
+                    .willReturn("encodedPassword123");
 
             given(userRepository.save(any(User.class)))
                     .willAnswer(invocation -> {
@@ -79,7 +89,8 @@ class BasicUserServiceTest {
             UserDto result = userService.create(request);
 
             // then
-            assertThat(result).isSameAs(expectedResponse);
+            assertThat(result)
+                    .isSameAs(expectedResponse);
 
             then(userRepository)
                     .should()
@@ -88,6 +99,10 @@ class BasicUserServiceTest {
             then(userRepository)
                     .should()
                     .existsByEmail("user01@example.com");
+
+            then(passwordEncoder)
+                    .should()
+                    .encode("password123");
 
             then(userRepository)
                     .should()
@@ -106,7 +121,8 @@ class BasicUserServiceTest {
                     CreateUserRequest.class
             );
 
-            given(request.getUsername()).willReturn("duplicate-user");
+            given(request.getUsername())
+                    .willReturn("duplicate-user");
 
             given(userRepository.existsByUsername("duplicate-user"))
                     .willReturn(true);
@@ -123,6 +139,9 @@ class BasicUserServiceTest {
                     .should(never())
                     .save(any(User.class));
 
+            then(passwordEncoder)
+                    .shouldHaveNoInteractions();
+
             then(userMapper)
                     .shouldHaveNoInteractions();
         }
@@ -135,8 +154,11 @@ class BasicUserServiceTest {
                     CreateUserRequest.class
             );
 
-            given(request.getUsername()).willReturn("user01");
-            given(request.getEmail()).willReturn("duplicate@example.com");
+            given(request.getUsername())
+                    .willReturn("user01");
+
+            given(request.getEmail())
+                    .willReturn("duplicate@example.com");
 
             given(userRepository.existsByUsername("user01"))
                     .willReturn(false);
@@ -151,6 +173,9 @@ class BasicUserServiceTest {
             then(userRepository)
                     .should(never())
                     .save(any(User.class));
+
+            then(passwordEncoder)
+                    .shouldHaveNoInteractions();
 
             then(userMapper)
                     .shouldHaveNoInteractions();
@@ -171,15 +196,28 @@ class BasicUserServiceTest {
                     UpdateUserRequest.class
             );
 
-            User user = org.mockito.Mockito.mock(User.class);
-            UserDto expectedResponse = org.mockito.Mockito.mock(UserDto.class);
+            User user = org.mockito.Mockito.mock(
+                    User.class
+            );
 
-            given(request.getUsername()).willReturn("new-username");
-            given(request.getEmail()).willReturn("new@example.com");
-            given(request.getPassword()).willReturn("newPassword123");
+            UserDto expectedResponse = org.mockito.Mockito.mock(
+                    UserDto.class
+            );
 
-            given(user.getUsername()).willReturn("old-username");
-            given(user.getEmail()).willReturn("old@example.com");
+            given(request.getUsername())
+                    .willReturn("new-username");
+
+            given(request.getEmail())
+                    .willReturn("new@example.com");
+
+            given(request.getPassword())
+                    .willReturn("newPassword123");
+
+            given(user.getUsername())
+                    .willReturn("old-username");
+
+            given(user.getEmail())
+                    .willReturn("old@example.com");
 
             given(userRepository.findById(userId))
                     .willReturn(Optional.of(user));
@@ -190,21 +228,34 @@ class BasicUserServiceTest {
             given(userRepository.existsByEmail("new@example.com"))
                     .willReturn(false);
 
+            given(passwordEncoder.encode("newPassword123"))
+                    .willReturn("encodedNewPassword123");
+
             given(userMapper.toDto(user))
                     .willReturn(expectedResponse);
 
             // when
-            UserDto result = userService.update(userId, request);
+            UserDto result = userService.update(
+                    userId,
+                    request
+            );
 
             // then
-            assertThat(result).isSameAs(expectedResponse);
+            assertThat(result)
+                    .isSameAs(expectedResponse);
 
-            then(user).should().update(
-                    "new-username",
-                    "new@example.com",
-                    "newPassword123",
-                    null
-            );
+            then(passwordEncoder)
+                    .should()
+                    .encode("newPassword123");
+
+            then(user)
+                    .should()
+                    .update(
+                            "new-username",
+                            "new@example.com",
+                            "encodedNewPassword123",
+                            null
+                    );
 
             then(userMapper)
                     .should()
@@ -225,8 +276,13 @@ class BasicUserServiceTest {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> userService.update(userId, request))
+            assertThatThrownBy(
+                    () -> userService.update(userId, request)
+            )
                     .isInstanceOf(UserNotFoundException.class);
+
+            then(passwordEncoder)
+                    .shouldHaveNoInteractions();
 
             then(userMapper)
                     .shouldHaveNoInteractions();
@@ -242,13 +298,21 @@ class BasicUserServiceTest {
                     UpdateUserRequest.class
             );
 
-            User user = org.mockito.Mockito.mock(User.class);
+            User user = org.mockito.Mockito.mock(
+                    User.class
+            );
 
-            given(request.getUsername()).willReturn("same-username");
-            given(request.getEmail()).willReturn("duplicate@example.com");
+            given(request.getUsername())
+                    .willReturn("same-username");
 
-            given(user.getUsername()).willReturn("same-username");
-            given(user.getEmail()).willReturn("old@example.com");
+            given(request.getEmail())
+                    .willReturn("duplicate@example.com");
+
+            given(user.getUsername())
+                    .willReturn("same-username");
+
+            given(user.getEmail())
+                    .willReturn("old@example.com");
 
             given(userRepository.findById(userId))
                     .willReturn(Optional.of(user));
@@ -257,12 +321,22 @@ class BasicUserServiceTest {
                     .willReturn(true);
 
             // when & then
-            assertThatThrownBy(() -> userService.update(userId, request))
+            assertThatThrownBy(
+                    () -> userService.update(userId, request)
+            )
                     .isInstanceOf(UserAlreadyExistsException.class);
 
             then(user)
                     .should(never())
-                    .update(any(), any(), any(), any());
+                    .update(
+                            any(),
+                            any(),
+                            any(),
+                            any()
+                    );
+
+            then(passwordEncoder)
+                    .shouldHaveNoInteractions();
 
             then(userMapper)
                     .shouldHaveNoInteractions();
@@ -278,7 +352,10 @@ class BasicUserServiceTest {
         void deleteSuccess() {
             // given
             UUID userId = UUID.randomUUID();
-            User user = org.mockito.Mockito.mock(User.class);
+
+            User user = org.mockito.Mockito.mock(
+                    User.class
+            );
 
             given(userRepository.findById(userId))
                     .willReturn(Optional.of(user));
@@ -302,7 +379,9 @@ class BasicUserServiceTest {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> userService.delete(userId))
+            assertThatThrownBy(
+                    () -> userService.delete(userId)
+            )
                     .isInstanceOf(UserNotFoundException.class);
 
             then(userRepository)

@@ -67,3 +67,9 @@ info:
   multipart:
     max-file-size: ${spring.servlet.multipart.max-file-size}
     max-request-size: ${spring.servlet.multipart.max-request-size}
+
+jwt:
+  issuer: discodeit
+  secret: ${JWT_SECRET:discodeit-jwt-secret-key-for-sprint-mission-10-2026}
+  access-token-validity-seconds: 900
+  refresh-token-validity-seconds: 604800
