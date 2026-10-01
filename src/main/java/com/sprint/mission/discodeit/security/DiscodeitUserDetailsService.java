@@ -3,9 +3,7 @@ package com.sprint.mission.discodeit.security;
 
 import com.sprint.mission.discodeit.dto.projection.UserProjection;
 import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.exception.DiscodeitException;
-import com.sprint.mission.discodeit.exception.ExceptionCode;
-import com.sprint.mission.discodeit.exception.UserNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -24,6 +22,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class DiscodeitUserDetailsService implements UserDetailsService {
+
+    private final String SERVICE_NAME = "DiscodeitUserDetailsService";
 
     private final UserRepository userRepository;
     private final MapStructMapper mapper;
@@ -51,16 +51,22 @@ public class DiscodeitUserDetailsService implements UserDetailsService {
         if (userRepository.existsByEmail(username))
             userId = userRepository
                     .findIdFromEmail(username)
-                    .orElseThrow(UserNotFoundException::new);
+                    .orElseThrow(() -> new UserNotFoundException(
+                            "{} - 인증 유저 조회 에러 - username = {}",
+                            SERVICE_NAME,
+                            username)
+                    );
         else
             userId = UUID.fromString(username);
 
         // set UserDetail
         UserProjection projection = userRepository.getUserFromId(userId)
-                .orElseThrow(() -> {
-                    log.warn("UserDetails - 유저 조회 오류 : {}",username);
-                    return new DiscodeitException(ExceptionCode.AUTH_FAILURE,"인증 오류");
-                });
+                .orElseThrow(() -> new UserNotFoundException(
+                            "{} - 인증 유저 조회 에러",
+                            SERVICE_NAME,
+                            userId
+                    )
+                );
 
         UserDto dto = mapper.toDto(
                 projection,

@@ -9,9 +9,9 @@ import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.exception.ChannelNotFoundException;
-import com.sprint.mission.discodeit.exception.ChannelTypeException;
-import com.sprint.mission.discodeit.exception.UserNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.ChannelTypeException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -38,6 +38,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class BasicChannelService implements ChannelService {
+
+    private final String SERVICE_NAME = "ChannelService";
+
     private final ChannelRepository channelRepository;
     private final ReadStatusRepository readStatusRepository;
     private final UserRepository userRepository;
@@ -189,9 +192,12 @@ public class BasicChannelService implements ChannelService {
 
     // id 에 해당하는 채널을 조회하고 없으면 에러.
     private Channel getChannelOrException(UUID id){
-        return channelRepository.findById(id).orElseThrow(
-                () -> new ChannelNotFoundException("Channel with id - {} not found",id)
-        );
+        return channelRepository.findById(id)
+                .orElseThrow(() -> new ChannelNotFoundException(
+                        "{} - Channel with id - {} not found",
+                        SERVICE_NAME,
+                        id
+                ));
     }
 
     // 현재 세션 사용자의 인가 체크. (channel manager)
@@ -211,7 +217,11 @@ public class BasicChannelService implements ChannelService {
      */
     private ChannelDto getChannelDtoFromChannel(Channel channel){
         ChannelProjection channelProjection = channelRepository.getChannelById(channel.getId())
-                .orElseThrow(RuntimeException::new);
+                .orElseThrow(() -> new ChannelNotFoundException(
+                        "{} -  Channel not Found by id - {}",
+                        SERVICE_NAME,
+                        channel.getId()
+                ));
 
         List<UserDto> users =
                 getUserDtoFromUserIdList(

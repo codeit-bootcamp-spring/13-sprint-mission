@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.service.basic;
 
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
@@ -23,9 +24,8 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     @Transactional(readOnly = true)
     public BinaryContentDto findByID(UUID id){
-        // todo - BinaryContentException 작성, ㅅㅓㄹ정.
         return binaryContentRepository.getBinaryContentById(id)
-                .orElseThrow(RuntimeException::new);
+                .orElseThrow(() -> new BinaryContentNotFoundException(id.toString()));
     }
 
     @Override
@@ -38,7 +38,8 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Transactional
     public void delete(UUID id){
         binaryContentRepository.deleteBinaryContent(
-                binaryContentRepository.findById(id).orElseThrow(RuntimeException::new)
+                binaryContentRepository.findById(id)
+                        .orElseThrow(() -> new BinaryContentNotFoundException(id.toString()))
         );
     }
 

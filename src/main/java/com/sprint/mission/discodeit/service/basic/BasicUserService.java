@@ -8,13 +8,12 @@ import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.UserDuplicatedException;
-import com.sprint.mission.discodeit.exception.UserNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserDuplicatedException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.mapper.MapperMethod;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.security.SessionService;
 import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.UserService;
@@ -25,7 +24,6 @@ import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -35,11 +33,11 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class BasicUserService implements UserService {
 
+    private final String SERVICE_NAME = "UserService";
+
     private final UserRepository userRepository;
     private final BinaryContentRepository binaryContentRepository;
-    private final BinaryContentStorage binaryContentStorage;
     private final MapStructMapper mapStructMapper;
-    private final MapperMethod mapperMethod;
 
     private final PasswordEncoder passwordEncoder;
 
@@ -129,7 +127,11 @@ public class BasicUserService implements UserService {
 
     private User getUserOrException(UUID id){
         return userRepository.findById(id).orElseThrow(
-                () -> new UserNotFoundException("User with id - {} not found", id)
+                () -> new UserNotFoundException(
+                        "User with id - {} not found",
+                        SERVICE_NAME,
+                        id
+                )
         );
 
     }
@@ -137,7 +139,11 @@ public class BasicUserService implements UserService {
     private String nameCheck(String username){
         Optional<User> sameNameChecker = userRepository.findByUsername(username).stream().findFirst();
         if(sameNameChecker.isPresent()){
-            throw new UserDuplicatedException("User with name - {} already exists", username);
+            throw new UserDuplicatedException(
+                    "{} - User with name - {} already exists",
+                    SERVICE_NAME,
+                    username
+            );
         }
         return username;
     }
@@ -145,7 +151,11 @@ public class BasicUserService implements UserService {
     private String emailCheck(String email){
         Optional<User> sameEmailChecker = userRepository.findByEmail(email).stream().findFirst();
         if(sameEmailChecker.isPresent()){
-            throw new UserDuplicatedException("User with email - {} already exists", email);
+            throw new UserDuplicatedException(
+                    "{} - User with email - {} already exists",
+                    SERVICE_NAME,
+                    email
+            );
         }
         return email;
     }

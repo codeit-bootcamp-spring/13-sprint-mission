@@ -6,7 +6,7 @@ import com.sprint.mission.discodeit.dto.response.JwtDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.UserNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -81,8 +81,6 @@ public class BasicAuthService implements AuthService {
             case SUCCESS -> {}
         }
 
-
-//        User user = userRepository.findById()
 
         User user = userRepository.findByUsernameOptional(result.username())
                 .orElseThrow(UserNotFoundException::new);

@@ -28,7 +28,7 @@ public class LoginFailureHandler implements AuthenticationFailureHandler {
             AuthenticationException exception
     ) throws IOException, ServletException {
 
-        ExceptionCode code = ExceptionCode.AUTH_FAILURE;
+        ExceptionCode code = ExceptionCode.INCORRECT_CERT_ERROR;
 
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

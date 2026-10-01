@@ -7,7 +7,10 @@ import com.sprint.mission.discodeit.dto.response.ReadStatusDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.*;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.readstatus.ReadStatusDuplicatedException;
+import com.sprint.mission.discodeit.exception.readstatus.ReadStatusNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -24,6 +27,9 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class BasicReadStatusService implements ReadStatusService {
+
+    private final String SERVICE_NAME = "ReadStatus";
+
     private final ReadStatusRepository readStatusRepository;
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
@@ -35,16 +41,29 @@ public class BasicReadStatusService implements ReadStatusService {
 
         // not found exception
         Channel channel = channelRepository.findById(request.channelId()).stream().findFirst().orElseThrow(
-                () -> new ChannelNotFoundException("Channel with id - {} was not found", request.channelId())
+                () -> new ChannelNotFoundException(
+                        "{} - Channel with id - {} was not found",
+                        SERVICE_NAME,
+                        request.channelId()
+                )
         );
         User user = userRepository.findById(request.userId()).stream().findFirst().orElseThrow(
-                () -> new UserNotFoundException("User with Id - {} was not founded", request.userId())
+                () -> new UserNotFoundException(
+                        "User with Id - {} was not founded",
+                        SERVICE_NAME,
+                        request.userId()
+                )
         );
 
 
         // already exist exception
         if (readStatusRepository.existsByUserOrChannel(user,channel))
-            throw new ReadStatusDuplicatedException("Read Status with user - {}, channel - {} was already existed", request.userId(), request.channelId());
+            throw new ReadStatusDuplicatedException(
+                    "{} - Read Status with user - {}, channel - {} was already existed",
+                    SERVICE_NAME,
+                    request.userId(),
+                    request.channelId()
+            );
 
 
         return mapStructMapper.toDto(
@@ -68,7 +87,11 @@ public class BasicReadStatusService implements ReadStatusService {
     @Transactional
     public ReadStatusDto update(UUID id, ReadStatusUpdateRequest request){
         ReadStatus readStatus = readStatusRepository.findById(id).stream().findFirst().orElseThrow(
-                () -> new ReadStatusNotFoundException("ReadStatus with id - {} was not found", id)
+                () -> new ReadStatusNotFoundException(
+                        "{} - ReadStatus with id - {} was not found",
+                        SERVICE_NAME,
+                        id
+                )
         );
         readStatus.update();
         return mapStructMapper.toDto(readStatus);

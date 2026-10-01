@@ -13,9 +13,9 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.ChannelNotFoundException;
-import com.sprint.mission.discodeit.exception.MessageNotFoundException;
-import com.sprint.mission.discodeit.exception.UserNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -24,7 +24,6 @@ import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.security.SessionService;
 import com.sprint.mission.discodeit.service.MessageService;
-import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -42,11 +41,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class BasicMessageService implements MessageService {
+
+    private final String SERVICE_NAME = "MessageService";
+
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
     private final BinaryContentRepository binaryContentRepository;
-    private final BinaryContentStorage binaryContentStorage;
     private final PageResponseMapper pageResponseMapper;
     private final MapStructMapper mapStructMapper;
 
@@ -54,13 +55,21 @@ public class BasicMessageService implements MessageService {
 
     private User getUserOrException(UUID id){
         return userRepository.findById(id).orElseThrow(
-                () -> new UserNotFoundException("User with id - {} not found",id)
+                () -> new UserNotFoundException(
+                        "{} - User with id - {} not found",
+                        SERVICE_NAME,
+                        id
+                )
         );
     }
 
     private Channel getChannelOrException(UUID id){
         return channelRepository.findById(id).orElseThrow(
-                () -> new ChannelNotFoundException("Channel with id - {} not found",id)
+                () -> new ChannelNotFoundException(
+                        "{} - Channel with id - {} not found",
+                        SERVICE_NAME,
+                        id
+                )
         );
     }
 
@@ -192,7 +201,11 @@ public class BasicMessageService implements MessageService {
     private Message getMessageOrException(UUID id){
         return messageRepository.findById(id)
                 .orElseThrow(
-                        () -> new MessageNotFoundException("Message with id - {} not found",id)
+                        () -> new MessageNotFoundException(
+                                "Message with id - {} not found",
+                                SERVICE_NAME,
+                                id
+                        )
                 );
     }
 
