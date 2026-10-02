@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.file.FileStorageException;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
@@ -22,6 +23,7 @@ import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -46,8 +48,8 @@ public class BasicMessageService implements MessageService {
     private final ChannelRepository channelRepository;
     private final BinaryContentRepository binaryContentRepository;
     private final MessageMapper messageMapper;
-    private final BinaryContentStorage binaryContentStorage;
     private final PageResponseMapper pageResponseMapper;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     //interface
     @Override
@@ -83,7 +85,7 @@ public class BasicMessageService implements MessageService {
                                 file.getContentType()
                         );
                         binaryContent = binaryContentRepository.save(binaryContent);
-                        binaryContentStorage.put(binaryContent.getId(), file.getBytes());
+                        applicationEventPublisher.publishEvent(new BinaryContentCreatedEvent(binaryContent.getId(), file.getBytes()));
 
                         binaryContentList.add(binaryContent);
                     } catch (IOException e) {

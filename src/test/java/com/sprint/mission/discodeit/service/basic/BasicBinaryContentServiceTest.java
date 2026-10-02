@@ -1,13 +1,26 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.BinaryContentStatus;
+import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
 import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
 import com.sprint.mission.discodeit.exception.file.FileStorageException;
 import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
-import com.sprint.mission.discodeit.storage.BinaryContentStorage;
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,21 +29,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class BasicBinaryContentServiceTest {
@@ -42,7 +43,7 @@ class BasicBinaryContentServiceTest {
     private BinaryContentMapper binaryContentMapper;
 
     @Mock
-    private BinaryContentStorage binaryContentStorage;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private BasicBinaryContentService binaryContentService;
@@ -52,7 +53,7 @@ class BasicBinaryContentServiceTest {
     class CreateBinaryContent {
 
         @Test
-        @DisplayName("파일 정보와 데이터를 저장하고 DTO를 반환한다")
+        @DisplayName("파일 메타데이터를 저장하고 생성 이벤트를 발행한 뒤 DTO를 반환한다")
         void create_success() throws IOException {
             // given
             byte[] bytes = "file-data".getBytes();
@@ -69,7 +70,6 @@ class BasicBinaryContentServiceTest {
             UUID binaryContentId = UUID.randomUUID();
 
             BinaryContent savedBinaryContent = mock(BinaryContent.class);
-
             BinaryContentDto expected = mock(BinaryContentDto.class);
 
             given(binaryContentRepository.save(any(BinaryContent.class)))
@@ -82,18 +82,20 @@ class BasicBinaryContentServiceTest {
                     .willReturn(expected);
 
             // when
-            BinaryContentDto result = binaryContentService.createBinaryContent(request);
+            BinaryContentDto result =
+                    binaryContentService.createBinaryContent(request);
 
             // then
             assertThat(result)
                     .isSameAs(expected);
 
-            ArgumentCaptor<BinaryContent> captor = ArgumentCaptor.forClass(BinaryContent.class);
+            ArgumentCaptor<BinaryContent> binaryContentCaptor =
+                    ArgumentCaptor.forClass(BinaryContent.class);
 
             then(binaryContentRepository).should()
-                    .save(captor.capture());
+                    .save(binaryContentCaptor.capture());
 
-            BinaryContent created = captor.getValue();
+            BinaryContent created = binaryContentCaptor.getValue();
 
             assertThat(created.getFileName())
                     .isEqualTo("test.txt");
@@ -102,8 +104,18 @@ class BasicBinaryContentServiceTest {
             assertThat(created.getContentType())
                     .isEqualTo("text/plain");
 
-            then(binaryContentStorage).should()
-                    .put(binaryContentId, bytes);
+            ArgumentCaptor<BinaryContentCreatedEvent> eventCaptor =
+                    ArgumentCaptor.forClass(BinaryContentCreatedEvent.class);
+
+            then(eventPublisher).should()
+                    .publishEvent(eventCaptor.capture());
+
+            BinaryContentCreatedEvent event = eventCaptor.getValue();
+
+            assertThat(event.binaryContentId())
+                    .isEqualTo(binaryContentId);
+            assertThat(event.bytes())
+                    .isEqualTo(bytes);
 
             then(binaryContentMapper).should()
                     .toDto(savedBinaryContent);
@@ -121,14 +133,20 @@ class BasicBinaryContentServiceTest {
             given(file.getBytes())
                     .willThrow(new IOException("read fail"));
 
-            BinaryContentCreateRequest request = new BinaryContentCreateRequest(file);
+            BinaryContentCreateRequest request =
+                    new BinaryContentCreateRequest(file);
 
             // when & then
-            assertThatThrownBy(() -> binaryContentService.createBinaryContent(request))
+            assertThatThrownBy(
+                    () -> binaryContentService.createBinaryContent(request)
+            )
                     .isInstanceOf(FileStorageException.class);
 
             then(binaryContentRepository).should(never())
                     .save(any(BinaryContent.class));
+
+            then(eventPublisher).should(never())
+                    .publishEvent(any());
         }
     }
 
@@ -143,7 +161,6 @@ class BasicBinaryContentServiceTest {
             UUID binaryContentId = UUID.randomUUID();
 
             BinaryContent binaryContent = mock(BinaryContent.class);
-
             BinaryContentDto expected = mock(BinaryContentDto.class);
 
             given(binaryContentRepository.findById(binaryContentId))
@@ -153,7 +170,8 @@ class BasicBinaryContentServiceTest {
                     .willReturn(expected);
 
             // when
-            BinaryContentDto result = binaryContentService.getBinaryContent(binaryContentId);
+            BinaryContentDto result =
+                    binaryContentService.getBinaryContent(binaryContentId);
 
             // then
             assertThat(result)
@@ -176,7 +194,9 @@ class BasicBinaryContentServiceTest {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> binaryContentService.getBinaryContent(binaryContentId))
+            assertThatThrownBy(
+                    () -> binaryContentService.getBinaryContent(binaryContentId)
+            )
                     .isInstanceOf(BinaryContentNotFoundException.class);
         }
     }
@@ -209,7 +229,8 @@ class BasicBinaryContentServiceTest {
                     .willReturn(dto2);
 
             // when
-            List<BinaryContentDto> result = binaryContentService.getBinaryContentsByIdIn(ids);
+            List<BinaryContentDto> result =
+                    binaryContentService.getBinaryContentsByIdIn(ids);
 
             // then
             assertThat(result)
@@ -235,12 +256,85 @@ class BasicBinaryContentServiceTest {
                     .willReturn(List.of());
 
             // when
-            List<BinaryContentDto> result = binaryContentService.getBinaryContentsByIdIn(ids);
+            List<BinaryContentDto> result =
+                    binaryContentService.getBinaryContentsByIdIn(ids);
 
             // then
             assertThat(result)
                     .isEmpty();
+        }
+    }
 
+    @Nested
+    @DisplayName("BinaryContent 상태 변경")
+    class UpdateStatus {
+
+        @Test
+        @DisplayName("BinaryContent가 존재하면 상태를 SUCCESS로 변경한다")
+        void updateStatus_successToSuccess() {
+            // given
+            UUID binaryContentId = UUID.randomUUID();
+
+            BinaryContent binaryContent = mock(BinaryContent.class);
+
+            given(binaryContentRepository.findById(binaryContentId))
+                    .willReturn(Optional.of(binaryContent));
+
+            // when
+            binaryContentService.updateStatus(
+                    binaryContentId,
+                    BinaryContentStatus.SUCCESS
+            );
+
+            // then
+            then(binaryContentRepository).should()
+                    .findById(binaryContentId);
+
+            then(binaryContent).should()
+                    .updateStatus(BinaryContentStatus.SUCCESS);
+        }
+
+        @Test
+        @DisplayName("BinaryContent가 존재하면 상태를 FAIL로 변경한다")
+        void updateStatus_successToFail() {
+            // given
+            UUID binaryContentId = UUID.randomUUID();
+
+            BinaryContent binaryContent = mock(BinaryContent.class);
+
+            given(binaryContentRepository.findById(binaryContentId))
+                    .willReturn(Optional.of(binaryContent));
+
+            // when
+            binaryContentService.updateStatus(
+                    binaryContentId,
+                    BinaryContentStatus.FAIL
+            );
+
+            // then
+            then(binaryContentRepository).should()
+                    .findById(binaryContentId);
+
+            then(binaryContent).should()
+                    .updateStatus(BinaryContentStatus.FAIL);
+        }
+
+        @Test
+        @DisplayName("BinaryContent가 존재하지 않으면 예외가 발생한다")
+        void updateStatus_fail() {
+            // given
+            UUID binaryContentId = UUID.randomUUID();
+
+            given(binaryContentRepository.findById(binaryContentId))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(
+                    () -> binaryContentService.updateStatus(
+                            binaryContentId,
+                            BinaryContentStatus.SUCCESS
+                    )
+            ).isInstanceOf(BinaryContentNotFoundException.class);
         }
     }
 
@@ -280,12 +374,13 @@ class BasicBinaryContentServiceTest {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> binaryContentService.deleteBinaryContent(binaryContentId))
+            assertThatThrownBy(
+                    () -> binaryContentService.deleteBinaryContent(binaryContentId)
+            )
                     .isInstanceOf(BinaryContentNotFoundException.class);
 
             then(binaryContentRepository).should(never())
                     .deleteById(binaryContentId);
         }
     }
-
 }

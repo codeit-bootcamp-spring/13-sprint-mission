@@ -1,12 +1,22 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
+import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -16,7 +26,10 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.storage.BinaryContentStorage;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,24 +38,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
+import org.springframework.mock.web.MockMultipartFile;
 
 @ExtendWith(MockitoExtension.class)
 class BasicMessageServiceTest {
@@ -63,7 +64,7 @@ class BasicMessageServiceTest {
     private MessageMapper messageMapper;
 
     @Mock
-    private BinaryContentStorage binaryContentStorage;
+    private ApplicationEventPublisher eventPublisher;
 
     @Mock
     private PageResponseMapper pageResponseMapper;
@@ -98,7 +99,6 @@ class BasicMessageServiceTest {
             given(channelRepository.findById(channelId))
                     .willReturn(Optional.of(channel));
 
-            // 저장하러 들어온 Message 객체를 그대로 반환
             given(messageRepository.save(any(Message.class)))
                     .willAnswer(invocation -> invocation.getArgument(0));
 
@@ -106,17 +106,21 @@ class BasicMessageServiceTest {
                     .willReturn(expectedDto);
 
             // when
-            MessageDto result = basicMessageService.createMessage(request, null);
+            MessageDto result =
+                    basicMessageService.createMessage(request, null);
 
             // then
-            assertThat(result).isEqualTo(expectedDto);
+            assertThat(result)
+                    .isEqualTo(expectedDto);
 
-            ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+            ArgumentCaptor<Message> messageCaptor =
+                    ArgumentCaptor.forClass(Message.class);
 
             then(messageRepository).should()
                     .save(messageCaptor.capture());
 
-            Message savedMessage = messageCaptor.getValue();
+            Message savedMessage =
+                    messageCaptor.getValue();
 
             assertThat(savedMessage.getContent())
                     .isEqualTo(request.content());
@@ -132,8 +136,126 @@ class BasicMessageServiceTest {
 
             then(userRepository).should()
                     .findById(authorId);
+
             then(channelRepository).should()
                     .findById(channelId);
+
+            then(messageMapper).should()
+                    .toDto(any(Message.class));
+
+            then(eventPublisher).should(never())
+                    .publishEvent(any());
+        }
+
+        @Test
+        @DisplayName("첨부파일이 있으면 BinaryContent를 저장하고 생성 이벤트를 발행")
+        void create_withAttachments_success() {
+            // given
+            UUID authorId = UUID.randomUUID();
+            UUID channelId = UUID.randomUUID();
+
+            MessageCreateRequest request = new MessageCreateRequest(
+                    "테스트 메시지",
+                    channelId,
+                    authorId
+            );
+
+            byte[] bytes =
+                    "file-data".getBytes();
+
+            MockMultipartFile attachment =
+                    new MockMultipartFile(
+                            "attachments",
+                            "test.txt",
+                            "text/plain",
+                            bytes
+                    );
+
+            User author =
+                    mock(User.class);
+
+            Channel channel =
+                    mock(Channel.class);
+
+            UUID binaryContentId =
+                    UUID.randomUUID();
+
+            BinaryContent savedBinaryContent =
+                    mock(BinaryContent.class);
+
+            MessageDto expectedDto =
+                    mock(MessageDto.class);
+
+            given(userRepository.findById(authorId))
+                    .willReturn(Optional.of(author));
+
+            given(channelRepository.findById(channelId))
+                    .willReturn(Optional.of(channel));
+
+            given(binaryContentRepository.save(any(BinaryContent.class)))
+                    .willReturn(savedBinaryContent);
+
+            given(savedBinaryContent.getId())
+                    .willReturn(binaryContentId);
+
+            given(messageRepository.save(any(Message.class)))
+                    .willAnswer(invocation -> invocation.getArgument(0));
+
+            given(messageMapper.toDto(any(Message.class)))
+                    .willReturn(expectedDto);
+
+            // when
+            MessageDto result =
+                    basicMessageService.createMessage(
+                            request,
+                            List.of(attachment)
+                    );
+
+            // then
+            assertThat(result)
+                    .isEqualTo(expectedDto);
+
+            then(binaryContentRepository).should()
+                    .save(any(BinaryContent.class));
+
+            ArgumentCaptor<BinaryContentCreatedEvent> eventCaptor =
+                    ArgumentCaptor.forClass(
+                            BinaryContentCreatedEvent.class
+                    );
+
+            then(eventPublisher).should()
+                    .publishEvent(eventCaptor.capture());
+
+            BinaryContentCreatedEvent event =
+                    eventCaptor.getValue();
+
+            assertThat(event.binaryContentId())
+                    .isEqualTo(binaryContentId);
+
+            assertThat(event.bytes())
+                    .isEqualTo(bytes);
+
+            ArgumentCaptor<Message> messageCaptor =
+                    ArgumentCaptor.forClass(Message.class);
+
+            then(messageRepository).should()
+                    .save(messageCaptor.capture());
+
+            Message savedMessage =
+                    messageCaptor.getValue();
+
+            assertThat(savedMessage.getContent())
+                    .isEqualTo(request.content());
+
+            assertThat(savedMessage.getAuthor())
+                    .isEqualTo(author);
+
+            assertThat(savedMessage.getChannel())
+                    .isEqualTo(channel);
+
+            assertThat(savedMessage.getAttachments())
+                    .containsExactly(savedBinaryContent);
+
             then(messageMapper).should()
                     .toDto(any(Message.class));
         }
@@ -155,14 +277,23 @@ class BasicMessageServiceTest {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> basicMessageService.createMessage(request, null))
-                    .isInstanceOf(UserNotFoundException.class);
+            assertThatThrownBy(
+                    () -> basicMessageService.createMessage(
+                            request,
+                            null
+                    )
+            ).isInstanceOf(
+                    UserNotFoundException.class
+            );
 
             then(userRepository).should()
                     .findById(authorId);
 
             then(messageRepository).should(never())
                     .save(any(Message.class));
+
+            then(eventPublisher).should(never())
+                    .publishEvent(any());
         }
     }
 
@@ -174,12 +305,19 @@ class BasicMessageServiceTest {
         @DisplayName("메시지가 존재하면 내용을 수정한다")
         void update_success() {
             // given
-            UUID messageId = UUID.randomUUID();
+            UUID messageId =
+                    UUID.randomUUID();
 
-            Message message = mock(Message.class);
-            MessageUpdateRequest request = new MessageUpdateRequest("수정된 메시지입니다.");
+            Message message =
+                    mock(Message.class);
 
-            MessageDto expectedDto = mock(MessageDto.class);
+            MessageUpdateRequest request =
+                    new MessageUpdateRequest(
+                            "수정된 메시지입니다."
+                    );
+
+            MessageDto expectedDto =
+                    mock(MessageDto.class);
 
             given(messageRepository.findById(messageId))
                     .willReturn(Optional.of(message));
@@ -188,10 +326,15 @@ class BasicMessageServiceTest {
                     .willReturn(expectedDto);
 
             // when
-            MessageDto result = basicMessageService.updateMessage(messageId, request);
+            MessageDto result =
+                    basicMessageService.updateMessage(
+                            messageId,
+                            request
+                    );
 
             // then
-            assertThat(result).isEqualTo(expectedDto);
+            assertThat(result)
+                    .isEqualTo(expectedDto);
 
             then(messageRepository).should()
                     .findById(messageId);
@@ -207,16 +350,26 @@ class BasicMessageServiceTest {
         @DisplayName("수정할 메시지가 존재하지 않으면 예외가 발생")
         void update_fail() {
             // given
-            UUID messageId = UUID.randomUUID();
+            UUID messageId =
+                    UUID.randomUUID();
 
-            MessageUpdateRequest request = new MessageUpdateRequest("수정된 내용");
+            MessageUpdateRequest request =
+                    new MessageUpdateRequest(
+                            "수정된 내용"
+                    );
 
             given(messageRepository.findById(messageId))
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> basicMessageService.updateMessage(messageId, request)).
-                    isInstanceOf(MessageNotFoundException.class);
+            assertThatThrownBy(
+                    () -> basicMessageService.updateMessage(
+                            messageId,
+                            request
+                    )
+            ).isInstanceOf(
+                    MessageNotFoundException.class
+            );
 
             then(messageRepository).should()
                     .findById(messageId);
@@ -231,9 +384,11 @@ class BasicMessageServiceTest {
         @DisplayName("메시지가 존재하면 삭제")
         void delete_success() {
             // given
-            UUID messageId = UUID.randomUUID();
+            UUID messageId =
+                    UUID.randomUUID();
 
-            Message message = mock(Message.class);
+            Message message =
+                    mock(Message.class);
 
             given(messageRepository.findById(messageId))
                     .willReturn(Optional.of(message));
@@ -250,6 +405,7 @@ class BasicMessageServiceTest {
             // then
             then(messageRepository).should()
                     .findById(messageId);
+
             then(messageRepository).should()
                     .deleteById(messageId);
         }
@@ -258,14 +414,20 @@ class BasicMessageServiceTest {
         @DisplayName("삭제할 메시지가 존재하지 않으면 예외가 발생")
         void delete_fail() {
             // given
-            UUID messageId = UUID.randomUUID();
+            UUID messageId =
+                    UUID.randomUUID();
 
             given(messageRepository.findById(messageId))
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> basicMessageService.deleteMessage(messageId))
-                    .isInstanceOf(MessageNotFoundException.class);
+            assertThatThrownBy(
+                    () -> basicMessageService.deleteMessage(
+                            messageId
+                    )
+            ).isInstanceOf(
+                    MessageNotFoundException.class
+            );
 
             then(messageRepository).should()
                     .findById(messageId);
@@ -283,20 +445,35 @@ class BasicMessageServiceTest {
         @DisplayName("커서가 없으면 첫 페이지를 조회")
         void get_success() {
             // given
-            UUID channelId = UUID.randomUUID();
-            Pageable pageable = PageRequest.of(0, 20);
+            UUID channelId =
+                    UUID.randomUUID();
 
-            Message message = mock(Message.class);
-            MessageDto messageDto = mock(MessageDto.class);
-            PageResponse<MessageDto> expectedResponse = mock(PageResponse.class);
+            Pageable pageable =
+                    PageRequest.of(0, 20);
 
-            Slice<Message> messageSlice = new SliceImpl<>(List.of(message), pageable, false);
+            Message message =
+                    mock(Message.class);
+
+            MessageDto messageDto =
+                    mock(MessageDto.class);
+
+            PageResponse<MessageDto> expectedResponse =
+                    mock(PageResponse.class);
+
+            Slice<Message> messageSlice =
+                    new SliceImpl<>(
+                            List.of(message),
+                            pageable,
+                            false
+                    );
 
             given(channelRepository.existsById(channelId))
                     .willReturn(true);
 
-            given(messageRepository.findAllByChannelId(channelId, pageable))
-                    .willReturn(messageSlice);
+            given(messageRepository.findAllByChannelId(
+                    channelId,
+                    pageable
+            )).willReturn(messageSlice);
 
             given(messageMapper.toDto(message))
                     .willReturn(messageDto);
@@ -305,20 +482,33 @@ class BasicMessageServiceTest {
                     .willReturn(expectedResponse);
 
             // when
-            PageResponse<MessageDto> result = basicMessageService.getMessagesByChannelId(channelId,null, pageable);
+            PageResponse<MessageDto> result =
+                    basicMessageService.getMessagesByChannelId(
+                            channelId,
+                            null,
+                            pageable
+                    );
 
             // then
             assertThat(result)
                     .isEqualTo(expectedResponse);
 
             then(messageRepository).should()
-                    .findAllByChannelId(channelId, pageable);
+                    .findAllByChannelId(
+                            channelId,
+                            pageable
+                    );
 
             then(messageRepository).should(never())
-                    .findAllByChannelId(any(UUID.class), any(Instant.class), any(Pageable.class));
+                    .findAllByChannelId(
+                            any(UUID.class),
+                            any(Instant.class),
+                            any(Pageable.class)
+                    );
 
             then(messageMapper).should()
                     .toDto(message);
+
             then(pageResponseMapper).should()
                     .fromSlice(any(Slice.class));
         }
@@ -327,15 +517,25 @@ class BasicMessageServiceTest {
         @DisplayName("채널이 존재하지 않으면 예외가 발생")
         void get_fail() {
             // given
-            UUID channelId = UUID.randomUUID();
-            Pageable pageable = PageRequest.of(0, 20);
+            UUID channelId =
+                    UUID.randomUUID();
+
+            Pageable pageable =
+                    PageRequest.of(0, 20);
 
             given(channelRepository.existsById(channelId))
                     .willReturn(false);
 
             // when & then
-            assertThatThrownBy(() -> basicMessageService.getMessagesByChannelId(channelId, null, pageable))
-                    .isInstanceOf(ChannelNotFoundException.class);
+            assertThatThrownBy(
+                    () -> basicMessageService.getMessagesByChannelId(
+                            channelId,
+                            null,
+                            pageable
+                    )
+            ).isInstanceOf(
+                    ChannelNotFoundException.class
+            );
         }
     }
 }

@@ -1,10 +1,22 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
 import com.sprint.mission.discodeit.exception.user.UserNameAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
@@ -13,26 +25,20 @@ import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.security.JwtRegistry;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class BasicUserServiceTest {
@@ -57,6 +63,9 @@ class BasicUserServiceTest {
 
     @Mock
     private JwtRegistry jwtRegistry;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private BasicUserService basicUserService;
@@ -150,6 +159,100 @@ class BasicUserServiceTest {
 
             then(userMapper).should()
                     .toDto(any(User.class), eq(false));
+
+            then(eventPublisher).should(never())
+                    .publishEvent(any());
+        }
+
+        @Test
+        @DisplayName("프로필 이미지가 있으면 BinaryContent를 저장하고 생성 이벤트를 발행")
+        void create_withProfile_success() {
+            // given
+            UserCreateRequest request = new UserCreateRequest(
+                    "테스트 이름",
+                    "테스트 이메일",
+                    "테스트 패스워드"
+            );
+
+            byte[] bytes = "profile-data".getBytes();
+
+            MockMultipartFile profile = new MockMultipartFile(
+                    "profile",
+                    "profile.png",
+                    "image/png",
+                    bytes
+            );
+
+            String encodedPassword = "암호화된 패스워드";
+
+            UUID binaryContentId = UUID.randomUUID();
+
+            BinaryContent savedBinaryContent = mock(BinaryContent.class);
+
+            User saved = new User(
+                    request.username(),
+                    request.email(),
+                    encodedPassword,
+                    savedBinaryContent,
+                    Role.USER
+            );
+
+            BinaryContentDto profileDto = mock(BinaryContentDto.class);
+
+            UserDto createdUserDto = new UserDto(
+                    saved.getId(),
+                    saved.getUsername(),
+                    saved.getEmail(),
+                    profileDto,
+                    false,
+                    Role.USER
+            );
+
+            given(userRepository.existsByUsername(request.username()))
+                    .willReturn(false);
+
+            given(userRepository.existsByEmail(request.email()))
+                    .willReturn(false);
+
+            given(passwordEncoder.encode(request.password()))
+                    .willReturn(encodedPassword);
+
+            given(binaryContentRepository.save(any(BinaryContent.class)))
+                    .willReturn(savedBinaryContent);
+
+            given(savedBinaryContent.getId())
+                    .willReturn(binaryContentId);
+
+            given(userRepository.save(any(User.class)))
+                    .willReturn(saved);
+
+            given(userMapper.toDto(any(User.class), eq(false)))
+                    .willReturn(createdUserDto);
+
+            // when
+            UserDto result =
+                    basicUserService.createUser(request, profile);
+
+            // then
+            assertThat(result)
+                    .isSameAs(createdUserDto);
+
+            then(binaryContentRepository).should()
+                    .save(any(BinaryContent.class));
+
+            ArgumentCaptor<BinaryContentCreatedEvent> eventCaptor =
+                    ArgumentCaptor.forClass(BinaryContentCreatedEvent.class);
+
+            then(eventPublisher).should()
+                    .publishEvent(eventCaptor.capture());
+
+            BinaryContentCreatedEvent event = eventCaptor.getValue();
+
+            assertThat(event.binaryContentId())
+                    .isEqualTo(binaryContentId);
+
+            assertThat(event.bytes())
+                    .isEqualTo(bytes);
         }
 
         @Test
@@ -180,6 +283,9 @@ class BasicUserServiceTest {
 
             then(passwordEncoder).should(never())
                     .encode(any());
+
+            then(eventPublisher).should(never())
+                    .publishEvent(any());
         }
     }
 
@@ -318,6 +424,106 @@ class BasicUserServiceTest {
 
             then(userMapper).should()
                     .toDto(user, false);
+
+            then(eventPublisher).should(never())
+                    .publishEvent(any());
+        }
+
+        @Test
+        @DisplayName("프로필 이미지가 있으면 BinaryContent를 저장하고 생성 이벤트를 발행")
+        void update_withProfile_success() {
+            // given
+            UUID userId = UUID.randomUUID();
+
+            User user = sample();
+
+            UserUpdateRequest request = new UserUpdateRequest(
+                    "테스트 이름",
+                    "테스트 이메일",
+                    "테스트 패스워드"
+            );
+
+            byte[] bytes = "updated-profile-data".getBytes();
+
+            MockMultipartFile profile = new MockMultipartFile(
+                    "profile",
+                    "updated-profile.png",
+                    "image/png",
+                    bytes
+            );
+
+            String encodedPassword = "암호화된 패스워드";
+
+            UUID binaryContentId = UUID.randomUUID();
+
+            BinaryContent savedBinaryContent = mock(BinaryContent.class);
+
+            BinaryContentDto profileDto = mock(BinaryContentDto.class);
+
+            UserDto updatedUserDto = new UserDto(
+                    user.getId(),
+                    request.newUsername(),
+                    request.newEmail(),
+                    profileDto,
+                    false,
+                    Role.USER
+            );
+
+            given(userRepository.findById(userId))
+                    .willReturn(Optional.of(user));
+
+            given(userRepository.existsByUsername(
+                    request.newUsername()
+            )).willReturn(false);
+
+            given(userRepository.existsByEmail(
+                    request.newEmail()
+            )).willReturn(false);
+
+            given(passwordEncoder.encode(
+                    request.newPassword()
+            )).willReturn(encodedPassword);
+
+            given(binaryContentRepository.save(any(BinaryContent.class)))
+                    .willReturn(savedBinaryContent);
+
+            given(savedBinaryContent.getId())
+                    .willReturn(binaryContentId);
+
+            given(jwtRegistry.hasActiveJwtInformationByUserId(userId))
+                    .willReturn(false);
+
+            given(userMapper.toDto(user, false))
+                    .willReturn(updatedUserDto);
+
+            // when
+            UserDto result =
+                    basicUserService.updateUser(
+                            userId,
+                            request,
+                            profile
+                    );
+
+            // then
+            assertThat(result)
+                    .isSameAs(updatedUserDto);
+
+            then(binaryContentRepository).should()
+                    .save(any(BinaryContent.class));
+
+            ArgumentCaptor<BinaryContentCreatedEvent> eventCaptor =
+                    ArgumentCaptor.forClass(BinaryContentCreatedEvent.class);
+
+            then(eventPublisher).should()
+                    .publishEvent(eventCaptor.capture());
+
+            BinaryContentCreatedEvent event = eventCaptor.getValue();
+
+            assertThat(event.binaryContentId())
+                    .isEqualTo(binaryContentId);
+
+            assertThat(event.bytes())
+                    .isEqualTo(bytes);
         }
 
         @Test
@@ -356,6 +562,9 @@ class BasicUserServiceTest {
                     .encode(any());
 
             then(jwtRegistry).shouldHaveNoInteractions();
+
+            then(eventPublisher).should(never())
+                    .publishEvent(any());
         }
     }
 
