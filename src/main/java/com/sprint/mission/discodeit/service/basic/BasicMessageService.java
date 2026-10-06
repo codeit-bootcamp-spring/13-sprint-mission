@@ -84,8 +84,7 @@ public class BasicMessageService implements MessageService {
         User user = getUserOrException(request.authorId());
         Channel channel = getChannelOrException(request.channelId());
 
-        // todo - 이벤트 드리븐 형식으로 변경후 삭제 예정.
-        List<BinaryContent> attachFiles = binaryContentRepository.saveAllFromMultipartFileDtoList(attachments);
+        List<BinaryContent> attachFiles = attachments.stream().map(this::getBinaryContent).toList();
 
         Message message = new Message(
                 request.content(),
@@ -96,25 +95,22 @@ public class BasicMessageService implements MessageService {
 
         messageRepository.save(message);
 
-        eventPublisher.publishEvent(new BinaryContentCreatedEvent());
-
         log.debug("Message Created - {}", message.getId());
-
-
-        List<BinaryContentDto> attachmentDtoList = binaryContentRepository
-                .getBinaryContentsInIdList(
-                        attachFiles.stream().map(BinaryContent::getId).toList()
-                )
-                .values()
-                .stream()
-                .toList();
-
 
         return mapStructMapper.toDto(
                 message,
                 getUserDtoFromUser(user),
                 getBinaryContentDtoFromAttachments(attachFiles)
         );
+    }
+
+    private BinaryContent getBinaryContent(MultipartFileDto fileDto){
+        BinaryContent binarycontent = binaryContentRepository.save(fileDto.toBinaryContent());
+        eventPublisher.publishEvent(new BinaryContentCreatedEvent(
+                binarycontent.getId(),
+                fileDto.content()
+        ));
+        return binarycontent;
     }
 
     @Override

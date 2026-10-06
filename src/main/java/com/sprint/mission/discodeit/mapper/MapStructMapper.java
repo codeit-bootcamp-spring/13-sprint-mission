@@ -22,6 +22,8 @@ import java.util.List;
 //        }
 
 )
+
+// todo - 매퍼 매서드에서 binaryContentData 도 반환하도록 변환.
 public interface MapStructMapper {
 
     /*

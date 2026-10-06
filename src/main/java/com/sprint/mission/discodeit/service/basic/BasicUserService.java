@@ -53,23 +53,18 @@ public class BasicUserService implements UserService {
         String email = emailCheck(userCreateRequest.email());
         String password = passwordEncoder.encode(userCreateRequest.password());
 
-
-
-        // todo - 데이터 저장 로직. 이벤트 방식으로 변경 후 삭제 예정.
-        BinaryContent bc = multiFileDto.map(binaryContentRepository::saveWithMultipartCommand).orElse(null);
+        // 바이너리 컨텐츠 저장 및 이벤트 발행.
+        BinaryContent binaryContent = multiFileDto.map(this::getBinaryContent).orElse(null);
 
         User user = new User(
                 username,
                 email,
                 password,
-                bc,
+                binaryContent,
                 Role.USER   // default role is User.
         );
 
-        // 유저 생성 완료 후, 이벤트 발행.
         userRepository.save(user);
-
-        eventPublisher.publishEvent(new BinaryContentCreatedEvent());
 
         // userDto from User
         return mapStructMapper.toDto(
@@ -113,14 +108,10 @@ public class BasicUserService implements UserService {
                 ? passwordEncoder.encode(uui.newPassword())
                 : null;
 
-        // todo - 프로필 이미지 이벤트 저장 구현 후 삭제
-        BinaryContent newProfile = multiFileDto.map(binaryContentRepository::saveWithMultipartCommand).orElse(null);
+        BinaryContent newProfile = multiFileDto.map(this::getBinaryContent).orElse(null);
 
         // JPA DirtyCheck 으로 별도 save 없이 유저 정보 업데이트
-        // 유저 업데이트 후, 프로필 사진 저장 이미지 발행
         user.update(newName, newEmail, newPassword, newProfile);
-
-        eventPublisher.publishEvent(new BinaryContentCreatedEvent());
 
         return mapStructMapper.toDto(
                 user,
@@ -138,6 +129,18 @@ public class BasicUserService implements UserService {
         if (user.getProfile() != null) binaryContentRepository.deleteBinaryContent(user.getProfile());
 
         userRepository.delete(user);
+    }
+
+    /*
+    바이너리 컨텐츠 저장용 매서드.
+     */
+    private BinaryContent getBinaryContent(MultipartFileDto fileDto){
+        BinaryContent binarycontent = binaryContentRepository.save(fileDto.toBinaryContent());
+        eventPublisher.publishEvent(new BinaryContentCreatedEvent(
+                binarycontent.getId(),
+                fileDto.content()
+        ));
+        return binarycontent;
     }
 
     private User getUserOrException(UUID id){
@@ -179,6 +182,4 @@ public class BasicUserService implements UserService {
         if (profile == null) return null;
         return binaryContentRepository.getBinaryContentById(profile.getId()).orElse(null);
     }
-
-    // 요구사항에서 Service 계층에서 이밴트를 발행하도록 정의되어있으므로,
 }
