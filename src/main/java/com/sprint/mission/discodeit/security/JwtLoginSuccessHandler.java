@@ -16,7 +16,8 @@ import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
-public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
+public class JwtLoginSuccessHandler
+        implements AuthenticationSuccessHandler {
 
     private static final String REFRESH_TOKEN_COOKIE_NAME =
             "REFRESH_TOKEN";
@@ -26,6 +27,7 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final ObjectMapper objectMapper;
     private final JwtTokenProvider jwtTokenProvider;
+    private final JwtRegistry jwtRegistry;
 
     @Override
     public void onAuthenticationSuccess(
@@ -35,24 +37,46 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
     ) throws IOException {
 
         DiscodeitUserDetails userDetails =
-                (DiscodeitUserDetails) authentication.getPrincipal();
+                (DiscodeitUserDetails)
+                        authentication.getPrincipal();
 
         UserResponse userResponse =
                 userDetails.getUserDto();
 
         String accessToken =
-                jwtTokenProvider.generateAccessToken(
-                        userResponse.getId(),
-                        userResponse.getUsername(),
-                        userResponse.getRole()
-                );
+                jwtTokenProvider
+                        .generateAccessToken(
+                                userResponse.getId(),
+                                userResponse.getUsername(),
+                                userResponse.getRole()
+                        );
 
         String refreshToken =
-                jwtTokenProvider.generateRefreshToken(
-                        userResponse.getId(),
-                        userResponse.getUsername(),
-                        userResponse.getRole()
+                jwtTokenProvider
+                        .generateRefreshToken(
+                                userResponse.getId(),
+                                userResponse.getUsername(),
+                                userResponse.getRole()
+                        );
+
+        /*
+         * 로그인 성공 시
+         * Access Token / Refresh Token 정보를 Registry에 등록한다.
+         *
+         * InMemoryJwtRegistry에서 maxActiveJwtCount = 1로 관리하므로
+         * 동일 계정으로 다시 로그인하면 기존 JwtInformation이 제거되고
+         * 새로운 JwtInformation만 유지된다.
+         */
+        JwtInformation jwtInformation =
+                new JwtInformation(
+                        userResponse,
+                        accessToken,
+                        refreshToken
                 );
+
+        jwtRegistry.registerJwtInformation(
+                jwtInformation
+        );
 
         Cookie refreshTokenCookie =
                 new Cookie(

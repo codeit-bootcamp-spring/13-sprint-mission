@@ -18,15 +18,12 @@ import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 @Configuration
 @EnableMethodSecurity
@@ -130,8 +127,10 @@ public class SecurityConfig {
                 /*
                  * JWT 기반 Stateless 인증
                  *
-                 * 서버에서 인증 세션을 생성하거나 유지하지 않고
+                 * 서버에서 HttpSession 기반 인증 상태를 유지하지 않고
                  * 매 요청마다 Access Token을 통해 인증한다.
+                 *
+                 * JWT의 활성 로그인 상태는 JwtRegistry에서 관리한다.
                  */
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(
@@ -161,10 +160,12 @@ public class SecurityConfig {
                 /*
                  * 로그아웃
                  *
-                 * JwtLogoutHandler가 REFRESH_TOKEN 쿠키를
-                 * Max-Age=0으로 만료시켜 브라우저에서 삭제한다.
+                 * JwtLogoutHandler가
+                 * JwtRegistry의 로그인 정보를 무효화하고
+                 * REFRESH_TOKEN 쿠키도 삭제한다.
                  *
-                 * 로그아웃 처리 완료 후에는 204 No Content를 반환한다.
+                 * 로그아웃 처리 완료 후에는
+                 * 204 No Content를 반환한다.
                  */
                 .logout(logout -> logout
                         .logoutUrl(
@@ -192,19 +193,6 @@ public class SecurityConfig {
                 );
 
         return http.build();
-    }
-
-    @Bean
-    public SessionRegistry sessionRegistry() {
-
-        return new SessionRegistryImpl();
-    }
-
-    @Bean
-    public HttpSessionEventPublisher
-    httpSessionEventPublisher() {
-
-        return new HttpSessionEventPublisher();
     }
 
     @Bean

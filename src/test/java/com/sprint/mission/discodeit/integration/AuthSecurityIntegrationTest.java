@@ -319,16 +319,17 @@ class AuthSecurityIntegrationTest {
 
         @Test
         @DisplayName(
-                "동일한 계정으로 여러 번 로그인해도 세션을 생성하지 않고 각각 JWT를 발급한다"
+                "동일한 계정으로 다시 로그인하면 기존 JWT는 무효화되고 새로운 JWT만 활성화된다"
         )
-        void should_IssueJwtWithoutSession_when_SameUserLogsInAgain()
+        void should_InvalidatePreviousJwt_when_SameUserLogsInAgain()
                 throws Exception {
 
-            createUser(
-                    "concurrentUser",
-                    "concurrent-user@test.com",
-                    "password"
-            );
+            String userId =
+                    createUser(
+                            "concurrentUser",
+                            "concurrent-user@test.com",
+                            "password"
+                    );
 
             LoginData firstLogin =
                     login(
@@ -357,6 +358,62 @@ class AuthSecurityIntegrationTest {
             assertThat(
                     secondLogin.refreshToken()
             ).isNotBlank();
+
+            assertThat(
+                    secondLogin.accessToken()
+            ).isNotEqualTo(
+                    firstLogin.accessToken()
+            );
+
+            assertThat(
+                    secondLogin.refreshToken()
+            ).isNotEqualTo(
+                    firstLogin.refreshToken()
+            );
+
+            /*
+             * 첫 번째 Access Token은 Registry에서 제거되었으므로
+             * 인증되지 않아야 한다.
+             */
+            mockMvc.perform(
+                            get(
+                                    "/api/channels"
+                            )
+                                    .param(
+                                            "userId",
+                                            userId
+                                    )
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER
+                                                    + firstLogin.accessToken()
+                                    )
+                    )
+                    .andExpect(
+                            status().isUnauthorized()
+                    );
+
+            /*
+             * 두 번째 로그인에서 발급된 Access Token은
+             * 현재 Registry에 등록된 활성 토큰이다.
+             */
+            mockMvc.perform(
+                            get(
+                                    "/api/channels"
+                            )
+                                    .param(
+                                            "userId",
+                                            userId
+                                    )
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER
+                                                    + secondLogin.accessToken()
+                                    )
+                    )
+                    .andExpect(
+                            status().isOk()
+                    );
         }
     }
 
@@ -465,9 +522,9 @@ class AuthSecurityIntegrationTest {
 
         @Test
         @DisplayName(
-                "재발급 시 Refresh Token Rotation으로 새로운 Refresh Token을 발급한다"
+                "재발급 후 기존 Refresh Token을 다시 사용하면 401을 반환한다"
         )
-        void should_RotateRefreshToken_when_AccessTokenIsRefreshed()
+        void should_RejectOldRefreshToken_when_RefreshTokenIsRotated()
                 throws Exception {
 
             createUser(
@@ -485,7 +542,7 @@ class AuthSecurityIntegrationTest {
             String oldRefreshToken =
                     loginData.refreshToken();
 
-            CsrfData csrfData =
+            CsrfData firstCsrfData =
                     getCsrfData();
 
             MvcResult result =
@@ -494,7 +551,7 @@ class AuthSecurityIntegrationTest {
                                             "/api/auth/refresh"
                                     )
                                             .cookie(
-                                                    csrfData.cookie(),
+                                                    firstCsrfData.cookie(),
                                                     new Cookie(
                                                             REFRESH_TOKEN,
                                                             oldRefreshToken
@@ -502,7 +559,7 @@ class AuthSecurityIntegrationTest {
                                             )
                                             .header(
                                                     "X-XSRF-TOKEN",
-                                                    csrfData.token()
+                                                    firstCsrfData.token()
                                             )
                             )
                             .andExpect(
@@ -529,6 +586,57 @@ class AuthSecurityIntegrationTest {
             ).isNotEqualTo(
                     oldRefreshToken
             );
+
+            /*
+             * Rotation 이후 Registry에는 새 Refresh Token만 존재한다.
+             * 따라서 기존 Refresh Token은 다시 사용할 수 없어야 한다.
+             */
+            CsrfData secondCsrfData =
+                    getCsrfData();
+
+            mockMvc.perform(
+                            post(
+                                    "/api/auth/refresh"
+                            )
+                                    .cookie(
+                                            secondCsrfData.cookie(),
+                                            new Cookie(
+                                                    REFRESH_TOKEN,
+                                                    oldRefreshToken
+                                            )
+                                    )
+                                    .header(
+                                            "X-XSRF-TOKEN",
+                                            secondCsrfData.token()
+                                    )
+                    )
+                    .andExpect(
+                            status().isUnauthorized()
+                    )
+                    .andExpect(
+                            jsonPath(
+                                    "$.status"
+                            )
+                                    .value(
+                                            401
+                                    )
+                    )
+                    .andExpect(
+                            jsonPath(
+                                    "$.code"
+                            )
+                                    .value(
+                                            "AUTH-001"
+                                    )
+                    )
+                    .andExpect(
+                            jsonPath(
+                                    "$.message"
+                            )
+                                    .value(
+                                            "유효하지 않은 Refresh Token입니다."
+                                    )
+                    );
         }
 
         @Test
@@ -1142,9 +1250,9 @@ class AuthSecurityIntegrationTest {
 
         @Test
         @DisplayName(
-                "기존 Access Token으로 요청해도 변경된 최신 Role이 적용된다"
+                "로그인 중인 사용자의 Role이 변경되면 기존 Access Token은 무효화된다"
         )
-        void should_UseLatestRole_when_UserRoleIsUpdated()
+        void should_InvalidateExistingJwt_when_UserRoleIsUpdated()
                 throws Exception {
 
             String targetUserId =
@@ -1185,6 +1293,9 @@ class AuthSecurityIntegrationTest {
                             targetUserId
                     );
 
+            /*
+             * ADMIN이 대상 사용자의 Role을 변경한다.
+             */
             mockMvc.perform(
                             put(
                                     "/api/auth/role"
@@ -1220,6 +1331,41 @@ class AuthSecurityIntegrationTest {
                                     )
                     );
 
+            /*
+             * Role 변경 시 JwtRegistry에서 대상 사용자의
+             * 기존 JWT 정보가 제거된다.
+             *
+             * 따라서 Role 변경 이전에 발급받았던
+             * Access Token은 더 이상 사용할 수 없다.
+             */
+            mockMvc.perform(
+                            get(
+                                    "/api/channels"
+                            )
+                                    .param(
+                                            "userId",
+                                            targetUserId
+                                    )
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER
+                                                    + targetLogin.accessToken()
+                                    )
+                    )
+                    .andExpect(
+                            status().isUnauthorized()
+                    );
+
+            /*
+             * 다시 로그인하면 변경된 Role을 기준으로
+             * 새로운 JWT가 발급된다.
+             */
+            LoginData newTargetLogin =
+                    login(
+                            "jwtRoleUser",
+                            "password"
+                    );
+
             CsrfData channelCsrfData =
                     getCsrfData();
 
@@ -1231,6 +1377,10 @@ class AuthSecurityIntegrationTest {
                     }
                     """;
 
+            /*
+             * 새로운 JWT에는 변경된 CHANNEL_MANAGER 권한이
+             * 적용되어 있으므로 채널 생성이 가능하다.
+             */
             mockMvc.perform(
                             post(
                                     "/api/channels/public"
@@ -1238,7 +1388,7 @@ class AuthSecurityIntegrationTest {
                                     .header(
                                             AUTHORIZATION,
                                             BEARER
-                                                    + targetLogin.accessToken()
+                                                    + newTargetLogin.accessToken()
                                     )
                                     .cookie(
                                             channelCsrfData.cookie()
@@ -1264,6 +1414,104 @@ class AuthSecurityIntegrationTest {
                                     .value(
                                             "jwt-role-channel"
                                     )
+                    );
+        }
+
+        @Test
+        @DisplayName(
+                "로그아웃하면 기존 Access Token과 Refresh Token이 모두 무효화된다"
+        )
+        void should_InvalidateJwtInformation_when_UserLogsOut()
+                throws Exception {
+
+            String userId =
+                    createUser(
+                            "logoutInvalidateUser",
+                            "logout-invalidate@test.com",
+                            "password"
+                    );
+
+            LoginData loginData =
+                    login(
+                            "logoutInvalidateUser",
+                            "password"
+                    );
+
+            CsrfData logoutCsrfData =
+                    getCsrfData();
+
+            mockMvc.perform(
+                            post(
+                                    "/api/auth/logout"
+                            )
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER
+                                                    + loginData.accessToken()
+                                    )
+                                    .cookie(
+                                            logoutCsrfData.cookie(),
+                                            new Cookie(
+                                                    REFRESH_TOKEN,
+                                                    loginData.refreshToken()
+                                            )
+                                    )
+                                    .header(
+                                            "X-XSRF-TOKEN",
+                                            logoutCsrfData.token()
+                                    )
+                    )
+                    .andExpect(
+                            status().isNoContent()
+                    );
+
+            /*
+             * 로그아웃 전 Access Token은 Registry에서 제거되었으므로
+             * 더 이상 인증에 사용할 수 없다.
+             */
+            mockMvc.perform(
+                            get(
+                                    "/api/channels"
+                            )
+                                    .param(
+                                            "userId",
+                                            userId
+                                    )
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER
+                                                    + loginData.accessToken()
+                                    )
+                    )
+                    .andExpect(
+                            status().isUnauthorized()
+                    );
+
+            /*
+             * 기존 Refresh Token 역시 Registry에서 제거되었으므로
+             * 재발급할 수 없다.
+             */
+            CsrfData refreshCsrfData =
+                    getCsrfData();
+
+            mockMvc.perform(
+                            post(
+                                    "/api/auth/refresh"
+                            )
+                                    .cookie(
+                                            refreshCsrfData.cookie(),
+                                            new Cookie(
+                                                    REFRESH_TOKEN,
+                                                    loginData.refreshToken()
+                                            )
+                                    )
+                                    .header(
+                                            "X-XSRF-TOKEN",
+                                            refreshCsrfData.token()
+                                    )
+                    )
+                    .andExpect(
+                            status().isUnauthorized()
                     );
         }
     }

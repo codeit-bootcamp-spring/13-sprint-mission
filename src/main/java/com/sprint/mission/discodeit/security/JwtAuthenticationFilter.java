@@ -26,6 +26,8 @@ public class JwtAuthenticationFilter
 
     private final JwtTokenProvider jwtTokenProvider;
 
+    private final JwtRegistry jwtRegistry;
+
     private final DiscodeitUserDetailsService
             discodeitUserDetailsService;
 
@@ -43,6 +45,10 @@ public class JwtAuthenticationFilter
                 token != null
                         && jwtTokenProvider
                         .validateAccessToken(token)
+                        && jwtRegistry
+                        .hasActiveJwtInformationByAccessToken(
+                                token
+                        )
                         && SecurityContextHolder
                         .getContext()
                         .getAuthentication() == null

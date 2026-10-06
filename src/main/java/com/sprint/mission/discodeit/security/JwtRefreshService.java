@@ -15,16 +15,31 @@ import java.util.UUID;
 public class JwtRefreshService {
 
     private final JwtTokenProvider jwtTokenProvider;
+
+    private final JwtRegistry jwtRegistry;
+
     private final UserService userService;
 
     public TokenRefreshResult refresh(
             String refreshToken
     ) {
 
-        if (refreshToken == null
-                || refreshToken.isBlank()
-                || !jwtTokenProvider
-                .validateRefreshToken(refreshToken)) {
+        /*
+         * 1. Refresh Token 기본 검증
+         * 2. Registry에 활성 상태로 등록된 Refresh Token인지 검증
+         */
+        if (
+                refreshToken == null
+                        || refreshToken.isBlank()
+                        || !jwtTokenProvider
+                        .validateRefreshToken(
+                                refreshToken
+                        )
+                        || !jwtRegistry
+                        .hasActiveJwtInformationByRefreshToken(
+                                refreshToken
+                        )
+        ) {
 
             throw new BadCredentialsException(
                     "유효하지 않은 Refresh Token입니다."
@@ -33,10 +48,21 @@ public class JwtRefreshService {
 
         UUID userId =
                 jwtTokenProvider
-                        .getUserId(refreshToken);
+                        .getUserId(
+                                refreshToken
+                        );
 
+        /*
+         * JWT 내부 정보만 그대로 사용하는 것이 아니라
+         * DB에서 현재 사용자 정보를 다시 조회한다.
+         *
+         * 이를 통해 최신 Role 등의 사용자 정보를
+         * 새 토큰에 반영할 수 있다.
+         */
         UserResponse userResponse =
-                userService.read(userId);
+                userService.read(
+                        userId
+                );
 
         String newAccessToken =
                 jwtTokenProvider
@@ -46,12 +72,6 @@ public class JwtRefreshService {
                                 userResponse.getRole()
                         );
 
-        /*
-         * Rotation
-         *
-         * 기존 Refresh Token을 그대로 반환하지 않고
-         * 새로운 Refresh Token을 생성한다.
-         */
         String newRefreshToken =
                 jwtTokenProvider
                         .generateRefreshToken(
@@ -59,6 +79,27 @@ public class JwtRefreshService {
                                 userResponse.getUsername(),
                                 userResponse.getRole()
                         );
+
+        /*
+         * 새로운 JWT 정보를 생성한다.
+         */
+        JwtInformation newJwtInformation =
+                new JwtInformation(
+                        userResponse,
+                        newAccessToken,
+                        newRefreshToken
+                );
+
+        /*
+         * Refresh Token Rotation
+         *
+         * Registry에 저장된 기존 Refresh Token 정보를 제거하고
+         * 새 Access Token / Refresh Token 정보로 교체한다.
+         */
+        jwtRegistry.rotateJwtInformation(
+                refreshToken,
+                newJwtInformation
+        );
 
         JwtDto jwtDto =
                 new JwtDto(
