@@ -79,10 +79,10 @@ public class InMemoryJwtRegistry implements JwtRegistry{
         RefreshTokenService.Output result = refreshTokenService.rotate(refresh);
 
         switch (result.result()) {
-            case REVOKED -> new RuntimeException();
-            case EXPIRED -> new RuntimeException();
-            case ROTATED -> new RuntimeException();
-            case NOT_FOUND -> new RuntimeException();
+            case REVOKED -> throw new RuntimeException();
+            case EXPIRED -> throw new RuntimeException();
+            case ROTATED -> throw new RuntimeException();
+            case NOT_FOUND -> throw new RuntimeException();
             case SUCCESS -> {}
         }
 
