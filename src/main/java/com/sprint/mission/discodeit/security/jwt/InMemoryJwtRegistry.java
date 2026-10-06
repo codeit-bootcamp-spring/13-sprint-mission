@@ -51,26 +51,22 @@ public class InMemoryJwtRegistry implements JwtRegistry{
 
     @Override
     public boolean hasActiveJwtInformationByAccessToken(String token) {
-        return origin.values().stream().map(
-                q -> q.stream()
-                        .map(info -> info.getAccessToken().equals(token))
-                        .filter(b -> b)
-                        .toList()
-        ).filter(
-                b -> !b.isEmpty()
-        ).toList().isEmpty();
+        return origin.values().stream().anyMatch(
+                q -> (q.stream()
+                        .anyMatch(
+                                info -> info.getAccessToken().equals(token)
+                        ))
+        );
     }
 
     @Override
     public boolean hasActiveJwtInformationByRefreshToken(String token) {
-        return origin.values().stream().map(
-                q -> q.stream()
-                        .map(info -> info.getRefreshToken().equals(token))
-                        .filter(b -> b)
-                        .toList()
-        ).filter(
-                b -> !b.isEmpty()
-        ).toList().isEmpty();
+        return origin.values().stream().anyMatch(
+                q -> (q.stream()
+                        .anyMatch(
+                                info -> info.getRefreshToken().equals(token)
+                        ))
+        );
     }
 
     @Override

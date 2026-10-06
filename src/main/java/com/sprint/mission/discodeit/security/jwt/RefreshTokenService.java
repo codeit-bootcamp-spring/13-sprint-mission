@@ -115,7 +115,7 @@ public class RefreshTokenService {
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
 
-        Integer killCount = tokenRepository.revokeAllByUser(user);
+        Integer killCount = tokenRepository.revokeAllByUser(user, RefreshToken.State.REVOKED);
         log.info("[{}] - 토큰 전체 무효화. user = {}, {}개",SERVICE_NAME,user.getUsername(),killCount);
     }
 
@@ -159,7 +159,7 @@ public class RefreshTokenService {
         // 1. 현재 사용자 기준 모든 토큰 삭제.
         User currnetUser = token.getUser();
 
-        Integer revokeCount = tokenRepository.revokeAllByUser(currnetUser);
+        Integer revokeCount = tokenRepository.revokeAllByUser(currnetUser, RefreshToken.State.REVOKED);
         log.warn("[{}] - 재사용 감지됨. user = {}, 무효화 한 토큰 = {}",
                 SERVICE_NAME,
                 token.getUser().getUsername(),

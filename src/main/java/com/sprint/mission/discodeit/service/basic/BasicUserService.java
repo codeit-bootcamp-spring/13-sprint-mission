@@ -137,7 +137,7 @@ public class BasicUserService implements UserService {
     }
 
     private String nameCheck(String username){
-        Optional<User> sameNameChecker = userRepository.findByUsername(username).stream().findFirst();
+        Optional<User> sameNameChecker = userRepository.findByUsername(username);
         if(sameNameChecker.isPresent()){
             throw new UserDuplicatedException(
                     "{} - User with name - {} already exists",
@@ -149,7 +149,7 @@ public class BasicUserService implements UserService {
     }
 
     private String emailCheck(String email){
-        Optional<User> sameEmailChecker = userRepository.findByEmail(email).stream().findFirst();
+        Optional<User> sameEmailChecker = userRepository.findByEmail(email);
         if(sameEmailChecker.isPresent()){
             throw new UserDuplicatedException(
                     "{} - User with email - {} already exists",

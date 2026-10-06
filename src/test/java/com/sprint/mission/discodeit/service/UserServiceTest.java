@@ -75,16 +75,14 @@ public class UserServiceTest {
             UserCreateRequest req = new UserCreateRequest("김숙희", "ksk@email.com","password");
             given(userRepository.findByUsername("김숙희"))
                     .willReturn(
-                            Collections
-                                    .singletonList(
-                                            new User(
-                                                    "김숙희",
-                                                    "ksk@email.com",
-                                                    "password",
-                                                    null,
-                                                    null
-                                            )
+                            Optional.of(new User(
+                                    "김숙희",
+                                        "ksk@email.com",
+                                        "password",
+                                        null,
+                                        null
                                     )
+                            )
                     );
             assertThatThrownBy(() -> userService.create(req,Optional.empty()))
                     .isInstanceOf(UserDuplicatedException.class);
@@ -106,7 +104,7 @@ public class UserServiceTest {
             UserUpdateRequest uur = new UserUpdateRequest("최둘리","cdr@email.com","password");
             UUID id = UUID.randomUUID();
             User user = setUp();
-            List<User> ls = new ArrayList<>();
+            Optional<User> ls = Optional.empty();
             // when
             given(userRepository.findById(id)).willReturn(Optional.of(user));
             given(userRepository.findByUsername("최둘리")).willReturn(ls);

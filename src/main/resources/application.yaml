@@ -40,6 +40,12 @@ discodeit:
         presign-time: ${S3_PRESIGN_TIME:5}
 
 
+  jwt:
+    secret: "json-token-secret-123-4567-789-tileup"
+    refresh-expired-date: 14 # 14 일
+    access-token-validate: 15 # 15 분
+
+
 
 
 springdoc:

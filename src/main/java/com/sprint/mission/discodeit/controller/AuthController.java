@@ -5,21 +5,17 @@ import com.sprint.mission.discodeit.controller.docs.AuthControllerDoc;
 import com.sprint.mission.discodeit.dto.request.user.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.JwtDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
-import com.sprint.mission.discodeit.security.jwt.RefreshTokenService;
 import com.sprint.mission.discodeit.service.AuthService;
-import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
+
+import com.sprint.mission.discodeit.service.basic.BasicAuthService.JwtOutput;
 
 @RestController
 @RequiredArgsConstructor
@@ -55,7 +51,7 @@ public class AuthController implements AuthControllerDoc {
     public ResponseEntity<JwtDto> refresh(
             @RequestHeader(value = "REFRESH_TOKEN") String token
     ){
-        com.sprint.mission.discodeit.service.basic.BasicAuthService.JwtOutput output = authService.jwtRefresh(token);
+        JwtOutput output = authService.jwtRefresh(token);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE,output.refresh().toString())

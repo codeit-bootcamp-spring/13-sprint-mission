@@ -28,6 +28,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class BasicAuthService implements AuthService {
+
+    private final String SERVICE_NAME = "AuthService";
+
     private final UserRepository userRepository;
     private final MapStructMapper mapper;
     private final BinaryContentRepository binaryContentRepository;
@@ -71,6 +74,8 @@ public class BasicAuthService implements AuthService {
     @Override
     public JwtOutput jwtRefresh(String key){
 
+        log.debug("[{}] - 토큰 리프레시 요청 - token : {}", SERVICE_NAME, key);
+
         RefreshTokenService.Output result = refreshTokenService.rotate(key);
 
         switch (result.result()) {
@@ -82,7 +87,7 @@ public class BasicAuthService implements AuthService {
         }
 
 
-        User user = userRepository.findByUsernameOptional(result.username())
+        User user = userRepository.findByUsername(result.username())
                 .orElseThrow(UserNotFoundException::new);
 
         String accessToken = jwtTokenProvider.createAccessToken(user.getUsername(),user.getRole());

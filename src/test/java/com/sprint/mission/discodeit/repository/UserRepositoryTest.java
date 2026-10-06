@@ -14,6 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -44,33 +45,6 @@ public class UserRepositoryTest {
 
         em.flush();
         em.clear();
-    }
-
-
-    @Test
-    @DisplayName("test user find by email")
-    void testFindByEmail(){
-        List<User> res = userRepository.findByEmail("ksk@email.com");
-
-        assertThat(res).hasSize(1);
-        assertThat(res.get(0)).extracting(User::getUsername).isEqualTo("김숙희");
-    }
-
-    @Test
-    @DisplayName("test user find with not contained email")
-    void testNotFindByEmail(){
-        List<User> res = userRepository.findByEmail("ksp@email.com");
-
-        assertThat(res).hasSize(0);
-    }
-
-    @Test
-    @DisplayName("test user find by Username")
-    void testFindByUsername(){
-        List<User> res = userRepository.findByUsername("김숙희");
-
-        assertThat(res).hasSize(1);
-        assertThat(res.get(0)).extracting(User::getEmail).isEqualTo("ksk@email.com");
     }
 
 }

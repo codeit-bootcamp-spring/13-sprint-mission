@@ -63,6 +63,8 @@ public class JwtSuccessHandler implements AuthenticationSuccessHandler {
 
         DiscodeitUserDetails principal = (DiscodeitUserDetails) authentication.getPrincipal();
 
+        log.debug("[{}] - 인증 흐름 확인 로그 - username : {}, role : {}","JwtSuccessFilter", principal.getUsername(), principal.getUserDto().role());
+
         String accessToken = jwtTokenProvider.createAccessToken(
                 principal.getUsername(),    // user.id
                 principal.getUserDto().role()

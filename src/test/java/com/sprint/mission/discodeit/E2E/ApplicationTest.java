@@ -1,10 +1,10 @@
-package com.sprint.mission.discodeit;
+package com.sprint.mission.discodeit.E2E;
 
 import com.jayway.jsonpath.JsonPath;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,14 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.io.File;
-import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -27,7 +25,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@DisplayName("total test")
+@DisplayName("E2E Test")
+@Slf4j
 public class ApplicationTest {
 
     @LocalServerPort
@@ -64,7 +63,7 @@ public class ApplicationTest {
     }
 
     @Nested
-    @DisplayName("User domain test")
+    @DisplayName("E2E - User Domain Test")
     class UserDomainTest {
 
         private ResponseEntity<String> createRequest(String data) {
@@ -75,7 +74,7 @@ public class ApplicationTest {
             MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
             parts.add("userCreateRequest", entity);
 
-            return rest.postForEntity(base, parts, String.class);
+            return rest.withBasicAuth("admin@admin.com","password").postForEntity(base, parts, String.class);
         }
 
         @Test
@@ -86,11 +85,12 @@ public class ApplicationTest {
                     "{\"username\" : \"김숙희\",\"email\":\"ksk@email.com\",\"password\":\"password\"}"
             );
 
+            log.debug("info - {}", created.getBody());
             assertThat(created.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
             created.getHeaders(); // [content-type:"application/json", date:"Sun, 02 Aug 2026 10:12:52 GMT", transfer-encoding:"chunked"]
 
-            ResponseEntity<String> fetched = rest.getForEntity(
+            ResponseEntity<String> fetched = rest.withBasicAuth("admin@admin.com","password").getForEntity(
                     "http://localhost:" + port + "/api/users", String.class
             );
             assertThat(fetched.getStatusCode()).isEqualTo(HttpStatus.OK);

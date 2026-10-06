@@ -52,7 +52,7 @@ public class JwtTokenProvider {
     public String createAccessToken(String username, Role role){
 
         Instant now = clock.instant();
-        Instant expiry = now.plus(properties.getAccessTokenValidate());
+        Instant expiry = now.plus(properties.getAccessTokenValidity());
 
         // Jwt 클래스 (JJWT 라이브러리 -> Json 구조 문자열 반환)
         return Jwts.builder()
@@ -91,7 +91,7 @@ public class JwtTokenProvider {
                 .build()
 
                 // 제작된 파서 객체로 실제 토큰 파싱(검사)
-                .parseEncryptedClaims(token)
+                .parseSignedClaims(token)
                 .getPayload();
     }
 
@@ -99,12 +99,12 @@ public class JwtTokenProvider {
     기타 면의 매서드
      */
     public Integer refreshTokenExpire(){
-        return 60 * 60 * 24 * properties.getRefreshExpireDate();
+        return 60 * 60 * 24 * properties.getRefreshExpiredDate();
     }
 
     public boolean isValidate(String token){
         Claims claims = parseClaims(token);
-        return isExpired(claims);
+        return !isExpired(claims);
     }
 
     /*

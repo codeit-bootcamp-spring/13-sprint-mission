@@ -36,7 +36,8 @@ user and password filter 앞에 위치한다. 로그인이 죄어있는지 확�
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final String BEARER_PREFIX = "bearer";
+    private final String CLASS_CODE = "JwtAuthFilter";
+    private final String BEARER_PREFIX = "Bearer";
 
     /** 엔트리 포인트에 전달할 플래그 */
     public static final String ATTR_JWT_ERROR = "jwt.error";
@@ -64,6 +65,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
          */
         String token = resolveToken(request);   // AccessToken(Bearer)
 
+        log.warn("[LoginFilter] - header : {}", token);
+
         if (token != null) {
             try {
                 Claims claims = provider.parseClaims(token);
@@ -72,15 +75,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                 && (!provider.isExpired(claims))
                 ) {
                     String username = claims.getSubject();  // user.id or user.email(login)
-                    Role role = provider.getRole(claims);
+
+                    log.debug("[{}] - 인증 요청 유저 - username : {}", CLASS_CODE, username);
 
                     // principal 은 인가를 확인할 때 필요. -> UserDetail
                     UserDetails principal = userDetailsService.loadUserByUsername(username);
 
+                    log.debug("[{}] - 인증 흐름 확인 로그 - username : {}, role : {}",CLASS_CODE, username, principal.getAuthorities());
+
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             principal,
                             null,
-                            getAuthority(role)
+                            principal.getAuthorities()
+//                            getAuthority(role)
                     );
 
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -96,10 +103,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             } catch (ExpiredJwtException e) {
                 request.setAttribute(ATTR_JWT_ERROR, ERROR_EXPIRED);
-                log.debug("[JWT] 만료된 토큰으로 접근 - {}", e.getMessage());
+                log.debug("[{}] - 만료된 토큰으로 접근 - token : {}",CLASS_CODE, token);
             } catch (JwtException | IllegalArgumentException e) {
                 request.setAttribute(ATTR_JWT_ERROR, ERROR_INVALID);
-                log.debug("[JWT] 유효하지 않은 토큰으로 접근 - {}", e.getMessage());
+                log.debug("[{}] - 유효하지 않은 토큰으로 접근 - token : {}",CLASS_CODE, token);
             }
         }
 
@@ -117,8 +124,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     private String resolveToken(HttpServletRequest request){
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
+        log.debug("[JwtFilter] - raw header : {}\nprefix : {}",header, BEARER_PREFIX);
         if(header != null && header.startsWith(BEARER_PREFIX))
-            return header.substring(BEARER_PREFIX.length());
+            return header.substring(BEARER_PREFIX.length() + 1);    // 헤더가 공백 한칸으로 공백과 베어러 구분.
         return null;
     }
 

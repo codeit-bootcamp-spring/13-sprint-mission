@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -73,8 +74,8 @@ public class ExceptionController {
     }
 
     // 인증 실패 에러
-    @ExceptionHandler(AuthenticationException.class)
-    public ProblemDetail handleAuthentication(AuthenticationException e) {
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ProblemDetail handleAuthentication(AuthorizationDeniedException e) {
         log.warn("CODE [{}] - {}", INVALID_AUTH_ERROR, e.getMessage());
         return from(INVALID_AUTH_ERROR, Instant.now());
     }
