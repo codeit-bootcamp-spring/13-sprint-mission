@@ -46,6 +46,9 @@ dependencies {
 	// Spring Security
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 
+	// JWT
+	implementation 'com.nimbusds:nimbus-jose-jwt:10.3'
+
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'

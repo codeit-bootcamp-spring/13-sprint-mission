@@ -2,9 +2,10 @@ package com.sprint.mission.discodeit.config;
 
 import com.sprint.mission.discodeit.security.CustomAccessDeniedHandler;
 import com.sprint.mission.discodeit.security.CustomAuthenticationEntryPoint;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
+import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
+import com.sprint.mission.discodeit.security.JwtLoginSuccessHandler;
+import com.sprint.mission.discodeit.security.JwtLogoutHandler;
 import com.sprint.mission.discodeit.security.LoginFailureHandler;
-import com.sprint.mission.discodeit.security.LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,22 +17,24 @@ import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final LoginSuccessHandler loginSuccessHandler;
+    private final JwtLoginSuccessHandler jwtLoginSuccessHandler;
+
     private final LoginFailureHandler loginFailureHandler;
+
+    private final JwtLogoutHandler jwtLogoutHandler;
 
     private final CustomAuthenticationEntryPoint
             customAuthenticationEntryPoint;
@@ -42,8 +45,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(
             HttpSecurity http,
-            SessionRegistry sessionRegistry,
-            DiscodeitUserDetailsService discodeitUserDetailsService
+            JwtAuthenticationFilter jwtAuthenticationFilter
     ) throws Exception {
 
         http
@@ -59,7 +61,17 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // CSRF 토큰 발급
+                        // 정적 리소스
+                        .requestMatchers(
+                                "/",
+                                "/*.html",
+                                "/css/**",
+                                "/js/**",
+                                "/images/**",
+                                "/favicon.ico"
+                        ).permitAll()
+
+                        // CSRF 토큰
                         .requestMatchers(
                                 "/api/auth/csrf-token"
                         ).permitAll()
@@ -67,6 +79,12 @@ public class SecurityConfig {
                         // 로그인
                         .requestMatchers(
                                 "/api/auth/login"
+                        ).permitAll()
+
+                        // Refresh Token을 이용한 Access Token 재발급
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/auth/refresh"
                         ).permitAll()
 
                         // 로그아웃
@@ -92,8 +110,9 @@ public class SecurityConfig {
                                 "/actuator/**"
                         ).permitAll()
 
-                        // 그 외 모든 요청 인증 필요
-                        .anyRequest().authenticated()
+                        // 그 외 요청은 인증 필요
+                        .anyRequest()
+                        .authenticated()
                 )
 
                 .exceptionHandling(exception -> exception
@@ -106,90 +125,74 @@ public class SecurityConfig {
                 )
 
                 /*
-                 * 동일 계정의 활성 세션은 최대 1개만 유지한다.
+                 * JWT 기반 Stateless 인증
                  *
-                 * maximumSessions(1)
-                 * -> 사용자당 활성 세션 최대 1개
+                 * 서버에서 HttpSession 기반 인증 상태를 유지하지 않고
+                 * 매 요청마다 Access Token을 통해 인증한다.
                  *
-                 * maxSessionsPreventsLogin(false)
-                 * -> 새로운 로그인을 막지 않고
-                 *    기존 세션을 만료시킨다.
-                 *
-                 * Remember-Me로 새로운 인증 세션이 생성되는 경우에도
-                 * 기존 세션과 충돌하지 않도록 한다.
+                 * JWT의 활성 로그인 상태는 JwtRegistry에서 관리한다.
                  */
-                .sessionManagement(management -> management
-                        .sessionConcurrency(concurrency -> concurrency
-                                .maximumSessions(1)
-                                .maxSessionsPreventsLogin(false)
-                                .sessionRegistry(sessionRegistry)
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
                         )
                 )
 
                 /*
-                 * 로그인 유지(Remember-Me)
+                 * Remember-Me는 제거되었다.
                  *
-                 * 로그인 요청:
-                 * remember-me=true
-                 *
-                 * JSESSIONID가 없어져도 remember-me 쿠키가 존재하면
-                 * 사용자를 다시 인증한다.
+                 * REFRESH_TOKEN 쿠키와
+                 * /api/auth/refresh API가
+                 * 기존 Remember-Me 역할을 대신한다.
                  */
-                .rememberMe(remember -> remember
-                        .key(
-                                "discodeit-remember-me-key"
-                        )
-                        .rememberMeParameter(
-                                "remember-me"
-                        )
-                        .rememberMeCookieName(
-                                "remember-me"
-                        )
-                        .tokenValiditySeconds(
-                                60 * 60 * 24 * 14
-                        )
-                        .userDetailsService(
-                                discodeitUserDetailsService
-                        )
-                )
-
                 .formLogin(login -> login
                         .loginProcessingUrl(
                                 "/api/auth/login"
                         )
                         .successHandler(
-                                loginSuccessHandler
+                                jwtLoginSuccessHandler
                         )
                         .failureHandler(
                                 loginFailureHandler
                         )
                 )
 
+                /*
+                 * 로그아웃
+                 *
+                 * JwtLogoutHandler가
+                 * JwtRegistry의 로그인 정보를 무효화하고
+                 * REFRESH_TOKEN 쿠키도 삭제한다.
+                 *
+                 * 로그아웃 처리 완료 후에는
+                 * 204 No Content를 반환한다.
+                 */
                 .logout(logout -> logout
                         .logoutUrl(
                                 "/api/auth/logout"
+                        )
+                        .addLogoutHandler(
+                                jwtLogoutHandler
                         )
                         .logoutSuccessHandler(
                                 new HttpStatusReturningLogoutSuccessHandler(
                                         HttpStatus.NO_CONTENT
                                 )
                         )
+                )
+
+                /*
+                 * Authorization: Bearer {AccessToken}
+                 *
+                 * UsernamePasswordAuthenticationFilter보다 먼저 실행하여
+                 * JWT 기반 인증 정보를 SecurityContext에 등록한다.
+                 */
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
                 );
 
         return http.build();
-    }
-
-    @Bean
-    public SessionRegistry sessionRegistry() {
-
-        return new SessionRegistryImpl();
-    }
-
-    @Bean
-    public HttpSessionEventPublisher
-    httpSessionEventPublisher() {
-
-        return new HttpSessionEventPublisher();
     }
 
     @Bean

@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -37,6 +36,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 @DisplayName("인가 통합 테스트")
 class AuthorizationIntegrationTest {
+
+    private static final String AUTHORIZATION =
+            "Authorization";
+
+    private static final String BEARER =
+            "Bearer ";
 
     @Autowired
     private MockMvc mockMvc;
@@ -89,7 +94,7 @@ class AuthorizationIntegrationTest {
                     Role.USER
             );
 
-            MockHttpSession session =
+            String accessToken =
                     login(
                             "normalUser",
                             "password"
@@ -107,7 +112,10 @@ class AuthorizationIntegrationTest {
 
             mockMvc.perform(
                             post("/api/channels/public")
-                                    .session(session)
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER + accessToken
+                                    )
                                     .cookie(
                                             csrfData.cookie()
                                     )
@@ -145,7 +153,7 @@ class AuthorizationIntegrationTest {
                     Role.CHANNEL_MANAGER
             );
 
-            MockHttpSession session =
+            String accessToken =
                     login(
                             "channelManager",
                             "password"
@@ -163,7 +171,10 @@ class AuthorizationIntegrationTest {
 
             mockMvc.perform(
                             post("/api/channels/public")
-                                    .session(session)
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER + accessToken
+                                    )
                                     .cookie(
                                             csrfData.cookie()
                                     )
@@ -201,7 +212,7 @@ class AuthorizationIntegrationTest {
                     Role.ADMIN
             );
 
-            MockHttpSession session =
+            String accessToken =
                     login(
                             "adminUser",
                             "password"
@@ -219,7 +230,10 @@ class AuthorizationIntegrationTest {
 
             mockMvc.perform(
                             post("/api/channels/public")
-                                    .session(session)
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER + accessToken
+                                    )
                                     .cookie(
                                             csrfData.cookie()
                                     )
@@ -270,7 +284,7 @@ class AuthorizationIntegrationTest {
                             Role.USER
                     );
 
-            MockHttpSession session =
+            String accessToken =
                     login(
                             "normalRoleUser",
                             "password"
@@ -288,7 +302,10 @@ class AuthorizationIntegrationTest {
 
             mockMvc.perform(
                             put("/api/auth/role")
-                                    .session(session)
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER + accessToken
+                                    )
                                     .cookie(
                                             csrfData.cookie()
                                     )
@@ -334,7 +351,7 @@ class AuthorizationIntegrationTest {
                             Role.USER
                     );
 
-            MockHttpSession session =
+            String accessToken =
                     login(
                             "managerRoleUser",
                             "password"
@@ -352,7 +369,10 @@ class AuthorizationIntegrationTest {
 
             mockMvc.perform(
                             put("/api/auth/role")
-                                    .session(session)
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER + accessToken
+                                    )
                                     .cookie(
                                             csrfData.cookie()
                                     )
@@ -398,7 +418,7 @@ class AuthorizationIntegrationTest {
                             Role.USER
                     );
 
-            MockHttpSession session =
+            String accessToken =
                     login(
                             "roleAdmin",
                             "password"
@@ -416,7 +436,10 @@ class AuthorizationIntegrationTest {
 
             mockMvc.perform(
                             put("/api/auth/role")
-                                    .session(session)
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER + accessToken
+                                    )
                                     .cookie(
                                             csrfData.cookie()
                                     )
@@ -460,7 +483,7 @@ class AuthorizationIntegrationTest {
                             Role.USER
                     );
 
-            MockHttpSession session =
+            String accessToken =
                     login(
                             "userOwner1",
                             "password"
@@ -480,7 +503,10 @@ class AuthorizationIntegrationTest {
                                     "/api/users/{userId}",
                                     userId
                             )
-                                    .session(session)
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER + accessToken
+                                    )
                                     .cookie(
                                             csrfData.cookie()
                                     )
@@ -526,7 +552,7 @@ class AuthorizationIntegrationTest {
                             Role.USER
                     );
 
-            MockHttpSession session =
+            String accessToken =
                     login(
                             "userAttacker1",
                             "password"
@@ -546,7 +572,10 @@ class AuthorizationIntegrationTest {
                                     "/api/users/{userId}",
                                     targetUserId
                             )
-                                    .session(session)
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER + accessToken
+                                    )
                                     .cookie(
                                             csrfData.cookie()
                                     )
@@ -595,7 +624,7 @@ class AuthorizationIntegrationTest {
                             Role.USER
                     );
 
-            MockHttpSession session =
+            String accessToken =
                     login(
                             "deleteOwner",
                             "password"
@@ -609,7 +638,10 @@ class AuthorizationIntegrationTest {
                                     "/api/users/{userId}",
                                     userId
                             )
-                                    .session(session)
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER + accessToken
+                                    )
                                     .cookie(
                                             csrfData.cookie()
                                     )
@@ -648,7 +680,7 @@ class AuthorizationIntegrationTest {
                             Role.USER
                     );
 
-            MockHttpSession session =
+            String accessToken =
                     login(
                             "deleteAttacker",
                             "password"
@@ -662,7 +694,10 @@ class AuthorizationIntegrationTest {
                                     "/api/users/{userId}",
                                     targetUserId
                             )
-                                    .session(session)
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER + accessToken
+                                    )
                                     .cookie(
                                             csrfData.cookie()
                                     )
@@ -717,7 +752,7 @@ class AuthorizationIntegrationTest {
                             "original message"
                     );
 
-            MockHttpSession session =
+            String accessToken =
                     login(
                             "messageAuthor1",
                             "password"
@@ -737,7 +772,10 @@ class AuthorizationIntegrationTest {
                                     "/api/messages/{messageId}",
                                     messageId
                             )
-                                    .session(session)
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER + accessToken
+                                    )
                                     .cookie(
                                             csrfData.cookie()
                                     )
@@ -793,7 +831,7 @@ class AuthorizationIntegrationTest {
                             "protected message"
                     );
 
-            MockHttpSession session =
+            String accessToken =
                     login(
                             "messageAttacker2",
                             "password"
@@ -813,7 +851,10 @@ class AuthorizationIntegrationTest {
                                     "/api/messages/{messageId}",
                                     messageId
                             )
-                                    .session(session)
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER + accessToken
+                                    )
                                     .cookie(
                                             csrfData.cookie()
                                     )
@@ -862,7 +903,7 @@ class AuthorizationIntegrationTest {
                             "delete my message"
                     );
 
-            MockHttpSession session =
+            String accessToken =
                     login(
                             "messageAuthor3",
                             "password"
@@ -876,7 +917,10 @@ class AuthorizationIntegrationTest {
                                     "/api/messages/{messageId}",
                                     messageId
                             )
-                                    .session(session)
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER + accessToken
+                                    )
                                     .cookie(
                                             csrfData.cookie()
                                     )
@@ -920,7 +964,7 @@ class AuthorizationIntegrationTest {
                             "protected delete message"
                     );
 
-            MockHttpSession session =
+            String accessToken =
                     login(
                             "messageAttacker4",
                             "password"
@@ -934,7 +978,10 @@ class AuthorizationIntegrationTest {
                                     "/api/messages/{messageId}",
                                     messageId
                             )
-                                    .session(session)
+                                    .header(
+                                            AUTHORIZATION,
+                                            BEARER + accessToken
+                                    )
                                     .cookie(
                                             csrfData.cookie()
                                     )
@@ -1067,7 +1114,7 @@ class AuthorizationIntegrationTest {
                 Role.CHANNEL_MANAGER
         );
 
-        MockHttpSession session =
+        String accessToken =
                 login(
                         username,
                         "password"
@@ -1091,7 +1138,10 @@ class AuthorizationIntegrationTest {
         MvcResult result =
                 mockMvc.perform(
                                 post("/api/channels/public")
-                                        .session(session)
+                                        .header(
+                                                AUTHORIZATION,
+                                                BEARER + accessToken
+                                        )
                                         .cookie(
                                                 csrfData.cookie()
                                         )
@@ -1132,7 +1182,7 @@ class AuthorizationIntegrationTest {
                         .findById(authorId)
                         .orElseThrow();
 
-        MockHttpSession session =
+        String accessToken =
                 login(
                         author.getUsername(),
                         "password"
@@ -1157,7 +1207,10 @@ class AuthorizationIntegrationTest {
         MvcResult result =
                 mockMvc.perform(
                                 post("/api/messages")
-                                        .session(session)
+                                        .header(
+                                                AUTHORIZATION,
+                                                BEARER + accessToken
+                                        )
                                         .cookie(
                                                 csrfData.cookie()
                                         )
@@ -1187,7 +1240,7 @@ class AuthorizationIntegrationTest {
         );
     }
 
-    private MockHttpSession login(
+    private String login(
             String username,
             String password
     ) throws Exception {
@@ -1220,17 +1273,26 @@ class AuthorizationIntegrationTest {
                         .andExpect(
                                 status().isOk()
                         )
+                        .andExpect(
+                                jsonPath("$.accessToken")
+                                        .isNotEmpty()
+                        )
                         .andReturn();
 
-        MockHttpSession session =
-                (MockHttpSession) loginResult
-                        .getRequest()
-                        .getSession(false);
+        JsonNode body =
+                objectMapper.readTree(
+                        loginResult.getResponse()
+                                .getContentAsString()
+                );
 
-        assertThat(session)
-                .isNotNull();
+        String accessToken =
+                body.get("accessToken")
+                        .asText();
 
-        return session;
+        assertThat(accessToken)
+                .isNotBlank();
+
+        return accessToken;
     }
 
     private CsrfData getCsrfData()

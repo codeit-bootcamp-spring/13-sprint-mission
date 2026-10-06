@@ -21,15 +21,14 @@ public class DiscodeitUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username)
             throws UsernameNotFoundException {
 
-        User user = userRepository.findByUsername(username);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException(
+                                "사용자를 찾을 수 없습니다. username=" + username
+                        )
+                );
 
-        if (user == null) {
-            throw new UsernameNotFoundException(
-                    "사용자를 찾을 수 없습니다. username=" + username
-            );
-        }
-
-        // 기존 UserService를 이용해 UserDto(UserResponse) 생성
+        // 기존 UserService를 이용해 UserResponse 생성
         UserResponse userDto = userService.read(user.getId());
 
         // Spring Security가 인증에 사용할 UserDetails 반환

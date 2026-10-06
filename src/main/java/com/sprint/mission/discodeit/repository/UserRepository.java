@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 // User 데이터를 저장하고 조회하기 위한 Spring Data JPA Repository
@@ -19,8 +20,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByRole(Role role);
 
     // username으로 사용자 조회
-    User findByUsername(String username);
+    Optional<User> findByUsername(String username);
 
     // email로 사용자 조회
-    User findByEmail(String email);
+    Optional<User> findByEmail(String email);
 }

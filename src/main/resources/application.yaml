@@ -52,6 +52,11 @@ discodeit:
 
   file-directory: ${FILE_DIRECTORY:data}
 
+jwt:
+  secret: ${JWT_SECRET:01234567890123456789012345678901}
+  access-token-validity: ${JWT_ACCESS_TOKEN_VALIDITY:3600000}
+  refresh-token-validity: ${JWT_REFRESH_TOKEN_VALIDITY:1209600000}
+
 management:
   endpoints:
     web:

@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.MessageResponse;
 import com.sprint.mission.discodeit.dto.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.mapper.MessageMultipartMapper;
+import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
 import com.sprint.mission.discodeit.service.MessageService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -55,6 +56,9 @@ class MessageControllerTest {
      */
     @MockitoBean
     private MessageService messageService;
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     /*
      * MessageController 생성자에 필요한 의존성이다.

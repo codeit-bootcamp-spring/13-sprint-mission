@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -32,9 +33,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleDiscodeitException(
             DiscodeitException exception
     ) {
-        ErrorCode errorCode = exception.getErrorCode();
+
+        ErrorCode errorCode =
+                exception.getErrorCode();
 
         if (errorCode.getHttpStatus().is5xxServerError()) {
+
             log.error(
                     "서버 내부 커스텀 예외가 발생했습니다. code={}, status={}, details={}",
                     errorCode.getCode(),
@@ -42,7 +46,9 @@ public class GlobalExceptionHandler {
                     exception.getDetails(),
                     exception
             );
+
         } else {
+
             log.warn(
                     "커스텀 예외가 발생했습니다. code={}, status={}, details={}",
                     errorCode.getCode(),
@@ -51,7 +57,9 @@ public class GlobalExceptionHandler {
             );
         }
 
-        return buildResponse(exception);
+        return buildResponse(
+                exception
+        );
     }
 
     /**
@@ -62,26 +70,38 @@ public class GlobalExceptionHandler {
     handleMethodArgumentNotValidException(
             MethodArgumentNotValidException exception
     ) {
-        Map<String, Object> details = new LinkedHashMap<>();
 
-        for (FieldError fieldError
-                : exception.getBindingResult().getFieldErrors()) {
+        Map<String, Object> details =
+                new LinkedHashMap<>();
+
+        for (
+                FieldError fieldError
+                : exception
+                .getBindingResult()
+                .getFieldErrors()
+        ) {
 
             details.putIfAbsent(
                     fieldError.getField(),
                     resolveValidationMessage(
-                            fieldError.getDefaultMessage()
+                            fieldError
+                                    .getDefaultMessage()
                     )
             );
         }
 
-        for (ObjectError globalError
-                : exception.getBindingResult().getGlobalErrors()) {
+        for (
+                ObjectError globalError
+                : exception
+                .getBindingResult()
+                .getGlobalErrors()
+        ) {
 
             details.putIfAbsent(
                     globalError.getObjectName(),
                     resolveValidationMessage(
-                            globalError.getDefaultMessage()
+                            globalError
+                                    .getDefaultMessage()
                     )
             );
         }
@@ -107,14 +127,21 @@ public class GlobalExceptionHandler {
     handleConstraintViolationException(
             ConstraintViolationException exception
     ) {
-        Map<String, Object> details = new LinkedHashMap<>();
 
-        for (ConstraintViolation<?> violation
-                : exception.getConstraintViolations()) {
+        Map<String, Object> details =
+                new LinkedHashMap<>();
 
-            String fieldName = extractFieldName(
-                    violation.getPropertyPath().toString()
-            );
+        for (
+                ConstraintViolation<?> violation
+                : exception.getConstraintViolations()
+        ) {
+
+            String fieldName =
+                    extractFieldName(
+                            violation
+                                    .getPropertyPath()
+                                    .toString()
+                    );
 
             details.putIfAbsent(
                     fieldName,
@@ -143,6 +170,7 @@ public class GlobalExceptionHandler {
     handleHttpMessageNotReadableException(
             HttpMessageNotReadableException exception
     ) {
+
         log.warn(
                 "요청 본문을 읽을 수 없습니다. message={}",
                 exception.getMessage()
@@ -159,14 +187,17 @@ public class GlobalExceptionHandler {
     /**
      * 요청 파라미터나 경로 변수의 타입 변환 실패를 처리한다.
      *
-     * 예: UUID 자리에 abc를 전달한 경우
+     * 예:
+     * UUID 자리에 abc를 전달한 경우
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse>
     handleMethodArgumentTypeMismatchException(
             MethodArgumentTypeMismatchException exception
     ) {
-        Map<String, Object> details = new LinkedHashMap<>();
+
+        Map<String, Object> details =
+                new LinkedHashMap<>();
 
         details.put(
                 "parameter",
@@ -174,6 +205,7 @@ public class GlobalExceptionHandler {
         );
 
         if (exception.getValue() != null) {
+
             details.put(
                     "value",
                     exception.getValue()
@@ -181,9 +213,12 @@ public class GlobalExceptionHandler {
         }
 
         if (exception.getRequiredType() != null) {
+
             details.put(
                     "requiredType",
-                    exception.getRequiredType().getSimpleName()
+                    exception
+                            .getRequiredType()
+                            .getSimpleName()
             );
         }
 
@@ -210,12 +245,15 @@ public class GlobalExceptionHandler {
     handleMissingServletRequestParameterException(
             MissingServletRequestParameterException exception
     ) {
-        Map<String, Object> details = new LinkedHashMap<>();
+
+        Map<String, Object> details =
+                new LinkedHashMap<>();
 
         details.put(
                 "parameter",
                 exception.getParameterName()
         );
+
         details.put(
                 "type",
                 exception.getParameterType()
@@ -236,6 +274,31 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 인증 실패를 처리한다.
+     *
+     * Refresh Token 누락, 변조, 만료,
+     * Access Token을 Refresh Token으로 전달한 경우 등에 사용한다.
+     */
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse>
+    handleBadCredentialsException(
+            BadCredentialsException exception
+    ) {
+
+        log.warn(
+                "인증에 실패했습니다. message={}",
+                exception.getMessage()
+        );
+
+        return buildResponse(
+                ErrorCode.AUTHENTICATION_FAILED,
+                exception.getMessage(),
+                Map.of(),
+                exception
+        );
+    }
+
+    /**
      * 아직 커스텀 예외로 변환하지 않은
      * IllegalArgumentException을 처리한다.
      */
@@ -244,6 +307,7 @@ public class GlobalExceptionHandler {
     handleIllegalArgumentException(
             IllegalArgumentException exception
     ) {
+
         log.warn(
                 "잘못된 요청이 발생했습니다. message={}",
                 exception.getMessage()
@@ -265,7 +329,8 @@ public class GlobalExceptionHandler {
      * CHANNEL_MANAGER가 ADMIN 전용 기능에 접근한 경우
      */
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+    public ResponseEntity<ErrorResponse>
+    handleAccessDeniedException(
             AccessDeniedException exception
     ) {
 
@@ -290,10 +355,12 @@ public class GlobalExceptionHandler {
     handleNoResourceFoundException(
             NoResourceFoundException exception
     ) {
-        Map<String, Object> details = Map.of(
-                "resourcePath",
-                exception.getResourcePath()
-        );
+
+        Map<String, Object> details =
+                Map.of(
+                        "resourcePath",
+                        exception.getResourcePath()
+                );
 
         log.debug(
                 "정적 리소스를 찾을 수 없습니다. resourcePath={}",
@@ -312,9 +379,11 @@ public class GlobalExceptionHandler {
      * 위에서 처리되지 않은 모든 예외를 처리한다.
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleException(
+    public ResponseEntity<ErrorResponse>
+    handleException(
             Exception exception
     ) {
+
         log.error(
                 "처리되지 않은 서버 예외가 발생했습니다.",
                 exception
@@ -331,35 +400,51 @@ public class GlobalExceptionHandler {
     /**
      * 커스텀 예외를 ErrorResponse로 변환한다.
      */
-    private ResponseEntity<ErrorResponse> buildResponse(
+    private ResponseEntity<ErrorResponse>
+    buildResponse(
             DiscodeitException exception
     ) {
-        ErrorCode errorCode = exception.getErrorCode();
+
+        ErrorCode errorCode =
+                exception.getErrorCode();
 
         return ResponseEntity
-                .status(errorCode.getHttpStatus())
-                .body(ErrorResponse.from(exception));
+                .status(
+                        errorCode.getHttpStatus()
+                )
+                .body(
+                        ErrorResponse.from(
+                                exception
+                        )
+                );
     }
 
     /**
      * Spring 및 Java 기본 예외를 ErrorResponse로 변환한다.
      */
-    private ResponseEntity<ErrorResponse> buildResponse(
+    private ResponseEntity<ErrorResponse>
+    buildResponse(
             ErrorCode errorCode,
             String message,
             Map<String, Object> details,
             Exception exception
     ) {
-        ErrorResponse response = ErrorResponse.of(
-                errorCode,
-                message,
-                details,
-                exception.getClass()
-        );
+
+        ErrorResponse response =
+                ErrorResponse.of(
+                        errorCode,
+                        message,
+                        details,
+                        exception.getClass()
+                );
 
         return ResponseEntity
-                .status(errorCode.getHttpStatus())
-                .body(response);
+                .status(
+                        errorCode.getHttpStatus()
+                )
+                .body(
+                        response
+                );
     }
 
     /**
@@ -372,24 +457,41 @@ public class GlobalExceptionHandler {
     private String extractFieldName(
             String propertyPath
     ) {
-        if (propertyPath == null || propertyPath.isBlank()) {
+
+        if (
+                propertyPath == null
+                        || propertyPath.isBlank()
+        ) {
+
             return "validation";
         }
 
-        int lastDotIndex = propertyPath.lastIndexOf('.');
+        int lastDotIndex =
+                propertyPath.lastIndexOf('.');
 
-        if (lastDotIndex < 0
-                || lastDotIndex == propertyPath.length() - 1) {
+        if (
+                lastDotIndex < 0
+                        || lastDotIndex
+                        == propertyPath.length() - 1
+        ) {
+
             return propertyPath;
         }
 
-        return propertyPath.substring(lastDotIndex + 1);
+        return propertyPath.substring(
+                lastDotIndex + 1
+        );
     }
 
     private String resolveValidationMessage(
             String message
     ) {
-        if (message == null || message.isBlank()) {
+
+        if (
+                message == null
+                        || message.isBlank()
+        ) {
+
             return "올바르지 않은 값입니다.";
         }
 

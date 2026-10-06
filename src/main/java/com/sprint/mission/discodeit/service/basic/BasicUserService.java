@@ -10,13 +10,12 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.session.SessionRegistry;
+import com.sprint.mission.discodeit.security.JwtRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +38,7 @@ public class BasicUserService implements UserService {
     private final MessageRepository messageRepository;
     private final ReadStatusRepository readStatusRepository;
     private final PasswordEncoder passwordEncoder;
-    private final SessionRegistry sessionRegistry;
+    private final JwtRegistry jwtRegistry;
 
     @Override
     public UserResponse create(UserCreateRequest request) {
@@ -345,7 +344,9 @@ public class BasicUserService implements UserService {
         User savedUser =
                 userRepository.save(user);
 
-        expireUserSessions(savedUser.getId());
+        jwtRegistry.invalidateJwtInformationByUserId(
+                savedUser.getId()
+        );
 
         log.info(
                 "사용자 권한 수정이 완료되었습니다. userId={}, newRole={}",
@@ -636,77 +637,10 @@ public class BasicUserService implements UserService {
             UUID userId
     ) {
 
-        return sessionRegistry.getAllPrincipals()
-                .stream()
-                .filter(
-                        principal ->
-                                principal
-                                        instanceof DiscodeitUserDetails
-                )
-                .map(
-                        principal ->
-                                (DiscodeitUserDetails) principal
-                )
-                .filter(
-                        userDetails ->
-                                userId.equals(
-                                        userDetails
-                                                .getUserDto()
-                                                .getId()
-                                )
-                )
-                .anyMatch(
-                        userDetails ->
-                                !sessionRegistry
-                                        .getAllSessions(
-                                                userDetails,
-                                                false
-                                        )
-                                        .isEmpty()
+        return jwtRegistry
+                .hasActiveJwtInformationByUserId(
+                        userId
                 );
-    }
-
-    private void expireUserSessions(
-            UUID userId
-    ) {
-
-        sessionRegistry.getAllPrincipals()
-                .stream()
-                .filter(
-                        principal ->
-                                principal
-                                        instanceof DiscodeitUserDetails
-                )
-                .map(
-                        principal ->
-                                (DiscodeitUserDetails) principal
-                )
-                .filter(
-                        userDetails ->
-                                userId.equals(
-                                        userDetails
-                                                .getUserDto()
-                                                .getId()
-                                )
-                )
-                .forEach(
-                        userDetails ->
-                                sessionRegistry
-                                        .getAllSessions(
-                                                userDetails,
-                                                false
-                                        )
-                                        .forEach(
-                                                sessionInformation ->
-                                                        sessionInformation
-                                                                .expireNow()
-                                        )
-                );
-
-        log.info(
-                "사용자의 기존 로그인 세션을 만료했습니다. userId={}",
-                userId
-        );
     }
 
     private boolean isBlank(

@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.ChannelResponse;
 import com.sprint.mission.discodeit.dto.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.entity.ChannelType;
+import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
 import com.sprint.mission.discodeit.service.ChannelService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -54,6 +55,9 @@ class ChannelControllerTest {
      */
     @MockitoBean
     private ChannelService channelService;
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     /*
      * 메인 애플리케이션의 @EnableJpaAuditing과

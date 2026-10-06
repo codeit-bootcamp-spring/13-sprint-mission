@@ -2,13 +2,14 @@ package com.sprint.mission.discodeit.repository;
 
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserData;
-import com.sprint.mission.discodeit.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -133,26 +134,33 @@ class UserRepositoryTest {
             );
 
             // when
-            User result =
+            Optional<User> result =
                     userRepository.findByUsername(USERNAME);
 
             // then
-            assertThat(result).isNotNull();
-            assertThat(result.getId())
+            assertThat(result).isPresent();
+
+            User foundUser = result.get();
+
+            assertThat(foundUser.getId())
                     .isEqualTo(savedUser.getId());
-            assertThat(result.getUsername())
+
+            assertThat(foundUser.getUsername())
                     .isEqualTo(USERNAME);
-            assertThat(result.getEmail())
+
+            assertThat(foundUser.getEmail())
                     .isEqualTo(EMAIL);
-            assertThat(result.getPassword())
+
+            assertThat(foundUser.getPassword())
                     .isEqualTo(PASSWORD);
-            assertThat(result.getProfile()).isNull();
-            assertThat(result.getProfileId()).isNull();
+
+            assertThat(foundUser.getProfile()).isNull();
+            assertThat(foundUser.getProfileId()).isNull();
         }
 
         @Test
-        @DisplayName("존재하지 않는 username으로 조회하면 null을 반환한다")
-        void should_ReturnNull_when_UsernameDoesNotExist() {
+        @DisplayName("존재하지 않는 username으로 조회하면 빈 Optional을 반환한다")
+        void should_ReturnEmptyOptional_when_UsernameDoesNotExist() {
             // given
             userRepository.saveAndFlush(
                     createUser(
@@ -163,11 +171,11 @@ class UserRepositoryTest {
             );
 
             // when
-            User result =
+            Optional<User> result =
                     userRepository.findByUsername("unknown");
 
             // then
-            assertThat(result).isNull();
+            assertThat(result).isEmpty();
         }
     }
 
@@ -188,26 +196,33 @@ class UserRepositoryTest {
             );
 
             // when
-            User result =
+            Optional<User> result =
                     userRepository.findByEmail(EMAIL);
 
             // then
-            assertThat(result).isNotNull();
-            assertThat(result.getId())
+            assertThat(result).isPresent();
+
+            User foundUser = result.get();
+
+            assertThat(foundUser.getId())
                     .isEqualTo(savedUser.getId());
-            assertThat(result.getUsername())
+
+            assertThat(foundUser.getUsername())
                     .isEqualTo(USERNAME);
-            assertThat(result.getEmail())
+
+            assertThat(foundUser.getEmail())
                     .isEqualTo(EMAIL);
-            assertThat(result.getPassword())
+
+            assertThat(foundUser.getPassword())
                     .isEqualTo(PASSWORD);
-            assertThat(result.getProfile()).isNull();
-            assertThat(result.getProfileId()).isNull();
+
+            assertThat(foundUser.getProfile()).isNull();
+            assertThat(foundUser.getProfileId()).isNull();
         }
 
         @Test
-        @DisplayName("존재하지 않는 email로 조회하면 null을 반환한다")
-        void should_ReturnNull_when_EmailDoesNotExist() {
+        @DisplayName("존재하지 않는 email로 조회하면 빈 Optional을 반환한다")
+        void should_ReturnEmptyOptional_when_EmailDoesNotExist() {
             // given
             userRepository.saveAndFlush(
                     createUser(
@@ -218,13 +233,13 @@ class UserRepositoryTest {
             );
 
             // when
-            User result =
+            Optional<User> result =
                     userRepository.findByEmail(
                             "unknown@test.com"
                     );
 
             // then
-            assertThat(result).isNull();
+            assertThat(result).isEmpty();
         }
     }
 
@@ -233,6 +248,7 @@ class UserRepositoryTest {
             String email,
             String password
     ) {
+
         UserData userData = new UserData(
                 username,
                 email,

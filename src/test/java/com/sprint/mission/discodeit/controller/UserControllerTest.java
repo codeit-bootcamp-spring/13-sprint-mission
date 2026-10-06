@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.UserResponse;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.mapper.UserMultipartMapper;
+import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
 import com.sprint.mission.discodeit.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -51,6 +52,9 @@ class UserControllerTest {
      */
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     /*
      * UserController 생성자에 필요한 의존성이다.
