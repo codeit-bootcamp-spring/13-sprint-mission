@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.binarycontent.BinaryContentCreatedEvent;
 import com.sprint.mission.discodeit.exception.user.UserDuplicatedException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
@@ -22,6 +23,7 @@ import java.util.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -41,12 +43,19 @@ public class BasicUserService implements UserService {
 
     private final SessionService sessionService;
 
+    private final ApplicationEventPublisher eventPublisher;
+
+
     @Override
     @Transactional
     public UserDto create(UserCreateRequest userCreateRequest, Optional<MultipartFileDto> multiFileDto){
         String username = nameCheck(userCreateRequest.username());
         String email = emailCheck(userCreateRequest.email());
         String password = passwordEncoder.encode(userCreateRequest.password());
+
+
+
+        // todo - 데이터 저장 로직. 이벤트 방식으로 변경 후 삭제 예정.
         BinaryContent bc = multiFileDto.map(binaryContentRepository::saveWithMultipartCommand).orElse(null);
 
         User user = new User(
@@ -57,7 +66,10 @@ public class BasicUserService implements UserService {
                 Role.USER   // default role is User.
         );
 
+        // 유저 생성 완료 후, 이벤트 발행.
         userRepository.save(user);
+
+        eventPublisher.publishEvent(new BinaryContentCreatedEvent());
 
         // userDto from User
         return mapStructMapper.toDto(
@@ -100,10 +112,15 @@ public class BasicUserService implements UserService {
         String newPassword = !uui.newPassword().isBlank()
                 ? passwordEncoder.encode(uui.newPassword())
                 : null;
+
+        // todo - 프로필 이미지 이벤트 저장 구현 후 삭제
         BinaryContent newProfile = multiFileDto.map(binaryContentRepository::saveWithMultipartCommand).orElse(null);
 
         // JPA DirtyCheck 으로 별도 save 없이 유저 정보 업데이트
+        // 유저 업데이트 후, 프로필 사진 저장 이미지 발행
         user.update(newName, newEmail, newPassword, newProfile);
+
+        eventPublisher.publishEvent(new BinaryContentCreatedEvent());
 
         return mapStructMapper.toDto(
                 user,
@@ -163,4 +180,5 @@ public class BasicUserService implements UserService {
         return binaryContentRepository.getBinaryContentById(profile.getId()).orElse(null);
     }
 
+    // 요구사항에서 Service 계층에서 이밴트를 발행하도록 정의되어있으므로,
 }

@@ -13,6 +13,7 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.binarycontent.BinaryContentCreatedEvent;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -26,6 +27,7 @@ import com.sprint.mission.discodeit.security.SessionService;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
@@ -52,6 +54,8 @@ public class BasicMessageService implements MessageService {
     private final MapStructMapper mapStructMapper;
 
     private final SessionService sessionService;
+
+    private final ApplicationEventPublisher eventPublisher;
 
     private User getUserOrException(UUID id){
         return userRepository.findById(id).orElseThrow(
@@ -80,7 +84,7 @@ public class BasicMessageService implements MessageService {
         User user = getUserOrException(request.authorId());
         Channel channel = getChannelOrException(request.channelId());
 
-
+        // todo - 이벤트 드리븐 형식으로 변경후 삭제 예정.
         List<BinaryContent> attachFiles = binaryContentRepository.saveAllFromMultipartFileDtoList(attachments);
 
         Message message = new Message(
@@ -91,6 +95,8 @@ public class BasicMessageService implements MessageService {
         );
 
         messageRepository.save(message);
+
+        eventPublisher.publishEvent(new BinaryContentCreatedEvent());
 
         log.debug("Message Created - {}", message.getId());
 
