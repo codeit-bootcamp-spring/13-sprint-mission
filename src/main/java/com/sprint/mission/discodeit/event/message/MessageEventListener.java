@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.NotificationRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -26,6 +27,7 @@ public class MessageEventListener {
      * 단, 메세지를 생성한 사용자는 제외.
      * @param event 메세지 생성 이벤트
      */
+    @Async("noty")
     @TransactionalEventListener
     public void on(MessageCreateEvent event){
         List<ReadStatus> readStatuses = readStatusRepository.findAllByChannelIdWithStatusOn(event.channelId(),true);
