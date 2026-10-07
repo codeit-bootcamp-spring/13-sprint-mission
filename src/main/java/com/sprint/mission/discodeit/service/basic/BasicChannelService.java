@@ -11,7 +11,7 @@ import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.ChannelTypeException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
-import com.sprint.mission.discodeit.mapper.MapStructMapper;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -47,7 +47,7 @@ public class BasicChannelService implements ChannelService {
 
     private final CertificationChecker certificationChecker;
 
-    private final MapStructMapper mapStructMapper;
+    private final EntityMapper entityMapper;
 
     private final RoleHierarchy roleHierarchy;
 
@@ -123,7 +123,7 @@ public class BasicChannelService implements ChannelService {
         // convert channel projection to channelDto
         return channelMap.values().stream()
                 .map(
-                        channelProjection -> mapStructMapper.toDto(
+                        channelProjection -> entityMapper.toDto(
                                 channelProjection,
                                 channelProjection.userIds().stream().map(userDtos::get).toList()
                         )
@@ -229,7 +229,7 @@ public class BasicChannelService implements ChannelService {
 
         List<UserDto> users = getUserDtoFromUserIdList(channelProjection.userIds()).values().stream().toList();
 
-        return mapStructMapper.toDto(
+        return entityMapper.toDto(
                 channelProjection,
                 users
         );
@@ -240,7 +240,7 @@ public class BasicChannelService implements ChannelService {
         List<User> users = userRepository.findAllById(userIdList);
 
         return users.stream()
-                .map(user -> mapStructMapper.toDto(user, certificationChecker.online(user.getId())))
+                .map(user -> entityMapper.toDto(user, certificationChecker.online(user.getId())))
                 .collect(Collectors.toMap(
                         UserDto::id,
                         dto -> dto

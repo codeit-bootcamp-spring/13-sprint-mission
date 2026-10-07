@@ -4,7 +4,7 @@ import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.BinaryContentStatus;
 import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
-import com.sprint.mission.discodeit.mapper.MapStructMapper;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +19,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BasicBinaryContentService implements BinaryContentService {
     private final BinaryContentRepository binaryContentRepository;
-    private final MapStructMapper mapStructMapper;
+    private final EntityMapper entityMapper;
 
 
     @Override
     @Transactional(readOnly = true)
     public BinaryContentDto findByID(UUID id){
-        return mapStructMapper.toDto(getBinaryContent(id));
+        return entityMapper.toDto(getBinaryContent(id));
     }
 
     @Override
@@ -33,7 +33,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     public List<BinaryContentDto> findAllByIdIn(List<UUID> ids){
         return binaryContentRepository.findAllById(ids)
                 .stream()
-                .map(mapStructMapper::toDto)
+                .map(entityMapper::toDto)
                 .toList();
     }
 
@@ -44,7 +44,7 @@ public class BasicBinaryContentService implements BinaryContentService {
 
         binaryContent.setStatus(status);
 
-        return mapStructMapper.toDto(binaryContent);
+        return entityMapper.toDto(binaryContent);
     }
 
     private BinaryContent getBinaryContent(UUID id){

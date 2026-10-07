@@ -9,7 +9,7 @@ import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
-import com.sprint.mission.discodeit.mapper.MapStructMapper;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -57,7 +57,7 @@ public class MessageServiceTest {
     CertificationChecker certificationChecker;
 
     @Spy
-    MapStructMapper mapStructMapper = Mappers.getMapper(MapStructMapper.class);
+    EntityMapper mapStructEntityMapper = Mappers.getMapper(EntityMapper.class);
 
     @InjectMocks
     BasicMessageService messageService;

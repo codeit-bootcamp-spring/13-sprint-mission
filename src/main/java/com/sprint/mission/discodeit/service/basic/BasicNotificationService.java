@@ -6,7 +6,7 @@ import com.sprint.mission.discodeit.dto.response.NotificationDto;
 import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.exception.ExceptionCode;
-import com.sprint.mission.discodeit.mapper.NotificationMapper;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.NotificationRepository;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.NotificationService;
@@ -24,7 +24,7 @@ import java.util.UUID;
 public class BasicNotificationService implements NotificationService {
 
     private final NotificationRepository notificationRepository;
-    private final NotificationMapper mapper;
+    private final EntityMapper entityMapper;
 
     @Cacheable(CacheConfig.NOTIFICATION_CACHE)
     @Override
@@ -35,7 +35,7 @@ public class BasicNotificationService implements NotificationService {
         return notificationRepository.findAllByReceiverId(
                 userIdFromAuth(authentication)
                 )
-                .stream().map(mapper::toDto).toList();
+                .stream().map(entityMapper::toDto).toList();
     }
 
     // 알림을 삭제하면, 현재 알림 목록 캐시를 비운다.

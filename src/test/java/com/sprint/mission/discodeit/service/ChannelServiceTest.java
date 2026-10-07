@@ -7,7 +7,7 @@ import com.sprint.mission.discodeit.dto.request.channel.PublicChannelUpdateReque
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.ChannelTypeException;
-import com.sprint.mission.discodeit.mapper.MapStructMapper;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.security.CertificationChecker;
 import com.sprint.mission.discodeit.service.basic.BasicChannelService;
@@ -49,7 +49,7 @@ public class ChannelServiceTest {
     RoleHierarchy roleHierarchy;
 
     @Spy
-    MapStructMapper mapStructMapper = Mappers.getMapper(MapStructMapper.class);
+    EntityMapper mapStructEntityMapper = Mappers.getMapper(EntityMapper.class);
 
     @InjectMocks
     BasicChannelService channelService;

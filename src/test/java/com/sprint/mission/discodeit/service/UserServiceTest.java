@@ -5,7 +5,7 @@ import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.user.UserDuplicatedException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
-import com.sprint.mission.discodeit.mapper.MapStructMapper;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.security.CertificationChecker;
@@ -39,7 +39,7 @@ public class UserServiceTest {
     @Mock
     UserCreateRequest userCreateRequest;
     @Spy
-    MapStructMapper mapStructMapper = Mappers.getMapper(MapStructMapper.class);
+    EntityMapper mapStructEntityMapper = Mappers.getMapper(EntityMapper.class);
     @Spy
     PasswordEncoder passwordEncoder;
     @InjectMocks

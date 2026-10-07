@@ -14,7 +14,7 @@ import com.sprint.mission.discodeit.event.message.MessageCreateEvent;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
-import com.sprint.mission.discodeit.mapper.MapStructMapper;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -47,7 +47,7 @@ public class BasicMessageService implements MessageService {
     private final ChannelRepository channelRepository;
     private final BinaryContentRepository binaryContentRepository;
     private final PageResponseMapper pageResponseMapper;
-    private final MapStructMapper mapStructMapper;
+    private final EntityMapper entityMapper;
 
     private final ApplicationEventPublisher eventPublisher;
 
@@ -98,7 +98,7 @@ public class BasicMessageService implements MessageService {
 
         log.debug("Message Created - {}", message.getId());
 
-        return mapStructMapper.toDto(message);
+        return entityMapper.toDto(message);
     }
 
     private BinaryContent getBinaryContent(MultipartFileDto fileDto){
@@ -137,7 +137,7 @@ public class BasicMessageService implements MessageService {
 
         // 3. construct MessageDto
         List<MessageDto> contents = query.stream()
-                .map(messageId -> mapStructMapper.toDto(messageList.get(messageId)))
+                .map(messageId -> entityMapper.toDto(messageList.get(messageId)))
                 .toList();
 
         // 4. create Slice Object from query
@@ -157,7 +157,7 @@ public class BasicMessageService implements MessageService {
 
         log.info("Message Updated - {}", message.getId());
 
-        return mapStructMapper.toDto(message);
+        return entityMapper.toDto(message);
     }
 
     @Override

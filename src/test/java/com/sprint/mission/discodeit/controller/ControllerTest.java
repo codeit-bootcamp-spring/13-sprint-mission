@@ -7,7 +7,6 @@ import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.filter.JwtAuthenticationFilter;
-import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.security.AuthChecker;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;

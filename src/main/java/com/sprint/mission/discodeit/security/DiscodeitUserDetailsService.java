@@ -4,7 +4,7 @@ package com.sprint.mission.discodeit.security;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
-import com.sprint.mission.discodeit.mapper.MapStructMapper;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,7 @@ public class DiscodeitUserDetailsService implements UserDetailsService {
     private final String SERVICE_NAME = "DiscodeitUserDetailsService";
 
     private final UserRepository userRepository;
-    private final MapStructMapper mapper;
+    private final EntityMapper entityMapper;
 
     private final CertificationChecker certificationChecker;
 
@@ -65,7 +65,7 @@ public class DiscodeitUserDetailsService implements UserDetailsService {
                     )
                 );
 
-        UserDto dto = mapper.toDto(user, certificationChecker.online(userId));
+        UserDto dto = entityMapper.toDto(user, certificationChecker.online(userId));
 
         return new DiscodeitUserDetails(dto, user.getPassword());
     }

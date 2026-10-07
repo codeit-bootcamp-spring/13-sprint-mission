@@ -11,7 +11,7 @@ import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.readstatus.ReadStatusDuplicatedException;
 import com.sprint.mission.discodeit.exception.readstatus.ReadStatusNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
-import com.sprint.mission.discodeit.mapper.MapStructMapper;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -33,7 +33,7 @@ public class BasicReadStatusService implements ReadStatusService {
     private final ReadStatusRepository readStatusRepository;
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
-    private final MapStructMapper mapStructMapper;
+    private final EntityMapper entityMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -66,7 +66,7 @@ public class BasicReadStatusService implements ReadStatusService {
             );
 
 
-        return mapStructMapper.toDto(
+        return entityMapper.toDto(
                 readStatusRepository.save(new ReadStatus(user, channel, request.lastReadAt()))
         );
     }
@@ -77,7 +77,7 @@ public class BasicReadStatusService implements ReadStatusService {
     @Transactional(readOnly = true)
     public List<ReadStatusDto> findAllByUserID(UUID userID){
         return readStatusRepository.findAllByUserId(userID).stream()
-                .map(mapStructMapper::toDto)
+                .map(entityMapper::toDto)
                 .toList();
     }
 
@@ -93,7 +93,7 @@ public class BasicReadStatusService implements ReadStatusService {
                 )
         );
         readStatus.update(request.newNotificationEnabled(), request.newLastReadAt());
-        return mapStructMapper.toDto(readStatus);
+        return entityMapper.toDto(readStatus);
     }
     @Override
     @Transactional

@@ -4,7 +4,7 @@ import com.sprint.mission.discodeit.dto.response.JwtDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
-import com.sprint.mission.discodeit.mapper.MapStructMapper;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 
@@ -29,7 +29,7 @@ public class BasicAuthService implements AuthService {
     private final String SERVICE_NAME = "AuthService";
 
     private final UserRepository userRepository;
-    private final MapStructMapper mapper;
+    private final EntityMapper entityMapper;
     private final BinaryContentRepository binaryContentRepository;
 
     private final CertificationChecker certificationChecker;
@@ -56,7 +56,7 @@ public class BasicAuthService implements AuthService {
         // 롤 변경시 기존 로그인 토큰 파기(로그아웃)
         jwtRegistry.invalidateJwtInformationByUserId(user.getId());
 
-        return mapper.toDto(user, certificationChecker.online(user.getId()));
+        return entityMapper.toDto(user, certificationChecker.online(user.getId()));
 
     }
 
@@ -81,7 +81,7 @@ public class BasicAuthService implements AuthService {
 
         String accessToken = jwtTokenProvider.createAccessToken(user.getUsername(),user.getRole());
 
-        UserDto userDto = mapper.toDto(
+        UserDto userDto = entityMapper.toDto(
                 user,
                 certificationChecker.online(user.getId())
         );
