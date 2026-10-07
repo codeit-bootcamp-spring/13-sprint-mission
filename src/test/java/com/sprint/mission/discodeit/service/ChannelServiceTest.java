@@ -10,7 +10,7 @@ import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.ChannelTypeException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.repository.*;
-import com.sprint.mission.discodeit.security.SessionService;
+import com.sprint.mission.discodeit.security.CertificationChecker;
 import com.sprint.mission.discodeit.service.basic.BasicChannelService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -45,7 +45,7 @@ public class ChannelServiceTest {
     @Mock
     BinaryContentRepository binaryContentRepository;
     @Mock
-    SessionService sessionService;
+    CertificationChecker certificationChecker;
     @Mock
     RoleHierarchy roleHierarchy;
 
@@ -135,7 +135,7 @@ public class ChannelServiceTest {
         given(binaryContentRepository.getBinaryContentsInIdList(anyList()))
                 .willReturn(Map.of());
 
-        given(sessionService.userOnline(any())).willReturn(false);
+        given(certificationChecker.userOnline(any())).willReturn(false);
     }
 
 

@@ -13,7 +13,7 @@ import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.security.SessionService;
+import com.sprint.mission.discodeit.security.CertificationChecker;
 import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.UserService;
 
@@ -42,7 +42,7 @@ public class BasicUserService implements UserService {
 
     private final PasswordEncoder passwordEncoder;
 
-    private final SessionService sessionService;
+    private final CertificationChecker certificationChecker;
 
     private final ApplicationEventPublisher eventPublisher;
 
@@ -69,7 +69,7 @@ public class BasicUserService implements UserService {
         userRepository.save(user);
 
         // userDto from User
-        return mapStructMapper.toDto(user, sessionService.userOnline(username));
+        return mapStructMapper.toDto(user, certificationChecker.online(user.getId()));
     }
 
     @Cacheable(CacheConfig.USER_CACHE)
@@ -79,7 +79,7 @@ public class BasicUserService implements UserService {
         List<User> users = userRepository.findAll();
 
         return users.stream()
-                .map(user -> mapStructMapper.toDto(user, sessionService.userOnline(user.getUsername())))
+                .map(user -> mapStructMapper.toDto(user, certificationChecker.online(user.getId())))
                 .toList();
     }
 
@@ -101,7 +101,7 @@ public class BasicUserService implements UserService {
         // JPA DirtyCheck 으로 별도 save 없이 유저 정보 업데이트
         user.update(newName, newEmail, newPassword, newProfile);
 
-        return mapStructMapper.toDto(user, sessionService.userOnline(user.getUsername()));
+        return mapStructMapper.toDto(user, certificationChecker.online(user.getId()));
     }
 
 

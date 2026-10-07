@@ -2,11 +2,9 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.config.CacheConfig;
 import com.sprint.mission.discodeit.dto.projection.ChannelProjection;
-import com.sprint.mission.discodeit.dto.projection.UserProjection;
 import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
@@ -18,7 +16,7 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.security.SessionService;
+import com.sprint.mission.discodeit.security.CertificationChecker;
 import com.sprint.mission.discodeit.service.ChannelService;
 
 import jakarta.transaction.Transactional;
@@ -47,9 +45,8 @@ public class BasicChannelService implements ChannelService {
     private final ChannelRepository channelRepository;
     private final ReadStatusRepository readStatusRepository;
     private final UserRepository userRepository;
-    private final BinaryContentRepository binaryContentRepository;
 
-    private final SessionService sessionService;
+    private final CertificationChecker certificationChecker;
 
     private final MapStructMapper mapStructMapper;
 
@@ -244,7 +241,7 @@ public class BasicChannelService implements ChannelService {
         List<User> users = userRepository.findAllById(userIdList);
 
         return users.stream()
-                .map(user -> mapStructMapper.toDto(user, sessionService.userOnline(user.getUsername())))
+                .map(user -> mapStructMapper.toDto(user, certificationChecker.online(user.getId())))
                 .collect(Collectors.toMap(
                         UserDto::id,
                         dto -> dto

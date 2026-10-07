@@ -8,7 +8,7 @@ import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.security.SessionService;
+import com.sprint.mission.discodeit.security.CertificationChecker;
 import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.basic.BasicUserService;
 import org.junit.jupiter.api.DisplayName;
@@ -45,7 +45,7 @@ public class UserServiceTest {
     @InjectMocks
     BasicUserService userService;
     @Mock
-    SessionService sessionService;
+    CertificationChecker certificationChecker;
 
     @Nested
     class Create{

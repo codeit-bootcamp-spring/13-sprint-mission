@@ -1,17 +1,14 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.projection.UserProjection;
-import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.JwtDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.MapStructMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 
-import com.sprint.mission.discodeit.security.SessionService;
+import com.sprint.mission.discodeit.security.CertificationChecker;
 import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
 import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import com.sprint.mission.discodeit.security.jwt.RefreshTokenService;
@@ -35,7 +32,7 @@ public class BasicAuthService implements AuthService {
     private final MapStructMapper mapper;
     private final BinaryContentRepository binaryContentRepository;
 
-    private final SessionService sessionService;
+    private final CertificationChecker certificationChecker;
 
     private final RefreshTokenService refreshTokenService;
     private final JwtTokenProvider jwtTokenProvider;
@@ -59,7 +56,7 @@ public class BasicAuthService implements AuthService {
         // 롤 변경시 기존 로그인 토큰 파기(로그아웃)
         jwtRegistry.invalidateJwtInformationByUserId(user.getId());
 
-        return mapper.toDto(user, sessionService.userOnline(user.getUsername()));
+        return mapper.toDto(user, certificationChecker.online(user.getId()));
 
     }
 
@@ -86,7 +83,7 @@ public class BasicAuthService implements AuthService {
 
         UserDto userDto = mapper.toDto(
                 user,
-                sessionService.userOnline(user.getUsername())
+                certificationChecker.online(user.getId())
         );
         return new JwtOutput(
                 new JwtDto(userDto, accessToken),
