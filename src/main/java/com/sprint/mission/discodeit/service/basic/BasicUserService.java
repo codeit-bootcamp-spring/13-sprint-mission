@@ -1,11 +1,9 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.config.CacheConfig;
-import com.sprint.mission.discodeit.dto.projection.UserProjection;
 import com.sprint.mission.discodeit.dto.request.MultipartFileDto;
 import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
@@ -71,34 +69,18 @@ public class BasicUserService implements UserService {
         userRepository.save(user);
 
         // userDto from User
-        return mapStructMapper.toDto(
-                user,
-                getProfileToDto(user.getProfile()),
-                sessionService.userOnline(username)
-        );
+        return mapStructMapper.toDto(user, sessionService.userOnline(username));
     }
 
     @Cacheable(CacheConfig.USER_CACHE)
     @Override
     @Transactional
     public List<UserDto> getUserList(){
-        List<UserProjection> users = userRepository.getAllUsers().values().stream().toList();
-        Map<UUID, BinaryContentDto> profiles = binaryContentRepository.getBinaryContentsInIdList(
-                users.stream()
-                        .map(UserProjection::profileId)
-                        .filter(Objects::nonNull)   // null Point Exception 방지.
-                        .toList()
-        );
+        List<User> users = userRepository.findAll();
 
-        // userDto from UserProfile
-        return users.stream().map(
-                user -> mapStructMapper.toDto(
-                            user,
-                            profiles.get(user.profileId()),
-                            sessionService.userOnline(user.username())
-                    )
-        ).toList();
-
+        return users.stream()
+                .map(user -> mapStructMapper.toDto(user, sessionService.userOnline(user.getUsername())))
+                .toList();
     }
 
 
@@ -119,11 +101,7 @@ public class BasicUserService implements UserService {
         // JPA DirtyCheck 으로 별도 save 없이 유저 정보 업데이트
         user.update(newName, newEmail, newPassword, newProfile);
 
-        return mapStructMapper.toDto(
-                user,
-                getProfileToDto(user.getProfile()),
-                sessionService.userOnline(user.getUsername())
-        );
+        return mapStructMapper.toDto(user, sessionService.userOnline(user.getUsername()));
     }
 
 
@@ -183,10 +161,5 @@ public class BasicUserService implements UserService {
             );
         }
         return email;
-    }
-
-    private BinaryContentDto getProfileToDto(BinaryContent profile){
-        if (profile == null) return null;
-        return binaryContentRepository.getBinaryContentById(profile.getId()).orElse(null);
     }
 }

@@ -78,4 +78,15 @@ public interface MapStructMapper {
     @Mapping(source = "lastMessageAt",target = "lastMessageAt")
     ChannelDto toDto(Channel channel, List<UserDto> userDtoList, Instant lastMessageAt);
 
+
+    /*
+    binary content dto 변경 후 사용 매핑 매서드
+     */
+    BinaryContentDto toDto(BinaryContent binaryContent);
+
+    @Mapping(source = "online", target = "online")
+    UserDto toDto(User user, boolean online);
+
+    @Mapping(source = "channel.id", target = "channelId")
+    MessageDto toDto(Message message);
 }

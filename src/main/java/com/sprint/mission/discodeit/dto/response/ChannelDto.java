@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.sprint.mission.discodeit.entity.ChannelType;
 
 import java.time.Instant;

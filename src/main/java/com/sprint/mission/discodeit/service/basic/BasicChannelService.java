@@ -231,10 +231,7 @@ public class BasicChannelService implements ChannelService {
                         channel.getId()
                 ));
 
-        List<UserDto> users =
-                getUserDtoFromUserIdList(
-                        readStatusRepository.findUserIdsByChannelId(channelProjection.id())
-                ).values().stream().toList();
+        List<UserDto> users = getUserDtoFromUserIdList(channelProjection.userIds()).values().stream().toList();
 
         return mapStructMapper.toDto(
                 channelProjection,
@@ -242,23 +239,13 @@ public class BasicChannelService implements ChannelService {
         );
     }
 
-    // 채널에 포함된 유저 정보 반환
+    // 채널에 포함된 유저 정보 반환 -> Map<유저 id, UserDto>
     private Map<UUID, UserDto> getUserDtoFromUserIdList(List<UUID> userIdList){
-        List<UserProjection> users = userRepository.getUsersFromIds(userIdList).values().stream().toList();
-        Map<UUID,BinaryContentDto> profileList = binaryContentRepository.getBinaryContentsInIdList(
-                users.stream().map(UserProjection::profileId).filter(Objects::nonNull).toList()
-        );
+        List<User> users = userRepository.findAllById(userIdList);
 
         return users.stream()
-                .map(
-                        userProjection -> mapStructMapper.toDto(
-                                userProjection,
-                                profileList.isEmpty()
-                                        ? null
-                                        : profileList.get(userProjection.profileId()),
-                                sessionService.userOnline(userProjection.username())
-                        )
-                ).collect(Collectors.toMap(
+                .map(user -> mapStructMapper.toDto(user, sessionService.userOnline(user.getUsername())))
+                .collect(Collectors.toMap(
                         UserDto::id,
                         dto -> dto
                 ));

@@ -34,5 +34,6 @@ public class BinaryContent extends BaseEntity{
         this.fileName = fileName;
         this.contentType = contentType;
         this.size = size;
+        status = BinaryContentStatus.PROCESSING;
     }
 }
