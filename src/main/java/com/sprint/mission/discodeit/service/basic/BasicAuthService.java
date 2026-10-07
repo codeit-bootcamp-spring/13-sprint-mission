@@ -56,18 +56,10 @@ public class BasicAuthService implements AuthService {
 
         userRepository.save(user);
 
-        // find after update
-        UserProjection projection = userRepository.getUserFromId(userId)
-                .orElseThrow(RuntimeException::new);
-
         // 롤 변경시 기존 로그인 토큰 파기(로그아웃)
         jwtRegistry.invalidateJwtInformationByUserId(user.getId());
 
-        return mapper.toDto(
-                projection,
-                binaryContentRepository.getBinaryContentById(projection.profileId()).orElse(null),
-                sessionService.userOnline(projection.username())
-        );
+        return mapper.toDto(user, sessionService.userOnline(user.getUsername()));
 
     }
 
@@ -94,7 +86,6 @@ public class BasicAuthService implements AuthService {
 
         UserDto userDto = mapper.toDto(
                 user,
-                getProfileToDto(user.getProfile()),
                 sessionService.userOnline(user.getUsername())
         );
         return new JwtOutput(
@@ -103,10 +94,6 @@ public class BasicAuthService implements AuthService {
         );
     }
 
-    private BinaryContentDto getProfileToDto(BinaryContent profile){
-        if (profile == null) return null;
-        return binaryContentRepository.getBinaryContentById(profile.getId()).orElse(null);
-    }
 
     private Cookie refreshCookie(UUID userId){
         String refreshToken = refreshTokenService.grant(userId);

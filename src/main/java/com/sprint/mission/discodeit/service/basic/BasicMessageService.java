@@ -105,11 +105,7 @@ public class BasicMessageService implements MessageService {
 
         log.debug("Message Created - {}", message.getId());
 
-        return mapStructMapper.toDto(
-                message,
-                getUserDtoFromUser(user),
-                getBinaryContentDtoFromAttachments(attachFiles)
-        );
+        return mapStructMapper.toDto(message);
     }
 
     private BinaryContent getBinaryContent(MultipartFileDto fileDto){
@@ -138,36 +134,18 @@ public class BasicMessageService implements MessageService {
 
 
         // 2. query required info about message.
-        List<MessageProjection> messageInfo = messageRepository
-                .getMessageProjectionFromIdList(query.getContent())
-                .values()
-                .stream()
-                .toList();
-
-        Map<UUID, UserDto> userList =
-                getUserDtoFromUserIdList(
-                        messageInfo.stream()
-                                .map(MessageProjection::userId)
-                                .toList()
+        Map<UUID, Message> messageList = messageRepository.findAllById(query.getContent()).stream()
+                .collect(
+                        Collectors.toMap(
+                                Message::getId,
+                                message -> message
+                        )
                 );
-
-        Map<UUID, BinaryContentDto> attachmentList =
-                binaryContentRepository.getBinaryContentsInIdList(
-                        messageInfo.stream()
-                                .map(MessageProjection::attachments)
-                                .flatMap(List::stream)
-                                .toList()
-                );
-
 
         // 3. construct MessageDto
-        List<MessageDto> contents = messageInfo.stream().map(
-                messageProjection -> mapStructMapper.toDto(
-                            messageProjection,
-                            userList.get(messageProjection.userId()),
-                            messageProjection.attachments().stream().map(attachmentList::get).toList()
-                )
-        ).toList();
+        List<MessageDto> contents = query.stream()
+                .map(messageId -> mapStructMapper.toDto(messageList.get(messageId)))
+                .toList();
 
         // 4. create Slice Object from query
         Slice<MessageDto> slice = new SliceImpl<>(contents,Pageable.ofSize(query.getSize()),query.hasNext());
@@ -183,15 +161,10 @@ public class BasicMessageService implements MessageService {
         Message message = getMessageOrException(id);
 
         message.update(request.newContent());
-        messageRepository.save(message);
 
         log.info("Message Updated - {}", message.getId());
 
-        return mapStructMapper.toDto(
-                message,
-                getUserDtoFromUser(message.getAuthor()),
-                getBinaryContentDtoFromAttachments(message.getAttachment())
-        );
+        return mapStructMapper.toDto(message);
     }
 
     @Override
@@ -218,51 +191,5 @@ public class BasicMessageService implements MessageService {
                         )
                 );
     }
-
-    // convert userinfo to userDto
-    // duplicated in channel class.
-    private Map<UUID, UserDto> getUserDtoFromUserIdList(List<UUID> userIdList){
-        List<UserProjection> users = userRepository.getUsersFromIds(userIdList).values().stream().toList();
-        Map<UUID,BinaryContentDto> profileList = binaryContentRepository.getBinaryContentsInIdList(
-                users.stream().map(UserProjection::profileId).filter(Objects::nonNull).toList()
-        );
-
-        return users.stream()
-                .map(
-                        userProjection -> mapStructMapper.toDto(
-                                userProjection,
-                                profileList.get(userProjection.profileId()),
-                                sessionService.userOnline(userProjection.username())
-                        )
-                ).collect(Collectors.toMap(
-                        UserDto::id,
-                        dto -> dto
-                ));
-    }
-
-    private UserDto getUserDtoFromUser(User user){
-        UUID profileId =
-                Optional.ofNullable(user.getProfile()).isEmpty()
-                ? null
-                : user.getProfile().getId();
-
-        return mapStructMapper.toDto(
-                user,
-                binaryContentRepository.getBinaryContentById(profileId).orElse(null),
-                sessionService.userOnline(user.getUsername())
-        );
-    }
-
-    private List<BinaryContentDto> getBinaryContentDtoFromAttachments(List<BinaryContent> list){
-        return binaryContentRepository
-                .getBinaryContentsInIdList(
-                        list.stream().map(BinaryContent::getId).toList()
-                )
-                .values()
-                .stream()
-                .toList();
-    }
-
-
 
 }

@@ -72,8 +72,7 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
 
-    // todo - 유저가 볼 수 있는 거 전부? 혹은 유저 id 에 대해서?
-    // 아마 후자? public 은 read status 가 바로 생성되지 않기 때문.
+
     @Override
     @Transactional(readOnly = true)
     public List<ReadStatusDto> findAllByUserID(UUID userID){
@@ -82,7 +81,7 @@ public class BasicReadStatusService implements ReadStatusService {
                 .toList();
     }
 
-    // todo - Instant 시간을 클라이언트가 보내주나? 확인.
+
     @Override
     @Transactional
     public ReadStatusDto update(UUID id, ReadStatusUpdateRequest request){
@@ -93,7 +92,7 @@ public class BasicReadStatusService implements ReadStatusService {
                         id
                 )
         );
-        readStatus.update();
+        readStatus.update(request.newNotificationEnabled(), request.newLastReadAt());
         return mapStructMapper.toDto(readStatus);
     }
     @Override
