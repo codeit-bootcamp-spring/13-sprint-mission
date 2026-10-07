@@ -111,7 +111,8 @@ public class BasicUserService implements UserService {
     public void delete(UUID id){
         User user =  getUserOrException(id);
 
-        if (user.getProfile() != null) binaryContentRepository.deleteBinaryContent(user.getProfile());
+        // todo - 실제 데이터 삭제 로직 추가.
+        if (user.getProfile() != null) binaryContentRepository.delete(user.getProfile());
 
         userRepository.delete(user);
     }

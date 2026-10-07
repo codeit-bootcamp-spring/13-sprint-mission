@@ -31,7 +31,10 @@ public class BasicBinaryContentService implements BinaryContentService {
     @Override
     @Transactional(readOnly = true)
     public List<BinaryContentDto> findAllByIdIn(List<UUID> ids){
-        return binaryContentRepository.getBinaryContentsInIdList(ids).values().stream().toList();
+        return binaryContentRepository.findAllById(ids)
+                .stream()
+                .map(mapStructMapper::toDto)
+                .toList();
     }
 
     @Override
