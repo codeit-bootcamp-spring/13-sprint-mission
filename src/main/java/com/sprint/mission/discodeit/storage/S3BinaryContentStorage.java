@@ -2,12 +2,19 @@ package com.sprint.mission.discodeit.storage;
 
 import com.sprint.mission.discodeit.config.storage.S3Property;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.event.system.SystemNotifyEvent;
+import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.exception.FileStorageException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -39,6 +46,13 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
     private final S3Client s3Client;
     private final S3Property s3Property;
 
+    private final ApplicationEventPublisher eventPublisher;
+
+    @Retryable(
+            retryFor = DiscodeitException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 100, multiplier = 2)
+    )
     @Override
     public UUID put(UUID id, byte[] content) {
 
@@ -54,6 +68,19 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
             throw new FileStorageException("S3 storage upload error");
         }
     }
+
+    @Recover
+    public void putRecover(DiscodeitException e, UUID id, byte[] content){
+        log.debug("[{}] - S3 파일 전송 실패 - id : {}", "S3_Storage", id, e);
+
+        eventPublisher.publishEvent(new SystemNotifyEvent(
+                "S3",
+                MDC.get("requestId"),
+                e.message()
+        ));
+
+    }
+
 
     @Override
     public InputStream get(UUID id) throws IOException {
