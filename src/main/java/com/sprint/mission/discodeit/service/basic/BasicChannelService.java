@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.config.CacheConfig;
 import com.sprint.mission.discodeit.dto.projection.ChannelProjection;
 import com.sprint.mission.discodeit.dto.projection.UserProjection;
 import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
@@ -23,6 +24,8 @@ import com.sprint.mission.discodeit.service.ChannelService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.core.Authentication;
@@ -59,6 +62,7 @@ public class BasicChannelService implements ChannelService {
      * @return channelDto
      */
     @Override
+    @CacheEvict(cacheNames = CacheConfig.CHANNEL_CACHE, allEntries = true)
     @Transactional
     public ChannelDto createPublicChannel(PublicChannelCreateRequest publicChannelCreate){
         Channel channel = channelRepository.save(
@@ -79,6 +83,7 @@ public class BasicChannelService implements ChannelService {
      * @return channelDto
      */
     @Override
+    @CacheEvict(cacheNames = CacheConfig.CHANNEL_CACHE, allEntries = true)
     @Transactional
     public ChannelDto createPrivateChannel(PrivateChannelCreateRequest publicChannelCreate){
         Channel channel = channelRepository.save(new Channel(null, null, ChannelType.PRIVATE));
@@ -103,6 +108,7 @@ public class BasicChannelService implements ChannelService {
      * @param userId UUID
      * @return channelList List
      */
+    @Cacheable(CacheConfig.CHANNEL_CACHE)
     @Override
     @Transactional
     public List<ChannelDto> findAllByUserID(UUID userId) {
@@ -137,6 +143,7 @@ public class BasicChannelService implements ChannelService {
      * @return ChannelDto 채널 정보에 대한 반환값.
      */
     @Override
+    @CacheEvict(cacheNames = CacheConfig.CHANNEL_CACHE, allEntries = true)
     @Transactional
     public ChannelDto update(UUID id, PublicChannelUpdateRequest uci, Authentication authentication) {
         Channel channel = getChannelOrException(id);
@@ -159,6 +166,7 @@ public class BasicChannelService implements ChannelService {
      * @param authentication 현재 인증 사용자 인가정보.
      */
     @Override
+    @CacheEvict(cacheNames = CacheConfig.CHANNEL_CACHE, allEntries = true)
     @Transactional
     public void deleteChannel(UUID id,Authentication authentication) {
 

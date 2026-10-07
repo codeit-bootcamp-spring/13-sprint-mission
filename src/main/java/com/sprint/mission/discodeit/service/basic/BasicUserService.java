@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.config.CacheConfig;
 import com.sprint.mission.discodeit.dto.projection.UserProjection;
 import com.sprint.mission.discodeit.dto.request.MultipartFileDto;
 import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
@@ -23,6 +24,8 @@ import java.util.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -47,6 +50,7 @@ public class BasicUserService implements UserService {
 
 
     @Override
+    @CacheEvict(cacheNames = CacheConfig.USER_CACHE, allEntries = true)
     @Transactional
     public UserDto create(UserCreateRequest userCreateRequest, Optional<MultipartFileDto> multiFileDto){
         String username = nameCheck(userCreateRequest.username());
@@ -74,6 +78,7 @@ public class BasicUserService implements UserService {
         );
     }
 
+    @Cacheable(CacheConfig.USER_CACHE)
     @Override
     @Transactional
     public List<UserDto> getUserList(){
@@ -98,6 +103,7 @@ public class BasicUserService implements UserService {
 
 
     @Override
+    @CacheEvict(cacheNames = CacheConfig.USER_CACHE, allEntries = true)
     @Transactional
     public UserDto update(UUID id, UserUpdateRequest uui, Optional<MultipartFileDto> multiFileDto){
         User user = getUserOrException(id);
@@ -122,6 +128,7 @@ public class BasicUserService implements UserService {
 
 
     @Override
+    @CacheEvict(cacheNames = CacheConfig.USER_CACHE, allEntries = true)
     @Transactional
     public void delete(UUID id){
         User user =  getUserOrException(id);

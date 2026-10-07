@@ -45,7 +45,11 @@ discodeit:
     refresh-expired-date: 14 # 14 일
     access-token-validate: 15 # 15 분
 
-
+  cache:
+    #캐시 사이즈
+    max-size: 500
+    #수명(초)
+    ttl-seconds: 60
 
 
 springdoc:

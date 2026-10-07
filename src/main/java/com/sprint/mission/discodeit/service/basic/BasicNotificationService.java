@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
 
+import com.sprint.mission.discodeit.config.CacheConfig;
 import com.sprint.mission.discodeit.dto.response.NotificationDto;
 import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
@@ -10,6 +11,8 @@ import com.sprint.mission.discodeit.repository.NotificationRepository;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +26,7 @@ public class BasicNotificationService implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationMapper mapper;
 
+    @Cacheable(CacheConfig.NOTIFICATION_CACHE)
     @Override
     public List<NotificationDto> getNotifies(Authentication authentication){
 
@@ -34,6 +38,8 @@ public class BasicNotificationService implements NotificationService {
                 .stream().map(mapper::toDto).toList();
     }
 
+    // 알림을 삭제하면, 현재 알림 목록 캐시를 비운다.
+    @CacheEvict(cacheNames = CacheConfig.NOTIFICATION_CACHE, allEntries = true)
     @Override
     public void deleteNotify(UUID id, Authentication authentication){
 

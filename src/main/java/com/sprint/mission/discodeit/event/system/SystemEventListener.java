@@ -1,11 +1,13 @@
 package com.sprint.mission.discodeit.event.system;
 
+import com.sprint.mission.discodeit.config.CacheConfig;
 import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.NotificationRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.security.role.Role;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -24,6 +26,7 @@ public class SystemEventListener {
      * @param event - 1. 작업 내용, 2. 리퀘스트 아이디, 3. 발생한 에러 메세지
      */
     @Async("noty")
+    @CacheEvict(cacheNames = CacheConfig.NOTIFICATION_CACHE, allEntries = true)
     @TransactionalEventListener
     public void on(SystemNotifyEvent event){
         List<User> admins = userRepository.findByRole(Role.ADMIN);
