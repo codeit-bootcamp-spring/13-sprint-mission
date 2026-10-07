@@ -71,14 +71,14 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
 
     @Recover
     public void putRecover(DiscodeitException e, UUID id, byte[] content){
-        log.debug("[{}] - S3 파일 전송 실패 - id : {}", "S3_Storage", id, e);
+        log.error("[{}] - S3 파일 전송 실패 - id : {}", "S3_Storage", id, e);
 
+        // 시스템 관리자 계정에 알림 작성.
         eventPublisher.publishEvent(new SystemNotifyEvent(
                 "S3",
                 MDC.get("requestId"),
                 e.message()
         ));
-
     }
 
 
