@@ -72,7 +72,7 @@ discodeit:
 logging:
   level:
     com.sprint.mission.discodeit: info
-    org.hibernate.sql: debug
+    org.hibernate.SQL: debug
 
 
 management:
