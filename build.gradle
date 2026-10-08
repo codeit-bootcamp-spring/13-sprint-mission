@@ -62,6 +62,10 @@ dependencies {
 
 	// JWT 라이브러리 nimbus
 	implementation 'com.nimbusds:nimbus-jose-jwt:10.3'
+
+	// 재시도를 어노테이션으로 간단하게 (AOP 스타터가 있어야 동작합니다.)
+	implementation 'org.springframework.retry:spring-retry'
+	implementation 'org.springframework.boot:spring-boot-starter-aop'
 }
 
 tasks.named('test') {

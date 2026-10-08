@@ -2,6 +2,8 @@ package com.sprint.mission.discodeit.storage;
 
 import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.repository.NotificationRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
@@ -37,6 +38,9 @@ class S3BinaryContentStorageTest {
     private static S3MockContainer s3Mock;
     private static S3Client s3Client;
     private static S3BinaryContentStorage storage;
+
+    private static UserRepository userRepository;
+    private static NotificationRepository notificationRepository;
 
     @BeforeAll
     static void setUp() {
@@ -61,6 +65,9 @@ class S3BinaryContentStorageTest {
                 builder.bucket(BUCKET)
         );
 
+        userRepository = mock(UserRepository.class);
+        notificationRepository = mock(NotificationRepository.class);
+
         // S3Mock endpoint를 사용하는 Storage 생성
         storage = new S3BinaryContentStorage(
                 "test",
@@ -68,7 +75,9 @@ class S3BinaryContentStorageTest {
                 "ap-northeast-2",
                 BUCKET,
                 600L,
-                URI.create(s3Mock.getHttpEndpoint())
+                URI.create(s3Mock.getHttpEndpoint()),
+                userRepository,
+                notificationRepository
         );
     }
 
