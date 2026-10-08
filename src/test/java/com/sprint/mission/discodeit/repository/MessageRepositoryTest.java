@@ -47,9 +47,6 @@ public class MessageRepositoryTest {
     @Autowired
     private MessageRepository messageRepository;
 
-    @MockitoBean
-    BinaryContentStorage binaryContentStorage;
-
     private List<UUID> setup() {
         Channel channel = getTestChannel();
         User user = getTestUser();
@@ -101,22 +98,6 @@ public class MessageRepositoryTest {
     }
 
     @Test
-    @DisplayName("test find by channel id")
-    void testFindByChannelId() {
-        // given
-        List<UUID> ids = setup();
-        log.info("id {}",ids.get(0));
-        // when
-        // then
-
-        // will return 4 message with orderd by ctime -> 4,3,2,1
-        List<Message> messages = messageRepository.findByChannelId(ids.get(0));
-
-        assertThat(messages).hasSize(4);
-        assertThat(messages.get(0)).extracting(Message::getContent).isEqualTo("message4");
-    }
-
-    @Test
     @DisplayName("test find by channel id orderd")
     void testFindByChannelIdWithCtime() {
         // given
@@ -140,7 +121,7 @@ public class MessageRepositoryTest {
         Pageable page = PageRequest.of(0, 2);
         // when
         // then
-        // if the worng channel id is whrown it will return empty list
+        // if the wrong channel id thrown it will return empty list
         assertThat(messageRepository.findByChannelIdOrderByCreatedAtDesc(UUID.randomUUID(),page))
                 .isEmpty();
 

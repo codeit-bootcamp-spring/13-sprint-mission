@@ -49,7 +49,7 @@ public class AuthController implements AuthControllerDoc {
     // todo - 전용 에러 + handler 로 401 에러 반환.
     @PostMapping("refresh")
     public ResponseEntity<JwtDto> refresh(
-            @RequestHeader(value = "REFRESH_TOKEN") String token
+            @CookieValue(value = "REFRESH_TOKEN", required = false) String token
     ){
         JwtOutput output = authService.jwtRefresh(token);
 

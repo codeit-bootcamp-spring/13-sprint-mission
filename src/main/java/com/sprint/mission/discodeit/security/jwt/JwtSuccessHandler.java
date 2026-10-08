@@ -55,7 +55,7 @@ public class JwtSuccessHandler implements AuthenticationSuccessHandler {
          */
 
         log.debug(
-                "{} - 로그인 요청 들어옴.\nprincipal(id): {}\ncredential(pw):{}",
+                "[{}] - 로그인 요청 들어옴.\nprincipal(id): {}\ncredential(pw):{}",
                 SERVICE_NAME,
                 authentication.getPrincipal(),
                 authentication.getCredentials() // maybe null

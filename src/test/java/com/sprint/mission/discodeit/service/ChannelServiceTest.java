@@ -40,9 +40,6 @@ public class ChannelServiceTest {
     @Mock ChannelRepository channelRepository;
     @Mock ReadStatusRepository readStatusRepository;
     @Mock UserRepository userRepository;
-    @Mock MessageRepository messageRepository;
-    @Mock
-    BinaryContentRepository binaryContentRepository;
     @Mock
     CertificationChecker certificationChecker;
     @Mock
@@ -107,40 +104,19 @@ public class ChannelServiceTest {
                         null
                 )));
 
-
-        given(readStatusRepository.findUserIdsByChannelId(any()))
-                .willReturn(users.stream().map(User::getId).toList());
-
-
-        given(userRepository.getUsersFromIds(anyList()))
-                .willReturn(
-                        users.stream().collect(
-                                Collectors.toMap(
-                                        BaseEntity::getId,
-                                        u -> new UserProjection(
-                                                u.getId(),
-                                                u.getUsername(),
-                                                u.getEmail(),
-                                                u.getPassword(),
-                                                u.getRole(),
-                                                null
-                                        )
-
-                                )
-                        )
+        given(userRepository.findAllById(anyList()))
+                .willAnswer(
+                       id -> List.of(user())
                 );
 
-        // no profile or files return
-        given(binaryContentRepository.getBinaryContentsInIdList(anyList()))
-                .willReturn(Map.of());
 
-        given(certificationChecker.userOnline(any())).willReturn(false);
+
+        given(certificationChecker.online(any(UUID.class))).willReturn(false);
     }
 
 
     @Nested
     class CreateTest{
-
 
 
         @Test

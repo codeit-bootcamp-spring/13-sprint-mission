@@ -75,6 +75,7 @@ public class BasicAuthService implements AuthService {
             case SUCCESS -> {}
         }
 
+        log.debug("[{}] - 토큰 로테이팅 됨.", SERVICE_NAME);
 
         User user = userRepository.findByUsername(result.username())
                 .orElseThrow(UserNotFoundException::new);
@@ -85,6 +86,7 @@ public class BasicAuthService implements AuthService {
                 user,
                 certificationChecker.online(user.getId())
         );
+
         return new JwtOutput(
                 new JwtDto(userDto, accessToken),
                 refreshCookie(user.getId())

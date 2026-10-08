@@ -11,6 +11,8 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.event.binarycontent.BinaryContentCreatedEvent;
 import com.sprint.mission.discodeit.event.message.MessageCreateEvent;
+import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.exception.ExceptionCode;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -117,12 +119,14 @@ public class BasicMessageService implements MessageService {
             Pageable pageable,
             Instant cursor
     ){
+        Instant cursorTime = Optional.of(cursor).orElse(Instant.now());
+
         // 1. query target messages id
         Slice<UUID> query =
-                messageRepository.findMessageIdsBuChannelIdWithCursor(
+                messageRepository.findMessageIdsByChannelIdWithCursor(
                         channelId,
                         pageable,
-                        Optional.of(cursor).orElse(Instant.now())
+                        cursorTime
                 );
 
 
@@ -137,16 +141,40 @@ public class BasicMessageService implements MessageService {
 
         // 3. construct MessageDto
         List<MessageDto> contents = query.stream()
-                .map(messageId -> entityMapper.toDto(messageList.get(messageId)))
+                .map(messageId -> {
+                    MessageDto dto = entityMapper.toDto(messageList.get(messageId));
+
+                    if (dto == null) {
+                        log.error(
+                                "[{}] - DTO conversion error. no message entity with - id : {}",
+                                SERVICE_NAME,
+                                messageId
+                        );
+                        throw new DiscodeitException(ExceptionCode.SERVER_ERROR, "메세지 -> DTO 변환 에러!");
+                    }
+                    return dto;
+                })
                 .toList();
 
         // 4. create Slice Object from query
         Slice<MessageDto> slice = new SliceImpl<>(contents,Pageable.ofSize(query.getSize()),query.hasNext());
-        Instant newCursor = contents.get(contents.size() - 1).createdAt();
+
+        Instant newCursor = getLastMessageTime(contents, cursorTime);
 
         return pageResponseMapper.fromSliceWithCursor(slice,newCursor);
     }
 
+    // NPE 방지 분기.
+    private Instant getLastMessageTime(List<MessageDto> messageList,Instant cursor){
+        Instant originCursor = Optional.of(cursor).orElse(null);
+        try{
+            if(messageList.isEmpty()) return originCursor;
+            else return messageList.get(messageList.size() - 1).createdAt();
+        } catch (NullPointerException e) {
+            log.error("[{}] - 메세지 변환 에러! - Cursor 변환시 null 발견됨.", SERVICE_NAME, e);
+            throw new DiscodeitException(ExceptionCode.SERVER_ERROR, "메세지 -> cursor 변환 에러!");
+        }
+    }
 
     @Override
     @Transactional

@@ -63,7 +63,7 @@ public class S3BinaryContentStorageTest {
     static void stop(){if (s3Mock != null) s3Mock.stop();}
 
     private BinaryContentDto getBinaryContentDto(UUID id, String name,Long size, String type) {
-        return new BinaryContentDto(id, name, size, type, null);
+        return new BinaryContentDto(id, name, size, type);
     }
 
 

@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.service;
 
-import com.sprint.mission.discodeit.dto.projection.MessageProjection;
 import com.sprint.mission.discodeit.dto.request.message.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.message.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
@@ -16,9 +15,11 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.security.CertificationChecker;
+import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
 import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.basic.BasicMessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -36,7 +38,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -44,6 +45,7 @@ import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Message Service Test")
+@Slf4j
 public class MessageServiceTest {
     @Mock
     MessageRepository messageRepository;
@@ -52,12 +54,14 @@ public class MessageServiceTest {
     @Mock BinaryContentRepository binaryContentRepository;
     @Mock BinaryContentStorage binaryContentStorage;
     @Mock PageResponseMapper pageResponseMapper;
-
     @Mock
-    CertificationChecker certificationChecker;
+    ApplicationEventPublisher eventPublisher;
 
     @Spy
-    EntityMapper mapStructEntityMapper = Mappers.getMapper(EntityMapper.class);
+    EntityMapper mapper = Mappers.getMapper(EntityMapper.class);
+
+    @Spy
+    PageResponseMapper pageMapper;
 
     @InjectMocks
     BasicMessageService messageService;
@@ -107,8 +111,6 @@ public class MessageServiceTest {
                 ReflectionTestUtils.setField(message,"id",messageId);
                 return message;
             });
-
-            given(certificationChecker.online(any(UUID.class))).willReturn(false);
 
             // when
 
@@ -161,7 +163,6 @@ public class MessageServiceTest {
 
             // when
             given(messageRepository.findById(messageId)).willReturn(Optional.of(message));
-            given(messageRepository.save(any(Message.class))).willReturn(message);
 
             // then
             MessageDto dto = messageService.updateMessageData(messageId,request);
@@ -228,21 +229,6 @@ public class MessageServiceTest {
     @DisplayName("find Message by Channel")
     class FindByChannel {
 
-        private MessageProjection getProjection(Message message){
-            return new MessageProjection(
-                    message.getId(),
-                    message.getCreatedAt(),
-                    message.getUpdatedAt(),
-                    message.getContent(),
-                    message.getChannel().getId(),
-                    message.getAuthor().getId(),
-                    message.getAttachment().stream()
-                            .map(BinaryContent::getId)
-                            .filter(Objects::nonNull)
-                            .toList()
-            );
-        }
-
         private BinaryContentDto getContentDto(BinaryContent content){
             return new BinaryContentDto(
                     content.getId(),
@@ -297,6 +283,10 @@ public class MessageServiceTest {
             Channel channel = channel(channelId);
             User user = user(userId,"ksk");
             Message message = new Message("beforeContents", channel, user, List.of());
+
+            ReflectionTestUtils.setField(message,"id",messageId);
+            ReflectionTestUtils.setField(message,"createdAt",cursor);
+
             // 2. messageDto
             MessageDto dto = messageDto(messageId,channelId,null,null);
             // 3. Slice
@@ -310,45 +300,13 @@ public class MessageServiceTest {
 
             // when
             // 1. query target message ids
-            given(messageRepository.findMessageIdsBuChannelIdWithCursor(
+            given(messageRepository.findMessageIdsByChannelIdWithCursor(
                     any(UUID.class),
                     any(Pageable.class),
                     any(Instant.class)
             )).willReturn(messageIdList);
             // 2.1. query message info
-            given(messageRepository.getMessageProjectionFromIdList(
-                    messageIdList.getContent()
-            )).willReturn(
-                    messageIdList.getContent().stream().collect(
-                            Collectors.toMap(
-                                    id -> id,
-                                    t -> getProjection(message)
-                            )
-                    )
-            );
-            // 2.2. get user info from Id
-            given(userRepository.getUsersFromIds(
-                    any())
-            ).willReturn(
-                    Map.of(
-                            userId,
-                            new UserProjection(
-                                    user.getId(),
-                                    user.getUsername(),
-                                    user.getEmail(),
-                                    user.getPassword(),
-                                    user.getRole(),
-                                    null
-                            )
-                    )
-            );
-            // 2.3 query message info and user and contents
-            given(binaryContentRepository.getBinaryContentsInIdList(
-                    any()
-            )).willReturn(
-                    new HashMap<>()
-            );
-
+            given(messageRepository.findAllById(anyList())).willReturn(List.of(message));
 
             PageResponse<MessageDto> result = messageService.findallByChannelIdWithCursor(
                     channelId,
@@ -356,27 +314,12 @@ public class MessageServiceTest {
                     cursor
             );
 
-
-
-//            assertThat(result.content()).extracting(
-//                    MessageDto::id
-//            ).isEqualTo(messageId);
+            log.info("test - message cursor query result - {}", result.content().toString());
 
             verify(messageRepository,times(1))
-                    .findMessageIdsBuChannelIdWithCursor(any(),any(),any());
-
-            verify(messageRepository,times(1))
-                    .getMessageProjectionFromIdList(any());
-
-            verify(userRepository,times(1))
-                    .getUsersFromIds(any());
-
-            verify(binaryContentRepository,times(2))
-                    .getBinaryContentsInIdList(any());
+                    .findMessageIdsByChannelIdWithCursor(any(),any(),any());
 
         }
-
-
 
     }
 

@@ -2,8 +2,12 @@ package com.sprint.mission.discodeit.E2E;
 
 
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.security.jwt.JwtInformation;
+import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
 import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
+import com.sprint.mission.discodeit.security.jwt.RefreshTokenService;
 import com.sprint.mission.discodeit.security.role.Role;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +20,8 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -33,6 +39,15 @@ public class E2EJwtTest {
 
     @Autowired
     JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    RefreshTokenService refreshTokenService;
+
+    @Autowired
+    EntityMapper entityMapper;
+
+    @Autowired
+    JwtRegistry jwtRegistry;
 
     @Autowired
     UserRepository userRepository;
@@ -74,6 +89,18 @@ public class E2EJwtTest {
     @DisplayName("엑세스 토큰 작성 -> 정상 결과 반환")
     void accessibleTokenTest(){
         String token = jwtTokenProvider.createAccessToken("admin@admin.com", Role.ADMIN);
+
+        User admin = userRepository.findByEmail("admin@admin.com").orElse(null);
+
+        String refreshToken = refreshTokenService.grant(admin.getId());
+
+        JwtInformation jwtInfo = new JwtInformation(
+                entityMapper.toDto(admin,true),
+                token,
+                refreshToken
+        );
+
+        jwtRegistry.registerJwtInformation(jwtInfo);
 
         ResponseEntity<String> res = getWithToken("/api/users",token);
 

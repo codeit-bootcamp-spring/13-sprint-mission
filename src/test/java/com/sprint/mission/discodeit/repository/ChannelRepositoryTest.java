@@ -40,9 +40,6 @@ public class ChannelRepositoryTest {
     @Autowired
     TestEntityManager em;
 
-    @MockitoBean
-    BinaryContentStorage binaryContentStorage;
-
     private final List<User> users = new ArrayList<>();
     private final List<Channel> channels = new ArrayList<>();
 
