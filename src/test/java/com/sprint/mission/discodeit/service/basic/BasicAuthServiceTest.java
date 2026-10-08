@@ -1,30 +1,34 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.request.UserRoleUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.entity.Role;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
-import com.sprint.mission.discodeit.mapper.UserMapper;
-import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.security.JwtRegistry;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Optional;
-import java.util.UUID;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+
+import com.sprint.mission.discodeit.dto.request.UserRoleUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.Role;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.RoleUpdatedEvent;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import com.sprint.mission.discodeit.mapper.UserMapper;
+import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.security.JwtRegistry;
+import java.util.Optional;
+import java.util.UUID;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 class BasicAuthServiceTest {
@@ -38,6 +42,9 @@ class BasicAuthServiceTest {
     @Mock
     private JwtRegistry jwtRegistry;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private BasicAuthService authService;
 
@@ -46,7 +53,7 @@ class BasicAuthServiceTest {
     class UpdateRole {
 
         @Test
-        @DisplayName("사용자가 존재하면 권한을 수정하고 JWT 정보를 무효화")
+        @DisplayName("사용자가 존재하면 권한을 수정하고 JWT 정보를 무효화하며 이벤트를 발행")
         void update_success() {
             // given
             UUID userId = UUID.randomUUID();
@@ -73,6 +80,9 @@ class BasicAuthServiceTest {
             given(user.getId())
                     .willReturn(userId);
 
+            given(user.getRole())
+                    .willReturn(Role.USER);
+
             given(userMapper.toDto(user, false))
                     .willReturn(expectedResponse);
 
@@ -98,6 +108,23 @@ class BasicAuthServiceTest {
             then(jwtRegistry).should()
                     .invalidateJwtInformationByUserId(userId);
 
+            ArgumentCaptor<RoleUpdatedEvent> eventCaptor =
+                    ArgumentCaptor.forClass(RoleUpdatedEvent.class);
+
+            then(eventPublisher).should()
+                    .publishEvent(eventCaptor.capture());
+
+            RoleUpdatedEvent event = eventCaptor.getValue();
+
+            assertThat(event.userId())
+                    .isEqualTo(userId);
+
+            assertThat(event.oldRole())
+                    .isEqualTo(Role.USER);
+
+            assertThat(event.newRole())
+                    .isEqualTo(Role.CHANNEL_MANAGER);
+
             then(userMapper).should()
                     .toDto(user, false);
         }
@@ -117,18 +144,23 @@ class BasicAuthServiceTest {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> authService.updateRole(request))
-                    .isInstanceOf(UserNotFoundException.class);
+            assertThatThrownBy(
+                    () -> authService.updateRole(request)
+            ).isInstanceOf(
+                    UserNotFoundException.class
+            );
 
             then(userRepository).should()
                     .findById(userId);
 
             then(jwtRegistry).shouldHaveNoInteractions();
 
+            then(eventPublisher).shouldHaveNoInteractions();
+
             then(userMapper).should(never())
                     .toDto(
-                            org.mockito.ArgumentMatchers.any(User.class),
-                            org.mockito.ArgumentMatchers.anyBoolean()
+                            any(User.class),
+                            anyBoolean()
                     );
         }
     }

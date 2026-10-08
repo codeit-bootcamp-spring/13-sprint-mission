@@ -9,6 +9,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
+import com.sprint.mission.discodeit.event.MessageCreatedEvent;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.file.FileStorageException;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
@@ -103,6 +104,8 @@ public class BasicMessageService implements MessageService {
         log.info("메시지: {}가 생성됨.", message.getContent());
 
         log.info("메시지 생성 완료");
+
+        applicationEventPublisher.publishEvent(new MessageCreatedEvent(message.getId()));
 
         return messageMapper.toDto(message);
     }

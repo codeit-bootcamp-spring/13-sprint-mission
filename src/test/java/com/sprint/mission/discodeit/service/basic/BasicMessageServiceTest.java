@@ -17,6 +17,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
+import com.sprint.mission.discodeit.event.MessageCreatedEvent;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -77,11 +78,12 @@ class BasicMessageServiceTest {
     class CreateMessage {
 
         @Test
-        @DisplayName("사용자와 채널이 존재하면 메시지를 생성")
+        @DisplayName("사용자와 채널이 존재하면 메시지를 생성하고 이벤트를 발행")
         void create_success() {
             // given
             UUID authorId = UUID.randomUUID();
             UUID channelId = UUID.randomUUID();
+            UUID messageId = UUID.randomUUID();
 
             MessageCreateRequest request = new MessageCreateRequest(
                     "테스트 메시지",
@@ -91,6 +93,7 @@ class BasicMessageServiceTest {
 
             User author = mock(User.class);
             Channel channel = mock(Channel.class);
+            Message savedMessage = mock(Message.class);
             MessageDto expectedDto = mock(MessageDto.class);
 
             given(userRepository.findById(authorId))
@@ -100,9 +103,12 @@ class BasicMessageServiceTest {
                     .willReturn(Optional.of(channel));
 
             given(messageRepository.save(any(Message.class)))
-                    .willAnswer(invocation -> invocation.getArgument(0));
+                    .willReturn(savedMessage);
 
-            given(messageMapper.toDto(any(Message.class)))
+            given(savedMessage.getId())
+                    .willReturn(messageId);
+
+            given(messageMapper.toDto(savedMessage))
                     .willReturn(expectedDto);
 
             // when
@@ -113,46 +119,38 @@ class BasicMessageServiceTest {
             assertThat(result)
                     .isEqualTo(expectedDto);
 
-            ArgumentCaptor<Message> messageCaptor =
-                    ArgumentCaptor.forClass(Message.class);
-
-            then(messageRepository).should()
-                    .save(messageCaptor.capture());
-
-            Message savedMessage =
-                    messageCaptor.getValue();
-
-            assertThat(savedMessage.getContent())
-                    .isEqualTo(request.content());
-
-            assertThat(savedMessage.getAuthor())
-                    .isEqualTo(author);
-
-            assertThat(savedMessage.getChannel())
-                    .isEqualTo(channel);
-
-            assertThat(savedMessage.getAttachments())
-                    .isEmpty();
-
             then(userRepository).should()
                     .findById(authorId);
 
             then(channelRepository).should()
                     .findById(channelId);
 
-            then(messageMapper).should()
-                    .toDto(any(Message.class));
+            then(messageRepository).should()
+                    .save(any(Message.class));
 
-            then(eventPublisher).should(never())
-                    .publishEvent(any());
+            ArgumentCaptor<MessageCreatedEvent> eventCaptor =
+                    ArgumentCaptor.forClass(MessageCreatedEvent.class);
+
+            then(eventPublisher).should()
+                    .publishEvent(eventCaptor.capture());
+
+            MessageCreatedEvent event =
+                    eventCaptor.getValue();
+
+            assertThat(event.messageId())
+                    .isEqualTo(messageId);
+
+            then(messageMapper).should()
+                    .toDto(savedMessage);
         }
 
         @Test
-        @DisplayName("첨부파일이 있으면 BinaryContent를 저장하고 생성 이벤트를 발행")
+        @DisplayName("첨부파일이 있으면 BinaryContent와 Message 생성 이벤트를 발행")
         void create_withAttachments_success() {
             // given
             UUID authorId = UUID.randomUUID();
             UUID channelId = UUID.randomUUID();
+            UUID messageId = UUID.randomUUID();
 
             MessageCreateRequest request = new MessageCreateRequest(
                     "테스트 메시지",
@@ -183,6 +181,9 @@ class BasicMessageServiceTest {
             BinaryContent savedBinaryContent =
                     mock(BinaryContent.class);
 
+            Message savedMessage =
+                    mock(Message.class);
+
             MessageDto expectedDto =
                     mock(MessageDto.class);
 
@@ -199,9 +200,12 @@ class BasicMessageServiceTest {
                     .willReturn(binaryContentId);
 
             given(messageRepository.save(any(Message.class)))
-                    .willAnswer(invocation -> invocation.getArgument(0));
+                    .willReturn(savedMessage);
 
-            given(messageMapper.toDto(any(Message.class)))
+            given(savedMessage.getId())
+                    .willReturn(messageId);
+
+            given(messageMapper.toDto(savedMessage))
                     .willReturn(expectedDto);
 
             // when
@@ -218,46 +222,42 @@ class BasicMessageServiceTest {
             then(binaryContentRepository).should()
                     .save(any(BinaryContent.class));
 
-            ArgumentCaptor<BinaryContentCreatedEvent> eventCaptor =
+            ArgumentCaptor<BinaryContentCreatedEvent> binaryEventCaptor =
                     ArgumentCaptor.forClass(
                             BinaryContentCreatedEvent.class
                     );
 
             then(eventPublisher).should()
-                    .publishEvent(eventCaptor.capture());
+                    .publishEvent(binaryEventCaptor.capture());
 
-            BinaryContentCreatedEvent event =
-                    eventCaptor.getValue();
+            BinaryContentCreatedEvent binaryEvent =
+                    binaryEventCaptor.getValue();
 
-            assertThat(event.binaryContentId())
+            assertThat(binaryEvent.binaryContentId())
                     .isEqualTo(binaryContentId);
 
-            assertThat(event.bytes())
+            assertThat(binaryEvent.bytes())
                     .isEqualTo(bytes);
 
-            ArgumentCaptor<Message> messageCaptor =
-                    ArgumentCaptor.forClass(Message.class);
-
             then(messageRepository).should()
-                    .save(messageCaptor.capture());
+                    .save(any(Message.class));
 
-            Message savedMessage =
-                    messageCaptor.getValue();
+            ArgumentCaptor<MessageCreatedEvent> messageEventCaptor =
+                    ArgumentCaptor.forClass(
+                            MessageCreatedEvent.class
+                    );
 
-            assertThat(savedMessage.getContent())
-                    .isEqualTo(request.content());
+            then(eventPublisher).should()
+                    .publishEvent(messageEventCaptor.capture());
 
-            assertThat(savedMessage.getAuthor())
-                    .isEqualTo(author);
+            MessageCreatedEvent messageEvent =
+                    messageEventCaptor.getValue();
 
-            assertThat(savedMessage.getChannel())
-                    .isEqualTo(channel);
-
-            assertThat(savedMessage.getAttachments())
-                    .containsExactly(savedBinaryContent);
+            assertThat(messageEvent.messageId())
+                    .isEqualTo(messageId);
 
             then(messageMapper).should()
-                    .toDto(any(Message.class));
+                    .toDto(savedMessage);
         }
 
         @Test

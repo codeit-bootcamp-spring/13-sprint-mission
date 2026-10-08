@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -66,7 +64,12 @@ class BasicReadStatusServiceTest {
             UUID userId = UUID.randomUUID();
             UUID channelId = UUID.randomUUID();
 
-            ReadStatusCreateRequest request = new ReadStatusCreateRequest(userId, channelId, Instant.now());
+            ReadStatusCreateRequest request =
+                    new ReadStatusCreateRequest(
+                            userId,
+                            channelId,
+                            Instant.now()
+                    );
 
             User user = mock(User.class);
             Channel channel = mock(Channel.class);
@@ -91,14 +94,18 @@ class BasicReadStatusServiceTest {
                     .willReturn(expected);
 
             // when
-            ReadStatusDto result = readStatusService.createReadStatus(request);
+            ReadStatusDto result =
+                    readStatusService.createReadStatus(request);
 
             // then
             assertThat(result)
                     .isSameAs(expected);
 
             then(readStatusRepository).should()
-                    .existsByUserIdAndChannelId(userId, channelId);
+                    .existsByUserIdAndChannelId(
+                            userId,
+                            channelId
+                    );
 
             then(readStatusRepository).should()
                     .save(any(ReadStatus.class));
@@ -114,14 +121,22 @@ class BasicReadStatusServiceTest {
             UUID userId = UUID.randomUUID();
             UUID channelId = UUID.randomUUID();
 
-            ReadStatusCreateRequest request = new ReadStatusCreateRequest(userId, channelId, Instant.now());
+            ReadStatusCreateRequest request =
+                    new ReadStatusCreateRequest(
+                            userId,
+                            channelId,
+                            Instant.now()
+                    );
 
             given(userRepository.findById(userId))
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> readStatusService.createReadStatus(request))
-                    .isInstanceOf(UserNotFoundException.class);
+            assertThatThrownBy(
+                    () -> readStatusService.createReadStatus(request)
+            ).isInstanceOf(
+                    UserNotFoundException.class
+            );
         }
 
         @Test
@@ -131,7 +146,12 @@ class BasicReadStatusServiceTest {
             UUID userId = UUID.randomUUID();
             UUID channelId = UUID.randomUUID();
 
-            ReadStatusCreateRequest request = new ReadStatusCreateRequest(userId, channelId, Instant.now());
+            ReadStatusCreateRequest request =
+                    new ReadStatusCreateRequest(
+                            userId,
+                            channelId,
+                            Instant.now()
+                    );
 
             User user = mock(User.class);
 
@@ -142,8 +162,11 @@ class BasicReadStatusServiceTest {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> readStatusService.createReadStatus(request))
-                    .isInstanceOf(ChannelNotFoundException.class);
+            assertThatThrownBy(
+                    () -> readStatusService.createReadStatus(request)
+            ).isInstanceOf(
+                    ChannelNotFoundException.class
+            );
         }
 
         @Test
@@ -153,7 +176,12 @@ class BasicReadStatusServiceTest {
             UUID userId = UUID.randomUUID();
             UUID channelId = UUID.randomUUID();
 
-            ReadStatusCreateRequest request = new ReadStatusCreateRequest(userId, channelId, Instant.now());
+            ReadStatusCreateRequest request =
+                    new ReadStatusCreateRequest(
+                            userId,
+                            channelId,
+                            Instant.now()
+                    );
 
             User user = mock(User.class);
             Channel channel = mock(Channel.class);
@@ -170,8 +198,11 @@ class BasicReadStatusServiceTest {
             )).willReturn(true);
 
             // when & then
-            assertThatThrownBy(() -> readStatusService.createReadStatus(request))
-                    .isInstanceOf(ReadStatusAlreadyExistsException.class);
+            assertThatThrownBy(
+                    () -> readStatusService.createReadStatus(request)
+            ).isInstanceOf(
+                    ReadStatusAlreadyExistsException.class
+            );
 
             then(readStatusRepository).should(never())
                     .save(any(ReadStatus.class));
@@ -198,10 +229,12 @@ class BasicReadStatusServiceTest {
                     .willReturn(expected);
 
             // when
-            ReadStatusDto result = readStatusService.getReadStatus(readStatusId);
+            ReadStatusDto result =
+                    readStatusService.getReadStatus(readStatusId);
 
             // then
-            assertThat(result).isSameAs(expected);
+            assertThat(result)
+                    .isSameAs(expected);
 
             then(readStatusRepository).should()
                     .findById(readStatusId);
@@ -220,8 +253,11 @@ class BasicReadStatusServiceTest {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> readStatusService.getReadStatus(readStatusId))
-                    .isInstanceOf(ReadStatusNotFoundException.class);
+            assertThatThrownBy(
+                    () -> readStatusService.getReadStatus(readStatusId)
+            ).isInstanceOf(
+                    ReadStatusNotFoundException.class
+            );
         }
     }
 
@@ -242,7 +278,12 @@ class BasicReadStatusServiceTest {
             ReadStatusDto dto2 = mock(ReadStatusDto.class);
 
             given(readStatusRepository.findAllByUserId(userId))
-                    .willReturn(List.of(readStatus1, readStatus2));
+                    .willReturn(
+                            List.of(
+                                    readStatus1,
+                                    readStatus2
+                            )
+                    );
 
             given(readStatusMapper.toDto(readStatus1))
                     .willReturn(dto1);
@@ -251,11 +292,17 @@ class BasicReadStatusServiceTest {
                     .willReturn(dto2);
 
             // when
-            List<ReadStatusDto> result = readStatusService.getReadStatusesByUserId(userId);
+            List<ReadStatusDto> result =
+                    readStatusService.getReadStatusesByUserId(
+                            userId
+                    );
 
             // then
             assertThat(result)
-                    .containsExactly(dto1, dto2);
+                    .containsExactly(
+                            dto1,
+                            dto2
+                    );
 
             then(readStatusRepository).should()
                     .findAllByUserId(userId);
@@ -277,7 +324,10 @@ class BasicReadStatusServiceTest {
                     .willReturn(List.of());
 
             // when
-            List<ReadStatusDto> result = readStatusService.getReadStatusesByUserId(userId);
+            List<ReadStatusDto> result =
+                    readStatusService.getReadStatusesByUserId(
+                            userId
+                    );
 
             // then
             assertThat(result)
@@ -290,15 +340,22 @@ class BasicReadStatusServiceTest {
     class UpdateReadStatus {
 
         @Test
-        @DisplayName("ReadStatus가 존재하면 마지막 확인 시간을 수정")
+        @DisplayName("ReadStatus가 존재하면 마지막 확인 시간과 알림 여부를 수정")
         void update_success() {
             // given
             UUID readStatusId = UUID.randomUUID();
 
-            ReadStatusUpdateRequest request = mock(ReadStatusUpdateRequest.class);
+            ReadStatusUpdateRequest request =
+                    mock(ReadStatusUpdateRequest.class);
 
-            ReadStatus readStatus = mock(ReadStatus.class);
-            ReadStatusDto expected = mock(ReadStatusDto.class);
+            ReadStatus readStatus =
+                    mock(ReadStatus.class);
+
+            ReadStatusDto expected =
+                    mock(ReadStatusDto.class);
+
+            given(request.newNotificationEnabled())
+                    .willReturn(true);
 
             given(readStatusRepository.findById(readStatusId))
                     .willReturn(Optional.of(readStatus));
@@ -307,10 +364,11 @@ class BasicReadStatusServiceTest {
                     .willReturn(expected);
 
             // when
-            ReadStatusDto result = readStatusService.updateReadStatus(
-                    readStatusId,
-                    request
-            );
+            ReadStatusDto result =
+                    readStatusService.updateReadStatus(
+                            readStatusId,
+                            request
+                    );
 
             // then
             assertThat(result)
@@ -318,6 +376,55 @@ class BasicReadStatusServiceTest {
 
             then(readStatus).should()
                     .updateLastReadAt();
+
+            then(readStatus).should()
+                    .updateNotificationEnabled(true);
+
+            then(readStatusMapper).should()
+                    .toDto(readStatus);
+        }
+
+        @Test
+        @DisplayName("알림 비활성화 요청이면 notificationEnabled를 false로 수정")
+        void update_notification_disabled_success() {
+            // given
+            UUID readStatusId =
+                    UUID.randomUUID();
+
+            ReadStatusUpdateRequest request =
+                    mock(ReadStatusUpdateRequest.class);
+
+            ReadStatus readStatus =
+                    mock(ReadStatus.class);
+
+            ReadStatusDto expected =
+                    mock(ReadStatusDto.class);
+
+            given(request.newNotificationEnabled())
+                    .willReturn(false);
+
+            given(readStatusRepository.findById(readStatusId))
+                    .willReturn(Optional.of(readStatus));
+
+            given(readStatusMapper.toDto(readStatus))
+                    .willReturn(expected);
+
+            // when
+            ReadStatusDto result =
+                    readStatusService.updateReadStatus(
+                            readStatusId,
+                            request
+                    );
+
+            // then
+            assertThat(result)
+                    .isSameAs(expected);
+
+            then(readStatus).should()
+                    .updateLastReadAt();
+
+            then(readStatus).should()
+                    .updateNotificationEnabled(false);
 
             then(readStatusMapper).should()
                     .toDto(readStatus);
@@ -327,18 +434,24 @@ class BasicReadStatusServiceTest {
         @DisplayName("ReadStatus가 존재하지 않으면 예외가 발생")
         void update_fail() {
             // given
-            UUID readStatusId = UUID.randomUUID();
+            UUID readStatusId =
+                    UUID.randomUUID();
 
-            ReadStatusUpdateRequest request = mock(ReadStatusUpdateRequest.class);
+            ReadStatusUpdateRequest request =
+                    mock(ReadStatusUpdateRequest.class);
 
             given(readStatusRepository.findById(readStatusId))
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> readStatusService.updateReadStatus(
-                    readStatusId,
-                    request
-            )).isInstanceOf(ReadStatusNotFoundException.class);
+            assertThatThrownBy(
+                    () -> readStatusService.updateReadStatus(
+                            readStatusId,
+                            request
+                    )
+            ).isInstanceOf(
+                    ReadStatusNotFoundException.class
+            );
         }
     }
 
@@ -350,9 +463,11 @@ class BasicReadStatusServiceTest {
         @DisplayName("ReadStatus가 존재하면 삭제")
         void delete_success() {
             // given
-            UUID readStatusId = UUID.randomUUID();
+            UUID readStatusId =
+                    UUID.randomUUID();
 
-            ReadStatus readStatus = mock(ReadStatus.class);
+            ReadStatus readStatus =
+                    mock(ReadStatus.class);
 
             given(readStatusRepository.findById(readStatusId))
                     .willReturn(Optional.of(readStatus));
@@ -372,14 +487,20 @@ class BasicReadStatusServiceTest {
         @DisplayName("ReadStatus가 존재하지 않으면 예외가 발생")
         void delete_fail() {
             // given
-            UUID readStatusId = UUID.randomUUID();
+            UUID readStatusId =
+                    UUID.randomUUID();
 
             given(readStatusRepository.findById(readStatusId))
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> readStatusService.deleteReadStatus(readStatusId))
-                    .isInstanceOf(ReadStatusNotFoundException.class);
+            assertThatThrownBy(
+                    () -> readStatusService.deleteReadStatus(
+                            readStatusId
+                    )
+            ).isInstanceOf(
+                    ReadStatusNotFoundException.class
+            );
 
             then(readStatusRepository).should(never())
                     .deleteById(readStatusId);
