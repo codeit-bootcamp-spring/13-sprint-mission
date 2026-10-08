@@ -50,32 +50,32 @@ public class RefreshTokenService {
             Result result
     ){}
 
-    /**
-     * Refresh 토큰을 저장소에 저장, 발급하는 매서드
-     * @param userId 변경 가능.
-     * @return
-     */
-    @Transactional
-    public String grant(UUID userId) {
-
-        byte[] salt = new byte[32];
-        random.nextBytes(salt);
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(UserNotFoundException::new);
-
-        String token = Base64.getUrlEncoder()
-                .withoutPadding()
-                .encodeToString(salt);
-
-        Instant expire = clock.instant().plus(properties.getRefreshTokenValidity());
-
-        RefreshToken newRefreshToken = new RefreshToken(hash(token), expire, user);
-
-        tokenRepository.save(newRefreshToken);
-
-        return token;
-    }
+//    /**
+//     * Refresh 토큰을 저장소에 저장, 발급하는 매서드
+//     * @param userId 변경 가능.
+//     * @return
+//     */
+//    @Transactional
+//    public String grant(UUID userId) {
+//
+//        byte[] salt = new byte[32];
+//        random.nextBytes(salt);
+//
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(UserNotFoundException::new);
+//
+//        String token = Base64.getUrlEncoder()
+//                .withoutPadding()
+//                .encodeToString(salt);
+//
+//        Instant expire = clock.instant().plus(properties.getRefreshTokenValidity());
+//
+//        RefreshToken newRefreshToken = new RefreshToken(hash(token), expire, user);
+//
+//        tokenRepository.save(newRefreshToken);
+//
+//        return token;
+//    }
 
     /**
      *
@@ -95,7 +95,7 @@ public class RefreshTokenService {
         RefreshToken token = tokenRepository.findByHash(hash(key)).orElse(null);
 
         // 1.
-        if (token == null) return notFound(token);
+        if (token == null) return notFound();
         // 2.
         return switch (token.getState()){
             case ROTATED -> rotated(token);
@@ -170,9 +170,8 @@ public class RefreshTokenService {
     }
 
 
-    private Output notFound(RefreshToken token){
-        User currnetUser = token.getUser();
-        return new Output(currnetUser.getUsername(), Result.NOT_FOUND);
+    private Output notFound(){
+        return new Output(null, Result.NOT_FOUND);
     }
 
     private Output checkExpire(RefreshToken token){

@@ -1,8 +1,5 @@
 package com.sprint.mission.discodeit.security.jwt;
 
-
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -12,13 +9,14 @@ import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.UUID;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtLogoutHandler implements LogoutHandler {
 
-    private final RefreshTokenService refreshTokenService;
+    private final JwtTokenProvider jwtTokenProvider;
     private final JwtRegistry jwtRegistry;
 
     @Override
@@ -44,12 +42,11 @@ public class JwtLogoutHandler implements LogoutHandler {
                             // 기존 리프레시 토큰 비활성화
                             // 엑세스 토큰 로테이트 시에, 리프레시 작업 에러로 로그인 방지.
                             String token = cookie.getValue();
-                            User user = refreshTokenService.getUserFrom(token)
-                                    .orElseThrow(UserNotFoundException::new);
-
-                            refreshTokenService.revoke(token);
-                            // jwtRegistry 등록 쿠키 삭제.
-                            jwtRegistry.invalidateJwtInformationByUserId(user.getId());
+                            if(jwtRegistry.hasActiveJwtInformationByRefreshToken(token))
+                                // jwtRegistry 등록 쿠키 삭제.
+                                jwtRegistry.invalidateJwtInformationByUserId(
+                                        UUID.fromString(jwtTokenProvider.getSubject(token))
+                                );
                         }
                 );
     }

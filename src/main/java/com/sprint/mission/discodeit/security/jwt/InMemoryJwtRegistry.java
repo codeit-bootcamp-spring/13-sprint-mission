@@ -1,8 +1,6 @@
 package com.sprint.mission.discodeit.security.jwt;
 
 
-import com.sprint.mission.discodeit.dto.response.UserDto;
-import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -18,8 +16,7 @@ public class InMemoryJwtRegistry implements JwtRegistry{
     // 최대 동시 사용자 1명.
     private final int maxActiveJwtCount;
 
-    private final JwtTokenProvider accessTokenProvider;
-    private final RefreshTokenService refreshTokenService;
+    private final JwtTokenProvider tokenProvider;
 
     @Override
     public void registerJwtInformation(JwtInformation info) {
@@ -69,28 +66,24 @@ public class InMemoryJwtRegistry implements JwtRegistry{
         );
     }
 
+    /**
+     * refresh 토큰으로 저장소의 토큰을 검사하고, 새 JwtInformation 으로 등록을 치환.
+     * @param refresh
+     * @param newInfo 새 JwtInformation.
+     */
     @Override
-    public void rotateJwtInformation(String refresh, JwtInformation accessInfo) {
+    public void rotateJwtInformation(String refresh, JwtInformation newInfo) {
         /*
         refresh 체크, 리프레쉬가 동일하다면 엑세스 토큰 변경.
          */
-        UserDto userDto = accessInfo.getUserDto();
 
-        RefreshTokenService.Output result = refreshTokenService.rotate(refresh);
+        UUID userId = UUID.fromString(tokenProvider.getSubject(refresh));
 
-        switch (result.result()) {
-            case REVOKED -> throw new RuntimeException();
-            case EXPIRED -> throw new RuntimeException();
-            case ROTATED -> throw new RuntimeException();
-            case NOT_FOUND -> throw new RuntimeException();
-            case SUCCESS -> {}
-        }
+        Queue<JwtInformation> storage = origin.get(userId);
 
-
-        String accessToken = accessTokenProvider.createAccessToken(userDto.username(),userDto.role());
-        String refreshToken = refreshTokenService.grant(userDto.id());
-
-        accessInfo.rotate(accessToken,refreshToken);
+        storage.stream()
+                .filter(info -> info.getRefreshToken().equals(refresh))
+                .forEach(info -> info.rotate(newInfo.getAccessToken(),  newInfo.getRefreshToken()));
     }
 
     @Scheduled(fixedDelay = 1000 * 60 * 5)
@@ -107,9 +100,8 @@ public class InMemoryJwtRegistry implements JwtRegistry{
         if (q.size() > 1) {
             q.forEach(
                     info -> {
-                        String accessToken = info.getAccessToken();
-                        Claims claims = accessTokenProvider.parseClaims(accessToken);
-                        if (accessTokenProvider.isExpired(claims)) q.remove(info);
+                       if(tokenProvider.isExpired(info.getRefreshToken()))
+                           q.remove(info);
                     }
             );
         }

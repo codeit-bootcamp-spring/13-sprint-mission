@@ -70,8 +70,8 @@ public class JwtSuccessHandler implements AuthenticationSuccessHandler {
                 principal.getUserDto().role()
         );
 
-        String refreshToken = refreshTokenService.grant(
-                UUID.fromString(principal.getUsername())
+        String refreshToken = jwtTokenProvider.createRefreshToken(
+                principal.getUsername()
         );
 
 
@@ -80,7 +80,7 @@ public class JwtSuccessHandler implements AuthenticationSuccessHandler {
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
         cookie.setPath("/");
-        cookie.setMaxAge(jwtTokenProvider.refreshTokenExpire());
+        cookie.setMaxAge(jwtTokenProvider.refreshCookieExpire());
 
         response.addCookie(cookie);
 
@@ -89,14 +89,6 @@ public class JwtSuccessHandler implements AuthenticationSuccessHandler {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
 
-        // jwt 레지스트리에 등록 (동시 로그인 세션을 제어.)
-        jwtRegistry.registerJwtInformation(
-                new JwtInformation(
-                        principal.getUserDto(),
-                        accessToken,
-                        refreshToken
-                )
-        );
 
         // todo - 읍답 반환시, 에러 생기면 Error Response 로 반환.
 
@@ -108,6 +100,18 @@ public class JwtSuccessHandler implements AuthenticationSuccessHandler {
                         accessToken
                 )
         );
+
+        // jwt 레지스트리에 등록 (동시 로그인 세션을 제어.)
+        // 응답을 보내고 레지스트리 등록. -> 응답 이후 로그인이 안 되더라도, 응답이 성공한 세션만 등록하는 보안관점.
+        jwtRegistry.registerJwtInformation(
+                new JwtInformation(
+                        principal.getUserDto(),
+                        accessToken,
+                        refreshToken
+                )
+        );
+
+
     }
 
     @Override

@@ -150,7 +150,6 @@ public class SecurityConfig {
 
     @Bean
     JwtRegistry jwtRegistry(
-            JwtTokenProvider jwtTokenProvider,
-            RefreshTokenService refreshTokenService
-    ){ return new InMemoryJwtRegistry(1,jwtTokenProvider,refreshTokenService); }
+            JwtTokenProvider jwtTokenProvider
+    ){ return new InMemoryJwtRegistry(1,jwtTokenProvider); }
 }

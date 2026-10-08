@@ -21,7 +21,8 @@ public enum ExceptionCode {
 
     // 인증, 인가 에러.
     INCORRECT_CERT_ERROR("A001",UNAUTHORIZED,"로그인 정보가 올바르지 않습니다."),
-    INVALID_AUTH_ERROR("C002",FORBIDDEN,"권한이 없습니다."),
+    INVALID_AUTH_ERROR("A002",FORBIDDEN,"권한이 없습니다."),
+    EXPIRED_TOKEN("A003",BAD_REQUEST,"만료된 토큰 입니다."),
 
     // 엔드포인트 에러
     REQUEST_VALUE_ERROR("C003",BAD_REQUEST,"요청 정보가 올바르지 않습니다."),

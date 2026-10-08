@@ -66,12 +66,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null) {
             try {
-                Claims claims = provider.parseClaims(token);
                 if (
                         jwtRegistry.hasActiveJwtInformationByAccessToken(token)
-                                && (!provider.isExpired(claims))
+                                && (!provider.isExpired(token))
                 ) {
-                    String username = claims.getSubject();  // user.id or user.email(login)
+                    String username = provider.getSubject(token);  // user.id or user.email(login)
 
                     log.debug("[{}] - 인증 요청 유저 - username : {}", SERVICE_NAME, username);
 
@@ -97,7 +96,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     /*
                     토큰이 없거나, 토큰이 만료된 경우. -> 에러 응답 반환?
                      */
-                    log.debug("[{}] - 토큰이 존재하지 않음. - {}", SERVICE_NAME, claims.getSubject());
+                    log.debug("[{}] - 토큰이 존재하지 않음. - {}", SERVICE_NAME, provider.getSubject(token));
                 }
             } catch (ExpiredJwtException e) {
                 request.setAttribute(ATTR_JWT_ERROR, ERROR_EXPIRED);

@@ -3,12 +3,15 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.response.JwtDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.exception.ExceptionCode;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 
 import com.sprint.mission.discodeit.security.CertificationChecker;
+import com.sprint.mission.discodeit.security.jwt.JwtInformation;
 import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
 import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import com.sprint.mission.discodeit.security.jwt.RefreshTokenService;
@@ -30,19 +33,11 @@ public class BasicAuthService implements AuthService {
 
     private final UserRepository userRepository;
     private final EntityMapper entityMapper;
-    private final BinaryContentRepository binaryContentRepository;
 
     private final CertificationChecker certificationChecker;
-
-    private final RefreshTokenService refreshTokenService;
     private final JwtTokenProvider jwtTokenProvider;
 
     private final JwtRegistry jwtRegistry;
-
-    public record JwtOutput(
-            JwtDto access,
-            Cookie refresh
-    ){}
 
     public UserDto roleUpdate(UUID userId, Role role){
         // update query
@@ -61,51 +56,45 @@ public class BasicAuthService implements AuthService {
     }
 
     @Override
-    public JwtOutput jwtRefresh(String key){
+    public JwtInformation jwtRefresh(String refreshToken){
+        // 1. 리프레시 토큰 검정 -> 토큰이 만료된건 아닌지, 토큰이 맞게 검정되어있는지.
+        // 2. 토큰 둘다 리프레시.
+        // 3. 두 토큰 다 반환.
 
-        log.debug("[{}] - 토큰 리프레시 요청 - token : {}", SERVICE_NAME, key);
-
-        RefreshTokenService.Output result = refreshTokenService.rotate(key);
-
-        switch (result.result()) {
-            case REVOKED -> throw new RuntimeException();
-            case EXPIRED -> throw new RuntimeException();
-            case ROTATED -> throw new RuntimeException();
-            case NOT_FOUND -> throw new RuntimeException();
-            case SUCCESS -> {}
+        if (
+                !jwtTokenProvider.isExpired(refreshToken)
+                && jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)
+        ) {
+            throw new DiscodeitException(ExceptionCode.EXPIRED_TOKEN,"[{}] - 토큰이 만료됨. {}", SERVICE_NAME, refreshToken);
         }
 
-        log.debug("[{}] - 토큰 로테이팅 됨.", SERVICE_NAME);
+        log.debug("[{}] - 토큰 리프레시 개시 - token : {}", SERVICE_NAME, refreshToken);
 
-        User user = userRepository.findByUsername(result.username())
+        String userId = jwtTokenProvider.getSubject(refreshToken);
+
+        User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(UserNotFoundException::new);
 
-        String accessToken = jwtTokenProvider.createAccessToken(user.getUsername(),user.getRole());
+        String newAccessToken = jwtTokenProvider.createAccessToken(user.getId().toString(),user.getRole());
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(user.getId().toString());
 
         UserDto userDto = entityMapper.toDto(
                 user,
                 certificationChecker.online(user.getId())
         );
 
-        return new JwtOutput(
-                new JwtDto(userDto, accessToken),
-                refreshCookie(user.getId())
+        JwtInformation newInfo = new JwtInformation(
+                userDto,
+                newAccessToken,
+                newRefreshToken
         );
+
+        jwtRegistry.rotateJwtInformation(refreshToken, newInfo);
+
+        return newInfo;
     }
 
 
-    private Cookie refreshCookie(UUID userId){
-        String refreshToken = refreshTokenService.grant(userId);
 
-
-        // refresh token 쿠키 세팅
-        Cookie cookie = new Cookie("REFRESH_TOKEN", refreshToken);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(jwtTokenProvider.refreshTokenExpire());
-
-        return cookie;
-    }
 
 }

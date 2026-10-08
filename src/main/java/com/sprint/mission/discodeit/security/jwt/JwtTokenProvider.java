@@ -45,6 +45,7 @@ public class JwtTokenProvider {
 
     /**
      * 서버의 설정을 이용해서 jwt 토큰을 발급하는 매서드.
+     * sub, iat, role, exp 존재.
      * @param username
      * @param role
      * @return
@@ -71,6 +72,27 @@ public class JwtTokenProvider {
     }
 
     /**
+     * 리프레시 토큰 발급 매서드.
+     * sub, iat, exp ㅗㅈㄴ재
+     * @param username
+     * @return
+     */
+    public String createRefreshToken(String username){
+        Instant now = clock.instant();
+        Instant expiry = now.plus(properties.getRefreshTokenValidity());
+
+        return Jwts.builder()
+                .subject(username)
+                .issuer(properties.getIssuer())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiry))
+                .signWith(secretKey,Jwts.SIG.HS256)
+                .compact();
+    }
+
+
+
+    /**
      * 토큰을 현재 서버 설정으로 확인하고, 페이로드를 반환한다.
      * @param token JWT
      * @return Claims 라는 페이로드 객체.
@@ -95,17 +117,13 @@ public class JwtTokenProvider {
                 .getPayload();
     }
 
-    /*
-    기타 면의 매서드
-     */
-    public Integer refreshTokenExpire(){
+
+
+    // cookie 수명 설정용 매서드
+    public Integer refreshCookieExpire(){
         return 60 * 60 * 24 * properties.getRefreshExpiredDate();
     }
 
-    public boolean isValidate(String token){
-        Claims claims = parseClaims(token);
-        return !isExpired(claims);
-    }
 
     /*
     별도 페이로드 정보 추출 매서드.
@@ -116,8 +134,10 @@ public class JwtTokenProvider {
 
     public UUID getIssuer(Claims claims) { return UUID.fromString(claims.getIssuer()); }
 
-    public Boolean isExpired(Claims claims) {
-        return claims.getExpiration().before(Date.from(clock.instant()));
+    public String getSubject(String token){ return parseClaims(token).getSubject(); }
+
+    public Boolean isExpired(String token) {
+        return parseClaims(token).getExpiration().before(Date.from(clock.instant()));
     }
 
 }
