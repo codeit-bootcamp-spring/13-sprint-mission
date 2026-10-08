@@ -11,6 +11,7 @@ import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -27,6 +28,7 @@ public class NotificationRequiredEventListener {
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
 
+    @Async
     @TransactionalEventListener
     public void on(MessageCreatedEvent event) {
         Message message = messageRepository.findById(event.messageId())
@@ -51,6 +53,7 @@ public class NotificationRequiredEventListener {
         notificationRepository.saveAll(notifications);
     }
 
+    @Async
     @TransactionalEventListener
     public void on(RoleUpdatedEvent event) {
         User receiver = userRepository.findById(event.userId())
