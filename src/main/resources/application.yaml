@@ -36,6 +36,11 @@ spring:
       max-file-size: 5MB
       max-request-size: 20MB
 
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=100,expireAfterAccess=600s,recordStats
+
 
 discodeit:
   repository:
@@ -67,13 +72,14 @@ discodeit:
 logging:
   level:
     com.sprint.mission.discodeit: info
+    org.hibernate.sql: debug
 
 
 management:
   endpoints:
     web:
       exposure:
-        include: health, info, metrics, loggers
+        include: health, info, metrics, loggers, caches
   info:
     env:
       enabled: true

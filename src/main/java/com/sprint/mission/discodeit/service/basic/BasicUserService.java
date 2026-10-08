@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.config.CacheNames;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
@@ -16,6 +17,8 @@ import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -44,6 +47,10 @@ public class BasicUserService implements UserService {
 
     //interface
     @Override
+    @CacheEvict(
+            value = CacheNames.USERS,
+            allEntries = true
+    )
     @Transactional
     public UserDto createUser(UserCreateRequest request, MultipartFile file) {
         log.debug("유저 생성 시작");
@@ -88,6 +95,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @Cacheable(CacheNames.USERS)
     @Transactional(readOnly = true)
     public List<UserDto> getUsers() {
         //유저들 검색
@@ -99,6 +107,10 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @CacheEvict(
+            value = CacheNames.USERS,
+            allEntries = true
+    )
     @PreAuthorize("#userId == authentication.principal.userDto.id")
     @Transactional
     public UserDto updateUser(UUID userId, UserUpdateRequest request, MultipartFile file) {
@@ -151,6 +163,10 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @CacheEvict(
+            value = CacheNames.USERS,
+            allEntries = true
+    )
     @PreAuthorize("#userId == authentication.principal.userDto.id")
     @Transactional
     public void deleteUser(UUID userId) {

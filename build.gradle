@@ -66,6 +66,10 @@ dependencies {
 	// 재시도를 어노테이션으로 간단하게 (AOP 스타터가 있어야 동작합니다.)
 	implementation 'org.springframework.retry:spring-retry'
 	implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+	// Caffeine 캐시 환경 구성
+	implementation 'org.springframework.boot:spring-boot-starter-cache'
+	implementation 'com.github.ben-manes.caffeine:caffeine'
 }
 
 tasks.named('test') {

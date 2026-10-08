@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.config.CacheNames;
 import com.sprint.mission.discodeit.dto.response.JwtDto;
 import com.sprint.mission.discodeit.entity.Role;
 import jakarta.servlet.ServletException;
@@ -8,6 +9,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -26,6 +29,7 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtRegistry jwtRegistry;
     private final ObjectMapper objectMapper;
+    private final CacheManager cacheManager;
 
     @Value("${discodeit.jwt.refresh-token-validity}")
     private Duration refreshTokenValidity;
@@ -46,6 +50,12 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
         // 생성한 access, refresh 토큰으로 jwtInformation 생성 및 registry에 등록(로그인 성공 시 JWT 정보 등록)
         JwtInformation jwtInformation = new JwtInformation(userDetails.getUserDto(), accessToken, refreshToken);
         jwtRegistry.registerJwtInformation(jwtInformation);
+
+        // 유저 목록 캐시 무효화
+        Cache usersCache = cacheManager.getCache(CacheNames.USERS);
+        if (usersCache != null) {
+            usersCache.clear();
+        }
 
         ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refreshToken)
                 .httpOnly(true)

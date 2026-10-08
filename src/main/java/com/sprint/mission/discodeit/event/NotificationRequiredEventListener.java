@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.event;
 
+import com.sprint.mission.discodeit.config.CacheNames;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.entity.User;
@@ -11,6 +12,7 @@ import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -30,6 +32,10 @@ public class NotificationRequiredEventListener {
 
     @Async
     @TransactionalEventListener
+    @CacheEvict(
+            value = CacheNames.USER_NOTIFICATIONS,
+            allEntries = true
+    )
     public void on(MessageCreatedEvent event) {
         Message message = messageRepository.findById(event.messageId())
                 .orElseThrow(() -> new MessageNotFoundException(event.messageId()));
@@ -55,6 +61,10 @@ public class NotificationRequiredEventListener {
 
     @Async
     @TransactionalEventListener
+    @CacheEvict(
+            value = CacheNames.USER_NOTIFICATIONS,
+            allEntries = true
+    )
     public void on(RoleUpdatedEvent event) {
         User receiver = userRepository.findById(event.userId())
                 .orElseThrow(() -> new UserNotFoundException(event.userId()));

@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.config.CacheNames;
 import com.sprint.mission.discodeit.dto.response.NotificationDto;
 import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.exception.notification.NotificationAccessDeniedException;
@@ -8,6 +9,8 @@ import com.sprint.mission.discodeit.mapper.NotificationMapper;
 import com.sprint.mission.discodeit.repository.NotificationRepository;
 import com.sprint.mission.discodeit.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +25,10 @@ public class BasicNotificationService implements NotificationService {
     private final NotificationMapper notificationMapper;
 
     @Override
+    @Cacheable(
+            value = CacheNames.USER_NOTIFICATIONS,
+            key = "#userId"
+    )
     @Transactional(readOnly = true)
     public List<NotificationDto> getNotifications(UUID userId) {
         return notificationRepository.findAllByReceiverId(userId)
@@ -31,6 +38,10 @@ public class BasicNotificationService implements NotificationService {
     }
 
     @Override
+    @CacheEvict(
+            value = CacheNames.USER_NOTIFICATIONS,
+            key = "#userId"
+    )
     @Transactional
     public void deleteNotification(UUID notificationId, UUID userId) {
         // 알림 검색
