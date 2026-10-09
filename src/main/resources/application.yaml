@@ -15,6 +15,15 @@ spring:
     init:
       mode: never
 
+  # Actuator 조회시, 초기 Spring 세팅시 캐시가 세팅되지 않으면 조회가 안 되기 때문에
+  # 이름을 미리 지정해서 Actuator 조회 가능하게 함.
+  cache:
+    cache-names:
+      - user
+      - channel
+      - notification
+
+
 
 # Server port.
 # set 80 fix in docker container
@@ -64,7 +73,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, info, metrics, loggers # 꼭 필요한 정보만 노출
+        include: health, info, metrics, loggers, caches # 꼭 필요한 정보만 노출
       base-path: /management # 경로도 바꿔서 숨김
 
   endpoint:
@@ -75,6 +84,10 @@ management:
       enabled: true
   server:
     port: 59090 # Actuator 전용 포트 (방화벽 같은데에서 Actuator는 허용된 ip만 접근이 가능하도록 막음)
+
+  observations:
+    annotations:
+      enabled: true
 
 # Actuator into
 info:

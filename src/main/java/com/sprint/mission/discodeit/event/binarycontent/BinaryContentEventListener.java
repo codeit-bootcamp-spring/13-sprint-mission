@@ -23,7 +23,7 @@ public class BinaryContentEventListener {
     private final BinaryContentStorage storage;
     private final BinaryContentService service;
 
-    @Async("noty")
+//    @Async("noty")
     @CacheEvict(cacheNames = CacheConfig.NOTIFICATION_CACHE, allEntries = true)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void create(BinaryContentCreatedEvent event){

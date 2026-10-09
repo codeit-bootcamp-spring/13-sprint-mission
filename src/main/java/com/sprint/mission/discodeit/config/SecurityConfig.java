@@ -65,7 +65,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,"/api/users").permitAll() // 유저 생성 (회원가입)
                         .requestMatchers("/api/auth/login","/api/auth/logout","/api/auth/refresh").permitAll()
                         .requestMatchers("/", "/login.html", "/index.html", "/favicon.ico", "/assets/**").permitAll() // 정적 리소스
-                        .requestMatchers("/h2-console/**", "/swagger-doc").permitAll() // h2 인메모리 데이터베이스, swagger
+                        .requestMatchers("/h2-console/**", "/swagger-doc","/management/**").permitAll() // h2 인메모리 데이터베이스, swagger
                         // 권한 기반 페이지 인가
                         .requestMatchers(HttpMethod.PUT, "/api/auth/role").hasRole("ADMIN")
                         // 기본 인증 필요

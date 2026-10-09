@@ -10,6 +10,7 @@ import com.sprint.mission.discodeit.dto.response.PageResponse;
 
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.service.MessageService;
+import io.micrometer.core.annotation.Timed;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +50,7 @@ public class MessageController implements MessageControllerDoc {
         return ResponseEntity.ok(res);
     }
 
-
+    @Timed("message.create.sync")
     @RequestMapping(
             value = "",
             method = RequestMethod.POST,
