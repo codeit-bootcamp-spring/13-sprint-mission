@@ -25,12 +25,6 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
 
     @Override
     public UUID put(UUID id, byte[] content) {
-        try{
-            Thread.sleep(3000);
-        } catch (InterruptedException e){
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
         writeFile(id.toString(), content);
         return id;
     }
