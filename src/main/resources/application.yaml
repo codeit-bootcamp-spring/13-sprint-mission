@@ -19,7 +19,7 @@ spring:
 # Server port.
 # set 80 fix in docker container
 server:
-  port: 80
+  port: 8080
 
 
 # Custom setting

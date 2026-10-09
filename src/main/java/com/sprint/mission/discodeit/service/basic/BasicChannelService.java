@@ -8,6 +8,8 @@ import com.sprint.mission.discodeit.dto.request.channel.PublicChannelUpdateReque
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.exception.ExceptionCode;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.ChannelTypeException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -209,11 +211,20 @@ public class BasicChannelService implements ChannelService {
         Collection<? extends GrantedAuthority> res = roleHierarchy
                 .getReachableGrantedAuthorities(auth.getAuthorities());
 
+        res.forEach(grantedAuthority -> {log.debug("[{}] - 권한 {}",SERVICE_NAME,grantedAuthority.getAuthority());});
+
         boolean has = res.stream()
                 .map(GrantedAuthority::getAuthority)
-                .anyMatch(g -> g.equals("CHANNEL_MANAGER"));
+                .anyMatch(g -> g.equals("ROLE_CHANNEL_MANAGER")); // Auth 안이라 preString 붙음?
 
-        if (!has) throw new AccessDeniedException("");
+        log.debug("[{}] - 사용자 권한 체크 - user : {}, has manager : {}", SERVICE_NAME, auth.getName(), has);
+
+        if (!has) throw new DiscodeitException(
+                ExceptionCode.INVALID_AUTH_ERROR,
+                "[%s] - 사용자 권한 인가 거부. user : %s",
+                SERVICE_NAME,
+                auth.getName()
+        );
     }
 
     /*

@@ -1,23 +1,19 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.response.JwtDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.exception.ExceptionCode;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.EntityMapper;
-import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 
 import com.sprint.mission.discodeit.security.CertificationChecker;
 import com.sprint.mission.discodeit.security.jwt.JwtInformation;
 import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
 import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
-import com.sprint.mission.discodeit.security.jwt.RefreshTokenService;
 import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.AuthService;
-import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -61,9 +57,11 @@ public class BasicAuthService implements AuthService {
         // 2. 토큰 둘다 리프레시.
         // 3. 두 토큰 다 반환.
 
+        if (refreshToken == null) throw new DiscodeitException(ExceptionCode.REQUEST_VALUE_ERROR,"빈 토큰이 요청됨.");
+
         if (
-                !jwtTokenProvider.isExpired(refreshToken)
-                && jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)
+                jwtTokenProvider.isExpired(refreshToken)
+                || !jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)
         ) {
             throw new DiscodeitException(ExceptionCode.EXPIRED_TOKEN,"[{}] - 토큰이 만료됨. {}", SERVICE_NAME, refreshToken);
         }

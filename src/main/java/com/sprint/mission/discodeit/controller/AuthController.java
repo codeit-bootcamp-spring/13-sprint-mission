@@ -32,7 +32,7 @@ public class AuthController implements AuthControllerDoc {
     public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken){  // HandlerMethodArgumentResolver 를 통해 자동으로 주입
         String tokenValue = csrfToken.getToken();
 
-        log.debug("토큰 요청됨 - {}",tokenValue);
+        log.debug("[AuthController] - csrf 토큰 요청됨 - response : {}",tokenValue);
 
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
@@ -56,6 +56,8 @@ public class AuthController implements AuthControllerDoc {
             HttpServletResponse response
     ){
         JwtInformation output = authService.jwtRefresh(token);
+
+        log.debug("[AuthController] - 토큰 리프레시 요청됨.\n oldRefresh : {}\n newRefresh : {}", token, output.getRefreshToken());
 
         response.addCookie(refreshCookie(output.getRefreshToken()));
 

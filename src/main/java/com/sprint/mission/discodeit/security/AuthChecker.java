@@ -18,7 +18,6 @@ import java.util.UUID;
 public class AuthChecker {
 
     private final MessageRepository messageRepository;
-    private final UserRepository userRepository;
 
 
     @Transactional(readOnly = true)
@@ -29,7 +28,7 @@ public class AuthChecker {
                         id
                 ));
 
-        return message.getAuthor().getUsername().equals(username);
+        return message.getAuthor().getId().equals(UUID.fromString(username));
     }
 
     @Transactional(readOnly = true)

@@ -105,10 +105,14 @@ public class BasicMessageService implements MessageService {
 
     private BinaryContent getBinaryContent(MultipartFileDto fileDto){
         BinaryContent binarycontent = binaryContentRepository.save(fileDto.toBinaryContent());
+
+        log.debug("[{}] - 바이너리 파일 메타데이터 저장됨. id:{}",SERVICE_NAME,binarycontent.getId());
+
         eventPublisher.publishEvent(new BinaryContentCreatedEvent(
                 binarycontent.getId(),
                 fileDto.content()
         ));
+
         return binarycontent;
     }
 
@@ -119,7 +123,7 @@ public class BasicMessageService implements MessageService {
             Pageable pageable,
             Instant cursor
     ){
-        Instant cursorTime = Optional.of(cursor).orElse(Instant.now());
+        Instant cursorTime = Optional.ofNullable(cursor).orElse(Instant.now());
 
         // 1. query target messages id
         Slice<UUID> query =
@@ -166,9 +170,8 @@ public class BasicMessageService implements MessageService {
 
     // NPE 방지 분기.
     private Instant getLastMessageTime(List<MessageDto> messageList,Instant cursor){
-        Instant originCursor = Optional.of(cursor).orElse(null);
         try{
-            if(messageList.isEmpty()) return originCursor;
+            if(messageList.isEmpty()) return cursor;
             else return messageList.get(messageList.size() - 1).createdAt();
         } catch (NullPointerException e) {
             log.error("[{}] - 메세지 변환 에러! - Cursor 변환시 null 발견됨.", SERVICE_NAME, e);

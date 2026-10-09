@@ -38,7 +38,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     }
 
     @Override
-    @Transactional(propagation = Propagation.NESTED)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public BinaryContentDto updateStatus(UUID id, BinaryContentStatus status){
         BinaryContent binaryContent = getBinaryContent(id);
 

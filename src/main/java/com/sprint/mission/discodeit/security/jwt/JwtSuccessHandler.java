@@ -30,8 +30,6 @@ public class JwtSuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
 
-    private final RefreshTokenService refreshTokenService;
-
     private final JwtRegistry jwtRegistry;
 
     /**
