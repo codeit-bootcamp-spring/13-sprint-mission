@@ -92,7 +92,7 @@ public class BasicUserService implements UserService {
 
         String newName = nameCheck(uui.newUsername());
         String newEmail = emailCheck(uui.newEmail());
-        String newPassword = !uui.newPassword().isBlank()
+        String newPassword = !Optional.ofNullable(uui.newPassword()).orElse("").isBlank()
                 ? passwordEncoder.encode(uui.newPassword())
                 : null;
 

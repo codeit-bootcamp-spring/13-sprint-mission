@@ -37,8 +37,6 @@ public class E2EJwtTest {
     @Autowired
     JwtTokenProvider jwtTokenProvider;
 
-    @Autowired
-    RefreshTokenService refreshTokenService;
 
     @Autowired
     EntityMapper entityMapper;
@@ -89,7 +87,7 @@ public class E2EJwtTest {
 
         User admin = userRepository.findByEmail("admin@admin.com").orElse(null);
 
-        String refreshToken = refreshTokenService.grant(admin.getId());
+        String refreshToken = jwtTokenProvider.createRefreshToken(admin.getId().toString());
 
         JwtInformation jwtInfo = new JwtInformation(
                 entityMapper.toDto(admin,true),

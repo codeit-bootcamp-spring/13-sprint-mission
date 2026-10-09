@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.security.jwt;
 
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import java.util.*;
@@ -9,7 +10,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 @RequiredArgsConstructor
+@Slf4j
 public class InMemoryJwtRegistry implements JwtRegistry{
+
+    private final String SERVICE_NAME = "JwtRegistry";
 
     // 나중에 concurrent linked queue 로 변경?
     private final Map<UUID, Queue<JwtInformation>> origin = new ConcurrentHashMap<>();
@@ -31,6 +35,8 @@ public class InMemoryJwtRegistry implements JwtRegistry{
             queue.poll();
             queue.add(info);
         }
+
+        log.debug("[{}] - jwt 토큰 등록 - user : {}",SERVICE_NAME,userId);
     }
 
     @Override
@@ -38,6 +44,7 @@ public class InMemoryJwtRegistry implements JwtRegistry{
         Queue<JwtInformation> queue = getQueueFromUserId(userId);
 
         queue.clear();
+        log.debug("[{}] - jwt 토큰 전체 삭제 - user : {}",SERVICE_NAME,userId);
     }
 
     @Override
@@ -84,6 +91,8 @@ public class InMemoryJwtRegistry implements JwtRegistry{
         storage.stream()
                 .filter(info -> info.getRefreshToken().equals(refresh))
                 .forEach(info -> info.rotate(newInfo.getAccessToken(),  newInfo.getRefreshToken()));
+
+        log.debug("[{}] - jwt 토큰 로테이트 - user : {}",SERVICE_NAME,userId);
     }
 
     @Scheduled(fixedDelay = 1000 * 60 * 5)

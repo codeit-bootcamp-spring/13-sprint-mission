@@ -37,8 +37,8 @@ public class ReadStatus extends BaseUpdatableEntity {
         notificationEnable = !channel.getType().equals(ChannelType.PUBLIC);
     }
 
-    public void update(boolean notification, Instant lastReadAt) {
-        notificationEnable = notification;
+    public void update(Boolean notification, Instant lastReadAt) {
+        if (notification != null) notificationEnable = notification;
         this.setUpdatedAt(lastReadAt);
     }
 }

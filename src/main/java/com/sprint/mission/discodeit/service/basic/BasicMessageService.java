@@ -197,7 +197,7 @@ public class BasicMessageService implements MessageService {
         Message message = getMessageOrException(id);
 
         // 실제 데이터 삭제로직 추가.
-        binaryContentRepository.deleteAll(message.getAttachment());
+        binaryContentRepository.deleteAll(message.getAttachments());
         messageRepository.delete(message);
 
         log.info("Message Deleted - {}", message.getId());

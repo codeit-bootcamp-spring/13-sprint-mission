@@ -107,6 +107,7 @@ public class ChannelRepositoryTest {
         assertThat(result).hasSize(3);
         // 3개의 채널은 1,2,3 번 채널임.
         for (ChannelProjection projection : result){
+            log.debug("유저 사이즈 - {} dls",projection.userIds().size());
             assertThat(currectChannelIdList.contains(projection.id()))
                     .isTrue();
         }

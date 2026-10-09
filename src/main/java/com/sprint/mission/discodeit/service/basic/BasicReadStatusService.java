@@ -92,6 +92,8 @@ public class BasicReadStatusService implements ReadStatusService {
                         id
                 )
         );
+
+
         readStatus.update(request.newNotificationEnabled(), request.newLastReadAt());
         return entityMapper.toDto(readStatus);
     }

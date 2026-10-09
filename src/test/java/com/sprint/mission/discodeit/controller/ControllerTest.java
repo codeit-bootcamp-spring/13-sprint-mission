@@ -81,8 +81,6 @@ public class ControllerTest {
     DiscodeitUserDetailsService userDetailsService;
     @MockitoBean
     JwtRegistry registry;
-    @MockitoBean
-    RefreshTokenService refreshTokenService;
 
     @MockitoBean
     SessionRegistry sessionRegistry;

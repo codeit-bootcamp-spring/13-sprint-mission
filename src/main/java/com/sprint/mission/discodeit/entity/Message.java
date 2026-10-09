@@ -37,7 +37,7 @@ public class Message extends BaseUpdatableEntity {
            , joinColumns = @JoinColumn(name = "message_id")
            , inverseJoinColumns = @JoinColumn(name = "attachment_id")
    )
-   private List<BinaryContent> attachment;
+   private List<BinaryContent> attachments;
 
    public Message(
            String content,
@@ -49,7 +49,7 @@ public class Message extends BaseUpdatableEntity {
        this.content = content;
        this.channel = channel;
        this.author = user;
-       this.attachment = attachment;
+       this.attachments = attachment;
    }
 
    public void update(
