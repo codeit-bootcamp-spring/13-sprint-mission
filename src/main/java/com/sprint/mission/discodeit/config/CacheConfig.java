@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.RemovalCause;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +16,7 @@ import java.time.Duration;
 @Configuration
 @EnableCaching
 @Slf4j
+@ConditionalOnProperty(name = "discodeit.cache.type",havingValue = "caffeine", matchIfMissing = true)
 public class CacheConfig {
     /*
     캐시 드랍시의 이유, 혹은 상세 정보를 확인하기 위해 설정을 자바 객체로 치환.

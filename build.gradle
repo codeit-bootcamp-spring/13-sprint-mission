@@ -83,6 +83,11 @@ dependencies {
 	// kafka 의존성
 	implementation 'org.springframework.kafka:spring-kafka'
 
+	// redis 의존성
+	implementation 'com.github.ben-manes.caffeine:caffeine'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+
 
 }
 

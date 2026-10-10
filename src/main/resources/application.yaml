@@ -23,6 +23,12 @@ spring:
       - channel
       - notification
 
+  data:
+    # redis 전용 캐시 설정.
+    redis:
+      #enable-statistics: true
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
   # kafka 설정.
   kafka:
@@ -68,6 +74,7 @@ discodeit:
     access-token-validate: 15 # 15 분
 
   cache:
+    type: redis
     #캐시 사이즈
     max-size: 500
     #수명(초)
