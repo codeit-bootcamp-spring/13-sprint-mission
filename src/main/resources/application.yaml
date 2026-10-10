@@ -134,3 +134,6 @@ info:
       max-file-size: ${spring.servlet.multipart.max-file-size}
       max-request-size: ${spring.servlet.multipart.max-request-size}
 
+scheduler:
+  jwt-cleanup:
+    fixed-delay: PT5M

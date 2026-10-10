@@ -9,7 +9,6 @@ import org.springframework.security.access.expression.method.DefaultMethodSecuri
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -34,7 +33,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    JwtLoginSuccessHandler jwtLoginSuccessHandler,
-                                                   LoginFailureHandler loginFailureHandler,
+                                                   JwtLoginFailureHandler jwtLoginFailureHandler,
                                                    AuthenticationEntryPoint authenticationEntryPoint,
                                                    AccessDeniedHandler accessDeniedHandler,
                                                    JwtLogoutHandler jwtLogoutHandler,
@@ -74,7 +73,7 @@ public class SecurityConfig {
                 .formLogin(login -> login
                         .loginProcessingUrl("/api/auth/login")
                         .successHandler(jwtLoginSuccessHandler)
-                        .failureHandler(loginFailureHandler)
+                        .failureHandler(jwtLoginFailureHandler)
                 )
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")

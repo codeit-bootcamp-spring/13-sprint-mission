@@ -10,12 +10,15 @@ import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -51,6 +54,22 @@ class UserIntegrationTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private CacheManager cacheManager;
+
+    @BeforeEach
+    void setUp() {
+        userRepository.deleteAll();
+
+        cacheManager.getCacheNames().forEach(cacheName -> {
+            Cache cache = cacheManager.getCache(cacheName);
+
+            if (cache != null) {
+                cache.clear();
+            }
+        });
+    }
 
     /*
      * UserIntegrationTest에서는 AdminInitializer 자체를 테스트하는 것이 아니므로

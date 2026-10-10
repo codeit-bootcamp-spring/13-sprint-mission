@@ -30,6 +30,7 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
     private final JwtRegistry jwtRegistry;
     private final ObjectMapper objectMapper;
     private final CacheManager cacheManager;
+    private final RefreshTokenCookieProvider refreshTokenCookieProvider;
 
     @Value("${discodeit.jwt.refresh-token-validity}")
     private Duration refreshTokenValidity;
@@ -57,17 +58,9 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
             usersCache.clear();
         }
 
-        ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", refreshToken)
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .maxAge(refreshTokenValidity)
-                .build();
+        ResponseCookie refreshCookie = refreshTokenCookieProvider.create(refreshToken, refreshTokenValidity);
 
-        response.addHeader(
-                HttpHeaders.SET_COOKIE,
-                refreshCookie.toString()
-        );
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
         JwtDto jwtDto = new JwtDto(userDetails.getUserDto(), accessToken);
 

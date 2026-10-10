@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.response.JwtDto;
 import com.sprint.mission.discodeit.dto.response.JwtRefreshResult;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.security.RefreshTokenCookieProvider;
 import com.sprint.mission.discodeit.service.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,6 +31,7 @@ import java.time.Duration;
 public class AuthController {
 
     private final AuthService authService;
+    private final RefreshTokenCookieProvider refreshTokenCookieProvider;
 
     @Value("${discodeit.jwt.refresh-token-validity}")
     private Duration refreshTokenValidity;
@@ -56,17 +58,9 @@ public class AuthController {
         JwtRefreshResult result = authService.refresh(refreshToken);
 
         //refresh 토큰 쿠키 설정
-        ResponseCookie refreshCookie = ResponseCookie.from("REFRESH_TOKEN", result.refreshToken())
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .maxAge(refreshTokenValidity)
-                .build();
+        ResponseCookie refreshCookie = refreshTokenCookieProvider.create(result.refreshToken(), refreshTokenValidity);
 
-        response.addHeader(
-                HttpHeaders.SET_COOKIE,
-                refreshCookie.toString()
-        );
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
         return ResponseEntity.ok().body(result.jwtDto());
     }

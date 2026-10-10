@@ -97,7 +97,7 @@ public class InMemoryJwtRegistry implements JwtRegistry {
         registerJwtInformation(newJwtInformation);
     }
 
-    @Scheduled(fixedDelay = 1000 * 60 * 5)
+    @Scheduled(fixedDelayString = "${scheduler.jwt-cleanup.fixed-delay:PT5M}")
     @Override
     public void clearExpiredJwtInformation() {
         origin.forEach((userId, queue) -> {

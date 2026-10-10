@@ -23,6 +23,7 @@ public class JwtLogoutHandler implements LogoutHandler {
 
     private final JwtRegistry jwtRegistry;
     private final CacheManager cacheManager;
+    private final RefreshTokenCookieProvider refreshTokenCookieProvider;
 
     @Override
     public void logout(HttpServletRequest request,
@@ -43,19 +44,7 @@ public class JwtLogoutHandler implements LogoutHandler {
                         usersCache.clear();
                     }
 
-                    response.addHeader(
-                            HttpHeaders.SET_COOKIE,
-                            deletedCookie().toString()
-                    );
+                    response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookieProvider.delete().toString());
                 });
-    }
-
-    private ResponseCookie deletedCookie() {
-        return ResponseCookie.from("REFRESH_TOKEN", "")
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .maxAge(Duration.ZERO)
-                .build();
     }
 }
