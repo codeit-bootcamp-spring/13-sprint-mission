@@ -2,12 +2,11 @@ package com.sprint.mission.discodeit.storage;
 
 import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
-import com.sprint.mission.discodeit.repository.NotificationRepository;
-import com.sprint.mission.discodeit.repository.UserRepository;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,8 +38,7 @@ class S3BinaryContentStorageTest {
     private static S3Client s3Client;
     private static S3BinaryContentStorage storage;
 
-    private static UserRepository userRepository;
-    private static NotificationRepository notificationRepository;
+    private static ApplicationEventPublisher eventPublisher;
 
     @BeforeAll
     static void setUp() {
@@ -65,8 +63,7 @@ class S3BinaryContentStorageTest {
                 builder.bucket(BUCKET)
         );
 
-        userRepository = mock(UserRepository.class);
-        notificationRepository = mock(NotificationRepository.class);
+        eventPublisher = mock(ApplicationEventPublisher.class);
 
         // S3Mock endpoint를 사용하는 Storage 생성
         storage = new S3BinaryContentStorage(
@@ -76,8 +73,7 @@ class S3BinaryContentStorageTest {
                 BUCKET,
                 600L,
                 URI.create(s3Mock.getHttpEndpoint()),
-                userRepository,
-                notificationRepository
+                eventPublisher
         );
     }
 

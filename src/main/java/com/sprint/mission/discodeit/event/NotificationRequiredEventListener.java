@@ -23,7 +23,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import java.util.List;
 import java.util.UUID;
 
-@Component
+//@Component
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationRequiredEventListener {

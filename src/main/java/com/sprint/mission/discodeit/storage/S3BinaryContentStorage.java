@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.S3UploadFailedEvent;
 import com.sprint.mission.discodeit.exception.file.FileStorageException;
 import com.sprint.mission.discodeit.repository.NotificationRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -12,6 +13,7 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -55,16 +57,14 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
 
     private final URI endpoint;
 
-    private final UserRepository userRepository;
-    private final NotificationRepository notificationRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Autowired
     public S3BinaryContentStorage(
             @Value("${discodeit.storage.s3.region}") String region,
             @Value("${discodeit.storage.s3.bucket}") String bucket,
             @Value("${discodeit.storage.s3.presigned-url-expiration}") long presignedUrlExpiration,
-            UserRepository userRepository,
-            NotificationRepository notificationRepository
+            ApplicationEventPublisher eventPublisher
     ) {
         this.region = region;
         this.bucket = bucket;
@@ -74,8 +74,7 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
         this.secretKey = null;
         this.endpoint = null;
 
-        this.userRepository = userRepository;
-        this.notificationRepository = notificationRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     //테스트용 생성자
@@ -86,8 +85,7 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
             String bucket,
             long presignedUrlExpiration,
             URI endpoint,
-            UserRepository userRepository,
-            NotificationRepository notificationRepository
+            ApplicationEventPublisher eventPublisher
     ) {
         this.accessKey = accessKey;
         this.secretKey = secretKey;
@@ -95,8 +93,7 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
         this.bucket = bucket;
         this.presignedUrlExpiration = presignedUrlExpiration;
         this.endpoint = endpoint;
-        this.userRepository = userRepository;
-        this.notificationRepository = notificationRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Retryable(
@@ -129,29 +126,16 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
     public UUID recover(FileStorageException e, UUID binaryContentId, byte[] bytes) {
         String requestId = MDC.get("requestId");
 
-        String content = """
-                RequestId: %s
-                BinaryContentId: %s
-                Error: %s
-                """.formatted(
-                requestId,
-                binaryContentId,
-                e.getMessage()
+        eventPublisher.publishEvent(
+                new S3UploadFailedEvent(
+                        "S3 BinaryContent Upload",
+                        requestId,
+                        binaryContentId,
+                        e.getMessage()
+                )
         );
 
-        List<User> admins = userRepository.findAllByRole(Role.ADMIN);
-
-        List<Notification> notifications = admins.stream()
-                .map(admin -> new Notification(
-                        admin,
-                        "S3 파일 업로드 실패",
-                        content
-                ))
-                .toList();
-
-        notificationRepository.saveAll(notifications);
-
-        return binaryContentId;
+        throw e;
     }
 
     @Override

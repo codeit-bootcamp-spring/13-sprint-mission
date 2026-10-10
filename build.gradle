@@ -70,6 +70,9 @@ dependencies {
 	// Caffeine 캐시 환경 구성
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'com.github.ben-manes.caffeine:caffeine'
+
+	// Kafka 설정
+	implementation 'org.springframework.kafka:spring-kafka'
 }
 
 tasks.named('test') {
