@@ -9,6 +9,7 @@ import com.sprint.mission.discodeit.exception.file.FileStorageException;
 import com.sprint.mission.discodeit.repository.NotificationRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
+import org.springframework.retry.support.RetrySynchronizationManager;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -47,6 +49,7 @@ import java.util.UUID;
         value = "discodeit.storage.type",
         havingValue = "s3"
 )
+@Slf4j
 public class S3BinaryContentStorage implements BinaryContentStorage {
 
     private final String accessKey;
@@ -103,6 +106,12 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
     )
     @Override
     public UUID put(UUID binaryContentId, byte[] bytes) {
+        int retryCount = RetrySynchronizationManager.getContext() == null
+                        ? 0
+                        : RetrySynchronizationManager.getContext().getRetryCount();
+
+        log.info("S3 업로드 시도 attempt={}, binaryContentId={}", retryCount + 1, binaryContentId);
+
         String key = binaryContentId.toString();
 
         PutObjectRequest request = PutObjectRequest.builder()
@@ -125,6 +134,8 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
     @Recover
     public UUID recover(FileStorageException e, UUID binaryContentId, byte[] bytes) {
         String requestId = MDC.get("requestId");
+
+        log.error("S3 업로드 최종 실패 Recover 실행. binaryContentId={}, requestId={}", binaryContentId, requestId);
 
         eventPublisher.publishEvent(
                 new S3UploadFailedEvent(
