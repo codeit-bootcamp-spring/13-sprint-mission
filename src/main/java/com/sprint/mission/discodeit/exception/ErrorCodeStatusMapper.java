@@ -11,6 +11,7 @@ public class ErrorCodeStatusMapper {
             case USER_NOT_FOUND,
                  CHANNEL_NOT_FOUND,
                  MESSAGE_NOT_FOUND,
+                 NOTIFICATION_NOT_FOUND,
                  BINARY_CONTENT_NOT_FOUND,
                  READ_STATUS_NOT_FOUND,
                  USER_STATUS_NOT_FOUND,

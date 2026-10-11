@@ -10,6 +10,7 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.enums.ChannelType;
 import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
+import com.sprint.mission.discodeit.event.MessageCreatedEvent;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.mapper.MessageMapper;
@@ -18,6 +19,9 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -27,10 +31,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -68,10 +68,11 @@ class BasicMessageServiceTest {
     private BasicMessageService messageService;
 
     @Test
-    void create_기존_첨부파일로_메시지를_생성한다() {
+    void create_기존_첨부파일로_메시지를_생성하고_이벤트를_발행한다() {
         UUID channelId = UUID.randomUUID();
         UUID senderId = UUID.randomUUID();
         UUID attachmentId = UUID.randomUUID();
+        UUID messageId = UUID.randomUUID();
 
         MessageCreateRequest request = new MessageCreateRequest(
                 channelId,
@@ -85,16 +86,19 @@ class BasicMessageServiceTest {
                 "공지 채널",
                 ChannelType.PUBLIC
         );
+
         User author = new User(
                 "codeit",
                 "codeit@example.com",
                 "password123"
         );
+
         BinaryContent attachment = new BinaryContent(
                 "image.png",
                 100L,
                 "image/png"
         );
+
         MessageResponse expected =
                 messageResponse("안녕하세요.");
 
@@ -105,10 +109,21 @@ class BasicMessageServiceTest {
         given(binaryContentRepository.findAllById(
                 List.of(attachmentId)
         )).willReturn(List.of(attachment));
+
         given(messageRepository.save(any(Message.class)))
-                .willAnswer(
-                        invocation -> invocation.getArgument(0)
-                );
+                .willAnswer(invocation -> {
+                    Message savedMessage =
+                            invocation.getArgument(0);
+
+                    ReflectionTestUtils.setField(
+                            savedMessage,
+                            "id",
+                            messageId
+                    );
+
+                    return savedMessage;
+                });
+
         given(messageMapper.toDto(any(Message.class)))
                 .willReturn(expected);
 
@@ -122,8 +137,16 @@ class BasicMessageServiceTest {
         ArgumentCaptor<Message> messageCaptor =
                 ArgumentCaptor.forClass(Message.class);
 
+        ArgumentCaptor<MessageCreatedEvent> eventCaptor =
+                ArgumentCaptor.forClass(
+                        MessageCreatedEvent.class
+                );
+
         then(messageRepository).should()
                 .save(messageCaptor.capture());
+
+        then(eventPublisher).should()
+                .publishEvent(eventCaptor.capture());
 
         Message savedMessage = messageCaptor.getValue();
 
@@ -134,14 +157,16 @@ class BasicMessageServiceTest {
         assertThat(savedMessage.getAttachments())
                 .containsExactly(attachment);
 
-        then(eventPublisher).shouldHaveNoInteractions();
+        assertThat(eventCaptor.getValue().messageId())
+                .isEqualTo(messageId);
     }
 
     @Test
-    void create_새_첨부파일이_있으면_생성_이벤트를_발행한다() {
+    void create_새_첨부파일이_있으면_파일과_메시지_이벤트를_발행한다() {
         UUID channelId = UUID.randomUUID();
         UUID senderId = UUID.randomUUID();
         UUID attachmentId = UUID.randomUUID();
+        UUID messageId = UUID.randomUUID();
 
         MessageCreateRequest request = new MessageCreateRequest(
                 channelId,
@@ -166,6 +191,7 @@ class BasicMessageServiceTest {
                 "공지 채널",
                 ChannelType.PUBLIC
         );
+
         User author = new User(
                 "codeit",
                 "codeit@example.com",
@@ -177,6 +203,7 @@ class BasicMessageServiceTest {
                 attachmentRequest.size(),
                 attachmentRequest.contentType()
         );
+
         ReflectionTestUtils.setField(
                 savedAttachment,
                 "id",
@@ -190,13 +217,25 @@ class BasicMessageServiceTest {
                 .willReturn(Optional.of(channel));
         given(userRepository.findById(senderId))
                 .willReturn(Optional.of(author));
+
         given(binaryContentRepository.save(
                 any(BinaryContent.class)
         )).willReturn(savedAttachment);
+
         given(messageRepository.save(any(Message.class)))
-                .willAnswer(
-                        invocation -> invocation.getArgument(0)
-                );
+                .willAnswer(invocation -> {
+                    Message savedMessage =
+                            invocation.getArgument(0);
+
+                    ReflectionTestUtils.setField(
+                            savedMessage,
+                            "id",
+                            messageId
+                    );
+
+                    return savedMessage;
+                });
+
         given(messageMapper.toDto(any(Message.class)))
                 .willReturn(expected);
 
@@ -209,25 +248,48 @@ class BasicMessageServiceTest {
 
         ArgumentCaptor<Message> messageCaptor =
                 ArgumentCaptor.forClass(Message.class);
-        ArgumentCaptor<BinaryContentCreatedEvent> eventCaptor =
+
+        ArgumentCaptor<BinaryContentCreatedEvent>
+                binaryContentEventCaptor =
                 ArgumentCaptor.forClass(
                         BinaryContentCreatedEvent.class
                 );
 
+        ArgumentCaptor<MessageCreatedEvent>
+                messageCreatedEventCaptor =
+                ArgumentCaptor.forClass(
+                        MessageCreatedEvent.class
+                );
+
         then(messageRepository).should()
                 .save(messageCaptor.capture());
+
         then(eventPublisher).should()
-                .publishEvent(eventCaptor.capture());
+                .publishEvent(
+                        binaryContentEventCaptor.capture()
+                );
+
+        then(eventPublisher).should()
+                .publishEvent(
+                        messageCreatedEventCaptor.capture()
+                );
 
         assertThat(messageCaptor.getValue().getAttachments())
                 .containsExactly(savedAttachment);
 
-        BinaryContentCreatedEvent event = eventCaptor.getValue();
+        BinaryContentCreatedEvent binaryContentEvent =
+                binaryContentEventCaptor.getValue();
 
-        assertThat(event.binaryContentId())
+        assertThat(binaryContentEvent.binaryContentId())
                 .isEqualTo(attachmentId);
-        assertThat(event.bytes())
+        assertThat(binaryContentEvent.bytes())
                 .isEqualTo(attachmentBytes);
+
+        MessageCreatedEvent messageCreatedEvent =
+                messageCreatedEventCaptor.getValue();
+
+        assertThat(messageCreatedEvent.messageId())
+                .isEqualTo(messageId);
     }
 
     @Test
@@ -279,6 +341,7 @@ class BasicMessageServiceTest {
 
         MessageUpdateRequest request =
                 new MessageUpdateRequest("수정 후");
+
         MessageResponse expected =
                 messageResponse("수정 후");
 
@@ -356,6 +419,7 @@ class BasicMessageServiceTest {
 
         Message firstMessage = message("첫 번째");
         Message secondMessage = message("두 번째");
+
         MessageResponse firstResponse =
                 messageResponse("첫 번째");
         MessageResponse secondResponse =
@@ -365,6 +429,7 @@ class BasicMessageServiceTest {
                 .willReturn(
                         List.of(firstMessage, secondMessage)
                 );
+
         given(messageMapper.toDto(firstMessage))
                 .willReturn(firstResponse);
         given(messageMapper.toDto(secondMessage))

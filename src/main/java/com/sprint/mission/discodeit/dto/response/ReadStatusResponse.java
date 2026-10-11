@@ -9,5 +9,7 @@ public record ReadStatusResponse(
         UUID userId,
         Instant createdAt,
         Instant updatedAt,
-        Instant lastReadAt
-) {}
+        Instant lastReadAt,
+        boolean notificationEnabled
+) {
+}

@@ -18,7 +18,8 @@ public class ReadStatusMapper {
                 entity.getUser().getId(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
-                entity.getLastReadAt()
+                entity.getLastReadAt(),
+                entity.isNotificationEnabled()
         );
     }
 }

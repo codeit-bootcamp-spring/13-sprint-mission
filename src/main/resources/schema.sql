@@ -62,6 +62,7 @@ CREATE TABLE read_statuses (
     user_id UUID NOT NULL,
     channel_id UUID NOT NULL,
     last_read_at TIMESTAMPTZ NOT NULL,
+    notification_enabled BOOLEAN NOT NULL,
 
     CONSTRAINT fk_read_statuses_users
         FOREIGN KEY (user_id)
@@ -113,4 +114,18 @@ CREATE TABLE message_attachments (
         ON DELETE CASCADE,
 
     PRIMARY KEY (message_id, attachment_id)
+);
+
+-- notifications
+CREATE TABLE notifications (
+    id UUID PRIMARY KEY,
+    created_at TIMESTAMPTZ NOT NULL,
+    receiver_id UUID NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+
+    CONSTRAINT fk_notifications_users
+        FOREIGN KEY (receiver_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
 );
