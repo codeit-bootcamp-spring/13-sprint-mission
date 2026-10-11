@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -27,6 +28,7 @@ public class JwtLoginSuccessHandler
     private final RefreshTokenCookieProvider refreshTokenCookieProvider;
 
     @Override
+    @CacheEvict(cacheNames = "users", allEntries = true)
     public void onAuthenticationSuccess(
             HttpServletRequest request,
             HttpServletResponse response,

@@ -18,6 +18,8 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +41,7 @@ public class BasicChannelService implements ChannelService {
     private final ChannelMapper channelMapper;
 
     @Override
+    @CacheEvict(cacheNames = "channels", allEntries = true)
     public ChannelResponse createPrivateChannel(
             ChannelPrivateRequest dto
     ) {
@@ -86,6 +89,7 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     @PreAuthorize("hasRole('CHANNEL_MANAGER')")
+    @CacheEvict(cacheNames = "channels", allEntries = true)
     public ChannelResponse createPublicChannel(
             ChannelPublicRequest dto
     ) {
@@ -119,12 +123,14 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "channels", key = "#userId")
     public List<ChannelResponse> findAll(UUID userId) {
         return findAllByUserId(userId);
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "channels", key = "#userId")
     public List<ChannelResponse> findAllByUserId(UUID userId) {
         return channelRepository.findAll()
                 .stream()
@@ -144,6 +150,7 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     @PreAuthorize("hasRole('CHANNEL_MANAGER')")
+    @CacheEvict(cacheNames = "channels", allEntries = true)
     public ChannelResponse update(
             UUID id,
             ChannelPublicRequest dto
@@ -177,6 +184,7 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     @PreAuthorize("hasRole('CHANNEL_MANAGER')")
+    @CacheEvict(cacheNames = "channels", allEntries = true)
     public void delete(UUID id) {
         log.debug(
                 "채널 삭제 시작: channelId={}",

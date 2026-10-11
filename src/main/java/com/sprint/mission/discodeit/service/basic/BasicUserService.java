@@ -16,6 +16,8 @@ import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,7 @@ public class BasicUserService implements UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
+    @CacheEvict(cacheNames = "users", allEntries = true)
     public UserResponse create(
             UserRequest dto,
             BinaryContentRequest profileDto
@@ -103,6 +106,7 @@ public class BasicUserService implements UserService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "users")
     public List<UserResponse> findAll() {
         return userRepository.findAll()
                 .stream()
@@ -111,6 +115,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "users", allEntries = true)
     public UserResponse update(
             UUID id,
             UserRequest dto,
@@ -143,6 +148,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "users", allEntries = true)
     public void delete(UUID id) {
         log.debug("사용자 삭제 시작: userId={}", id);
 
