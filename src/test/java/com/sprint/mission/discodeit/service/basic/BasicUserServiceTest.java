@@ -1,23 +1,27 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.request.BinaryContentRequest;
 import com.sprint.mission.discodeit.dto.request.UserRequest;
 import com.sprint.mission.discodeit.dto.response.UserResponse;
+import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
 import com.sprint.mission.discodeit.exception.user.UserAlreadyExistException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
-import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -45,7 +49,7 @@ class BasicUserServiceTest {
     private UserMapper userMapper;
 
     @Mock
-    private BinaryContentStorage binaryContentStorage;
+    private ApplicationEventPublisher eventPublisher;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -92,6 +96,73 @@ class BasicUserServiceTest {
         then(userStatusRepository).should()
                 .save(any(UserStatus.class));
         then(binaryContentRepository).should(never()).save(any());
+        then(eventPublisher).shouldHaveNoInteractions();
+    }
+
+    @Test
+    void create_프로필이_있으면_생성_이벤트를_발행한다() {
+        UserRequest request = new UserRequest(
+                "codeit",
+                "codeit@example.com",
+                "password123"
+        );
+
+        byte[] profileBytes = "profile-image".getBytes();
+        BinaryContentRequest profileRequest =
+                new BinaryContentRequest(
+                        "profile.png",
+                        (long) profileBytes.length,
+                        "image/png",
+                        profileBytes
+                );
+
+        UUID profileId = UUID.randomUUID();
+        BinaryContent savedProfile = new BinaryContent(
+                profileRequest.fileName(),
+                profileRequest.size(),
+                profileRequest.contentType()
+        );
+        ReflectionTestUtils.setField(
+                savedProfile,
+                "id",
+                profileId
+        );
+
+        UserResponse expected = userResponse(
+                "codeit",
+                "codeit@example.com"
+        );
+
+        given(userRepository.existsByUsername(request.username()))
+                .willReturn(false);
+        given(userRepository.existsByEmail(request.email()))
+                .willReturn(false);
+        given(passwordEncoder.encode(request.password()))
+                .willReturn("encoded-password");
+        given(binaryContentRepository.save(any(BinaryContent.class)))
+                .willReturn(savedProfile);
+        given(userRepository.save(any(User.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+        given(userMapper.toDto(any(User.class)))
+                .willReturn(expected);
+
+        UserResponse actual =
+                userService.create(request, profileRequest);
+
+        ArgumentCaptor<BinaryContentCreatedEvent> eventCaptor =
+                ArgumentCaptor.forClass(
+                        BinaryContentCreatedEvent.class
+                );
+
+        assertThat(actual).isEqualTo(expected);
+
+        then(eventPublisher).should()
+                .publishEvent(eventCaptor.capture());
+
+        BinaryContentCreatedEvent event = eventCaptor.getValue();
+
+        assertThat(event.binaryContentId()).isEqualTo(profileId);
+        assertThat(event.bytes()).isEqualTo(profileBytes);
     }
 
     @Test
@@ -112,6 +183,7 @@ class BasicUserServiceTest {
         then(passwordEncoder).shouldHaveNoInteractions();
         then(userRepository).should(never()).save(any(User.class));
         then(userStatusRepository).shouldHaveNoInteractions();
+        then(eventPublisher).shouldHaveNoInteractions();
     }
 
     @Test
@@ -151,6 +223,78 @@ class BasicUserServiceTest {
 
         then(passwordEncoder).shouldHaveNoInteractions();
         then(userMapper).should().toDto(user);
+        then(eventPublisher).shouldHaveNoInteractions();
+    }
+
+    @Test
+    void update_프로필이_있으면_생성_이벤트를_발행한다() {
+        UUID userId = UUID.randomUUID();
+
+        User user = new User(
+                "codeit",
+                "codeit@example.com",
+                "encoded-password"
+        );
+
+        UserRequest request = new UserRequest(
+                null,
+                null,
+                null
+        );
+
+        byte[] profileBytes = "new-profile-image".getBytes();
+        BinaryContentRequest profileRequest =
+                new BinaryContentRequest(
+                        "new-profile.png",
+                        (long) profileBytes.length,
+                        "image/png",
+                        profileBytes
+                );
+
+        UUID profileId = UUID.randomUUID();
+        BinaryContent savedProfile = new BinaryContent(
+                profileRequest.fileName(),
+                profileRequest.size(),
+                profileRequest.contentType()
+        );
+        ReflectionTestUtils.setField(
+                savedProfile,
+                "id",
+                profileId
+        );
+
+        UserResponse expected = userResponse(
+                "codeit",
+                "codeit@example.com"
+        );
+
+        given(userRepository.findById(userId))
+                .willReturn(Optional.of(user));
+        given(binaryContentRepository.save(any(BinaryContent.class)))
+                .willReturn(savedProfile);
+        given(userMapper.toDto(user)).willReturn(expected);
+
+        UserResponse actual =
+                userService.update(
+                        userId,
+                        request,
+                        profileRequest
+                );
+
+        ArgumentCaptor<BinaryContentCreatedEvent> eventCaptor =
+                ArgumentCaptor.forClass(
+                        BinaryContentCreatedEvent.class
+                );
+
+        assertThat(actual).isEqualTo(expected);
+
+        then(eventPublisher).should()
+                .publishEvent(eventCaptor.capture());
+
+        BinaryContentCreatedEvent event = eventCaptor.getValue();
+
+        assertThat(event.binaryContentId()).isEqualTo(profileId);
+        assertThat(event.bytes()).isEqualTo(profileBytes);
     }
 
     @Test
@@ -188,6 +332,7 @@ class BasicUserServiceTest {
                 .isEqualTo("encoded-new-password");
 
         then(passwordEncoder).should().encode("new-password");
+        then(eventPublisher).shouldHaveNoInteractions();
     }
 
     @Test
@@ -211,6 +356,7 @@ class BasicUserServiceTest {
 
         then(passwordEncoder).shouldHaveNoInteractions();
         then(userMapper).shouldHaveNoInteractions();
+        then(eventPublisher).shouldHaveNoInteractions();
     }
 
     @Test
