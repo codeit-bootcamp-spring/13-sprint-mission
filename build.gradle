@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'com.sprint.mission'
-version = '1.2-M8' // 미션 8, 버전 변경
+version = '2.0-M9' // 미션 9, 버전 변경
 
 java {
     toolchain {

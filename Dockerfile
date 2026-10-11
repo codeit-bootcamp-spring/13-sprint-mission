@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
 # 불필요한 패키지 설치 막고 패키지 목록 임시 파일들을 전부 다 삭제해 이미지 용량을 줄인다
 
 ENV PROJECT_NAME=discodeit
-ENV PROJECT_VERSION=1.2-M8
+ENV PROJECT_VERSION=2.0-M9
 ENV JVM_OPTS=""
 COPY --from=build /workspace/build/libs/${PROJECT_NAME}-${PROJECT_VERSION}.jar ./
 
