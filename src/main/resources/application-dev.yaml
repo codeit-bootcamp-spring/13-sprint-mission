@@ -27,3 +27,4 @@ logging:
     com.sprint.mission.discodeit: debug
     org.hibernate.SQL: debug # 실행되는 SQL
     org.hibernate.orm.jdbc.bind: trace # ? 자리에 채워지는 실제 값(바인딩)
+    org.springframework.security: trace # Spring Security 모듈의 로그를 trace 레벨로 출력
