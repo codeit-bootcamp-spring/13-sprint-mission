@@ -46,6 +46,9 @@ discodeit:
       presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600} # (기본값: 10분)
 
 management:
+  observations:
+    annotations:
+      enabled: true
   endpoints:
     web:
       exposure:
