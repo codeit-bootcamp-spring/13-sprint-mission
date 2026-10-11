@@ -7,17 +7,17 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import com.sprint.mission.discodeit.config.JwtProperties;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
+
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
-
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
@@ -29,20 +29,13 @@ public class JwtTokenProvider {
 
     private static final String TOKEN_TYPE_CLAIM = "token_type";
 
-    @Value("${discodeit.jwt.secret}")
-    private String secret;
-
-    @Value("${discodeit.jwt.access-token-expiration}")
-    private Duration accessTokenExpiration;
-
-    @Value("${discodeit.jwt.refresh-token-expiration}")
-    private Duration refreshTokenExpiration;
+    private final JwtProperties jwtProperties;
 
     public String generateAccessToken(UserDetails userDetails) {
         return generateToken(
                 userDetails.getUsername(),
                 TOKEN_TYPE_ACCESS,
-                accessTokenExpiration
+                jwtProperties.accessTokenExpiration()
         );
     }
 
@@ -50,7 +43,7 @@ public class JwtTokenProvider {
         return generateToken(
                 userDetails.getUsername(),
                 TOKEN_TYPE_REFRESH,
-                refreshTokenExpiration
+                jwtProperties.refreshTokenExpiration()
         );
     }
 
@@ -98,7 +91,10 @@ public class JwtTokenProvider {
 
         try {
             signedJwt.sign(
-                    new MACSigner(secret.getBytes(StandardCharsets.UTF_8))
+                    new MACSigner(
+                            jwtProperties.secret()
+                                    .getBytes(StandardCharsets.UTF_8)
+                    )
             );
             return signedJwt.serialize();
         } catch (JOSEException exception) {
@@ -118,7 +114,10 @@ public class JwtTokenProvider {
             JWTClaimsSet claims = signedJwt.getJWTClaimsSet();
 
             boolean validSignature = signedJwt.verify(
-                    new MACVerifier(secret.getBytes(StandardCharsets.UTF_8))
+                    new MACVerifier(
+                            jwtProperties.secret()
+                                    .getBytes(StandardCharsets.UTF_8)
+                    )
             );
             boolean notExpired = claims.getExpirationTime() != null
                     && claims.getExpirationTime().after(new Date());

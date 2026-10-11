@@ -1,24 +1,20 @@
 package com.sprint.mission.discodeit.security;
 
-import java.time.Duration;
-import org.springframework.beans.factory.annotation.Value;
+import com.sprint.mission.discodeit.config.JwtProperties;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+
 @Component
+@RequiredArgsConstructor
 public class RefreshTokenCookieProvider {
 
     private static final String SAME_SITE = "Lax";
     private static final String PATH = "/";
 
-    private final Duration refreshTokenExpiration;
-
-    public RefreshTokenCookieProvider(
-            @Value("${discodeit.jwt.refresh-token-expiration}")
-            Duration refreshTokenExpiration
-    ) {
-        this.refreshTokenExpiration = refreshTokenExpiration;
-    }
+    private final JwtProperties jwtProperties;
 
     public ResponseCookie create(
             String refreshToken,
@@ -33,7 +29,7 @@ public class RefreshTokenCookieProvider {
                 .secure(secure)
                 .sameSite(SAME_SITE)
                 .path(PATH)
-                .maxAge(refreshTokenExpiration)
+                .maxAge(jwtProperties.refreshTokenExpiration())
                 .build();
     }
 
