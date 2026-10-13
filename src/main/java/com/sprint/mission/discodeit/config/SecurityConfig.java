@@ -23,4 +23,9 @@ public class SecurityConfig {
         );
     return http.build();
   }
+
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder(); // 비밀번호를 단방향 해시로 인코딩 / 검증하는 데 사용되는 PasswordEncoder 빈을 생성
+  }
 }

@@ -18,6 +18,7 @@ import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -36,6 +37,7 @@ public class BasicUserService implements UserService {
   private final UserStatusRepository statusRepository;
   private final UserMapper userMapper;
   private final BinaryContentStorage storage;
+  private final PasswordEncoder passwordEncoder;
 
   @Transactional
   @Override
@@ -52,6 +54,7 @@ public class BasicUserService implements UserService {
       log.warn("이미 사용 중인 사용자 이름 {}", username);
       throw new UserAlreadyExistsException("중복된 username", username);
     }
+    String hashedPassword = passwordEncoder.encode(userCreateRequest.getPassword()); // 비밀번호 암호화
     // 프로필 이미지 있으면 등록
     BinaryContent savedProfile = optionalProfileCreateRequest
         .map(profileRequest -> {
@@ -66,9 +69,9 @@ public class BasicUserService implements UserService {
         .orElse(null);
     // 프로필 이미지 없으면 이는 비워두고 등록
     User user = new User(username, email, // 중복된 호출 변수 사용
-        userCreateRequest.getPassword(), savedProfile);
+        hashedPassword, savedProfile);
     // UserStatus를 같이 생성
-    UserStatus userStatus = new UserStatus(user, Instant.now());
+    new UserStatus(user, Instant.now());
     User savedUser = userRepository.save(user);
     // 영속성 전이-> user만 저장해도 되는 것
     log.info("사용자 등록 userName={}, userEmail={}, savedProfile={}", username, email, savedProfile);
@@ -109,6 +112,11 @@ public class BasicUserService implements UserService {
       log.warn("이미 존재하는 사용자 이름 {}", newUsername);
       throw new UserAlreadyExistsException("중복된 username", newUsername);
     }
+    String newPassword = userUpdateRequest.getNewPassword();
+    String hashedPassword = null;
+    if (newPassword != null && !passwordEncoder.matches(newPassword, user.getPassword())) {
+      hashedPassword = passwordEncoder.encode(newPassword);
+    }
     // 프로필 이미지 선택적으로 대체
     BinaryContent profile = optionalProfileCreateRequest
         .map(profileRequest -> {
@@ -122,7 +130,7 @@ public class BasicUserService implements UserService {
         })
         .orElse(null);
     // 기존 프로필 삭제
-    user.update(newUsername, newEmail, userUpdateRequest.getNewPassword(), profile); // profileId 추가
+    user.update(newUsername, newEmail, hashedPassword, profile); // profileId 추가
     log.info("사용자 정보 수정 userId={}, newUserName={}, newEmail={}, fileName={}", userId,
         newUsername, newEmail, profile != null ? profile.getFileName() : null);
     return userMapper.toDto(user);

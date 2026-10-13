@@ -9,6 +9,7 @@ import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor // 의존성 주입
@@ -17,6 +18,7 @@ public class BasicAuthService implements AuthService {
 
   private final UserRepository userRepository;
   private final UserMapper userMapper;
+  private final PasswordEncoder passwordEncoder;
 
   @Override
   public UserDto login(LoginRequest request) {
@@ -28,7 +30,7 @@ public class BasicAuthService implements AuthService {
         .orElseThrow(
             () -> new UserNameNotFoundException(request.getUsername())); // 제공되는 API 스펙에 맞추어 변경
 
-    if (!user.getPassword().equals(request.getPassword())) {
+    if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
       throw new InvalidPasswordException();
     }
     return userMapper.toDto(user);
