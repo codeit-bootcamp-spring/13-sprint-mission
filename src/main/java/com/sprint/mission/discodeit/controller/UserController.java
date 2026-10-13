@@ -47,7 +47,7 @@ public class UserController {
   // 사용자 등록
   @Operation(summary = "User 등록") // 엔드포인트 설명
   @ApiResponses({
-      @ApiResponse(responseCode = "201", description = "User가 성공적으로 생성됨"),
+      @ApiResponse(responseCode = "200", description = "User가 성공적으로 생성됨"),
       @ApiResponse(responseCode = "400", description = "같은 email 또는 username를 사용하는 User가 이미 존재함")})
   @RequestMapping(
       method = RequestMethod.POST,
@@ -68,7 +68,7 @@ public class UserController {
           }
         });
     return ResponseEntity
-        .status(HttpStatus.CREATED)
+        .status(HttpStatus.OK)
         .body(userService.create(userCreateRequest, profileRequest));
   }
 
