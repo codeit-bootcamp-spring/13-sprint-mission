@@ -1,9 +1,12 @@
 package com.sprint.mission.discodeit.security;
 
+import com.sprint.mission.discodeit.config.CacheNames;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
@@ -19,6 +22,8 @@ import java.util.Optional;
 public class JwtLogoutHandler implements LogoutHandler {
 
     private final JwtRegistry jwtRegistry;
+    private final CacheManager cacheManager;
+    private final RefreshTokenCookieProvider refreshTokenCookieProvider;
 
     @Override
     public void logout(HttpServletRequest request,
@@ -33,19 +38,13 @@ public class JwtLogoutHandler implements LogoutHandler {
                     // 서버 쪽에서 무효화
                     jwtRegistry.invalidateJwtInformationByRefreshToken(cookie.getValue());
 
-                    response.addHeader(
-                            HttpHeaders.SET_COOKIE,
-                            deletedCookie().toString()
-                    );
-                });
-    }
+                    // 유저 목록 캐시 무효화
+                    Cache usersCache = cacheManager.getCache(CacheNames.USERS);
+                    if (usersCache != null) {
+                        usersCache.clear();
+                    }
 
-    private ResponseCookie deletedCookie() {
-        return ResponseCookie.from("REFRESH_TOKEN", "")
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .maxAge(Duration.ZERO)
-                .build();
+                    response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookieProvider.delete().toString());
+                });
     }
 }

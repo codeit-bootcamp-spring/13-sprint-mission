@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.response.JwtRefreshResult;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.RoleUpdatedEvent;
 import com.sprint.mission.discodeit.exception.jwt.InvalidJwtException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
@@ -14,6 +15,7 @@ import com.sprint.mission.discodeit.security.*;
 import com.sprint.mission.discodeit.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,7 @@ public class BasicAuthService implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtRegistry jwtRegistry;
     private final DiscodeitUserDetailsService discodeitUserDetailsService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
@@ -37,7 +40,11 @@ public class BasicAuthService implements AuthService {
         User user = userRepository.findById(request.userId())
                 .orElseThrow(() -> new UserNotFoundException(request.userId()));
 
+        Role oldRole = user.getRole();
+
         user.updateRole(request.newRole());
+
+        applicationEventPublisher.publishEvent(new RoleUpdatedEvent(user.getId(), oldRole, request.newRole()));
 
         // 권한 변경 후 기존 JWT를 전부 무효화
         jwtRegistry.invalidateJwtInformationByUserId(user.getId());

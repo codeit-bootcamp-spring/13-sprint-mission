@@ -16,15 +16,7 @@ public class AdminInitializer implements ApplicationRunner {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
-    @Value("${discodeit.admin.username}")
-    private String adminUsername;
-
-    @Value("${discodeit.admin.email}")
-    private String adminEmail;
-
-    @Value("${discodeit.admin.password}")
-    private String adminPassword;
+    private final AdminProperties adminProperties;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -32,8 +24,14 @@ public class AdminInitializer implements ApplicationRunner {
             return;
         }
 
-        String encryptedPassword = passwordEncoder.encode(adminPassword);
-        User admin = new User(adminUsername, adminEmail, encryptedPassword, null, Role.ADMIN);
+        String encryptedPassword = passwordEncoder.encode(adminProperties.password());
+        User admin = new User(
+                adminProperties.username(),
+                adminProperties.email(),
+                encryptedPassword,
+                null,
+                Role.ADMIN);
+
         userRepository.save(admin);
     }
 }

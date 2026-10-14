@@ -1,9 +1,11 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.config.CacheNames;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
 import com.sprint.mission.discodeit.exception.file.FileStorageException;
 import com.sprint.mission.discodeit.exception.user.UserEmailAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNameAlreadyExistsException;
@@ -15,6 +17,9 @@ import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,12 +41,16 @@ public class BasicUserService implements UserService {
     private final ReadStatusRepository readStatusRepository;
     private final MessageRepository messageRepository;
     private final UserMapper userMapper;
-    private final BinaryContentStorage binaryContentStorage;
     private final PasswordEncoder passwordEncoder;
     private final JwtRegistry jwtRegistry;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     //interface
     @Override
+    @CacheEvict(
+            value = CacheNames.USERS,
+            allEntries = true
+    )
     @Transactional
     public UserDto createUser(UserCreateRequest request, MultipartFile file) {
         log.debug("유저 생성 시작");
@@ -86,6 +95,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @Cacheable(CacheNames.USERS)
     @Transactional(readOnly = true)
     public List<UserDto> getUsers() {
         //유저들 검색
@@ -97,6 +107,10 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @CacheEvict(
+            value = CacheNames.USERS,
+            allEntries = true
+    )
     @PreAuthorize("#userId == authentication.principal.userDto.id")
     @Transactional
     public UserDto updateUser(UUID userId, UserUpdateRequest request, MultipartFile file) {
@@ -149,6 +163,10 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @CacheEvict(
+            value = CacheNames.USERS,
+            allEntries = true
+    )
     @PreAuthorize("#userId == authentication.principal.userDto.id")
     @Transactional
     public void deleteUser(UUID userId) {
@@ -193,7 +211,7 @@ public class BasicUserService implements UserService {
                     file.getContentType()
             );
             binaryContent = binaryContentRepository.save(binaryContent);
-            binaryContentStorage.put(binaryContent.getId(), file.getBytes());
+            applicationEventPublisher.publishEvent(new BinaryContentCreatedEvent(binaryContent.getId(), file.getBytes()));
 
         } catch (IOException e) {
             log.error("프로필 파일 업로드 실패");

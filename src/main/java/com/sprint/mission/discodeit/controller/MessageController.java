@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.dto.response.MessageUpdateResponse;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.service.MessageService;
+import io.micrometer.core.annotation.Timed;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -36,6 +37,7 @@ public class MessageController {
     private final MessageService messageService;
 
     //메시지 생성
+    @Timed("message.create.async")
     @Operation(summary = "Message 생성")
     @ApiResponse(responseCode = "201", description = "Message가 성공적으로 생성됨")
     @RequestMapping(

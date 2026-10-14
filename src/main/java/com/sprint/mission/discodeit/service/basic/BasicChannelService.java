@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.config.CacheNames;
 import com.sprint.mission.discodeit.dto.request.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.PublicChannelUpdateRequest;
@@ -14,6 +15,8 @@ import com.sprint.mission.discodeit.repository.*;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +42,10 @@ public class BasicChannelService implements ChannelService {
 
     //interface
     @Override
+    @CacheEvict(
+            value = CacheNames.USER_CHANNELS,
+            allEntries = true
+    )
     @Transactional
     public ChannelDto createPrivateChannel(PrivateChannelCreateRequest request) {
         log.debug("Private 채널 생성 시작");
@@ -65,6 +72,10 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
+    @CacheEvict(
+            value = CacheNames.USER_CHANNELS,
+            allEntries = true
+    )
     @PreAuthorize("hasRole('CHANNEL_MANAGER')")
     @Transactional
     public ChannelDto createPublicChannel(PublicChannelCreateRequest request) {
@@ -91,6 +102,10 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
+    @Cacheable(
+            value = CacheNames.USER_CHANNELS,
+            key = "#userId"
+    )
     @Transactional(readOnly = true)
     public List<ChannelDto> getChannelsByUserId(UUID userId) {
         //유저 검증
@@ -124,6 +139,10 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
+    @CacheEvict(
+            value = CacheNames.USER_CHANNELS,
+            allEntries = true
+    )
     @PreAuthorize("hasRole('CHANNEL_MANAGER')")
     @Transactional
     public ChannelDto updateChannel(UUID channelId, PublicChannelUpdateRequest request) {
@@ -150,6 +169,10 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
+    @CacheEvict(
+            value = CacheNames.USER_CHANNELS,
+            allEntries = true
+    )
     @PreAuthorize("hasRole('CHANNEL_MANAGER')")
     @Transactional
     public void deleteChannel(UUID channelId) {
