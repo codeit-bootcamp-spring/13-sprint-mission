@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.filter;
 
-import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
 import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
 import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
@@ -36,7 +35,8 @@ user and password filter 앞에 위치한다. 로그인이 죄어있는지 확�
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final String BEARER_PREFIX = "bearer";
+    private final String SERVICE_NAME = "JwtAuthFilter";
+    private final String BEARER_PREFIX = "Bearer";
 
     /** 엔트리 포인트에 전달할 플래그 */
     public static final String ATTR_JWT_ERROR = "jwt.error";
@@ -66,21 +66,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null) {
             try {
-                Claims claims = provider.parseClaims(token);
                 if (
                         jwtRegistry.hasActiveJwtInformationByAccessToken(token)
-                                && (!provider.isExpired(claims))
+                                && (!provider.isExpired(token))
                 ) {
-                    String username = claims.getSubject();  // user.id or user.email(login)
-                    Role role = provider.getRole(claims);
+                    String username = provider.getSubject(token);  // user.id or user.email(login)
+
+                    log.debug("[{}] - 인증 요청 유저 - username : {}", SERVICE_NAME, username);
 
                     // principal 은 인가를 확인할 때 필요. -> UserDetail
                     UserDetails principal = userDetailsService.loadUserByUsername(username);
 
+                    log.debug("[{}] - 인증 흐름 확인 로그 - username : {}, role : {}",SERVICE_NAME, username, principal.getAuthorities());
+
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             principal,
                             null,
-                            getAuthority(role)
+                            principal.getAuthorities()
+//                            getAuthority(role)
                     );
 
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -93,13 +96,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     /*
                     토큰이 없거나, 토큰이 만료된 경우. -> 에러 응답 반환?
                      */
+                    log.debug("[{}] - 토큰이 존재하지 않음. - {}", SERVICE_NAME, provider.getSubject(token));
                 }
             } catch (ExpiredJwtException e) {
                 request.setAttribute(ATTR_JWT_ERROR, ERROR_EXPIRED);
-                log.debug("[JWT] 만료된 토큰으로 접근 - {}", e.getMessage());
+                log.debug("[{}] - 만료된 토큰으로 접근 - token : {}",SERVICE_NAME, token);
             } catch (JwtException | IllegalArgumentException e) {
                 request.setAttribute(ATTR_JWT_ERROR, ERROR_INVALID);
-                log.debug("[JWT] 유효하지 않은 토큰으로 접근 - {}", e.getMessage());
+                log.debug("[{}] - 유효하지 않은 토큰으로 접근 - token : {}",SERVICE_NAME, token);
             }
         }
 
@@ -117,8 +121,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     private String resolveToken(HttpServletRequest request){
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
+        log.debug("[{}] - raw header : {}\nprefix : {}", SERVICE_NAME, header, BEARER_PREFIX);
         if(header != null && header.startsWith(BEARER_PREFIX))
-            return header.substring(BEARER_PREFIX.length());
+            return header.substring(BEARER_PREFIX.length() + 1);    // 헤더가 공백 한칸으로 공백과 베어러 구분.
         return null;
     }
 

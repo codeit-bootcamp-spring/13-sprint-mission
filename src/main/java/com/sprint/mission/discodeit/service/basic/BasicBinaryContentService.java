@@ -1,13 +1,15 @@
 package com.sprint.mission.discodeit.service.basic;
 
-
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
-import com.sprint.mission.discodeit.mapper.MapStructMapper;
+import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.BinaryContentStatus;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
-import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -17,29 +19,37 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BasicBinaryContentService implements BinaryContentService {
     private final BinaryContentRepository binaryContentRepository;
-    private final BinaryContentStorage binaryContentStorage;
-    private final MapStructMapper mapStructMapper;
+    private final EntityMapper entityMapper;
+
 
     @Override
     @Transactional(readOnly = true)
     public BinaryContentDto findByID(UUID id){
-        // todo - BinaryContentException 작성, ㅅㅓㄹ정.
-        return binaryContentRepository.getBinaryContentById(id)
-                .orElseThrow(RuntimeException::new);
+        return entityMapper.toDto(getBinaryContent(id));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<BinaryContentDto> findAllByIdIn(List<UUID> ids){
-        return binaryContentRepository.getBinaryContentsInIdList(ids).values().stream().toList();
+        return binaryContentRepository.findAllById(ids)
+                .stream()
+                .map(entityMapper::toDto)
+                .toList();
     }
 
     @Override
-    @Transactional
-    public void delete(UUID id){
-        binaryContentRepository.deleteBinaryContent(
-                binaryContentRepository.findById(id).orElseThrow(RuntimeException::new)
-        );
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public BinaryContentDto updateStatus(UUID id, BinaryContentStatus status){
+        BinaryContent binaryContent = getBinaryContent(id);
+
+        binaryContent.setStatus(status);
+
+        return entityMapper.toDto(binaryContent);
+    }
+
+    private BinaryContent getBinaryContent(UUID id){
+        return binaryContentRepository.findById(id)
+                .orElseThrow(() -> new BinaryContentNotFoundException(id.toString()));
     }
 
 }

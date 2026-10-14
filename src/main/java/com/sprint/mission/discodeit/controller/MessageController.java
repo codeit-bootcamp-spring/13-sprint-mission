@@ -10,6 +10,7 @@ import com.sprint.mission.discodeit.dto.response.PageResponse;
 
 import com.sprint.mission.discodeit.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.service.MessageService;
+import io.micrometer.core.annotation.Timed;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +25,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -47,7 +50,7 @@ public class MessageController implements MessageControllerDoc {
         return ResponseEntity.ok(res);
     }
 
-
+    @Timed("message.create.sync")
     @RequestMapping(
             value = "",
             method = RequestMethod.POST,
@@ -57,20 +60,24 @@ public class MessageController implements MessageControllerDoc {
             @Valid @RequestPart(value = "messageCreateRequest") MessageCreateRequest mcr,
             @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
     ) {
-        List<MultipartFileDto> multifileList =  attachments.stream().map(
-                mp -> {
-                    try {
-                        return new MultipartFileDto(
-                                mp.getOriginalFilename(),
-                                mp.getContentType(),
-                                mp.getSize(),
-                                mp.getBytes()
-                        );
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .toList();
+        List<MultipartFileDto> multifileList = Optional.ofNullable(attachments)
+                .map(
+                        list -> list
+                                .stream().map(
+                                        mp -> {
+                                            try {
+                                                return new MultipartFileDto(
+                                                        mp.getOriginalFilename(),
+                                                        mp.getContentType(),
+                                                        mp.getSize(),
+                                                        mp.getBytes()
+                                                );
+                                            } catch (IOException e) {
+                                                throw new RuntimeException(e);
+                                            }
+                                        })
+                                .toList()
+                ).orElse(new ArrayList<>());
 
 
         MessageDto res = messageService.createMessage(mcr,multifileList);

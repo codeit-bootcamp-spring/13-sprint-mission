@@ -3,12 +3,12 @@ package com.sprint.mission.discodeit.service;
 import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.UserDuplicatedException;
-import com.sprint.mission.discodeit.exception.UserNotFoundException;
-import com.sprint.mission.discodeit.mapper.MapStructMapper;
+import com.sprint.mission.discodeit.exception.user.UserDuplicatedException;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.security.SessionService;
+import com.sprint.mission.discodeit.security.CertificationChecker;
 import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.basic.BasicUserService;
 import org.junit.jupiter.api.DisplayName;
@@ -39,13 +39,13 @@ public class UserServiceTest {
     @Mock
     UserCreateRequest userCreateRequest;
     @Spy
-    MapStructMapper mapStructMapper = Mappers.getMapper(MapStructMapper.class);
+    EntityMapper mapStructEntityMapper = Mappers.getMapper(EntityMapper.class);
     @Spy
     PasswordEncoder passwordEncoder;
     @InjectMocks
     BasicUserService userService;
     @Mock
-    SessionService sessionService;
+    CertificationChecker certificationChecker;
 
     @Nested
     class Create{
@@ -75,16 +75,14 @@ public class UserServiceTest {
             UserCreateRequest req = new UserCreateRequest("김숙희", "ksk@email.com","password");
             given(userRepository.findByUsername("김숙희"))
                     .willReturn(
-                            Collections
-                                    .singletonList(
-                                            new User(
-                                                    "김숙희",
-                                                    "ksk@email.com",
-                                                    "password",
-                                                    null,
-                                                    null
-                                            )
+                            Optional.of(new User(
+                                    "김숙희",
+                                        "ksk@email.com",
+                                        "password",
+                                        null,
+                                        null
                                     )
+                            )
                     );
             assertThatThrownBy(() -> userService.create(req,Optional.empty()))
                     .isInstanceOf(UserDuplicatedException.class);
@@ -106,7 +104,7 @@ public class UserServiceTest {
             UserUpdateRequest uur = new UserUpdateRequest("최둘리","cdr@email.com","password");
             UUID id = UUID.randomUUID();
             User user = setUp();
-            List<User> ls = new ArrayList<>();
+            Optional<User> ls = Optional.empty();
             // when
             given(userRepository.findById(id)).willReturn(Optional.of(user));
             given(userRepository.findByUsername("최둘리")).willReturn(ls);

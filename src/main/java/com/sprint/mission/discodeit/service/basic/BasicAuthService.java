@@ -1,23 +1,19 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.projection.UserProjection;
-import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
-import com.sprint.mission.discodeit.dto.response.JwtDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.UserNotFoundException;
-import com.sprint.mission.discodeit.mapper.MapStructMapper;
-import com.sprint.mission.discodeit.repository.BinaryContentRepository;
+import com.sprint.mission.discodeit.exception.DiscodeitException;
+import com.sprint.mission.discodeit.exception.ExceptionCode;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 
-import com.sprint.mission.discodeit.security.SessionService;
+import com.sprint.mission.discodeit.security.CertificationChecker;
+import com.sprint.mission.discodeit.security.jwt.JwtInformation;
 import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
 import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
-import com.sprint.mission.discodeit.security.jwt.RefreshTokenService;
 import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.AuthService;
-import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,21 +24,16 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class BasicAuthService implements AuthService {
+
+    private final String SERVICE_NAME = "AuthService";
+
     private final UserRepository userRepository;
-    private final MapStructMapper mapper;
-    private final BinaryContentRepository binaryContentRepository;
+    private final EntityMapper entityMapper;
 
-    private final SessionService sessionService;
-
-    private final RefreshTokenService refreshTokenService;
+    private final CertificationChecker certificationChecker;
     private final JwtTokenProvider jwtTokenProvider;
 
     private final JwtRegistry jwtRegistry;
-
-    public record JwtOutput(
-            JwtDto access,
-            Cookie refresh
-    ){}
 
     public UserDto roleUpdate(UUID userId, Role role){
         // update query
@@ -53,70 +44,55 @@ public class BasicAuthService implements AuthService {
 
         userRepository.save(user);
 
-        // find after update
-        UserProjection projection = userRepository.getUserFromId(userId)
-                .orElseThrow(RuntimeException::new);
-
         // 롤 변경시 기존 로그인 토큰 파기(로그아웃)
         jwtRegistry.invalidateJwtInformationByUserId(user.getId());
 
-        return mapper.toDto(
-                projection,
-                binaryContentRepository.getBinaryContentById(projection.profileId()).orElse(null),
-                sessionService.userOnline(projection.username())
-        );
+        return entityMapper.toDto(user, certificationChecker.online(user.getId()));
 
     }
 
     @Override
-    public JwtOutput jwtRefresh(String key){
+    public JwtInformation jwtRefresh(String refreshToken){
+        // 1. 리프레시 토큰 검정 -> 토큰이 만료된건 아닌지, 토큰이 맞게 검정되어있는지.
+        // 2. 토큰 둘다 리프레시.
+        // 3. 두 토큰 다 반환.
 
-        RefreshTokenService.Output result = refreshTokenService.rotate(key);
+        if (refreshToken == null) throw new DiscodeitException(ExceptionCode.REQUEST_VALUE_ERROR,"빈 토큰이 요청됨.");
 
-        switch (result.result()) {
-            case REVOKED -> new RuntimeException();
-            case EXPIRED -> new RuntimeException();
-            case ROTATED -> new RuntimeException();
-            case NOT_FOUND -> new RuntimeException();
-            case SUCCESS -> {}
+        if (
+                jwtTokenProvider.isExpired(refreshToken)
+                || !jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)
+        ) {
+            throw new DiscodeitException(ExceptionCode.EXPIRED_TOKEN,"[{}] - 토큰이 만료됨. {}", SERVICE_NAME, refreshToken);
         }
 
+        log.debug("[{}] - 토큰 리프레시 개시 - token : {}", SERVICE_NAME, refreshToken);
 
-//        User user = userRepository.findById()
+        String userId = jwtTokenProvider.getSubject(refreshToken);
 
-        User user = userRepository.findByUsernameOptional(result.username())
+        User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(UserNotFoundException::new);
 
-        String accessToken = jwtTokenProvider.createAccessToken(user.getUsername(),user.getRole());
+        String newAccessToken = jwtTokenProvider.createAccessToken(user.getId().toString(),user.getRole());
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(user.getId().toString());
 
-        UserDto userDto = mapper.toDto(
+        UserDto userDto = entityMapper.toDto(
                 user,
-                getProfileToDto(user.getProfile()),
-                sessionService.userOnline(user.getUsername())
+                certificationChecker.online(user.getId())
         );
-        return new JwtOutput(
-                new JwtDto(userDto, accessToken),
-                refreshCookie(user.getId())
+
+        JwtInformation newInfo = new JwtInformation(
+                userDto,
+                newAccessToken,
+                newRefreshToken
         );
+
+        jwtRegistry.rotateJwtInformation(refreshToken, newInfo);
+
+        return newInfo;
     }
 
-    private BinaryContentDto getProfileToDto(BinaryContent profile){
-        if (profile == null) return null;
-        return binaryContentRepository.getBinaryContentById(profile.getId()).orElse(null);
-    }
-
-    private Cookie refreshCookie(UUID userId){
-        String refreshToken = refreshTokenService.grant(userId);
 
 
-        // refresh token 쿠키 세팅
-        Cookie cookie = new Cookie("REFRESH_TOKEN", refreshToken);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(jwtTokenProvider.refreshTokenExpire());
-
-        return cookie;
-    }
 
 }

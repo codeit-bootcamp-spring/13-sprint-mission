@@ -1,17 +1,13 @@
 package com.sprint.mission.discodeit.security;
 
 
-import com.sprint.mission.discodeit.dto.projection.UserProjection;
 import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.exception.DiscodeitException;
-import com.sprint.mission.discodeit.exception.ExceptionCode;
-import com.sprint.mission.discodeit.exception.UserNotFoundException;
-import com.sprint.mission.discodeit.mapper.MapStructMapper;
-import com.sprint.mission.discodeit.repository.BinaryContentRepository;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -25,11 +21,12 @@ import java.util.UUID;
 @Slf4j
 public class DiscodeitUserDetailsService implements UserDetailsService {
 
-    private final UserRepository userRepository;
-    private final MapStructMapper mapper;
-    private final BinaryContentRepository binaryContentRepository;
+    private final String SERVICE_NAME = "DiscodeitUserDetailsService";
 
-    private final SessionRegistry sessionRegistry;
+    private final UserRepository userRepository;
+    private final EntityMapper entityMapper;
+
+    private final CertificationChecker certificationChecker;
 
     /*
     UserPassword...filter 가 폼 데이터에서 UserPassword...Token 생성.
@@ -51,23 +48,25 @@ public class DiscodeitUserDetailsService implements UserDetailsService {
         if (userRepository.existsByEmail(username))
             userId = userRepository
                     .findIdFromEmail(username)
-                    .orElseThrow(UserNotFoundException::new);
+                    .orElseThrow(() -> new UserNotFoundException(
+                            "{} - 인증 유저 조회 에러 - username = {}",
+                            SERVICE_NAME,
+                            username)
+                    );
         else
             userId = UUID.fromString(username);
 
         // set UserDetail
-        UserProjection projection = userRepository.getUserFromId(userId)
-                .orElseThrow(() -> {
-                    log.warn("UserDetails - 유저 조회 오류 : {}",username);
-                    return new DiscodeitException(ExceptionCode.AUTH_FAILURE,"인증 오류");
-                });
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(
+                            "{} - 인증 유저 조회 에러",
+                            SERVICE_NAME,
+                            userId
+                    )
+                );
 
-        UserDto dto = mapper.toDto(
-                projection,
-                binaryContentRepository.getBinaryContentById(projection.profileId()).orElse(null),
-                true    // todo - 온라인 로직 고려해서 값 변경 필요 or 온라인 정보 필요없으면 별도 유저 정보 객체로 사용.
-        );
+        UserDto dto = entityMapper.toDto(user, certificationChecker.online(userId));
 
-        return new DiscodeitUserDetails(dto, projection.password());
+        return new DiscodeitUserDetails(dto, user.getPassword());
     }
 }

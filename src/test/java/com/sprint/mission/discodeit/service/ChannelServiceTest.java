@@ -1,17 +1,15 @@
 package com.sprint.mission.discodeit.service;
 
 import com.sprint.mission.discodeit.dto.projection.ChannelProjection;
-import com.sprint.mission.discodeit.dto.projection.UserProjection;
 import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.exception.ChannelNotFoundException;
-import com.sprint.mission.discodeit.exception.ChannelTypeException;
-import com.sprint.mission.discodeit.mapper.MapStructMapper;
+import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.exception.channel.ChannelTypeException;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.*;
-import com.sprint.mission.discodeit.security.SessionService;
+import com.sprint.mission.discodeit.security.CertificationChecker;
 import com.sprint.mission.discodeit.service.basic.BasicChannelService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,15 +21,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.*;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,16 +40,13 @@ public class ChannelServiceTest {
     @Mock ChannelRepository channelRepository;
     @Mock ReadStatusRepository readStatusRepository;
     @Mock UserRepository userRepository;
-    @Mock MessageRepository messageRepository;
     @Mock
-    BinaryContentRepository binaryContentRepository;
-    @Mock
-    SessionService sessionService;
+    CertificationChecker certificationChecker;
     @Mock
     RoleHierarchy roleHierarchy;
 
     @Spy
-    MapStructMapper mapStructMapper = Mappers.getMapper(MapStructMapper.class);
+    EntityMapper mapStructEntityMapper = Mappers.getMapper(EntityMapper.class);
 
     @InjectMocks
     BasicChannelService channelService;
@@ -112,40 +104,19 @@ public class ChannelServiceTest {
                         null
                 )));
 
-
-        given(readStatusRepository.findUserIdsByChannelId(any()))
-                .willReturn(users.stream().map(User::getId).toList());
-
-
-        given(userRepository.getUsersFromIds(anyList()))
-                .willReturn(
-                        users.stream().collect(
-                                Collectors.toMap(
-                                        BaseEntity::getId,
-                                        u -> new UserProjection(
-                                                u.getId(),
-                                                u.getUsername(),
-                                                u.getEmail(),
-                                                u.getPassword(),
-                                                u.getRole(),
-                                                null
-                                        )
-
-                                )
-                        )
+        given(userRepository.findAllById(anyList()))
+                .willAnswer(
+                       id -> List.of(user())
                 );
 
-        // no profile or files return
-        given(binaryContentRepository.getBinaryContentsInIdList(anyList()))
-                .willReturn(Map.of());
 
-        given(sessionService.userOnline(any())).willReturn(false);
+
+        given(certificationChecker.online(any(UUID.class))).willReturn(false);
     }
 
 
     @Nested
     class CreateTest{
-
 
 
         @Test

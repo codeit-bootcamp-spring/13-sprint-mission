@@ -10,6 +10,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -49,7 +52,9 @@ public class S3BinaryContentStorageTest {
         s3Client = config.s3Client(props);
         s3Presigner = config.s3Presigner(props);
 
-        s3BinaryContentStorage = new S3BinaryContentStorage(s3Presigner,s3Client,props);
+        ApplicationEventPublisher eventPublisher = Mockito.mock(ApplicationEventPublisher.class);
+
+        s3BinaryContentStorage = new S3BinaryContentStorage(s3Presigner,s3Client,props,eventPublisher);
 
         s3Client.createBucket(b -> b.bucket(BUCKET));
     }
@@ -58,7 +63,7 @@ public class S3BinaryContentStorageTest {
     static void stop(){if (s3Mock != null) s3Mock.stop();}
 
     private BinaryContentDto getBinaryContentDto(UUID id, String name,Long size, String type) {
-        return new BinaryContentDto(id, name, size, type, null);
+        return new BinaryContentDto(id, name, size, type);
     }
 
 

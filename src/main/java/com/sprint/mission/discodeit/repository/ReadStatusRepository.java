@@ -32,6 +32,9 @@ public interface ReadStatusRepository extends JpaRepository<ReadStatus, UUID> {
     @Query("select rs from ReadStatus rs where rs.channel.type = ChannelType.PUBLIC")
     List<ReadStatus> findAllByUserVisible(@Param("id") UUID userId);
 
+    @Query("select rs from ReadStatus rs where rs.channel.id = :channelId and rs.notificationEnable = :noty")
+    List<ReadStatus> findAllByChannelIdWithStatusOn(@Param("channelId") UUID channelId, @Param("noty") Boolean noty);
+
     List<ReadStatus> findAllByUserId(UUID userId);
 
     boolean existsByUserOrChannel(User user, Channel channel);

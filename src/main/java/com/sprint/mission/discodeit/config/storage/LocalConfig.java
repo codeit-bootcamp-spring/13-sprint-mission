@@ -11,7 +11,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Configuration
-@ConditionalOnProperty(name = "discodeit.storage.type", havingValue = "local", matchIfMissing = true)
+@ConditionalOnProperty(
+        name = "discodeit.storage.type",
+        havingValue = "local",
+        matchIfMissing = true
+)
 @Slf4j
 public class LocalConfig {
 

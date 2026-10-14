@@ -64,14 +64,28 @@ public class ChannelQueryDslImpl implements ChannelQueryDsl {
     public Map<UUID,ChannelProjection> getChannelsFromUserId(UUID id) {
         if (id == null) return new HashMap<>();
 
-        List<QueryDto> result = jpaQuery(
+        List<UUID> ids = idListQuery(
                 channelQueryCondition(
                         readStatus.user.id.eq(id),
                         channel.type.eq(ChannelType.PUBLIC)
                 )
         );
 
+
+        List<QueryDto> result = jpaQuery(
+                channelQueryCondition(channel.id.in(ids))
+        );
+
         return convertProjectionFromDto(result);
+    }
+
+    private List<UUID> idListQuery(BooleanBuilder condition){
+        return jpaQueryFactory
+                .select(channel.id)
+                .from(channel)
+                .leftJoin(readStatus).on(readStatus.channel.eq(channel))
+                .where(condition)
+                .fetch();
     }
 
 
@@ -115,7 +129,7 @@ public class ChannelQueryDslImpl implements ChannelQueryDsl {
                                             QueryDto sample = list.get(0);
                                             List<UUID> userIds = list.stream()
                                                     .map(QueryDto::getUserId)
-                                                    .collect(Collectors.toList());
+                                                    .toList();
 
                                             return new ChannelProjection(
                                                     sample.id,
