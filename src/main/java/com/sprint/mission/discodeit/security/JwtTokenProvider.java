@@ -8,6 +8,7 @@ import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.sprint.mission.discodeit.config.JwtProperties;
+import com.sprint.mission.discodeit.dto.auth.TokenPair;
 import com.sprint.mission.discodeit.dto.user.UserResponse;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
@@ -209,26 +210,30 @@ public class JwtTokenProvider {
       }
 
       JWTClaimsSet claims = signedJwt.getJWTClaimsSet();
-      Instant now = clock.instant();
-      if (!issuer.equals(claims.getIssuer())) {
-        throw new IllegalArgumentException("JWT 발급자가 올바르지 않습니다.");
-      }
-      if (claims.getIssueTime() == null || claims.getIssueTime().toInstant().isAfter(now)) {
-        throw new IllegalArgumentException("JWT 발급 시간이 올바르지 않습니다.");
-      }
-      if (claims.getExpirationTime() == null || !claims.getExpirationTime().toInstant().isAfter(now)) {
-        throw new IllegalArgumentException("JWT가 만료되었습니다.");
-      }
-      if (!StringUtils.hasText(claims.getSubject())) {
-        throw new IllegalArgumentException("JWT 주체가 없습니다.");
-      }
-      String tokenType = getStringClaim(claims, TOKEN_TYPE_CLAIM);
-      if (!ACCESS_TOKEN_TYPE.equals(tokenType) && !REFRESH_TOKEN_TYPE.equals(tokenType)) {
-        throw new IllegalArgumentException("JWT 종류가 올바르지 않습니다.");
-      }
+      validateClaims(claims);
       return claims;
     } catch (ParseException | JOSEException exception) {
       throw new IllegalArgumentException("JWT를 검증할 수 없습니다.", exception);
+    }
+  }
+
+  private void validateClaims(JWTClaimsSet claims) {
+    Instant now = clock.instant();
+    if (!issuer.equals(claims.getIssuer())) {
+      throw new IllegalArgumentException("JWT 발급자가 올바르지 않습니다.");
+    }
+    if (claims.getIssueTime() == null || claims.getIssueTime().toInstant().isAfter(now)) {
+      throw new IllegalArgumentException("JWT 발급 시간이 올바르지 않습니다.");
+    }
+    if (claims.getExpirationTime() == null || !claims.getExpirationTime().toInstant().isAfter(now)) {
+      throw new IllegalArgumentException("JWT가 만료되었습니다.");
+    }
+    if (!StringUtils.hasText(claims.getSubject())) {
+      throw new IllegalArgumentException("JWT 주체가 없습니다.");
+    }
+    String tokenType = getStringClaim(claims, TOKEN_TYPE_CLAIM);
+    if (!ACCESS_TOKEN_TYPE.equals(tokenType) && !REFRESH_TOKEN_TYPE.equals(tokenType)) {
+      throw new IllegalArgumentException("JWT 종류가 올바르지 않습니다.");
     }
   }
 
@@ -264,7 +269,4 @@ public class JwtTokenProvider {
     return value;
   }
 
-  public record TokenPair(String accessToken, String refreshToken) {
-
-  }
 }

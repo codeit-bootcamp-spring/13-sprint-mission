@@ -16,7 +16,7 @@ import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.security.JwtRegistry;
-import com.sprint.mission.discodeit.storage.BinaryContentStorage;
+import org.springframework.context.ApplicationEventPublisher;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -36,7 +36,7 @@ class BasicUserServiceTest {
   @Mock
   BinaryContentRepository contentRepository;
   @Mock
-  BinaryContentStorage storage;
+  ApplicationEventPublisher eventPublisher;
   @Mock
   UserMapper mapper;
   @Mock

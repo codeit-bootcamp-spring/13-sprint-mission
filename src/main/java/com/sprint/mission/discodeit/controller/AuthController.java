@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.auth.JwtDto;
+import com.sprint.mission.discodeit.dto.auth.TokenPair;
 import com.sprint.mission.discodeit.dto.user.RoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.user.UserResponse;
 import com.sprint.mission.discodeit.exception.auth.InvalidRefreshTokenException;
@@ -60,7 +61,7 @@ public class AuthController {
         throw new InvalidRefreshTokenException();
       }
 
-      JwtTokenProvider.TokenPair tokens = jwtTokenProvider.rotateTokens(refreshToken);
+      TokenPair tokens = jwtTokenProvider.rotateTokens(refreshToken);
       UserResponse user = userService.findUserById(jwtTokenProvider.getUserId(refreshToken));
       boolean rotated = jwtRegistry.rotateJwtInformation(
           refreshToken,

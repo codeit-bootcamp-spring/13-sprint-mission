@@ -1,4 +1,23 @@
 spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: discodeit-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+  cache:
+    type: redis
+    cache-names: channelsByUser,notificationsByUser,users
+    redis:
+      enable-statistics: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   config:
     import: optional:file:.env[.properties]
   application:
@@ -11,7 +30,7 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: validate
+      ddl-auto: create
     properties:
       hibernate:
         format_sql: true
@@ -36,6 +55,7 @@ discodeit:
       access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:30m}
       refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:7d}
       max-active-jwt-count: 1
+      cleanup-fixed-delay: ${JWT_CLEANUP_FIXED_DELAY:PT5M}
   storage:
     type: ${STORAGE_TYPE:local}
     local:
@@ -65,10 +85,13 @@ server:
   port: 8080
 
 management:
+  observations:
+    annotations:
+      enabled: true
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,loggers
+        include: health,info,metrics,loggers,caches
   info:
     env:
       enabled: true

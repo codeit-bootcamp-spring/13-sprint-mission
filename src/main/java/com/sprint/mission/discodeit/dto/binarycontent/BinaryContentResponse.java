@@ -1,11 +1,16 @@
 package com.sprint.mission.discodeit.dto.binarycontent;
 
+import com.sprint.mission.discodeit.entity.BinaryContentStatus;
 import java.util.UUID;
 
 public record BinaryContentResponse(
     UUID id,
     String fileName,
     Long size,
-    String contentType
+    String contentType,
+    BinaryContentStatus status
 ) {
+  public BinaryContentResponse(UUID id, String fileName, Long size, String contentType) {
+    this(id, fileName, size, contentType, BinaryContentStatus.PROCESSING);
+  }
 }

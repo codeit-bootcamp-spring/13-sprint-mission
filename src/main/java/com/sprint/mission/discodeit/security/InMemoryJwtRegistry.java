@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -33,6 +34,7 @@ public class InMemoryJwtRegistry implements JwtRegistry {
   }
 
   @Override
+  @CacheEvict(cacheNames = {"users", "channelsByUser"}, allEntries = true)
   public void registerJwtInformation(JwtInformation jwtInformation) {
     UUID userId = jwtInformation.getUserDto().id();
     origin.compute(userId, (ignored, existing) -> {
@@ -48,6 +50,7 @@ public class InMemoryJwtRegistry implements JwtRegistry {
   }
 
   @Override
+  @CacheEvict(cacheNames = {"users", "channelsByUser"}, allEntries = true)
   public void invalidateJwtInformationByUserId(UUID userId) {
     if (userId != null) {
       origin.remove(userId);
@@ -77,6 +80,8 @@ public class InMemoryJwtRegistry implements JwtRegistry {
   }
 
   @Override
+  @CacheEvict(cacheNames = {"users", "channelsByUser"}, allEntries = true,
+      condition = "#result == true")
   public boolean rotateJwtInformation(String refreshToken, JwtInformation newJwtInformation) {
     UUID userId = newJwtInformation.getUserDto().id();
     final boolean[] rotated = {false};
@@ -101,8 +106,9 @@ public class InMemoryJwtRegistry implements JwtRegistry {
     return rotated[0];
   }
 
-  @Scheduled(fixedDelay = 1000 * 60 * 5)
+  @Scheduled(fixedDelayString = "${discodeit.security.jwt.cleanup-fixed-delay:PT5M}")
   @Override
+  @CacheEvict(cacheNames = {"users", "channelsByUser"}, allEntries = true)
   public void clearExpiredJwtInformation() {
     origin.forEach((userId, informationQueue) -> {
       informationQueue.removeIf(information -> !isActive(information));

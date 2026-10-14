@@ -7,6 +7,7 @@ public record ReadStatusResponse(
     UUID id,
     UUID userId,
     UUID channelId,
-    Instant lastReadAt
+    Instant lastReadAt,
+    boolean notificationEnabled
 ) {
 }

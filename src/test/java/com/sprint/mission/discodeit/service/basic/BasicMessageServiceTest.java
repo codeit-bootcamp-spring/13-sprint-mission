@@ -20,7 +20,7 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.storage.BinaryContentStorage;
+import org.springframework.context.ApplicationEventPublisher;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -43,7 +43,7 @@ class BasicMessageServiceTest {
   @Mock
   BinaryContentRepository contentRepository;
   @Mock
-  BinaryContentStorage storage;
+  ApplicationEventPublisher eventPublisher;
   @Mock
   MessageMapper mapper;
   @Mock

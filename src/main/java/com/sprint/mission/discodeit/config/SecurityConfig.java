@@ -1,18 +1,20 @@
 package com.sprint.mission.discodeit.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.dto.error.ErrorResponse;
 import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
 import com.sprint.mission.discodeit.security.JwtLoginSuccessHandler;
 import com.sprint.mission.discodeit.security.JwtLogoutHandler;
 import com.sprint.mission.discodeit.security.SpaCsrfTokenRequestHandler;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Map;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
@@ -49,6 +51,7 @@ public class SecurityConfig {
 
     http
         .csrf(csrf -> csrf
+            .ignoringRequestMatchers("/api/notifications/**")
             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
             .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
         )
@@ -127,34 +130,34 @@ public class SecurityConfig {
     return handler;
   }
 
-  // 미인증(401) 응답을 ProblemDetail JSON으로 커스텀할 수 있는 객체.
+  // 미인증(401) 응답을 ErrorResponse JSON으로 반환한다.
   @Bean
   AuthenticationEntryPoint restAuthenticationEntryPoint(ObjectMapper objectMapper) {
     return (request, response, authException) ->
-        writeProblem(objectMapper, response, HttpStatus.UNAUTHORIZED, "AUTH_401",
-            "인증이 필요합니다. 로그인 후 다시 시도하세요.");
+        writeError(objectMapper, response, HttpStatus.UNAUTHORIZED, "AUTH_401",
+            "인증이 필요합니다. 로그인 후 다시 시도하세요.", authException);
   }
 
-  // 권한 부족(403) 응답을 ProblemDetail JSON으로 커스텀할 수 있는 객체.
+  // 권한 부족(403) 응답을 ErrorResponse JSON으로 반환한다.
   @Bean
   AccessDeniedHandler restAccessDeniedHandler(ObjectMapper objectMapper) {
     return (request, response, deniedException) ->
-        writeProblem(objectMapper, response, HttpStatus.FORBIDDEN, "AUTH_403",
-            "이 작업을 수행할 권한이 없습니다.");
+        writeError(objectMapper, response, HttpStatus.FORBIDDEN, "AUTH_403",
+            "이 작업을 수행할 권한이 없습니다.", deniedException);
 
   }
 
   /**
-   * 401/403 공통 — ProblemDetail 을 JSON 으로 직접 응답 본문에 쓴다.
+   * 필터에서 발생한 401/403도 ErrorResponse 형식으로 반환한다.
    */
-  private static void writeProblem(ObjectMapper objectMapper, HttpServletResponse response,
-      HttpStatus status, String code, String detail) throws IOException {
-    ProblemDetail pd = ProblemDetail.forStatusAndDetail(status, detail);
-    pd.setProperty("code", code);
+  private static void writeError(ObjectMapper objectMapper, HttpServletResponse response,
+      HttpStatus status, String code, String detail, Exception exception) throws IOException {
+    ErrorResponse error = new ErrorResponse(Instant.now(), code, detail, Map.of(),
+        exception.getClass().getSimpleName(), status.value());
     response.setStatus(status.value());
-    response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
     response.setCharacterEncoding("UTF-8");
-    objectMapper.writeValue(response.getWriter(), pd);
+    objectMapper.writeValue(response.getWriter(), error);
   }
 
 }

@@ -59,6 +59,7 @@ public class ReadStatusService {
   public ReadStatusResponse updateReadStatus(UUID readStatusId, ReadStatusUpdateRequest request) {
     ReadStatus readStatus = getReadStatusOrThrow(readStatusId);
     readStatus.updateLastReadAt(request.newLastReadAt());
+    readStatus.updateNotificationEnabled(request.newNotificationEnabled());
     repository.save(readStatus);
     return readStatusMapper.toDto(readStatus);
   }

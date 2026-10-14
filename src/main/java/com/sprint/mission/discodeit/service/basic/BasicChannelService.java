@@ -18,6 +18,8 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -41,12 +43,14 @@ public class BasicChannelService implements ChannelService {
   private final UserRepository userRepository;
   private final ChannelMapper channelMapper;
 
+  @CacheEvict(cacheNames = "channelsByUser", allEntries = true)
   public void addAllowedUserList(UUID channelId, UUID userId) {
     Channel channel = getChannelOrThrow(channelId);
     channel.addAllowedUserList(userId);
     repository.save(channel);
   }
 
+  @CacheEvict(cacheNames = "channelsByUser", allEntries = true)
   public void disallowChannelList(UUID channelId, UUID userId) {
     Channel channel = getChannelOrThrow(channelId);
 
@@ -56,6 +60,7 @@ public class BasicChannelService implements ChannelService {
 
   @Override
   @Transactional
+  @CacheEvict(cacheNames = "channelsByUser", allEntries = true)
   public ChannelResponse createPublicChannel(ChannelPublicCreateRequest request) {
     log.info("공개 채널 생성 시작: name={}", request.name());
     // PRIVATE 채널은 name이 null이므로 null-안전 비교가 필요하다.
@@ -75,10 +80,12 @@ public class BasicChannelService implements ChannelService {
 
   @Override
   @Transactional
+  @CacheEvict(cacheNames = "channelsByUser", allEntries = true)
   public ChannelResponse createPrivateChannel(ChannelPrivateCreateRequest request) {
     log.info("비공개 채널 생성 시작: participantCount={}", request.participantIds().size());
 
-    Channel channel = request.toEntity();
+    // 읽음 상태가 참조할 채널을 먼저 저장하고 반환된 영속 엔티티를 사용한다.
+    Channel channel = repository.save(request.toEntity());
 
     List<UUID> userIdList = request.participantIds();
     // toEntity()에서 이미 allowedUserList를 채우므로 중복 추가하지 않는다.
@@ -91,7 +98,6 @@ public class BasicChannelService implements ChannelService {
       readStatusRepository.save(readStatus);
     });
 
-    repository.save(channel);
     log.info("private 채널 생성됨");
     return toResponse(channel);
   }
@@ -105,6 +111,7 @@ public class BasicChannelService implements ChannelService {
 
   @Override
   @Transactional(readOnly = true)
+  @Cacheable(cacheNames = "channelsByUser", key = "#userId")
   public List<ChannelResponse> findAllByUserId(UUID userId) {
     userRepository.findById(userId)
         .orElseThrow(() -> new UserNotFoundException("userId", userId));
@@ -127,6 +134,7 @@ public class BasicChannelService implements ChannelService {
 
   @Override
   @Transactional
+  @CacheEvict(cacheNames = "channelsByUser", allEntries = true)
   public ChannelResponse updateChannel(UUID channelId, ChannelUpdateRequest request) {
     log.info("채널 수정 시작: channelId={}", channelId);
     Channel channel = getChannelOrThrow(channelId);
@@ -145,6 +153,7 @@ public class BasicChannelService implements ChannelService {
 
   @Override
   @Transactional
+  @CacheEvict(cacheNames = "channelsByUser", allEntries = true)
   public void deleteChannel(UUID channelId) {
     log.info("채널 삭제 시작: channelId={}", channelId);
     getChannelOrThrow(channelId);

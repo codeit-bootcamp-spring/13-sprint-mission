@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import com.sprint.mission.discodeit.config.JwtProperties;
+import com.sprint.mission.discodeit.dto.auth.TokenPair;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -41,7 +42,7 @@ class JwtTokenProviderTest {
   void rotateTokens() {
     String oldRefreshToken = tokenProvider.generateRefreshToken(userDetails);
 
-    JwtTokenProvider.TokenPair tokens = tokenProvider.rotateTokens(oldRefreshToken);
+    TokenPair tokens = tokenProvider.rotateTokens(oldRefreshToken);
 
     assertThat(tokens.refreshToken()).isNotEqualTo(oldRefreshToken);
     assertThat(tokenProvider.validateAccessToken(tokens.accessToken())).isTrue();

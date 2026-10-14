@@ -6,7 +6,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -15,10 +15,9 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 @Getter
-@Builder
 @Entity
-@Table(name = "read_status")
-@AllArgsConstructor
+@Table(name = "read_status", uniqueConstraints =
+    @UniqueConstraint(name = "uk_read_status_user_channel", columnNames = {"user_id", "channel_id"}))
 public class ReadStatus extends BaseUpdatableEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
@@ -34,10 +33,29 @@ public class ReadStatus extends BaseUpdatableEntity {
   @Column(nullable = false)
   private Instant lastReadAt;
 
+  @Column(nullable = false)
+  private boolean notificationEnabled;
+
+  @Builder
+  public ReadStatus(User user, Channel channel, Instant lastReadAt) {
+    this.user = user;
+    this.channel = channel;
+    this.lastReadAt = lastReadAt == null ? Instant.now() : lastReadAt;
+    this.notificationEnabled = channel.getType() == ChannelType.PRIVATE;
+  }
+
   protected ReadStatus() {
   }
 
   public void updateLastReadAt(Instant lastReadAt) {
-    this.lastReadAt = lastReadAt;
+    if (lastReadAt != null) {
+      this.lastReadAt = lastReadAt;
+    }
+  }
+
+  public void updateNotificationEnabled(Boolean notificationEnabled) {
+    if (notificationEnabled != null) {
+      this.notificationEnabled = notificationEnabled;
+    }
   }
 }
