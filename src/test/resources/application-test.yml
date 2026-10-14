@@ -15,11 +15,22 @@ spring:
       hibernate:
         format_sql: true
 
+  cache:
+    type: none
+
   sql:
     init:
       mode: never
 
 discodeit:
+  admin:
+    username: admin
+    email: admin@discodeit.com
+    password: admin1234
+
+  jwt:
+    secret: discodeit-test-jwt-secret-key-for-tests-only
+
   storage:
     type: local
     local:

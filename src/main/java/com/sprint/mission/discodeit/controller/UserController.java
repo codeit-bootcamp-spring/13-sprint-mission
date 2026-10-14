@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.controller;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.security.JwtRegistry;
 import com.sprint.mission.discodeit.service.UserService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -29,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
 
   private final UserService userService;
+  private final JwtRegistry jwtRegistry;
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<UserDto> create(
@@ -78,7 +80,11 @@ public class UserController {
   public ResponseEntity<List<UserDto>> findAll() {
     log.debug("사용자 목록 조회 요청");
 
-    List<UserDto> response = userService.findAll();
+    List<UserDto> response = userService.findAll().stream()
+        .map(user -> user.withOnline(
+            jwtRegistry.hasActiveJwtInformationByUserId(user.id())
+        ))
+        .toList();
 
     return ResponseEntity.ok(response);
   }

@@ -16,6 +16,7 @@ public class AdminInitializer implements CommandLineRunner {
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
+  private final AdminProperties adminProperties;
 
   @Override
   public void run(String... args) throws Exception {
@@ -24,9 +25,9 @@ public class AdminInitializer implements CommandLineRunner {
     }
 
     User admin = new User(
-        "admin",
-        "admin@discodeit.com",
-        passwordEncoder.encode("admin1234"),
+        adminProperties.username(),
+        adminProperties.email(),
+        passwordEncoder.encode(adminProperties.password()),
         null,
         Role.ADMIN
     );

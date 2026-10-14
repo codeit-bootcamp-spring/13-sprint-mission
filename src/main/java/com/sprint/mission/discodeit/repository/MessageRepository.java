@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -34,4 +35,7 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
   );
 
   void deleteByChannelId(UUID channelId);
+
+  @EntityGraph(attributePaths = {"author", "channel"})
+  Optional<Message> findWithAuthorAndChannelById(UUID id);
 }

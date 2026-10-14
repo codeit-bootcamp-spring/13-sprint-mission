@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.request.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
+import com.sprint.mission.discodeit.security.JwtRegistry;
 import com.sprint.mission.discodeit.service.ChannelService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ChannelController {
 
   private final ChannelService channelService;
+  private final JwtRegistry jwtRegistry;
 
   @PostMapping("/public")
   @PreAuthorize("hasRole('CHANNEL_MANAGER')")
@@ -99,6 +101,22 @@ public class ChannelController {
   ) {
     log.debug("사용자별 채널 목록 조회 요청: userId={}", userId);
 
-    return ResponseEntity.ok(channelService.findAllByUserId(userId));
+    List<ChannelDto> channels = channelService.findAllByUserId(userId)
+        .stream()
+        .map(channel -> new ChannelDto(
+            channel.id(),
+            channel.type(),
+            channel.name(),
+            channel.description(),
+            channel.participants().stream()
+                .map(user -> user.withOnline(
+                    jwtRegistry.hasActiveJwtInformationByUserId(user.id())
+                ))
+                .toList(),
+            channel.lastMessageAt()
+        ))
+        .toList();
+
+    return ResponseEntity.ok(channels);
   }
 }

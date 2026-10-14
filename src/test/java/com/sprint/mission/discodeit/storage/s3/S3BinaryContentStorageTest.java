@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -42,6 +43,8 @@ class S3BinaryContentStorageTest {
   private S3Client s3Client;
   @Mock
   private S3Presigner s3Presigner;
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
 
   private S3Properties properties;
   private S3BinaryContentStorage storage;
@@ -53,7 +56,7 @@ class S3BinaryContentStorageTest {
     properties.setBucket("test-bucket");
     properties.setPresignedUrlExpiration(600);
 
-    storage = new S3BinaryContentStorage(s3Client, s3Presigner, properties);
+    storage = new S3BinaryContentStorage(s3Client, s3Presigner, properties, eventPublisher);
   }
 
   @Test

@@ -46,14 +46,14 @@ public class ReadStatusController {
   }
 
   @PatchMapping("/{readStatusId}")
-  public ResponseEntity<ReadStatusDto> updateLastReadAt(
+  public ResponseEntity<ReadStatusDto> update(
       @PathVariable("readStatusId") UUID id,
       @RequestBody @Valid ReadStatusUpdateRequest request
   ) {
     log.debug("읽음 상태 수정 요청: readStatusId={}", id);
 
     ReadStatusDto response =
-        readStatusService.updateLastReadAt(id, request);
+        readStatusService.update(id, request);
 
     return ResponseEntity.ok(response);
   }

@@ -5,6 +5,33 @@ spring:
     password: discodeit1234
     driver-class-name: org.postgresql.Driver
 
+  kafka:
+    bootstrap-servers: localhost:9092
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+    consumer:
+      group-id: discodeit-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  cache:
+    type: redis
+    cache-names:
+      - channels
+      - notifications
+      - users
+    redis:
+      enable-statistics: true
+
   jpa:
     hibernate:
       ddl-auto: create
@@ -20,8 +47,17 @@ logging:
     org.springframework.security: trace
 
 discodeit:
+  admin:
+    username: ${ADMIN_USERNAME:admin}
+    email: ${ADMIN_EMAIL:admin@discodeit.com}
+    password: ${ADMIN_PASSWORD}
+
+  jwt:
+    secret: discodeit-jwt-secret-key-for-local-dev
+
   storage:
     type: local
 
     local:
       root-path: ${STORAGE_LOCAL_ROOT_PATH:./storage}
+      artificial-delay-ms: 3000

@@ -29,6 +29,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +51,7 @@ public class BasicChannelService implements ChannelService {
   private final BinaryContentStorage binaryContentStorage;
 
   @Override
+  @CacheEvict(cacheNames = "channels", allEntries = true)
   public ChannelDto createPublicChannel(PublicChannelCreateRequest request) {
     log.debug("공개 채널 생성 시작");
 
@@ -69,6 +72,7 @@ public class BasicChannelService implements ChannelService {
   }
 
   @Override
+  @CacheEvict(cacheNames = "channels", allEntries = true)
   public ChannelDto createPrivateChannel(
       PrivateChannelCreateRequest request
   ) {
@@ -124,6 +128,7 @@ public class BasicChannelService implements ChannelService {
 
   @Transactional(readOnly = true)
   @Override
+  @Cacheable(cacheNames = "channels", key = "#userId")
   public List<ChannelDto> findAllByUserId(UUID userId) {
     log.debug("사용자별 채널 목록 조회 시작: userId={}", userId);
 
@@ -203,6 +208,7 @@ public class BasicChannelService implements ChannelService {
   }
 
   @Override
+  @CacheEvict(cacheNames = "channels", allEntries = true)
   public ChannelDto update(UUID id, ChannelUpdateRequest request) {
     log.debug("채널 수정 시작: channelId={}", id);
 
@@ -225,6 +231,7 @@ public class BasicChannelService implements ChannelService {
   }
 
   @Override
+  @CacheEvict(cacheNames = "channels", allEntries = true)
   public void delete(UUID id) {
     log.debug("채널 삭제 시작: channelId={}", id);
 

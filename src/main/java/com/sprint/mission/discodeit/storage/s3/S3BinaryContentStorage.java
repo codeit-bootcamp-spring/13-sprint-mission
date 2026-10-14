@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.storage.s3;
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.event.S3UploadFailedEvent;
 import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentDeleteException;
 import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentDownloadException;
 import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentUploadException;
@@ -11,9 +12,14 @@ import java.time.Duration;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -36,8 +42,14 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
   private final S3Client s3Client;
   private final S3Presigner s3Presigner;
   private final S3Properties properties;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Override
+  @Retryable(
+      retryFor = BinaryContentUploadException.class,
+      maxAttempts = 3,
+      backoff = @Backoff(delay = 1000, multiplier = 2)
+  )
   public UUID put(UUID id, byte[] bytes) {
     try {
       PutObjectRequest request = PutObjectRequest.builder()
@@ -45,14 +57,41 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
           .key(id.toString())
           .build();
 
-      s3Client.putObject(request, RequestBody.fromBytes(bytes));
+      s3Client.putObject(
+          request,
+          RequestBody.fromBytes(bytes)
+      );
 
-      log.debug("S3 파일 업로드 완료: binaryContentId={}", id);
+      log.debug(
+          "S3 파일 업로드 완료: binaryContentId={}",
+          id
+      );
+
       return id;
+
     } catch (RuntimeException e) {
-      log.error("S3 파일 업로드 실패: bucket={}, binaryContentId={}", properties.getBucket(), id, e);
+      log.warn(
+          "S3 파일 업로드 실패 - 재시도 예정: bucket={}, binaryContentId={}",
+          properties.getBucket(),
+          id,
+          e
+      );
+
       throw new BinaryContentUploadException(id, e);
     }
+  }
+
+  @Recover
+  public UUID recover(BinaryContentUploadException e, UUID id, byte[] bytes) {
+    String requestId = MDC.get("requestId");
+
+    eventPublisher.publishEvent(
+        new S3UploadFailedEvent(id, "S3_UPLOAD", requestId, e.getMessage())
+    );
+
+    log.error("S3 파일 업로드 최종 실패: binaryContentId={}", id, e);
+
+    throw e;
   }
 
   @Override

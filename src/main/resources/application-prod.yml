@@ -17,6 +17,14 @@ logging:
     com.sprint.mission.discodeit: info
 
 discodeit:
+  admin:
+    username: ${ADMIN_USERNAME}
+    email: ${ADMIN_EMAIL}
+    password: ${ADMIN_PASSWORD}
+
+  jwt:
+    secret: ${JWT_SECRET}
+
   storage:
     type: s3
 

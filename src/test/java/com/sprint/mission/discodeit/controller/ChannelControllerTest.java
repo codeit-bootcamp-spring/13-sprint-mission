@@ -13,6 +13,8 @@ import com.sprint.mission.discodeit.dto.request.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.entity.Channel.ChannelType;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
+import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
+import com.sprint.mission.discodeit.security.JwtRegistry;
 import com.sprint.mission.discodeit.service.ChannelService;
 import java.util.List;
 import java.util.UUID;
@@ -40,6 +42,12 @@ class ChannelControllerTest {
 
   @MockitoBean
   private ChannelService channelService;
+
+  @MockitoBean
+  private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+  @MockitoBean
+  private JwtRegistry jwtRegistry;
 
   @Test
   @WithMockUser(roles = "CHANNEL_MANAGER")

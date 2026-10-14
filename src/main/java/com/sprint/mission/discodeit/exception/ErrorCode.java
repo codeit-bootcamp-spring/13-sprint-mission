@@ -24,6 +24,10 @@ public enum ErrorCode {
   READ_STATUS_NOT_FOUND(HttpStatus.NOT_FOUND, "RS001", "읽음 상태를 찾을 수 없습니다."),
   READ_STATUS_ALREADY_EXISTS(HttpStatus.CONFLICT, "RS002", "이미 읽음 상태가 존재합니다."),
 
+  // Auth
+  INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "A001", "유효하지 않은 Refresh Token입니다."),
+  AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "A002", "인증에 실패했습니다."),
+
   // BinaryContent
   BINARY_CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "B001", "바이너리 콘텐츠를 찾을 수 없습니다."),
   BINARY_CONTENT_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "B002", "파일 업로드 중 오류가 발생했습니다."),
@@ -35,7 +39,10 @@ public enum ErrorCode {
   INVALID_REQUEST(HttpStatus.BAD_REQUEST, "C002", "잘못된 요청입니다."),
   INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "C003", "서버 내부 오류가 발생했습니다."),
   ACCESS_DENIED(HttpStatus.FORBIDDEN, "C004", "접근 권한이 없습니다."),
-  AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "C005", "인증이 필요합니다.");
+  AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "C005", "인증이 필요합니다."),
+
+  // Notification
+  NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "N001", "알림을 찾을 수 없습니다.");
 
   private final HttpStatus status;
   private final String code;

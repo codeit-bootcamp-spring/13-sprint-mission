@@ -32,12 +32,15 @@ import org.springframework.stereotype.Component;
 public class LocalBinaryContentStorage implements BinaryContentStorage {
 
   private final Path root;
+  private final long artificialDelayMs;
 
 
   public LocalBinaryContentStorage(
-      @Value("${discodeit.storage.local.root-path}") String rootPath
+      @Value("${discodeit.storage.local.root-path}") String rootPath,
+      @Value("${discodeit.storage.local.artificial-delay-ms:0}") long artificialDelayMs
   ) {
     this.root = Paths.get(rootPath);
+    this.artificialDelayMs = artificialDelayMs;
   }
 
   private Path resolvePath(UUID id) {
@@ -52,12 +55,37 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
   @Override
   public UUID put(UUID id, byte[] bytes) {
     Path path = resolvePath(id);
+    long startTime = System.nanoTime();
+
+    log.info("로컬 파일 저장 시작: binaryContentId={}, thread={}", id, Thread.currentThread().getName());
 
     try {
+      if (artificialDelayMs > 0) {
+        Thread.sleep(artificialDelayMs);
+      }
+
       Files.write(path, bytes);
+
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new BinaryContentUploadException(id, e);
+
     } catch (IOException e) {
       throw new BinaryContentUploadException(id, e);
+
+    } finally {
+      long elapsedMs = java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(
+          System.nanoTime() - startTime
+      );
+
+      log.info(
+          "로컬 파일 저장 작업 종료: binaryContentId={}, elapsedMs={}, thread={}",
+          id,
+          elapsedMs,
+          Thread.currentThread().getName()
+      );
     }
+
     return id;
   }
 

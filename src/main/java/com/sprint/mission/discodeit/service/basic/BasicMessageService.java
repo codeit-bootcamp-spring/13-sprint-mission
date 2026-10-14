@@ -8,7 +8,7 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentUploadException;
+import com.sprint.mission.discodeit.event.MessageCreatedEvent;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -18,14 +18,17 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
-import java.io.IOException;
+import io.micrometer.core.annotation.Timed;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -44,12 +47,16 @@ public class BasicMessageService implements MessageService {
   private final MessageRepository messageRepository;
   private final UserRepository userRepository;
   private final ChannelRepository channelRepository;
+  private final BinaryContentService binaryContentService;
   private final BinaryContentRepository binaryContentRepository;
   private final MessageMapper messageMapper;
   private final BinaryContentStorage binaryContentStorage;
   private final PageResponseMapper pageResponseMapper;
+  private final ApplicationEventPublisher eventPublisher;
 
+  @Timed("message.create.async")
   @Override
+  @CacheEvict(cacheNames = "channels", allEntries = true)
   public MessageDto create(
       MessageCreateRequest request,
       List<MultipartFile> attachments
@@ -85,6 +92,7 @@ public class BasicMessageService implements MessageService {
 
     if (attachments != null && !attachments.isEmpty()) {
       for (MultipartFile file : attachments) {
+
         if (file.isEmpty()) {
           log.debug("빈 첨부파일 건너뜀");
           continue;
@@ -96,35 +104,12 @@ public class BasicMessageService implements MessageService {
             file.getSize()
         );
 
-        byte[] bytes;
+        BinaryContent content = binaryContentService.create(file);
 
-        try {
-          bytes = file.getBytes();
-        } catch (IOException e) {
-          log.error(
-              "메시지 첨부파일 읽기 실패: fileName={}",
-              file.getOriginalFilename(),
-              e
-          );
-
-          throw new BinaryContentUploadException(
-              file.getOriginalFilename(),
-              e
-          );
-        }
-
-        BinaryContent content = new BinaryContent(
-            file.getOriginalFilename(),
-            file.getSize(),
-            file.getContentType()
-        );
-
-        binaryContentRepository.save(content);
-        binaryContentStorage.put(content.getId(), bytes);
         attachmentsList.add(content);
 
         log.debug(
-            "메시지 첨부파일 업로드 완료: binaryContentId={}",
+            "메시지 첨부파일 업로드 요청 완료: binaryContentId={}",
             content.getId()
         );
       }
@@ -138,6 +123,10 @@ public class BasicMessageService implements MessageService {
     );
 
     messageRepository.save(message);
+
+    eventPublisher.publishEvent(
+        new MessageCreatedEvent(message.getId())
+    );
 
     log.info(
         "메시지 생성 완료: messageId={}, channelId={}, attachmentCount={}",
@@ -234,6 +223,7 @@ public class BasicMessageService implements MessageService {
   }
 
   @Override
+  @CacheEvict(cacheNames = "channels", allEntries = true)
   public void delete(UUID messageId) {
     log.debug("메시지 삭제 시작: messageId={}", messageId);
 

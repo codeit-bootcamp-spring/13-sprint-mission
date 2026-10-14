@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.storage.s3;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import java.io.InputStream;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -61,7 +63,8 @@ public class AWSS3Test {
     storage = new S3BinaryContentStorage(
         s3Client,
         s3Presigner,
-        properties
+        properties,
+        mock(ApplicationEventPublisher.class)
     );
   }
 

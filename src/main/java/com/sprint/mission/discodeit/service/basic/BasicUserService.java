@@ -7,22 +7,24 @@ import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentUploadException;
+import com.sprint.mission.discodeit.event.RoleUpdatedEvent;
 import com.sprint.mission.discodeit.exception.user.DuplicateUserException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.security.CustomUserDetails;
+import com.sprint.mission.discodeit.security.JwtRegistry;
+import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.session.SessionInformation;
-import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,14 +37,17 @@ import org.springframework.web.multipart.MultipartFile;
 public class BasicUserService implements UserService {
 
   private final UserRepository userRepository;
+  private final BinaryContentService binaryContentService;
   private final BinaryContentRepository binaryContentRepository;
   private final UserMapper userMapper;
   private final BinaryContentStorage binaryContentStorage;
   private final PasswordEncoder passwordEncoder;
-  private final SessionRegistry sessionRegistry;
+  private final JwtRegistry jwtRegistry;
+  private final ApplicationEventPublisher eventPublisher;
 
 
   @Override
+  @CacheEvict(cacheNames = "users", allEntries = true)
   public UserDto create(UserCreateRequest request, MultipartFile profile) {
     log.debug("사용자 생성 시작: hasProfile={}", profile != null && !profile.isEmpty());
 
@@ -57,28 +62,15 @@ public class BasicUserService implements UserService {
     }
 
     BinaryContent profileContent = null;
+
     if (profile != null && !profile.isEmpty()) {
-      log.debug("프로필 파일 업로드 시작: fileName={}, size={}",
-          profile.getOriginalFilename(), profile.getSize());
-
-      byte[] bytes;
-
-      try {
-        bytes = profile.getBytes();
-      } catch (IOException e) {
-        log.error("프로필 파일 읽기 실패: fileName={}", profile.getOriginalFilename(), e);
-        throw new BinaryContentUploadException(profile.getOriginalFilename(), e);
-      }
-
-      BinaryContent content = new BinaryContent(
+      log.debug(
+          "프로필 파일 업로드 시작: fileName={}, size={}",
           profile.getOriginalFilename(),
-          profile.getSize(),
-          profile.getContentType()
+          profile.getSize()
       );
 
-      binaryContentRepository.save(content);
-      binaryContentStorage.put(content.getId(), bytes);
-      profileContent = content;
+      profileContent = binaryContentService.create(profile);
     }
 
     String encodedPassword = passwordEncoder.encode(request.password());
@@ -116,6 +108,7 @@ public class BasicUserService implements UserService {
 
   @Transactional(readOnly = true)
   @Override
+  @Cacheable(cacheNames = "users")
   public List<UserDto> findAll() {
     log.debug("사용자 목록 조회 시작");
 
@@ -129,6 +122,10 @@ public class BasicUserService implements UserService {
   }
 
   @Override
+  @Caching(evict = {
+      @CacheEvict(cacheNames = "users", allEntries = true),
+      @CacheEvict(cacheNames = "channels", allEntries = true)
+  })
   public UserDto update(UUID id, UserUpdateRequest request, MultipartFile profile) {
     log.debug("사용자 수정 시작: userId={}, hasProfile={}", id, profile != null && !profile.isEmpty());
 
@@ -157,41 +154,39 @@ public class BasicUserService implements UserService {
     BinaryContent currentProfile = user.getProfile();
 
     if (profile != null && !profile.isEmpty()) {
-      if (currentProfile != null) {
-        log.debug("기존 프로필 정보 삭제: binaryContentId={}", currentProfile.getId());
 
+      if (currentProfile != null) {
         UUID currentProfileId = currentProfile.getId();
+
+        log.debug(
+            "기존 프로필 정보 삭제: binaryContentId={}",
+            currentProfileId
+        );
 
         binaryContentStorage.delete(currentProfileId);
         binaryContentRepository.deleteById(currentProfileId);
       }
 
-      byte[] bytes;
+      currentProfile = binaryContentService.create(profile);
 
-      try {
-        bytes = profile.getBytes();
-      } catch (IOException e) {
-        log.error("프로필 파일 읽기 실패: userId={}, fileName={}", id, profile.getOriginalFilename(), e);
-        throw new BinaryContentUploadException(profile.getOriginalFilename(), e);
-      }
-
-      BinaryContent newProfile = new BinaryContent(
-          profile.getOriginalFilename(),
-          profile.getSize(),
-          profile.getContentType()
+      log.debug(
+          "새 프로필 파일 업로드 요청 완료: userId={}, binaryContentId={}",
+          id,
+          currentProfile.getId()
       );
-
-      binaryContentRepository.save(newProfile);
-      binaryContentStorage.put(newProfile.getId(), bytes);
-      currentProfile = newProfile;
-
-      log.debug("새 프로필 파일 업로드 완료: userId={}, binaryContentId={}", id, newProfile.getId());
     }
 
     String encodedPassword =
-        request.newPassword() != null ? passwordEncoder.encode(request.newPassword()) : null;
+        request.newPassword() != null
+            ? passwordEncoder.encode(request.newPassword())
+            : null;
 
-    user.update(request.newUsername(), request.newEmail(), encodedPassword, currentProfile);
+    user.update(
+        request.newUsername(),
+        request.newEmail(),
+        encodedPassword,
+        currentProfile
+    );
 
     log.info("사용자 수정 완료: userId={}", id);
 
@@ -199,6 +194,10 @@ public class BasicUserService implements UserService {
   }
 
   @Override
+  @Caching(evict = {
+      @CacheEvict(cacheNames = "users", allEntries = true),
+      @CacheEvict(cacheNames = "channels", allEntries = true)
+  })
   public void delete(UUID userId) {
     log.debug("사용자 삭제 시작: userId={}", userId);
 
@@ -224,27 +223,28 @@ public class BasicUserService implements UserService {
   }
 
   @Override
+  @Caching(evict = {
+      @CacheEvict(cacheNames = "users", allEntries = true),
+      @CacheEvict(cacheNames = "channels", allEntries = true)
+  })
   public UserDto updateRole(UserRoleUpdateRequest request) {
 
     User user = userRepository.findById(request.userId())
         .orElseThrow(() -> new UserNotFoundException(request.userId()));
 
-    user.updateRole(request.newRole());
+    Role oldRole = user.getRole();
+    Role newRole = request.newRole();
 
-    expireSession(request.userId());
+    user.updateRole(newRole);
+
+    jwtRegistry.invalidateJwtInformationByUserId(request.userId());
+
+    if (oldRole != newRole) {
+      eventPublisher.publishEvent(
+          new RoleUpdatedEvent(user.getId(), oldRole, newRole)
+      );
+    }
 
     return userMapper.toDto(user);
-  }
-
-  private void expireSession(UUID userId) {
-    sessionRegistry.getAllPrincipals().stream()
-        .filter(CustomUserDetails.class::isInstance)
-        .map(CustomUserDetails.class::cast)
-        .filter(UserDetails -> UserDetails.getUserDto().id().equals(userId)
-        )
-        .forEach(UserDetails ->
-            sessionRegistry
-                .getAllSessions(UserDetails, false)
-                .forEach(SessionInformation::expireNow));
   }
 }
