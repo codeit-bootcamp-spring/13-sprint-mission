@@ -50,7 +50,7 @@ public class BasicNotificationService implements NotificationService {
                 .orElseThrow(() -> new DiscodeitException(ExceptionCode.RESOURCE_NOT_FOUNDED));
 
         // !(요청자 == 메세지 수신자) => 403 error
-        if (noty.getReceiverId().equals(userIdFromAuth(authentication)))
+        if (!noty.getReceiverId().equals(userIdFromAuth(authentication)))
             throw new DiscodeitException(ExceptionCode.INVALID_AUTH_ERROR);
 
         notificationRepository.deleteById(id);

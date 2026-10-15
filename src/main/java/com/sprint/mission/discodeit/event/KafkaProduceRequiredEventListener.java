@@ -21,7 +21,7 @@ public class KafkaProduceRequiredEventListener {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
-    @Async("noty")
+    @Async("notificationExecutor")
     @TransactionalEventListener
     public void on(MessageCreateEvent event) {
         log.debug("카프카 - 메세지 생성 이벤트 발행.");
@@ -33,7 +33,7 @@ public class KafkaProduceRequiredEventListener {
         }
     }
 
-    @Async("noty")
+    @Async("notificationExecutor")
     @TransactionalEventListener
     public void on(RoleUpdateEvent event) {
         try{
@@ -44,7 +44,7 @@ public class KafkaProduceRequiredEventListener {
         }
     }
 
-    @Async("noty")
+    @Async("notificationExecutor")
     @EventListener
     public void on(SystemNotifyEvent event) {
         try{

@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.event;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.config.CacheConfig;
 import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
@@ -14,11 +15,15 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.security.role.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Objects;
+
+
+// todo - 캐시 저장 시, 캐시 키를 UUID 로 변경, 캐시 갱신시, 특정 캐시만 갱신되도록 변경.
 
 @Slf4j
 @RequiredArgsConstructor
@@ -30,6 +35,7 @@ public class NotificationRequiredTopicListener {
     private final UserRepository userRepository;
 
     @KafkaListener(topics = "discodeit.MessageCreatedEvent")
+    @CacheEvict(cacheNames = CacheConfig.NOTIFICATION_CACHE, allEntries = true)
     public void onMessageCreatedEvent(String kafkaEvent) {
         try {
             // 카프카에서의 메세지를 읽고, 원래의 이벤트로 변환.
@@ -59,13 +65,14 @@ public class NotificationRequiredTopicListener {
             return null;
         else
             return new Notification(
-                    user.getId(),
+                    event.userId(),
                     user.getUsername(),
                     event.content()
             );
     }
 
     @KafkaListener(topics = "discodeit.RoleUpdateEvent")
+    @CacheEvict(cacheNames = CacheConfig.NOTIFICATION_CACHE, allEntries = true)
     public void onRoleUpdatedEvent(String kafkaEvent) {
         try {
             RoleUpdateEvent event = objectMapper.readValue(kafkaEvent,RoleUpdateEvent.class);
@@ -83,6 +90,7 @@ public class NotificationRequiredTopicListener {
     }
 
     @KafkaListener(topics = "discodeit.SystemNotifyEvent")
+    @CacheEvict(cacheNames = CacheConfig.NOTIFICATION_CACHE, allEntries = true)
     public void onS3UploadFailedEvent(String kafkaEvent) {
         try {
             SystemNotifyEvent event = objectMapper.readValue(kafkaEvent,SystemNotifyEvent.class);
