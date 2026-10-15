@@ -87,6 +87,8 @@ dependencies {
 	implementation 'com.github.ben-manes.caffeine:caffeine'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
+	// web socket 의존성
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
 
 }
