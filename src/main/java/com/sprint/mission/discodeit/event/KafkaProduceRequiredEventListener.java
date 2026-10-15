@@ -25,10 +25,10 @@ public class KafkaProduceRequiredEventListener {
     @TransactionalEventListener
     public void on(MessageCreateEvent event) {
         log.debug("카프카 - 메세지 생성 이벤트 발행.");
-        try{
+        try {
             String payload = objectMapper.writeValueAsString(event);
             kafkaTemplate.send("discodeit.MessageCreatedEvent", payload);
-        }catch(JsonProcessingException e){
+        } catch (JsonProcessingException e){
             log.error("json 파싱 에러",e);
         }
     }

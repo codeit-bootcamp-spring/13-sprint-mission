@@ -77,11 +77,11 @@ public class NotificationRequiredTopicListener {
         try {
             RoleUpdateEvent event = objectMapper.readValue(kafkaEvent,RoleUpdateEvent.class);
 
-            log.debug("[Event] - RoleUpdateEvent - {}", event.id());
+            log.debug("[Event] - RoleUpdateEvent - {}", event.userId());
             notificationRepository.save(new Notification(
-                    event.id(),
+                    event.userId(),
                     "권한 변경 알림",
-                    "권한이 변경되었습니다. - " + event.role().toString()
+                    String.format("권한이 변경되었습니다. %s -> %s", event.before().toString(), event.after().toString())
             ));
 
         } catch (JsonProcessingException e) {

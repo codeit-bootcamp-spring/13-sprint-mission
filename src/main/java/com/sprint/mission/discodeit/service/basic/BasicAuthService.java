@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.role.RoleUpdateEvent;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.exception.ExceptionCode;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -16,6 +17,7 @@ import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -35,12 +37,23 @@ public class BasicAuthService implements AuthService {
 
     private final JwtRegistry jwtRegistry;
 
+    private final ApplicationEventPublisher applicationEventPublisher;
+
+
     public UserDto roleUpdate(UUID userId, Role role){
         // update query
         User user = userRepository.findById(userId)
                 .orElseThrow(RuntimeException::new);
 
-        user.updateRole(role);
+        Role before = user.getRole();
+        Role after = role;
+
+        // message event 발행.
+        applicationEventPublisher.publishEvent(
+                new RoleUpdateEvent(user.getId(), before, after)
+        );
+
+        user.updateRole(after);
 
         userRepository.save(user);
 
