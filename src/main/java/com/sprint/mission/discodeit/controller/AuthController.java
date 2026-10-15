@@ -4,12 +4,9 @@ package com.sprint.mission.discodeit.controller;
 import com.sprint.mission.discodeit.dto.request.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.JwtDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
-import com.sprint.mission.discodeit.exception.auth.InvalidRefreshTokenException;
-import com.sprint.mission.discodeit.security.CustomUserDetails;
-import com.sprint.mission.discodeit.security.CustomUserDetailsService;
 import com.sprint.mission.discodeit.security.JwtInformation;
-import com.sprint.mission.discodeit.security.JwtRegistry;
 import com.sprint.mission.discodeit.security.JwtTokenProvider;
+import com.sprint.mission.discodeit.service.AuthService;
 import com.sprint.mission.discodeit.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -36,9 +33,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
   private final UserService userService;
+  private final AuthService authService;
   private final JwtTokenProvider jwtTokenProvider;
-  private final JwtRegistry jwtRegistry;
-  private final CustomUserDetailsService userDetailsService;
 
   @GetMapping("/csrf-token")
   public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
@@ -66,35 +62,19 @@ public class AuthController {
           required = false
       ) String refreshToken, HttpServletResponse response
   ) {
-    if (refreshToken == null
-        || !jwtTokenProvider.validateRefreshToken(refreshToken)
-        || !jwtRegistry.hasActiveJwtInformationByRefreshToken(refreshToken)) {
 
-      throw new InvalidRefreshTokenException();
-    }
+    JwtInformation jwtInformation = authService.refresh(refreshToken);
 
-    String email = jwtTokenProvider.getEmail(refreshToken);
-
-    CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(
-        email);
-
-    UserDto userDto = userDetails.getUserDto();
-
-    String newAccessToken = jwtTokenProvider.createAccessToken(userDto);
-
-    String newRefreshToken = jwtTokenProvider.createRefreshToken(userDto);
-
-    JwtInformation newJwtInformation = new JwtInformation(userDto, newAccessToken, newRefreshToken);
-
-    jwtRegistry.rotateJwtInformation(refreshToken, newJwtInformation);
-
-    ResponseCookie refreshCookie = jwtTokenProvider.createRefreshTokenCookie(newRefreshToken);
+    ResponseCookie refreshCookie = jwtTokenProvider.createRefreshTokenCookie(
+        jwtInformation.refreshToken());
 
     response.addHeader(
         HttpHeaders.SET_COOKIE, refreshCookie.toString()
     );
 
-    JwtDto responseDto = new JwtDto(userDto, newAccessToken);
+    JwtDto responseDto = new JwtDto(
+        jwtInformation.userDto(), jwtInformation.accessToken()
+    );
 
     return ResponseEntity.ok(responseDto);
   }
