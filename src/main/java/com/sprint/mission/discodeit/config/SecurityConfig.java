@@ -58,16 +58,21 @@ public class SecurityConfig {
                 "/favicon.ico",
                 "/default-avatar.png"
             ).permitAll()
+
+            .requestMatchers("/ws", "/ws/**").permitAll()
+
             .requestMatchers(
                 "/api/auth/csrf-token",
                 "/api/auth/login",
                 "/api/auth/logout",
                 "/api/auth/refresh"
             ).permitAll()
+
             .requestMatchers(
                 HttpMethod.POST,
                 "/api/users"
             ).permitAll()
+            
             .requestMatchers("/api/**").authenticated()
             .anyRequest().authenticated()
         )
