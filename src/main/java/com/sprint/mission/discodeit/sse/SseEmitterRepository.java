@@ -37,7 +37,10 @@ public class SseEmitterRepository {
     public void delete(UUID receiver,SseEmitter emitter) {
         List<SseEmitter> emitters = data.get(receiver);
         emitters.forEach(em -> {
-            if (em == emitter) emitters.remove(em);
+            if (em == emitter) {
+                em.complete();  // 삭제될 emitter 은 반환 끊음.
+                emitters.remove(em);
+            }
         });
     }
 

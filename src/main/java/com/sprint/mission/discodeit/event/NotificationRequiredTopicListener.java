@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.event;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sprint.mission.discodeit.config.CacheConfig;
+import com.sprint.mission.discodeit.config.cache.CacheConfig;
 import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;

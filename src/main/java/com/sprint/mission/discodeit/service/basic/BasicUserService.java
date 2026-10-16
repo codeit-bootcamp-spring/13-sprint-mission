@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.config.CacheConfig;
+import com.sprint.mission.discodeit.config.cache.CacheConfig;
 import com.sprint.mission.discodeit.dto.request.MultipartFileDto;
 import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;

@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
 
-import com.sprint.mission.discodeit.config.CacheConfig;
+import com.sprint.mission.discodeit.config.cache.CacheConfig;
 import com.sprint.mission.discodeit.dto.response.NotificationDto;
 import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.exception.DiscodeitException;

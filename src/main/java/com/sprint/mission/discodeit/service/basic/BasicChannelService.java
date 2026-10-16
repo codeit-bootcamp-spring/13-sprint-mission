@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.config.CacheConfig;
+import com.sprint.mission.discodeit.config.cache.CacheConfig;
 import com.sprint.mission.discodeit.dto.projection.ChannelProjection;
 import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
@@ -210,7 +210,7 @@ public class BasicChannelService implements ChannelService {
     private void checkUpdatable(Channel channel, Authentication authentication){
         if (channel.getType().equals(ChannelType.PRIVATE)) {
             log.warn("Private channel checked - id : {}, name : {}",channel.getId(), channel.getName());
-            throw new ChannelTypeException("Channel with id - {} was private",channel.getId());
+            throw new ChannelTypeException("Channel with id - %s was private",channel.getId());
         } else
             checkAuth(authentication);
     }
@@ -219,7 +219,7 @@ public class BasicChannelService implements ChannelService {
     private Channel getChannelOrException(UUID id){
         return channelRepository.findById(id)
                 .orElseThrow(() -> new ChannelNotFoundException(
-                        "{} - Channel with id - {} not found",
+                        "%s - Channel with id - %s not found",
                         SERVICE_NAME,
                         id
                 ));

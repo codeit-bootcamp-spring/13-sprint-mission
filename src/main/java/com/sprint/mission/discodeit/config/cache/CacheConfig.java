@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.config;
+package com.sprint.mission.discodeit.config.cache;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;

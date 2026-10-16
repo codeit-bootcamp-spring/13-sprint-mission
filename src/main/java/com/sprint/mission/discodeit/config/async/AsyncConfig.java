@@ -29,7 +29,7 @@ public class AsyncConfig {
         executor.setQueueCapacity(50);
         executor.setKeepAliveSeconds(60);
         executor.setAllowCoreThreadTimeOut(false);
-        executor.setThreadNamePrefix("[noty]");
+        executor.setThreadNamePrefix("Noty-");
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy()); // 스레드풀 포화시 정책. 기본 4가지 있다.
         executor.setTaskDecorator(asyncDecorator);
         executor.initialize();
@@ -44,7 +44,7 @@ public class AsyncConfig {
         executor.setQueueCapacity(50);
         executor.setKeepAliveSeconds(60);
         executor.setAllowCoreThreadTimeOut(false);
-        executor.setThreadNamePrefix("[noty]");
+        executor.setThreadNamePrefix("Binary-");
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy()); // 스레드풀 포화시 정책. 기본 4가지 있다.
         executor.setTaskDecorator(asyncDecorator);
         executor.initialize();
