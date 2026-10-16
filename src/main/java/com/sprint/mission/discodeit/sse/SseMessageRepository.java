@@ -32,7 +32,7 @@ public class SseMessageRepository {
 
     public List<SseMessage> getFromId(UUID messageId){
         Integer index = getIndex(messageId);
-        return eventIdQueue.stream().skip(index)
+        return eventIdQueue.stream().skip(index + 1)
                 .map(messages::get)
                 .toList();
     }

@@ -72,12 +72,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 ) {
                     String username = provider.getSubject(token);  // user.id or user.email(login)
 
-                    log.debug("[{}] - 인증 요청 유저 - username : {}", SERVICE_NAME, username);
-
                     // principal 은 인가를 확인할 때 필요. -> UserDetail
                     UserDetails principal = userDetailsService.loadUserByUsername(username);
-
-                    log.debug("[{}] - 인증 흐름 확인 로그 - username : {}, role : {}",SERVICE_NAME, username, principal.getAuthorities());
 
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             principal,
@@ -121,7 +117,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     private String resolveToken(HttpServletRequest request){
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-        log.debug("[{}] - raw header : {}\nprefix : {}", SERVICE_NAME, header, BEARER_PREFIX);
         if(header != null && header.startsWith(BEARER_PREFIX))
             return header.substring(BEARER_PREFIX.length() + 1);    // 헤더가 공백 한칸으로 공백과 베어러 구분.
         return null;

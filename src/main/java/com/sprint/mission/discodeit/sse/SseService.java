@@ -30,10 +30,15 @@ public class SseService {
      */
     public SseEmitter connect(UUID receiverId, UUID lastEventId) {
 
+        log.debug("[{}] - SSE connection start - receiver : {}, lastEventId : {}",
+                NAME,
+                receiverId,
+                lastEventId);
+
         SseEmitter emitter = new SseEmitter();  // 타임아웃 시간을 어떻게 정할 지 모르니 일단 공백.
         emitterRepository.register(receiverId, emitter);
 
-//        emitter.onTimeout(() -> {});
+        emitter.onTimeout(emitter::complete);
         emitter.onCompletion(() -> emitterRepository.delete(receiverId,emitter));
         emitter.onError(e -> {
             log.error("[{}] - SSE Emitter error!", NAME, e);
@@ -42,12 +47,12 @@ public class SseService {
 
 
         // emitter 가 연결되면, 지금까지 생성된, 혹은 유실된 메세지 전송.
-        // 이벤트 유실 방지 last event Id -> 존재하면, 마지막 메세지에서 메세지가 더 생겼는지 검색, 메세지 전송?
-        // 메세지 생성시각에 따라, 메세지의 생성시각이 last 보다 아래라면 보내기로? -> 이벤트는 어차피
-        if (lastEventId == null || messageRepository.isLast(lastEventId)) {
-            sendToEmitter(emitter, messageRepository.findAll());
-        } else {
+        // last msg 가 있다면, last 에서부터 메세지 반환. -> emitter 가 반환되지 않았는데 반환 가능?
+        // 비동기 방식으로 커넥션이 완성되면 보내야 하나?
+        if (lastEventId != null) {
             sendToEmitter(emitter, messageRepository.getFromId(lastEventId));
+        } else {
+            sendToEmitter(emitter, messageRepository.findAll());
         }
 
         return emitter;
@@ -55,6 +60,14 @@ public class SseService {
 
 
     public void send(Collection<UUID> receiverIds, String eventName, Object data) {
+
+        log.debug(
+                "[{}] - SSE Message send. - eventName : {}, data : {}",
+                NAME,
+                eventName,
+                data
+        );
+
         SseMessage message = new SseMessage(eventName,data);
         messageRepository.save(message);
         emitterRepository.findByReceiverList(receiverIds)
@@ -64,10 +77,18 @@ public class SseService {
     }
 
     public void broadcast(String eventName, Object data) {
+        log.debug(
+                "[{}] - SSE Message broadcast. - eventName : {}, data : {}",
+                NAME,
+                eventName,
+                data
+        );
+
         SseMessage message = new SseMessage(eventName,data);
         messageRepository.save(message);
         emitterRepository.findAll()
                 .forEach(emitter -> {
+                    log.debug("[{}] - SSE Emitter message send : {}", NAME, emitter);
                     sendToEmitter(emitter, List.of(message));
                 });
     }

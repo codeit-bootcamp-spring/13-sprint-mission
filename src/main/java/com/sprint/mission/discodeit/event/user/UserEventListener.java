@@ -17,7 +17,7 @@ public class UserEventListener {
 
     private final SseService sseService;
 
-    @Async("notification")
+    @Async("notificationExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(UserEvent event) {
         sseService.broadcast(event.getName(), event.getData());

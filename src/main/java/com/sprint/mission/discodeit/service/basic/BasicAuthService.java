@@ -42,7 +42,7 @@ public class BasicAuthService implements AuthService {
 
     public UserDto roleUpdate(UUID userId, Role role){
         // update query
-        User user = userRepository.findById(userId)
+        User user = userRepository.findById(userId) // 유저가 없음?
                 .orElseThrow(RuntimeException::new);
 
         Role before = user.getRole();

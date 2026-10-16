@@ -80,7 +80,10 @@ public class BasicMessageService implements MessageService {
         User user = getUserOrException(request.authorId());
         Channel channel = getChannelOrException(request.channelId());
 
-        List<BinaryContent> attachFiles = attachments.stream().map(this::getBinaryContent).toList();
+        List<BinaryContent> attachFiles =
+                (attachments == null)
+                        ? null
+                        : attachments.stream().map(this::getBinaryContent).toList();
 
         Message message = new Message(
                 request.content(),

@@ -20,6 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
@@ -42,11 +44,15 @@ public class NotificationRequiredTopicListener {
 
     @KafkaListener(topics = "discodeit.MessageCreatedEvent")
     @CacheEvict(cacheNames = CacheConfig.NOTIFICATION_CACHE, allEntries = true)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onMessageCreatedEvent(String kafkaEvent) {
         try {
             // 카프카에서의 메세지를 읽고, 원래의 이벤트로 변환.
             MessageCreateEvent event = objectMapper.readValue(kafkaEvent, MessageCreateEvent.class);
             log.debug("[MessageEvent] - 메세지 생성 이벤트 시작. id : {}", event.id());
+
+            // 메세지 생성 이후,
+
 
             List<ReadStatus> readStatuses = readStatusRepository.findAllByChannelIdWithStatusOn(event.channelId(),true);
 
@@ -57,13 +63,12 @@ public class NotificationRequiredTopicListener {
 
             log.debug("[MessageEvent] - 알림 대상 : {} 건", notifications.size());
 
+//            notificationRepository.saveAll(notifications);
 
-            // 같은 채널에 소속된 모든 사용자에게 메세지를 전송.
-            // notification 엔티티의 target 객체는 없어도 된다.
             notifications.forEach(notification ->
                     sseService.send(
                             List.of(notification.getReceiverId()),
-                            "notification.created",
+                            "notifications.created",
                             entityMapper.toDto(notification)
                     ));
 
@@ -87,6 +92,7 @@ public class NotificationRequiredTopicListener {
 
     @KafkaListener(topics = "discodeit.RoleUpdateEvent")
     @CacheEvict(cacheNames = CacheConfig.NOTIFICATION_CACHE, allEntries = true)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onRoleUpdatedEvent(String kafkaEvent) {
         try {
             RoleUpdateEvent event = objectMapper.readValue(kafkaEvent,RoleUpdateEvent.class);
@@ -100,7 +106,7 @@ public class NotificationRequiredTopicListener {
 
             sseService.send(
                     List.of(notification.getReceiverId()),
-                    "notification.created",
+                    "notifications.created",
                     entityMapper.toDto(notification)
             );
 
@@ -111,6 +117,7 @@ public class NotificationRequiredTopicListener {
 
     @KafkaListener(topics = "discodeit.SystemNotifyEvent")
     @CacheEvict(cacheNames = CacheConfig.NOTIFICATION_CACHE, allEntries = true)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onS3UploadFailedEvent(String kafkaEvent) {
         try {
             SystemNotifyEvent event = objectMapper.readValue(kafkaEvent,SystemNotifyEvent.class);
@@ -127,7 +134,7 @@ public class NotificationRequiredTopicListener {
                         );
                         sseService.send(
                                 List.of(notification.getReceiverId()),
-                                "notification.created",
+                                "notifications.created",
                                 entityMapper.toDto(notification)
                         );
                     }
