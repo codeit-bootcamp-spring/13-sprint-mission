@@ -61,7 +61,7 @@ public class SseEmitterManager {
         emitter.send(
             SseEmitter.event()
                 .id(notification.id().toString())
-                .name("notification")
+                .name("notifications.created")
                 .data(notification)
         );
       } catch (Exception e) {
