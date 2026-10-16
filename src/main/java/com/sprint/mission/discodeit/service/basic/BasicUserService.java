@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.event.binarycontent.BinaryContentCreatedEvent;
+import com.sprint.mission.discodeit.event.user.UserEvent;
 import com.sprint.mission.discodeit.exception.user.UserDuplicatedException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.EntityMapper;
@@ -69,7 +70,11 @@ public class BasicUserService implements UserService {
         userRepository.save(user);
 
         // userDto from User
-        return entityMapper.toDto(user, certificationChecker.online(user.getId()));
+        UserDto dto = entityMapper.toDto(user, certificationChecker.online(user.getId()));
+
+        eventPublisher.publishEvent(new UserEvent("users.created", dto));
+
+        return dto;
     }
 
     @Cacheable(CacheConfig.USER_CACHE)
@@ -101,7 +106,11 @@ public class BasicUserService implements UserService {
         // JPA DirtyCheck 으로 별도 save 없이 유저 정보 업데이트
         user.update(newName, newEmail, newPassword, newProfile);
 
-        return entityMapper.toDto(user, certificationChecker.online(user.getId()));
+        UserDto dto = entityMapper.toDto(user, certificationChecker.online(user.getId()));
+
+        eventPublisher.publishEvent(new UserEvent("users.updated", dto));
+
+        return dto;
     }
 
 
@@ -114,7 +123,11 @@ public class BasicUserService implements UserService {
         // todo - 실제 데이터 삭제 로직 추가.
         if (user.getProfile() != null) binaryContentRepository.delete(user.getProfile());
 
+        UserDto dto = entityMapper.toDto(user, certificationChecker.online(user.getId()));
+
         userRepository.delete(user);
+
+        eventPublisher.publishEvent(new UserEvent("users.deleted", dto));
     }
 
     /*

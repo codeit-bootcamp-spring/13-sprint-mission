@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.event.binarycontent;
 
 import com.sprint.mission.discodeit.entity.BinaryContentStatus;
 import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.sse.SseService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,8 @@ public class BinaryContentEventListener {
     private final BinaryContentStorage storage;
     private final BinaryContentService service;
 
+    private final SseService sseService;
+
     @Async("contentRelateExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void create(BinaryContentCreatedEvent event){
@@ -35,6 +38,14 @@ public class BinaryContentEventListener {
             service.updateStatus(event.id(), BinaryContentStatus.FAIL);
             log.error("[{}] - 데이터 저장 실패 - id : {}", SERVICE_NAME, event.id(), e);
         }
+    }
+
+    @Async("contentRelateExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void update(BinaryContentUpdateEvent event){
+        log.debug("[{}] - 바이너리 파일 상태 업데이트 - eventId : {}, dto : {}", SERVICE_NAME, event.getId(), event.getDto());
+        // 발송 대상자를 어떻게 판별?
+        sseService.broadcast(event.getName(),  event.getDto());
     }
 
 }

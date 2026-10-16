@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.dto.request.channel.PublicChannelUpdateReque
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.event.channel.ChannelEvent;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.exception.ExceptionCode;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
@@ -25,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -52,6 +54,7 @@ public class BasicChannelService implements ChannelService {
 
     private final RoleHierarchy roleHierarchy;
 
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * public 채널 생성
@@ -71,7 +74,11 @@ public class BasicChannelService implements ChannelService {
 
         log.debug("ChannelService - public 채널 생성 {}",channel.getId());
 
-        return getChannelDtoFromChannel(channel);
+        ChannelDto dto = getChannelDtoFromChannel(channel);
+
+        eventPublisher.publishEvent(new ChannelEvent("channels.created",dto));
+
+        return dto;
     }
 
     /**
@@ -97,7 +104,12 @@ public class BasicChannelService implements ChannelService {
                 }
         );
 
-        return getChannelDtoFromChannel(channel);
+        ChannelDto dto = getChannelDtoFromChannel(channel);
+
+        eventPublisher.publishEvent(new ChannelEvent("channels.created",dto));
+
+        return dto;
+
     }
 
     /**
@@ -154,7 +166,12 @@ public class BasicChannelService implements ChannelService {
         );
         channelRepository.save(channel);
 
-        return getChannelDtoFromChannel(channel);
+        ChannelDto dto = getChannelDtoFromChannel(channel);
+
+        eventPublisher.publishEvent(new ChannelEvent("channels.updated",dto));
+
+        return dto;
+
     }
 
     /**
@@ -173,9 +190,12 @@ public class BasicChannelService implements ChannelService {
         if(channel.getType().equals(ChannelType.PUBLIC)) checkAuth(authentication);
         // todo - 프라이베이트 라면, 채널 소유자 인지 체크?
 
+        ChannelDto dto = getChannelDtoFromChannel(channel);
 
         // todo - channel 에 속한 message 전부 삭제.
         channelRepository.deleteById(id);
+
+        eventPublisher.publishEvent(new ChannelEvent("channels.deleted",dto));
     }
 
 

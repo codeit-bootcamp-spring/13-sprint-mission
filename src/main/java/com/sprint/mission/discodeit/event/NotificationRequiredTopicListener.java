@@ -9,10 +9,12 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.event.message.MessageCreateEvent;
 import com.sprint.mission.discodeit.event.role.RoleUpdateEvent;
 import com.sprint.mission.discodeit.event.system.SystemNotifyEvent;
+import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.NotificationRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.security.role.Role;
+import com.sprint.mission.discodeit.sse.SseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -34,6 +36,10 @@ public class NotificationRequiredTopicListener {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
 
+    private final EntityMapper entityMapper;
+
+    private final SseService sseService;
+
     @KafkaListener(topics = "discodeit.MessageCreatedEvent")
     @CacheEvict(cacheNames = CacheConfig.NOTIFICATION_CACHE, allEntries = true)
     public void onMessageCreatedEvent(String kafkaEvent) {
@@ -51,7 +57,15 @@ public class NotificationRequiredTopicListener {
 
             log.debug("[MessageEvent] - 알림 대상 : {} 건", notifications.size());
 
-            notificationRepository.saveAll(notifications);
+
+            // 같은 채널에 소속된 모든 사용자에게 메세지를 전송.
+            // notification 엔티티의 target 객체는 없어도 된다.
+            notifications.forEach(notification ->
+                    sseService.send(
+                            List.of(notification.getReceiverId()),
+                            "notification.created",
+                            entityMapper.toDto(notification)
+                    ));
 
             log.debug("[MessageEvent] - 메세지 생성 알림 생성 완료. - id : {}", event.id());
 
@@ -78,11 +92,17 @@ public class NotificationRequiredTopicListener {
             RoleUpdateEvent event = objectMapper.readValue(kafkaEvent,RoleUpdateEvent.class);
 
             log.debug("[Event] - RoleUpdateEvent - {}", event.userId());
-            notificationRepository.save(new Notification(
+            Notification notification = new Notification(
                     event.userId(),
                     "권한 변경 알림",
                     String.format("권한이 변경되었습니다. %s -> %s", event.before().toString(), event.after().toString())
-            ));
+            );
+
+            sseService.send(
+                    List.of(notification.getReceiverId()),
+                    "notification.created",
+                    entityMapper.toDto(notification)
+            );
 
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
@@ -99,11 +119,18 @@ public class NotificationRequiredTopicListener {
             List<User> admins = userRepository.findByRole(Role.ADMIN);
 
             admins.forEach(
-                    user -> notificationRepository.save(new Notification(
+                    user -> {
+                        Notification notification = new Notification(
                             user.getId(),
                             event.job() + "작업 실패",
                             message(event.job(), event.requestId(), event.exceptionMessage())
-                    ))
+                        );
+                        sseService.send(
+                                List.of(notification.getReceiverId()),
+                                "notification.created",
+                                entityMapper.toDto(notification)
+                        );
+                    }
 
             );
 

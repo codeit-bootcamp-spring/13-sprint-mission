@@ -2,6 +2,8 @@ package com.sprint.mission.discodeit.security.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.response.JwtDto;
+import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.event.user.UserEvent;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -10,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -31,6 +34,8 @@ public class JwtSuccessHandler implements AuthenticationSuccessHandler {
     private final JwtTokenProvider jwtTokenProvider;
 
     private final JwtRegistry jwtRegistry;
+
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 로그인에 성공하면 UserDetail 에 존재하는 유저 정보 반환.
@@ -109,7 +114,8 @@ public class JwtSuccessHandler implements AuthenticationSuccessHandler {
                 )
         );
 
-
+        // 로그인 시, 유저 현황 새로고침
+        eventPublisher.publishEvent(new UserEvent("users.updated", principal.getUserDto()));
     }
 
     @Override
