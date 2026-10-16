@@ -34,6 +34,10 @@ public class StompJwtChannelInterceptor implements ChannelInterceptor {
 
     StompCommand command = accessor.getCommand();
 
+    if (command == StompCommand.DISCONNECT) {
+      return message;
+    }
+
     if (command == StompCommand.SEND || command == StompCommand.SUBSCRIBE) {
 
       if (!(accessor.getUser() instanceof Authentication authentication)
@@ -50,25 +54,40 @@ public class StompJwtChannelInterceptor implements ChannelInterceptor {
       }
 
       if (command == StompCommand.SUBSCRIBE) {
-        String prefix = "/sub/channels/";
+        String prefix = "/sub/channels.";
+        String suffix = ".messages";
 
-        if (destination == null || !destination.startsWith(prefix)) {
+        if (destination == null
+            || !destination.startsWith(prefix)
+            || !destination.endsWith(suffix)) {
           throw new AccessDeniedException("허용되지 않은 구독 경로입니다.");
         }
 
+        String channelIdText = destination.substring(
+            prefix.length(),
+            destination.length() - suffix.length()
+        );
+
         UUID channelId;
+
         try {
-          channelId = UUID.fromString(destination.substring(prefix.length()));
+          channelId = UUID.fromString(channelIdText);
         } catch (IllegalArgumentException e) {
           throw new AccessDeniedException("잘못된 채널 ID입니다.", e);
         }
 
-        if (!channelSecurity.canAccess(channelId, userDetails.getUserDto().id()
+        if (!channelSecurity.canAccess(
+            channelId,
+            userDetails.getUserDto().id()
         )) {
           throw new AccessDeniedException("구독 권한이 없는 채널입니다.");
         }
       }
 
+      return message;
+    }
+
+    if (command != StompCommand.CONNECT) {
       return message;
     }
 

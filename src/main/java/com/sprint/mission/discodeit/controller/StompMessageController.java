@@ -47,6 +47,6 @@ public class StompMessageController {
 
     MessageDto message = messageService.create(createRequest, null);
 
-    messagingTemplate.convertAndSend("/sub/channels/" + request.channelId(), message);
+    messagingTemplate.convertAndSend("/sub/channels." + request.channelId() + ".messages", message);
   }
 }
