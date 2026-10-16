@@ -60,6 +60,7 @@ public class SecurityConfig {
             ).permitAll()
 
             .requestMatchers("/ws", "/ws/**").permitAll()
+            .requestMatchers("/actuator/health").permitAll()
 
             .requestMatchers(
                 "/api/auth/csrf-token",
@@ -72,7 +73,7 @@ public class SecurityConfig {
                 HttpMethod.POST,
                 "/api/users"
             ).permitAll()
-            
+
             .requestMatchers("/api/**").authenticated()
             .anyRequest().authenticated()
         )
