@@ -1,13 +1,21 @@
 package com.sprint.mission.discodeit.storage;
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.event.S3UploadFailedEvent;
+import com.sprint.mission.discodeit.filter.RequestIdFilter;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -24,26 +32,38 @@ import java.util.UUID;
 @Component
 @ConditionalOnProperty(
         name = "discodeit.storage.type",
-        havingValue = "S3"
+        havingValue = "s3"
 )
 public class S3BinaryContentStorage implements BinaryContentStorage{
 
     private final String bucketName;
     private final String region;
     private final long presignedUrlExpiration;
+    private final ApplicationEventPublisher eventPublisher;
 
     public S3BinaryContentStorage(
             @Value("${discodeit.storage.s3.bucket}") String bucketName,
             @Value("${discodeit.storage.s3.region}") String region,
             @Value("${discodeit.storage.s3.presigned-url-expiration}")
-            long presignedUrlExpiration
+            long presignedUrlExpiration,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.bucketName = bucketName;
         this.region = region;
         this.presignedUrlExpiration = presignedUrlExpiration;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
+    @Retryable(
+            retryFor = SdkException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(
+                    delay = 1000,
+                    multiplier = 2.0
+            )
+    )
+    @Recover
     public UUID put(UUID binaryContentId, byte[] bytes) {
         if (binaryContentId == null) {
             throw new IllegalArgumentException(
@@ -56,15 +76,48 @@ public class S3BinaryContentStorage implements BinaryContentStorage{
                     "저장할 바이너리 데이터는 필수입니다."
             );
         }
+
         String key = binaryContentId.toString();
+
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(key)
                 .build();
 
-        getS3Client().putObject(request, RequestBody.fromBytes(bytes));
+        getS3Client().putObject(
+                request,
+                RequestBody.fromBytes(bytes)
+        );
 
         return binaryContentId;
+    }
+
+    @Recover
+    public UUID recover(
+            SdkException exception,
+            UUID binaryContentId,
+            byte[] bytes
+    ) {
+        String requestId = MDC.get(
+                RequestIdFilter.MDC_REQUEST_ID
+        );
+
+        String errorMessage = exception.getMessage();
+
+        if (errorMessage == null || errorMessage.isBlank()) {
+            errorMessage = exception.getClass().getSimpleName();
+        }
+
+        eventPublisher.publishEvent(
+                new S3UploadFailedEvent(
+                        "S3 파일 업로드",
+                        requestId,
+                        binaryContentId,
+                        errorMessage
+                )
+        );
+
+        throw exception;
     }
 
     @Override

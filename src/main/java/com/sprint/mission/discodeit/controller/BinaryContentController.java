@@ -11,7 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import java.io.*;
 import java.util.*;
 
-@RequestMapping("/api/binary-contents")
+
+@RequestMapping("/api/binaryContents")
 @RestController
 @RequiredArgsConstructor
 public class BinaryContentController {
@@ -20,36 +21,31 @@ public class BinaryContentController {
     private final BinaryContentStorage binaryContentStorage;
 
     @GetMapping("/{binaryContentId}")
-    public ResponseEntity<Resource> find(@PathVariable UUID binaryContentId) {
+    public ResponseEntity<BinaryContentDto> find(
+            @PathVariable UUID binaryContentId
+    ) {
         BinaryContentDto response =
                 binaryContentService.find(binaryContentId);
 
-        InputStream inputStream = binaryContentStorage.get(binaryContentId);
-        Resource resource = new InputStreamResource(inputStream);
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(response.contentType()))
-                .body(resource);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping
-    public ResponseEntity<List<BinaryContentDto>> finaAll(@RequestParam List<UUID> ids) {
-        List<BinaryContentDto> dto = binaryContentService.findAllByIdIn(ids);
-        return ResponseEntity.ok(dto);
-    }
-
-    @GetMapping("/find")
-    public ResponseEntity<BinaryContentDto> findByRequestParam(
-            @RequestParam UUID binaryContentId
+    public ResponseEntity<List<BinaryContentDto>> findAll(
+            @RequestParam List<UUID> ids
     ) {
-        BinaryContentDto dto = binaryContentService.find(binaryContentId);
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(
+                binaryContentService.findAllByIdIn(ids)
+        );
     }
 
     @GetMapping("/{binaryContentId}/download")
-    public ResponseEntity<?> download(@PathVariable UUID binaryContentId) {
-        BinaryContentDto dto = binaryContentService.find(binaryContentId);
+    public ResponseEntity<?> download(
+            @PathVariable UUID binaryContentId
+    ) {
+        BinaryContentDto dto =
+                binaryContentService.find(binaryContentId);
+
         return binaryContentStorage.download(dto);
     }
-
 }

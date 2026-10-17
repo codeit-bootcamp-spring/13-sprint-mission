@@ -9,8 +9,16 @@ import java.util.*;
 @Mapper(componentModel = "spring")
 public interface BinaryContentMapper {
 
+    @Mapping(target = "bytes", ignore = true)
     BinaryContentDto toDto(BinaryContent binaryContent);
 
-    List<BinaryContentDto> toDtoList(List<BinaryContent> binaryContents);
+    @Mapping(target = "bytes", source = "bytes")
+    BinaryContentDto toDto(
+            BinaryContent binaryContent,
+            byte[] bytes
+    );
 
+    List<BinaryContentDto> toDtoList(
+            List<BinaryContent> binaryContents
+    );
 }

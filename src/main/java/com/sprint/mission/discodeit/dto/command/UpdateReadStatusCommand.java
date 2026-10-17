@@ -1,17 +1,10 @@
 package com.sprint.mission.discodeit.dto.command;
 
-import com.sprint.mission.discodeit.dto.request.*;
-import io.swagger.v3.oas.annotations.media.*;
-import jakarta.validation.constraints.*;
-import org.hibernate.sql.*;
-
-import java.time.*;
+import java.time.Instant;
 
 public record UpdateReadStatusCommand(
-        Instant lastReadTime
+        Instant lastReadTime,
+        Boolean newNotificationEnabled
 ) {
 
-    public static UpdateReadStatusCommand from(UpdateReadStatusRequest request) {
-        return new UpdateReadStatusCommand(request.lastReadTime());
-    }
 }

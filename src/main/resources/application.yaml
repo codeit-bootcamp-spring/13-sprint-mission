@@ -2,8 +2,35 @@ spring:
   application:
     name: discodeit
 
+  cache:
+    type: redis
+    cache-names:
+      - channelsByUser
+      - notificationsByUser
+      - users
+    redis:
+      enable-statistics: true
+      time-to-live: 600s
+      cache-null-values: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
   profiles:
     active: dev
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: discodeit-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
   jpa:
     open-in-view: false
@@ -49,7 +76,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,loggers
+        include: health,metrics,caches
+  observations:
+    annotations:
+      enabled: true
 
   endpoint:
     health:

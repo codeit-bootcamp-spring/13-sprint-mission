@@ -1,11 +1,13 @@
 package com.sprint.mission.discodeit.storage.s3;
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.entity.BinaryContentStatus;
 import com.sprint.mission.discodeit.storage.S3BinaryContentStorage;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,8 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
+
 @EnabledIfEnvironmentVariable(
         named = "RUN_S3_TESTS",
         matches = "true"
@@ -31,19 +35,29 @@ public class S3BinaryContentStorageTest {
     private S3Client s3Client;
     private final String bucketName = "discodeit-binary-content-storage-hj";
     private UUID binaryContentId;
+    private ApplicationEventPublisher eventPublisher;
 
     @BeforeEach
     void setUp() {
-      storage = new S3BinaryContentStorage(bucketName,
-              "ap-northeast-2", 600);
+        eventPublisher = mock(ApplicationEventPublisher.class);
 
-      s3Client = S3Client.builder()
-              .region(Region.AP_NORTHEAST_2)
-              .credentialsProvider(DefaultCredentialsProvider.create())
-              .build();
+        storage = new S3BinaryContentStorage(
+                bucketName,
+                "ap-northeast-2",
+                600,
+                eventPublisher
+        );
 
-      binaryContentId = UUID.randomUUID();
+        s3Client = S3Client.builder()
+                .region(Region.AP_NORTHEAST_2)
+                .credentialsProvider(
+                        DefaultCredentialsProvider.create()
+                )
+                .build();
+
+        binaryContentId = UUID.randomUUID();
     }
+
 
     @Test
     void put_uploadsAndReadsBinaryContent() throws IOException {
@@ -69,7 +83,8 @@ public class S3BinaryContentStorageTest {
                 "test.txt",
                 (long) bytes.length,
                 "text/plain",
-                bytes
+                bytes,
+                BinaryContentStatus.SUCCESS
         );
 
         ResponseEntity<?> download = storage.download(dto);

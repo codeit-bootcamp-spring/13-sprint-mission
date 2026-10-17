@@ -11,6 +11,7 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.MessageCreatedEvent;
 import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
@@ -27,6 +28,7 @@ import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -51,6 +53,7 @@ public class BasicMessageService implements MessageService {
     private final BinaryContentService binaryContentService;
     private final UserMapper userMapper;
     private final AuthService authService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public MessageDto find(UUID id) {
@@ -113,6 +116,8 @@ public class BasicMessageService implements MessageService {
 
         Message savedMessage =
                 messageRepository.save(message);
+
+        eventPublisher.publishEvent(new MessageCreatedEvent(savedMessage.getId()));
 
         log.info("메세지 생성 완료. id = {}", savedMessage.getId());
         return toDto(savedMessage);

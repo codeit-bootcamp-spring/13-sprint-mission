@@ -15,9 +15,10 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.AuthService;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -35,13 +36,13 @@ public class BasicUserService implements UserService {
     private final UserRepository repository;
     private final BinaryContentRepository binaryContentRepository;
     private final BinaryContentService binaryContentService;
-    private final BinaryContentStorage binaryContentStorage;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final AuthService authService;
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "users", allEntries = true)
     public UserDto create(CreateUserCommand command, CreateBinaryContentCommand profileImage) {
 
         if (command == null) {
@@ -79,17 +80,26 @@ public class BasicUserService implements UserService {
         );
 
         if (profileImage != null) {
-            BinaryContent profile = new BinaryContent(
-                    profileImage.fileName(),
-                    (long)profileImage.bytes().length,
-                    profileImage.contentType()
-            );
-            binaryContentRepository.save(profile);
-            binaryContentStorage.put(profile.getId(), profileImage.bytes());
+            BinaryContentDto profileResponse =
+                    binaryContentService.create(profileImage);
+
+            BinaryContent profile =
+                    binaryContentRepository
+                            .findById(profileResponse.id())
+                            .orElseThrow(() ->
+                                    new IllegalStateException(
+                                            "저장된 프로필 이미지 정보를 찾을 수 없습니다."
+                                    )
+                            );
+
             user.updateProfile(profile);
 
-            log.debug("사용자 프로필 이미지 저장 완료. profileId={}", profile.getId());
+            log.debug(
+                    "사용자 프로필 이미지 메타데이터 저장 완료. profileId={}",
+                    profile.getId()
+            );
         }
+
         repository.save(user);
         log.info("사용자 생성 완료. id={}", user.getId());
         return userMapper.toDto(user, false);
@@ -114,11 +124,13 @@ public class BasicUserService implements UserService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "users", key = "'all'")
     public List<UserDto> findAll() {
-        List<User> users = repository.findAll();
-        return users.stream()
+        return repository.findAll().stream()
                 .map(user -> {
-                    boolean online = authService.isOnline(user.getId());
+                    boolean online =
+                            authService.isOnline(user.getId());
+
                     return userMapper.toDto(user, online);
                 })
                 .toList();
@@ -127,6 +139,7 @@ public class BasicUserService implements UserService {
     @Override
     @Transactional
     @PreAuthorize("#id == authentication.principal.userDto.id()")
+    @CacheEvict(cacheNames = "users", allEntries = true)
     public UserDto update(UUID id, UpdateUserCommand command,
                           CreateBinaryContentCommand profileImage) {
 
@@ -212,6 +225,7 @@ public class BasicUserService implements UserService {
     @Override
     @Transactional
     @PreAuthorize("#id == authentication.principal.userDto.id()")
+    @CacheEvict(cacheNames = "users", allEntries = true)
     public void delete(UUID id) {
 
         if (id == null) {

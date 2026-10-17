@@ -7,6 +7,7 @@ public record ReadStatusDto(
         UUID id,
         UUID userId,
         UUID channelId,
-        Instant lastReadTime
+        Instant lastReadTime,
+        Boolean newNotificationEnabled
 ) {
 }

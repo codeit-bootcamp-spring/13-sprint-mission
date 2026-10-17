@@ -8,7 +8,9 @@ import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.security.JwtInformation;
 import com.sprint.mission.discodeit.security.JwtRegistry;
 import com.sprint.mission.discodeit.security.JwtTokenProvider;
+import com.sprint.mission.discodeit.security.RefreshTokenCookieProvider;
 import com.sprint.mission.discodeit.service.AuthService;
+import com.sprint.mission.discodeit.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +18,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -27,7 +30,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Duration;
 import java.util.UUID;
 
 @RequestMapping("/api/auth")
@@ -36,17 +38,17 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private static final String REFRESH_TOKEN_COOKIE = "REFRESH_TOKEN";
-
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtRegistry jwtRegistry;
     private final UserDetailsService userDetailsService;
     private  final AuthService authService;
+    private final RefreshTokenCookieProvider refreshTokenCookieProvider;
+    private final UserService userService;
 
     @PostMapping("/refresh")
     public ResponseEntity<JwtDto> refreshToken(
             @CookieValue(
-                    name = REFRESH_TOKEN_COOKIE,
+                    name = RefreshTokenCookieProvider.COOKIE_NAME,
                     required = false
             ) String refreshToken
     ) {
@@ -113,20 +115,7 @@ public class AuthController {
             );
 
             ResponseCookie refreshTokenCookie =
-                    ResponseCookie
-                            .from(
-                                    REFRESH_TOKEN_COOKIE,
-                                    newRefreshToken
-                            )
-                            .httpOnly(true)
-                            .secure(false)
-                            .path("/")
-                            .sameSite("Lax")
-                            .maxAge(Duration.ofSeconds(
-                                    jwtTokenProvider
-                                            .getRefreshTokenExpirationTime()
-                            ))
-                            .build();
+                    refreshTokenCookieProvider.create(newRefreshToken);
 
             JwtDto response =
                     new JwtDto(userDto, newAccessToken);
@@ -170,5 +159,17 @@ public class AuthController {
 
         return ResponseEntity.ok(updateUser);
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> getCurrentUser(
+            @AuthenticationPrincipal DiscodeitUserDetails userDetails
+    ) {
+        UUID userId = userDetails.getUserDto().id();
+
+        return ResponseEntity.ok(
+                userService.findByUserId(userId)
+        );
+    }
+
 }
 

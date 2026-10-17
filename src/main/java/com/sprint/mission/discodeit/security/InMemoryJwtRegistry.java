@@ -9,6 +9,7 @@ import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @RequiredArgsConstructor
@@ -89,7 +90,10 @@ public class InMemoryJwtRegistry implements JwtRegistry{
         });
     }
 
-    @Scheduled(fixedDelay = 1000 * 60 * 5)
+    @Scheduled(
+            fixedDelay = 5,
+            timeUnit = TimeUnit.MINUTES
+    )
     @Override
     public void clearExpiredJwtInformation() {
         origin.forEach((userId, jwtInformationQueue) ->

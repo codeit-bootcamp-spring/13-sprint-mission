@@ -18,6 +18,8 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +45,7 @@ public class BasicChannelService implements ChannelService {
     @Override
     @Transactional
     @PreAuthorize("hasRole('CHANNEL_MANAGER')")
+    @CacheEvict(cacheNames = "channelsByUser", allEntries = true)
     public ChannelDto createPublicChannel(CreatePublicChannelCommand publicChannel) {
         if (publicChannel == null) {
             throw new IllegalArgumentException("공개 채널 생성 요청은 필수입니다.");
@@ -66,6 +69,7 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "channelsByUser", allEntries = true)
     public ChannelDto createPrivateChannel(CreatePrivateChannelCommand privateChannel) {
         if (privateChannel == null) {
             throw new IllegalArgumentException("비공개 채널 생성 요청은 필수입니다.");
@@ -135,6 +139,7 @@ public class BasicChannelService implements ChannelService {
     @Override
     @Transactional
     @PreAuthorize("hasRole('CHANNEL_MANAGER')")
+    @CacheEvict(cacheNames = "channelsByUser", allEntries = true)
     public ChannelDto update(UUID id, UpdateChannelCommand command) {
         if (id == null) {
             throw new IllegalArgumentException("채널 ID는 필수입니다.");
@@ -171,6 +176,7 @@ public class BasicChannelService implements ChannelService {
     @Override
     @Transactional
     @PreAuthorize("hasRole('CHANNEL_MANAGER')")
+    @CacheEvict(cacheNames = "channelsByUser", allEntries = true)
     public void delete(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("채널 ID는 필수입니다.");
@@ -188,7 +194,9 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
+    @Cacheable(cacheNames = "channelsByUser", key = "#userId")
     public List<ChannelDto> findAllByUserId(UUID userId) {
+
         if (userId == null) {
             throw new IllegalArgumentException("사용자 아이디는 필수입니다.");
         }
@@ -197,7 +205,8 @@ public class BasicChannelService implements ChannelService {
             throw new UserNotFoundException(userId);
         }
 
-        List<ReadStatus> readStatuses = readStatusRepository.findAllByUserId(userId);
+        List<ReadStatus> readStatuses =
+                readStatusRepository.findAllByUserId(userId);
 
         Set<UUID> privateChannelIds = readStatuses.stream()
                 .map(readStatus -> readStatus.getChannel().getId())

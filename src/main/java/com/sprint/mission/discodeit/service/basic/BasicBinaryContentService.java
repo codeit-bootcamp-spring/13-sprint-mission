@@ -1,29 +1,35 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.command.*;
-import com.sprint.mission.discodeit.dto.request.*;
-import com.sprint.mission.discodeit.dto.response.*;
-import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.exception.binarycontent.*;
-import com.sprint.mission.discodeit.mapper.*;
-import com.sprint.mission.discodeit.repository.*;
-import com.sprint.mission.discodeit.service.*;
-import com.sprint.mission.discodeit.storage.*;
-import lombok.*;
-import lombok.extern.slf4j.*;
-import org.springframework.stereotype.*;
-import org.springframework.transaction.annotation.*;
+import com.sprint.mission.discodeit.dto.command.CreateBinaryContentCommand;
+import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.BinaryContentStatus;
+import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
+import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
+import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
+import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.storage.BinaryContentStorage;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class BasicBinaryContentService implements BinaryContentService {
-private final BinaryContentRepository repository;
-    private final BinaryContentStorage binaryContentStorage;
+
+    private final BinaryContentRepository repository;
     private final BinaryContentMapper binaryContentMapper;
+    private final BinaryContentStorage binaryContentStorage;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -46,10 +52,11 @@ private final BinaryContentRepository repository;
         );
 
         repository.save(binaryContent);
-        binaryContentStorage.put(binaryContent.getId(), command.bytes());
+
+        eventPublisher.publishEvent(new BinaryContentCreatedEvent(binaryContent.getId(), command.bytes()));
 
         log.info(
-                "파일 업로드 완료. id={}, fileName={}",
+                "바이너리 콘텐츠 메타데이터 저장 및 이벤트 발행 완료. id={}, fileName={}",
                 binaryContent.getId(),
                 binaryContent.getFileName()
         );
@@ -60,11 +67,15 @@ private final BinaryContentRepository repository;
     @Override
     public BinaryContentDto find(UUID id) {
         if (id == null) {
-            throw new BinaryContentNotFoundException(id);
+            throw new IllegalArgumentException(
+                    "바이너리 콘텐츠 ID는 필수입니다."
+            );
         }
 
         BinaryContent binaryContent = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("파일을 찾을 수 없습니다."));
+                .orElseThrow(() ->
+                        new BinaryContentNotFoundException(id)
+                );
 
         return binaryContentMapper.toDto(binaryContent);
     }
@@ -91,6 +102,24 @@ private final BinaryContentRepository repository;
 
         repository.delete(binaryContent);
         log.info("파일 삭제 완료. id={}", id);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public BinaryContentDto updateStatus(UUID binaryContentId, BinaryContentStatus status) {
+        if (binaryContentId == null) {
+            throw new IllegalArgumentException("바이너리 콘텐츠 ID는 필수입니다.");
+        }
+
+        if (status == null) {
+            throw new IllegalArgumentException("바이너리 콘텐츠 상태는 필수입니다.");
+        }
+
+        BinaryContent  binaryContent = repository.findById(binaryContentId)
+                .orElseThrow(() -> new BinaryContentNotFoundException(binaryContentId));
+
+        binaryContent.updateStatus(status);
+        return binaryContentMapper.toDto(binaryContent);
     }
 
 }

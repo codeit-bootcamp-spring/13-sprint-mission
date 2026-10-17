@@ -5,13 +5,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -20,10 +21,10 @@ import java.util.UUID;
 @Slf4j
 public class JwtLogoutHandler implements LogoutHandler {
 
-    private static final String REFRESH_TOKEN_COOKIE = "REFRESH_TOKEN";
-
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtRegistry jwtRegistry;
+    private final CacheManager cacheManager;
+    private final RefreshTokenCookieProvider refreshTokenCookieProvider;
 
     @Override
     public void logout(
@@ -36,7 +37,8 @@ public class JwtLogoutHandler implements LogoutHandler {
         if (cookies != null) {
             Arrays.stream(cookies)
                     .filter(cookie ->
-                            REFRESH_TOKEN_COOKIE.equals(cookie.getName())
+                            RefreshTokenCookieProvider.COOKIE_NAME
+                                    .equals(cookie.getName())
                     )
                     .findFirst()
                     .ifPresent(cookie ->
@@ -45,13 +47,7 @@ public class JwtLogoutHandler implements LogoutHandler {
         }
 
         ResponseCookie expiredCookie =
-                ResponseCookie.from(REFRESH_TOKEN_COOKIE, "")
-                        .httpOnly(true)
-                        .secure(false)
-                        .path("/")
-                        .sameSite("Lax")
-                        .maxAge(Duration.ZERO)
-                        .build();
+                refreshTokenCookieProvider.expire();
 
         response.addHeader(
                 HttpHeaders.SET_COOKIE,
@@ -72,6 +68,12 @@ public class JwtLogoutHandler implements LogoutHandler {
             );
 
             jwtRegistry.invalidateJwtInformationByUserId(userId);
+
+            Cache usersCache = cacheManager.getCache("users");
+
+            if (usersCache != null) {
+                usersCache.clear();
+            }
 
         } catch (IllegalArgumentException e) {
             log.warn(

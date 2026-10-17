@@ -4,7 +4,6 @@ import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,34 +16,26 @@ public class AdminInitializer implements ApplicationRunner {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
-    @Value("${discodeit.admin.username}")
-    private String username;
-
-    @Value("${discodeit.admin.email}")
-    private String email;
-
-    @Value("${discodeit.admin.password}")
-    private String password;
+    private final AdminProperties adminProperties;
 
     @Override
     @Transactional
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
         if (userRepository.existsByRole(Role.ADMIN)) {
             return;
         }
 
-        if (userRepository.existsByUsername(username)
-                || userRepository.existsByEmail(email)) {
+        if (userRepository.existsByUsername(adminProperties.username())
+                || userRepository.existsByEmail(adminProperties.email())) {
             throw new IllegalStateException(
                     "관리자 username 또는 email이 기존 사용자와 중복됩니다."
             );
         }
 
         User admin = new User(
-                username,
-                email,
-                passwordEncoder.encode(password)
+                adminProperties.username(),
+                adminProperties.email(),
+                passwordEncoder.encode(adminProperties.password())
         );
 
         admin.updateRole(Role.ADMIN);

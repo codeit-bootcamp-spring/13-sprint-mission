@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.RoleUpdatedEvent;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -10,6 +11,8 @@ import com.sprint.mission.discodeit.security.JwtRegistry;
 import com.sprint.mission.discodeit.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +27,7 @@ public class BasicAuthService implements AuthService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final JwtRegistry jwtRegistry;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -38,6 +42,7 @@ public class BasicAuthService implements AuthService {
     @Override
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
+    @CacheEvict(cacheNames = "users", allEntries = true)
     public UserDto updateRole(UUID userId, Role newRole) {
         if (userId == null) {
             throw new IllegalArgumentException(
@@ -56,16 +61,33 @@ public class BasicAuthService implements AuthService {
                         new UserNotFoundException(userId)
                 );
 
-        user.updateRole(newRole);
+        Role previousRole = user.getRole();
 
-        jwtRegistry.invalidateJwtInformationByUserId(userId);
+        if (previousRole != newRole) {
+            user.updateRole(newRole);
 
-        log.info(
-                "사용자 권한 변경 및 기존 JWT 무효화 완료. userId={}, newRole={}",
-                userId,
-                newRole
+            eventPublisher.publishEvent(
+                    new RoleUpdatedEvent(
+                            user.getId(),
+                            previousRole,
+                            newRole
+                    )
+            );
+
+            jwtRegistry.invalidateJwtInformationByUserId(userId);
+
+            log.info(
+                    "사용자 권한 변경 및 기존 JWT 무효화 완료. " +
+                            "userId={}, previousRole={}, newRole={}",
+                    userId,
+                    previousRole,
+                    newRole
+            );
+        }
+
+        return userMapper.toDto(
+                user,
+                jwtRegistry.hasActiveJwtInformationByUserId(userId)
         );
-
-        return userMapper.toDto(user, false);
     }
 }

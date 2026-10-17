@@ -1,13 +1,16 @@
 package com.sprint.mission.discodeit.dto.response;
 
-import java.util.*;
+import com.sprint.mission.discodeit.entity.BinaryContentStatus;
+
+import java.util.UUID;
 
 public record BinaryContentDto(
         UUID id,
         String fileName,
         Long size,
         String contentType,
-        byte[] bytes
+        byte[] bytes,
+        BinaryContentStatus status
 ) {
 
 }

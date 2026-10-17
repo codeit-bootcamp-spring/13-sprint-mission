@@ -5,19 +5,22 @@ import io.swagger.v3.oas.annotations.media.*;
 import jakarta.validation.constraints.*;
 
 import java.time.*;
+
 @Schema(description = "메시지 읽음 상태 수정 정보")
-public record UpdateReadStatusRequest  (
+public record UpdateReadStatusRequest(
 
-        @PastOrPresent(message = "마지막 접속 시간이 미래 시점일 수 없습니다.")
-        Instant lastReadTime
+        @PastOrPresent(
+                message = "마지막 접속 시간이 미래 시점일 수 없습니다."
+        )
+        Instant lastReadTime,
+
+        Boolean newNotificationEnabled
 ) {
-    public UpdateReadStatusRequest{
-        if (lastReadTime == null) {
-            lastReadTime = Instant.now();
-        }
-    }
 
-    public UpdateReadStatusCommand toCommand(){
-        return new UpdateReadStatusCommand(lastReadTime);
+    public UpdateReadStatusCommand toCommand() {
+        return new UpdateReadStatusCommand(
+                lastReadTime,
+                newNotificationEnabled
+        );
     }
 }

@@ -18,7 +18,6 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-@Getter
 public class BasicReadStatusService implements ReadStatusService {
 
     private final ReadStatusRepository readStatusRepository;
@@ -54,7 +53,7 @@ public class BasicReadStatusService implements ReadStatusService {
 
         if (existingReadStatus.isPresent()) {
             ReadStatus readStatus = existingReadStatus.get();
-            readStatus.update(command.lastReadAt());
+            readStatus.update(command.lastReadAt(), null );
 
             return readStatusMapper.toDto(readStatus);
         }
@@ -121,7 +120,9 @@ public class BasicReadStatusService implements ReadStatusService {
         ReadStatus readStatus = readStatusRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("수정할 읽음 상태 정보가 없습니다."));
 
-        readStatus.update(command.lastReadTime());
+        readStatus.update(
+                command.lastReadTime(),
+                command.newNotificationEnabled());
         return readStatusMapper.toDto(readStatus);
     }
 }
