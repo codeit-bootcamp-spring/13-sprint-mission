@@ -7,14 +7,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -27,11 +25,10 @@ public class JwtLoginSuccessHandler
 
     private final ObjectMapper objectMapper;
     private final JwtTokenProvider jwtTokenProvider;
-
-    @Value("${discodeit.jwt.refresh-token-expiration}")
-    private Duration refreshTokenExpiration;
+    private final RefreshTokenCookieProvider refreshTokenCookieProvider;
 
     @Override
+    @CacheEvict(cacheNames = "users", allEntries = true)
     public void onAuthenticationSuccess(
             HttpServletRequest request,
             HttpServletResponse response,
@@ -44,18 +41,6 @@ public class JwtLoginSuccessHandler
                 jwtTokenProvider.generateAccessToken(userDetails);
         String refreshToken =
                 jwtTokenProvider.generateRefreshToken(userDetails);
-
-        ResponseCookie refreshTokenCookie = ResponseCookie
-                .from(
-                        JwtTokenProvider.REFRESH_TOKEN_COOKIE_NAME,
-                        refreshToken
-                )
-                .httpOnly(true)
-                .secure(request.isSecure())
-                .sameSite("Lax")
-                .path("/")
-                .maxAge(refreshTokenExpiration)
-                .build();
 
         JwtDto jwtDto = new JwtDto(
                 userDetails.getUser(),
@@ -72,7 +57,9 @@ public class JwtLoginSuccessHandler
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.addHeader(
                 HttpHeaders.SET_COOKIE,
-                refreshTokenCookie.toString()
+                refreshTokenCookieProvider
+                        .create(refreshToken, request.isSecure())
+                        .toString()
         );
 
         objectMapper.writeValue(

@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.storage.s3;
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentResponse;
+import com.sprint.mission.discodeit.entity.BinaryContentStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -112,6 +113,7 @@ class S3BinaryContentStorageTest {
                 "test.txt",
                 12L,
                 "text/plain",
+                BinaryContentStatus.SUCCESS,
                 "test-content".getBytes()
         );
 

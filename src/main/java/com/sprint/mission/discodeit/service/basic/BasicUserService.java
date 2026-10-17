@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
 import com.sprint.mission.discodeit.exception.user.UserAlreadyExistException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
@@ -13,9 +14,11 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,10 +37,11 @@ public class BasicUserService implements UserService {
     private final UserStatusRepository userStatusRepository;
     private final BinaryContentRepository binaryContentRepository;
     private final UserMapper userMapper;
-    private final BinaryContentStorage binaryContentStorage;
+    private final ApplicationEventPublisher eventPublisher;
     private final PasswordEncoder passwordEncoder;
 
     @Override
+    @CacheEvict(cacheNames = "users", allEntries = true)
     public UserResponse create(
             UserRequest dto,
             BinaryContentRequest profileDto
@@ -79,21 +83,7 @@ public class BasicUserService implements UserService {
         );
 
         if (hasProfile(profileDto)) {
-            BinaryContent binaryContent = new BinaryContent(
-                    profileDto.fileName(),
-                    profileDto.size(),
-                    profileDto.contentType()
-            );
-
-            BinaryContent savedProfile =
-                    binaryContentRepository.save(binaryContent);
-
-            binaryContentStorage.put(
-                    savedProfile.getId(),
-                    profileDto.bytes()
-            );
-
-            user.updateProfile(savedProfile);
+            user.updateProfile(createProfile(profileDto));
         }
 
         User savedUser = userRepository.save(user);
@@ -116,6 +106,7 @@ public class BasicUserService implements UserService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "users")
     public List<UserResponse> findAll() {
         return userRepository.findAll()
                 .stream()
@@ -124,6 +115,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "users", allEntries = true)
     public UserResponse update(
             UUID id,
             UserRequest dto,
@@ -147,21 +139,7 @@ public class BasicUserService implements UserService {
         );
 
         if (hasProfile(profileDto)) {
-            BinaryContent newProfile = new BinaryContent(
-                    profileDto.fileName(),
-                    profileDto.size(),
-                    profileDto.contentType()
-            );
-
-            BinaryContent savedProfile =
-                    binaryContentRepository.save(newProfile);
-
-            binaryContentStorage.put(
-                    savedProfile.getId(),
-                    profileDto.bytes()
-            );
-
-            user.updateProfile(savedProfile);
+            user.updateProfile(createProfile(profileDto));
         }
 
         log.info("사용자 수정 완료: userId={}", id);
@@ -170,6 +148,7 @@ public class BasicUserService implements UserService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "users", allEntries = true)
     public void delete(UUID id) {
         log.debug("사용자 삭제 시작: userId={}", id);
 
@@ -187,6 +166,25 @@ public class BasicUserService implements UserService {
         userRepository.delete(user);
 
         log.info("사용자 삭제 완료: userId={}", id);
+    }
+
+    private BinaryContent createProfile(BinaryContentRequest profileDto) {
+        BinaryContent profile = new BinaryContent(
+                profileDto.fileName(),
+                profileDto.size(),
+                profileDto.contentType()
+        );
+
+        BinaryContent savedProfile = binaryContentRepository.save(profile);
+
+        eventPublisher.publishEvent(
+                new BinaryContentCreatedEvent(
+                        savedProfile.getId(),
+                        profileDto.bytes()
+                )
+        );
+
+        return savedProfile;
     }
 
     private String encodePasswordIfPresent(String password) {

@@ -15,13 +15,12 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ReadStatusService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -36,16 +35,32 @@ public class BasicReadStatusService implements ReadStatusService {
     @Override
     public ReadStatusResponse create(ReadStatusCreateRequest dto) {
         Channel channel = channelRepository.findById(dto.channelId())
-                .orElseThrow(() -> new ChannelNotFoundException(dto.channelId()));
-        User user = userRepository.findById(dto.userId())
-                .orElseThrow(() -> new UserNotFoundException(dto.userId()));
+                .orElseThrow(
+                        () -> new ChannelNotFoundException(
+                                dto.channelId()
+                        )
+                );
 
-        if (readStatusRepository.existsByChannelIdAndUserId(dto.channelId(), dto.userId())) {
-            throw new ReadStatusAlreadyExistException(dto.channelId(), dto.userId());
+        User user = userRepository.findById(dto.userId())
+                .orElseThrow(
+                        () -> new UserNotFoundException(
+                                dto.userId()
+                        )
+                );
+
+        if (readStatusRepository.existsByChannelIdAndUserId(
+                dto.channelId(),
+                dto.userId()
+        )) {
+            throw new ReadStatusAlreadyExistException(
+                    dto.channelId(),
+                    dto.userId()
+            );
         }
 
         ReadStatus readStatus = new ReadStatus(channel, user);
-        ReadStatus savedReadStatus = readStatusRepository.save(readStatus);
+        ReadStatus savedReadStatus =
+                readStatusRepository.save(readStatus);
 
         return readStatusMapper.toDto(savedReadStatus);
     }
@@ -60,17 +75,26 @@ public class BasicReadStatusService implements ReadStatusService {
     @Override
     @Transactional(readOnly = true)
     public List<ReadStatusResponse> findAllByUserId(UUID userId) {
-        return readStatusRepository.findAllByUserId(userId).stream()
+        return readStatusRepository.findAllByUserId(userId)
+                .stream()
                 .map(readStatusMapper::toDto)
                 .toList();
     }
 
     @Override
-    public ReadStatusResponse update(UUID id, ReadStatusUpdateRequest dto) {
+    public ReadStatusResponse update(
+            UUID id,
+            ReadStatusUpdateRequest dto
+    ) {
         ReadStatus readStatus = readStatusRepository.findById(id)
-                .orElseThrow(() -> new ReadStatusNotFoundException(id));
+                .orElseThrow(
+                        () -> new ReadStatusNotFoundException(id)
+                );
 
         readStatus.updateLastRead();
+        readStatus.updateNotificationEnabled(
+                dto.notificationEnabled()
+        );
 
         return readStatusMapper.toDto(readStatus);
     }

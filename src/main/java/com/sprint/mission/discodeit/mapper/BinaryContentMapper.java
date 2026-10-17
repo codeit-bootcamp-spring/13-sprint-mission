@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.mapper;
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentResponse;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.BinaryContentStatus;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -21,7 +22,9 @@ public class BinaryContentMapper {
             return null;
         }
 
-        byte[] bytes = readBytes(binaryContent);
+        byte[] bytes = binaryContent.getStatus() == BinaryContentStatus.SUCCESS
+                ? readBytes(binaryContent)
+                : null;
 
         return new BinaryContentResponse(
                 binaryContent.getId(),
@@ -29,6 +32,7 @@ public class BinaryContentMapper {
                 binaryContent.getFileName(),
                 binaryContent.getSize(),
                 binaryContent.getContentType(),
+                binaryContent.getStatus(),
                 bytes
         );
     }
@@ -40,5 +44,4 @@ public class BinaryContentMapper {
             throw new UncheckedIOException("바이너리 파일을 DTO로 변환할 수 없습니다.", e);
         }
     }
-
 }

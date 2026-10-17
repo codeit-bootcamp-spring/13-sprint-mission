@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.request.BinaryContentRequest;
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.MessageResponse;
@@ -8,6 +9,8 @@ import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
+import com.sprint.mission.discodeit.event.MessageCreatedEvent;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -18,18 +21,18 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -45,27 +48,64 @@ public class BasicMessageService implements MessageService {
     private final BinaryContentRepository binaryContentRepository;
     private final MessageMapper messageMapper;
     private final PageResponseMapper pageResponseMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
-    public MessageResponse create(MessageCreateRequest dto) {
-        int attachmentCount = dto.binaryContentIds() == null ? 0 : dto.binaryContentIds().size();
-        log.debug("메시지 생성 시작: channelId={}, senderId={}, attachmentCount={}",
-                dto.channelId(), dto.senderId(), attachmentCount);
+    public MessageResponse create(
+            MessageCreateRequest dto,
+            List<BinaryContentRequest> attachmentDtos
+    ) {
+        int existingAttachmentCount =
+                dto.binaryContentIds() == null
+                        ? 0
+                        : dto.binaryContentIds().size();
+        int newAttachmentCount =
+                attachmentDtos == null
+                        ? 0
+                        : attachmentDtos.size();
+
+        log.debug(
+                "메시지 생성 시작: channelId={}, senderId={}, attachmentCount={}",
+                dto.channelId(),
+                dto.senderId(),
+                existingAttachmentCount + newAttachmentCount
+        );
+
         Channel channel = channelRepository.findById(dto.channelId())
-                .orElseThrow(() -> new ChannelNotFoundException(dto.channelId()));
+                .orElseThrow(
+                        () -> new ChannelNotFoundException(
+                                dto.channelId()
+                        )
+                );
+
         User author = userRepository.findById(dto.senderId())
-                .orElseThrow(() -> new UserNotFoundException(dto.senderId()));
+                .orElseThrow(
+                        () -> new UserNotFoundException(
+                                dto.senderId()
+                        )
+                );
 
-        Message message = new Message(dto.content(), channel, author);
+        Message message = new Message(
+                dto.content(),
+                channel,
+                author
+        );
 
-        if (dto.binaryContentIds() != null && !dto.binaryContentIds().isEmpty()) {
-            List<BinaryContent> attachments = binaryContentRepository.findAllById(dto.binaryContentIds());
-            message.getAttachments().addAll(attachments);
-        }
+        addExistingAttachments(message, dto.binaryContentIds());
+        addNewAttachments(message, attachmentDtos);
 
         Message savedMessage = messageRepository.save(message);
-        log.info("메시지 생성 완료: messageId={}, channelId={}",
-                savedMessage.getId(), dto.channelId());
+
+        eventPublisher.publishEvent(
+                new MessageCreatedEvent(savedMessage.getId())
+        );
+
+        log.info(
+                "메시지 생성 완료: messageId={}, channelId={}",
+                savedMessage.getId(),
+                dto.channelId()
+        );
+
         return messageMapper.toDto(savedMessage);
     }
 
@@ -85,14 +125,19 @@ public class BasicMessageService implements MessageService {
     @Override
     @Transactional(readOnly = true)
     public List<MessageResponse> findAllByChannelId(UUID channelId) {
-        return messageRepository.findAllByChannelId(channelId).stream()
+        return messageRepository
+                .findAllByChannelId(channelId)
+                .stream()
                 .map(messageMapper::toDto)
                 .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<MessageResponse> findAllByChannelId(UUID channelId, int page) {
+    public PageResponse<MessageResponse> findAllByChannelId(
+            UUID channelId,
+            int page
+    ) {
         Pageable pageable = PageRequest.of(
                 page,
                 MESSAGE_PAGE_SIZE,
@@ -107,14 +152,21 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public MessageResponse update(UUID id, MessageUpdateRequest dto) {
+    public MessageResponse update(
+            UUID id,
+            MessageUpdateRequest dto
+    ) {
         log.debug("메시지 수정 시작: messageId={}", id);
+
         Message message = messageRepository.findById(id)
-                .orElseThrow(() -> new MessageNotFoundException(id));
+                .orElseThrow(
+                        () -> new MessageNotFoundException(id)
+                );
 
         message.updateContent(dto.content());
 
         log.info("메시지 수정 완료: messageId={}", id);
+
         return messageMapper.toDto(message);
     }
 
@@ -123,5 +175,50 @@ public class BasicMessageService implements MessageService {
         log.debug("메시지 삭제 시작: messageId={}", id);
         messageRepository.deleteById(id);
         log.info("메시지 삭제 완료: messageId={}", id);
+    }
+
+    private void addExistingAttachments(
+            Message message,
+            List<UUID> binaryContentIds
+    ) {
+        if (binaryContentIds == null || binaryContentIds.isEmpty()) {
+            return;
+        }
+
+        List<BinaryContent> attachments =
+                binaryContentRepository.findAllById(
+                        binaryContentIds
+                );
+
+        message.getAttachments().addAll(attachments);
+    }
+
+    private void addNewAttachments(
+            Message message,
+            List<BinaryContentRequest> attachmentDtos
+    ) {
+        if (attachmentDtos == null || attachmentDtos.isEmpty()) {
+            return;
+        }
+
+        for (BinaryContentRequest attachmentDto : attachmentDtos) {
+            BinaryContent attachment = new BinaryContent(
+                    attachmentDto.fileName(),
+                    attachmentDto.size(),
+                    attachmentDto.contentType()
+            );
+
+            BinaryContent savedAttachment =
+                    binaryContentRepository.save(attachment);
+
+            message.getAttachments().add(savedAttachment);
+
+            eventPublisher.publishEvent(
+                    new BinaryContentCreatedEvent(
+                            savedAttachment.getId(),
+                            attachmentDto.bytes()
+                    )
+            );
+        }
     }
 }

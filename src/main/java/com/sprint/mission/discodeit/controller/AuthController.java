@@ -7,22 +7,25 @@ import com.sprint.mission.discodeit.exception.auth.InvalidRefreshTokenException;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
 import com.sprint.mission.discodeit.security.JwtTokenProvider;
+import com.sprint.mission.discodeit.security.RefreshTokenCookieProvider;
 import com.sprint.mission.discodeit.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.Duration;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
@@ -33,9 +36,7 @@ public class AuthController {
     private final AuthService authService;
     private final JwtTokenProvider jwtTokenProvider;
     private final DiscodeitUserDetailsService userDetailsService;
-
-    @Value("${discodeit.jwt.refresh-token-expiration}")
-    private Duration refreshTokenExpiration;
+    private final RefreshTokenCookieProvider refreshTokenCookieProvider;
 
     @GetMapping("/csrf-token")
     public ResponseEntity<Void> getCsrfToken(CsrfToken csrfToken) {
@@ -79,21 +80,11 @@ public class AuthController {
         String newRefreshToken =
                 jwtTokenProvider.generateRefreshToken(userDetails);
 
-        ResponseCookie refreshTokenCookie = ResponseCookie
-                .from(
-                        JwtTokenProvider.REFRESH_TOKEN_COOKIE_NAME,
-                        newRefreshToken
-                )
-                .httpOnly(true)
-                .secure(request.isSecure())
-                .sameSite("Lax")
-                .path("/")
-                .maxAge(refreshTokenExpiration)
-                .build();
-
         response.addHeader(
                 HttpHeaders.SET_COOKIE,
-                refreshTokenCookie.toString()
+                refreshTokenCookieProvider
+                        .create(newRefreshToken, request.isSecure())
+                        .toString()
         );
 
         JwtDto jwtDto = new JwtDto(

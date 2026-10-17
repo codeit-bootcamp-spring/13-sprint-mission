@@ -28,7 +28,10 @@ public class MessageMode {
                 content,
                 Collections.emptyList()
         );
-        MessageResponse createdResponse = messageService.create(createRequest);
+        MessageResponse createdResponse = messageService.create(
+                createRequest,
+                Collections.emptyList()
+        );
         trackingId[0] = createdResponse.id();
 
         System.out.println(content + "메세지를 성공적으로 보냈습니다.");

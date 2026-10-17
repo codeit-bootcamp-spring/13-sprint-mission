@@ -4,17 +4,20 @@ import com.sprint.mission.discodeit.dto.request.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserRole;
+import com.sprint.mission.discodeit.event.RoleUpdatedEvent;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Optional;
-import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -30,11 +33,14 @@ class BasicAuthServiceTest {
     @Mock
     private UserMapper userMapper;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private BasicAuthService authService;
 
     @Test
-    void updateRole_사용자_권한을_변경한다() {
+    void updateRole_사용자_권한을_변경하고_이벤트를_발행한다() {
         UUID userId = UUID.randomUUID();
 
         UserRoleUpdateRequest request =
@@ -48,6 +54,8 @@ class BasicAuthServiceTest {
                 "codeit@example.com",
                 "encoded-password"
         );
+
+        ReflectionTestUtils.setField(user, "id", userId);
 
         UserResponse expected = new UserResponse(
                 userId,
@@ -69,7 +77,47 @@ class BasicAuthServiceTest {
         assertThat(user.getRole())
                 .isEqualTo(UserRole.CHANNEL_MANAGER);
 
+        ArgumentCaptor<RoleUpdatedEvent> eventCaptor =
+                ArgumentCaptor.forClass(RoleUpdatedEvent.class);
+
+        then(eventPublisher)
+                .should()
+                .publishEvent(eventCaptor.capture());
+
+        RoleUpdatedEvent event = eventCaptor.getValue();
+
+        assertThat(event.userId()).isEqualTo(userId);
+        assertThat(event.previousRole()).isEqualTo(UserRole.USER);
+        assertThat(event.updatedRole())
+                .isEqualTo(UserRole.CHANNEL_MANAGER);
+
         then(userMapper).should().toDto(user);
+    }
+
+    @Test
+    void updateRole_같은_권한이면_이벤트를_발행하지_않는다() {
+        UUID userId = UUID.randomUUID();
+
+        UserRoleUpdateRequest request =
+                new UserRoleUpdateRequest(
+                        userId,
+                        UserRole.USER
+                );
+
+        User user = new User(
+                "codeit",
+                "codeit@example.com",
+                "encoded-password"
+        );
+
+        given(userRepository.findById(userId))
+                .willReturn(Optional.of(user));
+        given(userMapper.toDto(user))
+                .willReturn(null);
+
+        authService.updateRole(request);
+
+        then(eventPublisher).shouldHaveNoInteractions();
     }
 
     @Test
@@ -92,5 +140,6 @@ class BasicAuthServiceTest {
                 .hasMessage("사용자를 찾을 수 없습니다.");
 
         then(userMapper).shouldHaveNoInteractions();
+        then(eventPublisher).shouldHaveNoInteractions();
     }
 }
