@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.security;
 
+import com.sprint.mission.discodeit.event.UserLogInOutEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -19,10 +21,14 @@ public class InMemoryJwtRegistry implements JwtRegistry {
 
     private final JwtTokenProvider jwtTokenProvider;
 
+    private final ApplicationEventPublisher applicationEventPublisher;
+
 
     @Override
     public void registerJwtInformation(JwtInformation jwtInformation) {
         UUID userId = jwtInformation.getUserDto().id();
+
+        boolean wasOnline = hasActiveJwtInformationByUserId(userId);
 
         // userId에 해당하는 큐가 없으면 새 큐를 생성해 origin에 등록
         Queue<JwtInformation> queue = origin.computeIfAbsent(
@@ -37,24 +43,46 @@ public class InMemoryJwtRegistry implements JwtRegistry {
         while (queue.size() > maxActiveJwtCount) {
             queue.poll();
         }
+
+        if (!wasOnline && hasActiveJwtInformationByUserId(userId)) {
+            applicationEventPublisher.publishEvent(
+                    new UserLogInOutEvent(userId, true)
+            );
+        }
     }
 
     @Override
     public void invalidateJwtInformationByUserId(UUID userId) {
+        boolean wasOnline = hasActiveJwtInformationByUserId(userId);
+
         // 해당 사용자의 모든 JWT 정보 삭제
         origin.remove(userId);
+
+        if (wasOnline) {
+            applicationEventPublisher.publishEvent(
+                    new UserLogInOutEvent(userId, false)
+            );
+        }
     }
 
     @Override
     public void invalidateJwtInformationByRefreshToken(String refreshToken) {
         origin.forEach((userId, queue) -> {
+            boolean wasOnline = !queue.isEmpty();
+
             // 전달받은 Refresh Token과 일치하는 JwtInformation 제거
-            queue.removeIf(jwtInformation ->
+            boolean removed = queue.removeIf(jwtInformation ->
                     jwtInformation.getRefreshToken().equals(refreshToken));
 
             // JWT 정보가 남아있지 않으면 해당 사용자 행도 제거
             if (queue.isEmpty()) {
                 origin.remove(userId, queue);
+
+                if (removed && wasOnline) {
+                    applicationEventPublisher.publishEvent(
+                            new UserLogInOutEvent(userId, false)
+                    );
+                }
             }
         });
     }
