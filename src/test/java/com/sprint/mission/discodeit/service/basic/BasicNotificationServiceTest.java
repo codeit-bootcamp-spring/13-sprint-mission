@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.response.NotificationDto;
 import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.notification.NotificationAccessDeniedException;
 import com.sprint.mission.discodeit.exception.notification.NotificationNotFoundException;
 import com.sprint.mission.discodeit.mapper.NotificationMapper;
 import com.sprint.mission.discodeit.repository.NotificationRepository;
@@ -17,7 +18,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -241,8 +241,12 @@ class BasicNotificationServiceTest {
                         requesterId
                 )
         )
-                .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("본인의 알림만 확인할 수 있습니다.");
+                .isInstanceOf(
+                        NotificationAccessDeniedException.class
+                )
+                .hasMessage(
+                        "본인의 알림만 확인할 수 있습니다."
+                );
 
         then(notificationRepository)
                 .should(never())

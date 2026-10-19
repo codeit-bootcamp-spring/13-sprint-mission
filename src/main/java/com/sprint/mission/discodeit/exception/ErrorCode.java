@@ -20,6 +20,9 @@ public enum ErrorCode {
 
     MESSAGE_NOT_FOUND("메시지를 찾을 수 없습니다."),
     NOTIFICATION_NOT_FOUND("알림을 찾을 수 없습니다."),
+    NOTIFICATION_ACCESS_DENIED(
+            "본인의 알림만 확인할 수 있습니다."
+    ),
     BINARY_CONTENT_NOT_FOUND("파일을 찾을 수 없습니다."),
 
     READ_STATUS_NOT_FOUND("읽음 상태 정보를 찾을 수 없습니다."),

@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.config;
 
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadPoolExecutor;
 import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -85,6 +86,11 @@ public class AsyncConfig {
         executor.setTaskDecorator(
                 contextCopyingTaskDecorator
         );
+        executor.setRejectedExecutionHandler(
+                new ThreadPoolExecutor.CallerRunsPolicy()
+        );
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(30);
         executor.initialize();
 
         return executor;

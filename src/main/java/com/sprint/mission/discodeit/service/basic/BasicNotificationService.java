@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.response.NotificationDto;
 import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.notification.NotificationAccessDeniedException;
 import com.sprint.mission.discodeit.exception.notification.NotificationNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.NotificationMapper;
@@ -14,7 +15,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -81,8 +81,9 @@ public class BasicNotificationService implements NotificationService {
         if (!notification.getReceiver()
                 .getId()
                 .equals(requesterId)) {
-            throw new AccessDeniedException(
-                    "본인의 알림만 확인할 수 있습니다."
+            throw new NotificationAccessDeniedException(
+                    notificationId,
+                    requesterId
             );
         }
 

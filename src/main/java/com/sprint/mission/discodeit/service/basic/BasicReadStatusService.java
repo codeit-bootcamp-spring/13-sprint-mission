@@ -19,13 +19,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class BasicReadStatusService implements ReadStatusService {
+public class BasicReadStatusService
+        implements ReadStatusService {
 
     private final ReadStatusRepository readStatusRepository;
     private final UserRepository userRepository;
@@ -33,8 +35,13 @@ public class BasicReadStatusService implements ReadStatusService {
     private final ReadStatusMapper readStatusMapper;
 
     @Override
-    public ReadStatusResponse create(ReadStatusCreateRequest dto) {
-        Channel channel = channelRepository.findById(dto.channelId())
+    @CacheEvict(cacheNames = "channels", allEntries = true)
+    public ReadStatusResponse create(
+            ReadStatusCreateRequest dto
+    ) {
+        Channel channel = channelRepository.findById(
+                        dto.channelId()
+                )
                 .orElseThrow(
                         () -> new ChannelNotFoundException(
                                 dto.channelId()
@@ -48,17 +55,20 @@ public class BasicReadStatusService implements ReadStatusService {
                         )
                 );
 
-        if (readStatusRepository.existsByChannelIdAndUserId(
-                dto.channelId(),
-                dto.userId()
-        )) {
+        if (readStatusRepository
+                .existsByChannelIdAndUserId(
+                        dto.channelId(),
+                        dto.userId()
+                )) {
             throw new ReadStatusAlreadyExistException(
                     dto.channelId(),
                     dto.userId()
             );
         }
 
-        ReadStatus readStatus = new ReadStatus(channel, user);
+        ReadStatus readStatus =
+                new ReadStatus(channel, user);
+
         ReadStatus savedReadStatus =
                 readStatusRepository.save(readStatus);
 
@@ -74,8 +84,11 @@ public class BasicReadStatusService implements ReadStatusService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ReadStatusResponse> findAllByUserId(UUID userId) {
-        return readStatusRepository.findAllByUserId(userId)
+    public List<ReadStatusResponse> findAllByUserId(
+            UUID userId
+    ) {
+        return readStatusRepository
+                .findAllByUserId(userId)
                 .stream()
                 .map(readStatusMapper::toDto)
                 .toList();
@@ -86,15 +99,26 @@ public class BasicReadStatusService implements ReadStatusService {
             UUID id,
             ReadStatusUpdateRequest dto
     ) {
-        ReadStatus readStatus = readStatusRepository.findById(id)
-                .orElseThrow(
-                        () -> new ReadStatusNotFoundException(id)
-                );
+        ReadStatus readStatus =
+                readStatusRepository.findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new ReadStatusNotFoundException(
+                                                id
+                                        )
+                        );
 
-        readStatus.updateLastRead();
-        readStatus.updateNotificationEnabled(
-                dto.notificationEnabled()
-        );
+        if (dto.lastReadAt() != null) {
+            readStatus.updateLastReadAt(
+                    dto.lastReadAt()
+            );
+        }
+
+        if (dto.notificationEnabled() != null) {
+            readStatus.updateNotificationEnabled(
+                    dto.notificationEnabled()
+            );
+        }
 
         return readStatusMapper.toDto(readStatus);
     }
