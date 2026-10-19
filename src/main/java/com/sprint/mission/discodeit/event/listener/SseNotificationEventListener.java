@@ -1,10 +1,12 @@
 package com.sprint.mission.discodeit.event.listener;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.response.NotificationDto;
 import com.sprint.mission.discodeit.event.NotificationCreatedEvent;
-import com.sprint.mission.discodeit.service.SseEmitterManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -14,15 +16,37 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class SseNotificationEventListener {
 
-  private final SseEmitterManager sseEmitterManager;
+  private final KafkaTemplate<String, String> kafkaTemplate;
+  private final ObjectMapper objectMapper;
 
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void onNotificationCreated(NotificationCreatedEvent event) {
     NotificationDto notification = event.notification();
 
-    sseEmitterManager.send(notification.receiverId(), notification);
+    try {
+      String payload = objectMapper.writeValueAsString(notification);
 
-    log.debug("SSE 알림 발송 처리: notificationId={}, receiverId={}", notification.id(),
-        notification.receiverId());
+      kafkaTemplate.send(
+          "discodeit.NotificationCreatedEvent",
+          notification.receiverId().toString(),
+          payload
+      ).whenComplete((result, exception) -> {
+        if (exception != null) {
+          log.error(
+              "SSE 알림 Kafka 발행 실패: notificationId={}",
+              notification.id(),
+              exception
+          );
+        } else {
+          log.info(
+              "SSE 알림 Kafka 발행 성공: notificationId={}",
+              notification.id()
+          );
+        }
+      });
+
+    } catch (JsonProcessingException e) {
+      throw new IllegalStateException("SSE 알림 JSON 변환 실패", e);
+    }
   }
 }
