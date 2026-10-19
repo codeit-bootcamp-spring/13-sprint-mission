@@ -5,10 +5,17 @@ import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(
+    prefix = "discodeit.jwt",
+    name = "registry",
+    havingValue = "memory",
+    matchIfMissing = true
+)
 public class InMemoryJwtRegistry implements JwtRegistry {
 
   private static final int MAX_ACTIVE_JWT_COUNT = 1;
