@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.event;
 
-import com.sprint.mission.discodeit.dto.response.MessageDto;
-import com.sprint.mission.discodeit.service.MessageService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -12,16 +12,21 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class WebSocketRequiredEventListener {
 
-    private final SimpMessagingTemplate simpMessagingTemplate;
-    private final MessageService messageService;
+    private static final String TOPIC = "discodeit.websocket.messages";
+
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleMessage(MessageCreatedEvent event) {
+        try {
+            String payload = objectMapper.writeValueAsString(event);
 
-        MessageDto message = messageService.getMessage(event.messageId());
-
-        String destination = "/sub/channels." + message.channelId() + ".messages";
-
-        simpMessagingTemplate.convertAndSend(destination, message);
+            kafkaTemplate.send(TOPIC, payload);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(
+                    "WebSocket 이벤트 직렬화에 실패했습니다.", e
+            );
+        }
     }
 }

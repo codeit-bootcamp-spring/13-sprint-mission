@@ -18,6 +18,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    deploy:
+      replicas: 3
     environment:
       # Spring Profile
       - SPRING_PROFILES_ACTIVE=prod

@@ -12,7 +12,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-@Component
+//@Component
 @RequiredArgsConstructor
 public class InMemoryJwtRegistry implements JwtRegistry {
 
