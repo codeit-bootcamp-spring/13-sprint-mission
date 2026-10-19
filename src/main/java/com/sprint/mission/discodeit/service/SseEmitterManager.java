@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -42,11 +43,7 @@ public class SseEmitterManager {
   ) {
     SseConnection connection = new SseConnection();
 
-    Runnable cleanup = () ->
-        connections.computeIfPresent(userId, (id, current) -> {
-          current.remove(connection);
-          return current.isEmpty() ? null : current;
-        });
+    Runnable cleanup = () -> removeConnection(userId, connection);
 
     connection.emitter.onCompletion(cleanup);
     connection.emitter.onTimeout(cleanup);
@@ -157,7 +154,6 @@ public class SseEmitterManager {
     }
   }
 
-
   private boolean sendEvent(
       SseConnection connection,
       UUID eventId,
@@ -193,4 +189,42 @@ public class SseEmitterManager {
 
     return true;
   }
+
+  private void removeConnection(UUID userId, SseConnection connection) {
+    connections.computeIfPresent(userId, (id, current) -> {
+      current.remove(connection);
+      return current.isEmpty() ? null : current;
+    });
+  }
+
+  @Scheduled(fixedDelay = 60_000)
+  public void ping() {
+    connections.forEach((userId, userConnections) -> {
+      for (SseConnection connection : userConnections) {
+        synchronized (connection) {
+          try {
+            connection.emitter.send(
+                SseEmitter.event()
+                    .name("ping")
+                    .data("keep-alive")
+            );
+          } catch (Exception e) {
+            removeConnection(userId, connection);
+            connection.emitter.completeWithError(e);
+
+            log.debug(
+                "SSE 비정상 연결 제거: userId={}",
+                userId
+            );
+          }
+        }
+      }
+    });
+  }
+
+  @Scheduled(fixedDelay = 30 * 60 * 1000L)
+  public void cleanUp() {
+    ping();
+  }
+
 }

@@ -27,6 +27,7 @@ public class CacheConfig {
         .allowIfSubType("com.sprint.mission.discodeit.")
         .allowIfSubType("java.util.")
         .allowIfSubType("java.time.")
+        .allowIfSubType(Long.class)
         .build();
 
     redisObjectMapper.activateDefaultTyping(
