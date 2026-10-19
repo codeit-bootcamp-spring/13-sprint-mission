@@ -38,4 +38,14 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
 
   @EntityGraph(attributePaths = {"author", "channel"})
   Optional<Message> findWithAuthorAndChannelById(UUID id);
+
+  @Query("""
+      select distinct message
+      from Message message
+      join message.attachments attachment
+      where attachment.id = :binaryContentId
+      """)
+  List<Message> findByAttachmentId(
+      @Param("binaryContentId") UUID binaryContentId
+  );
 }

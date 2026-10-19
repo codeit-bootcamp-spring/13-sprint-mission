@@ -15,6 +15,7 @@ import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.security.JwtRegistry;
 import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.service.SseDomainEventPublisher;
 import com.sprint.mission.discodeit.service.UserService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.util.List;
@@ -44,7 +45,7 @@ public class BasicUserService implements UserService {
   private final PasswordEncoder passwordEncoder;
   private final JwtRegistry jwtRegistry;
   private final ApplicationEventPublisher eventPublisher;
-
+  private final SseDomainEventPublisher sseDomainEventPublisher;
 
   @Override
   @CacheEvict(cacheNames = "users", allEntries = true)
@@ -87,7 +88,11 @@ public class BasicUserService implements UserService {
 
     log.info("사용자 생성 완료: userId={}", user.getId());
 
-    return userMapper.toDto(user);
+    UserDto response = userMapper.toDto(user);
+
+    publishToAllUsers("users.created", response, null);
+
+    return response;
   }
 
   @Transactional(readOnly = true)
@@ -190,7 +195,11 @@ public class BasicUserService implements UserService {
 
     log.info("사용자 수정 완료: userId={}", id);
 
-    return userMapper.toDto(user);
+    UserDto response = userMapper.toDto(user);
+
+    publishToAllUsers("users.updated", response, null);
+
+    return response;
   }
 
   @Override
@@ -207,6 +216,8 @@ public class BasicUserService implements UserService {
           return new UserNotFoundException(userId);
         });
 
+    UserDto deletedUser = userMapper.toDto(user);
+
     if (user.getProfile() != null) {
       log.debug("사용자 프로필 정보 삭제: userId={}, binaryContentId={}",
           userId, user.getProfile().getId());
@@ -216,6 +227,8 @@ public class BasicUserService implements UserService {
       binaryContentStorage.delete(profileId);
       binaryContentRepository.deleteById(profileId);
     }
+
+    publishToAllUsers("users.deleted", deletedUser, userId);
 
     userRepository.delete(user);
 
@@ -245,6 +258,25 @@ public class BasicUserService implements UserService {
       );
     }
 
-    return userMapper.toDto(user);
+    UserDto response = userMapper.toDto(user);
+
+    publishToAllUsers("users.updated", response, null);
+
+    return response;
+  }
+
+
+  private void publishToAllUsers(String eventName, Object data, UUID excludedUserId) {
+    userRepository.findAll().stream()
+        .map(User::getId)
+        .filter(userId -> !userId.equals(excludedUserId))
+        .distinct()
+        .forEach(receiverId ->
+            sseDomainEventPublisher.publishToUser(
+                receiverId,
+                eventName,
+                data
+            )
+        );
   }
 }

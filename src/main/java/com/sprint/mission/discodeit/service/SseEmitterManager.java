@@ -100,9 +100,33 @@ public class SseEmitterManager {
     return connection.emitter;
   }
 
+
   public void send(UUID userId, NotificationDto notification) {
+    sendToUser(
+        userId,
+        notification.id(),
+        "notifications.created",
+        notification
+    );
+  }
+
+  public void send(SseEvent event) {
+    sendToUser(
+        event.receiverId(),
+        event.id(),
+        event.name(),
+        event.data()
+    );
+  }
+
+  private void sendToUser(
+      UUID receiverId,
+      UUID eventId,
+      String eventName,
+      Object data
+  ) {
     Set<SseConnection> userConnections =
-        connections.get(userId);
+        connections.get(receiverId);
 
     if (userConnections == null) {
       return;
@@ -113,23 +137,26 @@ public class SseEmitterManager {
         try {
           sendEvent(
               connection,
-              notification.id(),
-              "notifications.created",
-              notification
+              eventId,
+              eventName,
+              data
           );
+
         } catch (Exception e) {
           connection.emitter.completeWithError(e);
 
           log.warn(
-              "SSE 실시간 전송 실패: receiverId={}, eventId={}",
-              userId,
-              notification.id(),
+              "SSE 이벤트 전달 실패: receiverId={}, eventId={}, eventName={}",
+              receiverId,
+              eventId,
+              eventName,
               e
           );
         }
       }
     }
   }
+
 
   private boolean sendEvent(
       SseConnection connection,

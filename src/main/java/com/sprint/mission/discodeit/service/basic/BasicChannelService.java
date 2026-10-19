@@ -20,6 +20,7 @@ import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
+import com.sprint.mission.discodeit.service.SseDomainEventPublisher;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ public class BasicChannelService implements ChannelService {
   private final ChannelMapper channelMapper;
   private final BinaryContentRepository binaryContentRepository;
   private final BinaryContentStorage binaryContentStorage;
+  private final SseDomainEventPublisher sseDomainEventPublisher;
 
   @Override
   @CacheEvict(cacheNames = "channels", allEntries = true)
@@ -64,11 +66,24 @@ public class BasicChannelService implements ChannelService {
 
     log.info("공개 채널 생성 완료: channelId={}", channel.getId());
 
-    return channelMapper.toDto(
+    ChannelDto response = channelMapper.toDto(
         channel,
         List.of(),
         null
     );
+
+    userRepository.findAll().stream()
+        .map(User::getId)
+        .distinct()
+        .forEach(userId ->
+            sseDomainEventPublisher.publishToUser(
+                userId,
+                "channels.created",
+                response
+            )
+        );
+
+    return response;
   }
 
   @Override
@@ -118,11 +133,24 @@ public class BasicChannelService implements ChannelService {
         participants.size()
     );
 
-    return channelMapper.toDto(
+    ChannelDto response = channelMapper.toDto(
         channel,
         participants,
         null
     );
+
+    participants.stream()
+        .map(User::getId)
+        .distinct()
+        .forEach(userId ->
+            sseDomainEventPublisher.publishToUser(
+                userId,
+                "channels.created",
+                response
+            )
+        );
+
+    return response;
   }
 
 
@@ -227,7 +255,20 @@ public class BasicChannelService implements ChannelService {
 
     log.info("채널 수정 완료: channelId={}", id);
 
-    return toDto(channel);
+    ChannelDto response = toDto(channel);
+
+    userRepository.findAll().stream()
+        .map(User::getId)
+        .distinct()
+        .forEach(userId ->
+            sseDomainEventPublisher.publishToUser(
+                userId,
+                "channels.updated",
+                response
+            )
+        );
+
+    return response;
   }
 
   @Override
@@ -240,6 +281,22 @@ public class BasicChannelService implements ChannelService {
           log.warn("채널 삭제 실패: channelId={}를 찾을 수 없음", id);
           return new ChannelNotFoundException(id);
         });
+
+    List<UUID> receiverIds;
+
+    if (channel.getType() == ChannelType.PUBLIC) {
+      receiverIds = userRepository.findAll().stream()
+          .map(User::getId)
+          .distinct()
+          .toList();
+    } else {
+      receiverIds = readStatusRepository.findByChannelId(id).stream()
+          .map(readStatus -> readStatus.getUser().getId())
+          .distinct()
+          .toList();
+    }
+
+    ChannelDto deletedChannel = toDto(channel);
 
     List<Message> messages = messageRepository.findByChannelId(id);
 
@@ -266,6 +323,14 @@ public class BasicChannelService implements ChannelService {
     channelRepository.delete(channel);
 
     log.info("채널 삭제 완료: channelId={}", id);
+
+    receiverIds.forEach(userId ->
+        sseDomainEventPublisher.publishToUser(
+            userId,
+            "channels.deleted",
+            deletedChannel
+        )
+    );
   }
 
   private ChannelDto toDto(Channel channel) {

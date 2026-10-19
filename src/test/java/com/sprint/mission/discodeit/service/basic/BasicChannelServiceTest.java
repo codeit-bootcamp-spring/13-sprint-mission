@@ -21,7 +21,6 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Channel.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.ReadStatus;
-import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.PrivateChannelUnmodifiableException;
@@ -32,6 +31,7 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.service.SseDomainEventPublisher;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.time.Instant;
 import java.util.List;
@@ -69,6 +69,9 @@ class BasicChannelServiceTest {
   @Mock
   private BinaryContentStorage binaryContentStorage;
 
+  @Mock
+  private SseDomainEventPublisher sseDomainEventPublisher;
+
   @InjectMocks
   private BasicChannelService basicChannelService;
 
@@ -96,6 +99,12 @@ class BasicChannelServiceTest {
         isNull()
     )).willReturn(expected);
 
+    UUID receiverId = UUID.randomUUID();
+    User receiver = mock(User.class);
+
+    given(receiver.getId()).willReturn(receiverId);
+    given(userRepository.findAll()).willReturn(List.of(receiver));
+
     // when
     ChannelDto result = basicChannelService.createPublicChannel(request);
 
@@ -105,10 +114,18 @@ class BasicChannelServiceTest {
     then(channelRepository).should().save(any(Channel.class));
     then(channelMapper).should().toDto(any(Channel.class), anyList(), isNull());
 
+    then(userRepository).should().findAll();
+
+    then(sseDomainEventPublisher).should()
+        .publishToUser(
+            receiverId,
+            "channels.created",
+            expected
+        );
+
     verifyNoInteractions(
         readStatusRepository,
         messageRepository,
-        userRepository,
         binaryContentRepository,
         binaryContentStorage
     );
@@ -124,13 +141,9 @@ class BasicChannelServiceTest {
         List.of(userId)
     );
 
-    User participant = new User(
-        "participant",
-        "participant@test.com",
-        "password",
-        null,
-        Role.USER
-    );
+    User participant = mock(User.class);
+
+    given(participant.getId()).willReturn(userId);
 
     ChannelDto expected = new ChannelDto(
         null,
@@ -160,6 +173,13 @@ class BasicChannelServiceTest {
     then(userRepository).should().findById(userId);
     then(readStatusRepository).should().save(any(ReadStatus.class));
     then(channelMapper).should().toDto(any(Channel.class), anyList(), isNull());
+
+    then(sseDomainEventPublisher).should()
+        .publishToUser(
+            userId,
+            "channels.created",
+            expected
+        );
 
     verifyNoInteractions(
         messageRepository,

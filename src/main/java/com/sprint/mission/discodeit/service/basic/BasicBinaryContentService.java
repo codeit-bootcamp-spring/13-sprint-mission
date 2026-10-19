@@ -3,15 +3,23 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.BinaryContent.Status;
+import com.sprint.mission.discodeit.entity.Channel.ChannelType;
+import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
 import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
 import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentUploadException;
 import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.ReadStatusRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.BinaryContentService;
+import com.sprint.mission.discodeit.service.SseDomainEventPublisher;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +39,10 @@ public class BasicBinaryContentService implements BinaryContentService {
   private final BinaryContentMapper binaryContentMapper;
   private final BinaryContentStorage binaryContentStorage;
   private final ApplicationEventPublisher eventPublisher;
+  private final UserRepository userRepository;
+  private final MessageRepository messageRepository;
+  private final ReadStatusRepository readStatusRepository;
+  private final SseDomainEventPublisher sseDomainEventPublisher;
 
   @Transactional
   @Override
@@ -111,9 +123,56 @@ public class BasicBinaryContentService implements BinaryContentService {
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   @Override
   public void updateStatus(UUID id, Status status) {
+
     BinaryContent binaryContent = binaryContentRepository.findById(id)
         .orElseThrow(() -> new BinaryContentNotFoundException(id));
 
     binaryContent.updateStatus(status);
+
+    if (status != Status.SUCCESS && status != Status.FAIL) {
+      return;
+    }
+
+    Set<UUID> receiverIds = new HashSet<>();
+
+    // 1. 프로필 사진인 경우: 해당 사용자
+    userRepository.findByProfileId(id)
+        .forEach(user -> receiverIds.add(user.getId()));
+
+    // 2. 메시지 첨부파일인 경우: 채널 접근 가능 사용자
+    for (Message message : messageRepository.findByAttachmentId(id)) {
+
+      UUID channelId = message.getChannel().getId();
+
+      if (message.getChannel().getType() == ChannelType.PUBLIC) {
+
+        userRepository.findAll()
+            .forEach(user -> receiverIds.add(user.getId()));
+
+      } else {
+
+        readStatusRepository.findByChannelId(channelId)
+            .forEach(readStatus ->
+                receiverIds.add(readStatus.getUser().getId())
+            );
+      }
+    }
+
+    BinaryContentDto response = binaryContentMapper.toDto(binaryContent);
+
+    receiverIds.forEach(receiverId ->
+        sseDomainEventPublisher.publishToUser(
+            receiverId,
+            "binaryContents.updated",
+            response
+        )
+    );
+
+    log.info(
+        "파일 상태 변경 SSE 이벤트 발행 요청: binaryContentId={}, status={}, receiverCount={}",
+        id,
+        status,
+        receiverIds.size()
+    );
   }
 }
