@@ -79,6 +79,9 @@ dependencies {
 
 	//STOMP 웹소켓
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+	// STOMP 관련 보안
+	implementation 'org.springframework.security:spring-security-messaging'
 }
 
 tasks.named('test') {
