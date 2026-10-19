@@ -46,15 +46,16 @@ public class NotificationRequiredTopicListener {
     @CacheEvict(cacheNames = CacheConfig.NOTIFICATION_CACHE, allEntries = true)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onMessageCreatedEvent(String kafkaEvent) {
+        log.info("Received message created event: {}", kafkaEvent);
         try {
             // 카프카에서의 메세지를 읽고, 원래의 이벤트로 변환.
             MessageCreateEvent event = objectMapper.readValue(kafkaEvent, MessageCreateEvent.class);
-            log.debug("[MessageEvent] - 메세지 생성 이벤트 시작. id : {}", event.id());
+            log.debug("[MessageEvent] - 메세지 생성 이벤트 시작. id : {}", event.message().id());
 
             // 메세지 생성 이후,
 
 
-            List<ReadStatus> readStatuses = readStatusRepository.findAllByChannelIdWithStatusOn(event.channelId(),true);
+            List<ReadStatus> readStatuses = readStatusRepository.findAllByChannelIdWithStatusOn(event.message().channelId(), true);
 
             List<Notification> notifications = readStatuses.stream()
                     .map(readStatus -> getNotificationFromUser(event,readStatus.getUser()))
@@ -72,21 +73,21 @@ public class NotificationRequiredTopicListener {
                             entityMapper.toDto(notification)
                     ));
 
-            log.debug("[MessageEvent] - 메세지 생성 알림 생성 완료. - id : {}", event.id());
+            log.debug("[MessageEvent] - 메세지 생성 알림 생성 완료. - id : {}", event.message().id());
 
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
     private Notification getNotificationFromUser(MessageCreateEvent event, User user){
-        log.debug("[MessageEvent] - 아이디 유저 체크 - 작성자 : {}, 알림 대상 : {}", event.userId(), user.getId());
-        if (user.getId().equals(event.userId()))
+        log.debug("[MessageEvent] - 아이디 유저 체크 - 작성자 : {}, 알림 대상 : {}", event.message().author().id(),user.getId());
+        if (user.getId().equals(event.message().author().id()))
             return null;
         else
             return new Notification(
-                    event.userId(),
+                    event.message().author().id(),
                     user.getUsername(),
-                    event.content()
+                    event.message().content()
             );
     }
 

@@ -22,6 +22,8 @@ public class DiscodeitInit implements CommandLineRunner {
 
         // if no admin account, create admin.
         createAdminUser(userRepository.existsByRole(Role.ADMIN));
+        // tmp
+        testUser();
     }
 
     private void createAdminUser(boolean hasAdmin){
@@ -42,5 +44,23 @@ public class DiscodeitInit implements CommandLineRunner {
         userRepository.save(admin);
 
         log.info("init admin account made - email : {}, password : {}", email, password);
+    }
+
+    private void testUser(){
+        String email = "test@email.com";
+        String password = "password";
+
+        User admin = new User(
+                "test",
+                email,
+                passwordEncoder.encode(password),
+                null,
+                null
+        );
+        admin.updateRole(Role.USER);
+
+        userRepository.save(admin);
+
+        log.info("init test account made - email : {}, password : {}", email, password);
     }
 }

@@ -18,9 +18,9 @@ public class WebSocketRequiredEventListener {
     // todo - 아마 MessageDto 를 전송해야 메세지가 정상적으로 표시될 것임.
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleMessage(MessageCreateEvent event) {
-        String url = String.format("/sub/channels.%s.messages",event.channelId());
+        String url = String.format("/sub/channels.%s.messages",event.message().channelId());
 
-        messagingTemplate.convertAndSend(url, event.content());
+        messagingTemplate.convertAndSend(url, event.message());
     }
 
 }

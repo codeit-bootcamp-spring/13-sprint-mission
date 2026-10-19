@@ -41,8 +41,8 @@ spring:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-    listener:
-      auto-startup: false
+#    listener:
+#      auto-startup: false
 
 
 
@@ -50,6 +50,7 @@ spring:
 # set 80 fix in docker container
 server:
   port: ${DISCODEIT_PORT:8080}
+  forward-headers-strategy: native  # 프록시 헤더 복원 옵션.
 
 
 # Custom setting

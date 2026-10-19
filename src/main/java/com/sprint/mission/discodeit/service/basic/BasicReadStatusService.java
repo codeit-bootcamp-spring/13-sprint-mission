@@ -18,12 +18,14 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ReadStatusService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BasicReadStatusService implements ReadStatusService {
@@ -36,7 +38,7 @@ public class BasicReadStatusService implements ReadStatusService {
     private final EntityMapper entityMapper;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ReadStatusDto create(ReadStatusCreateRequest request){
 
         // not found exception
@@ -56,19 +58,17 @@ public class BasicReadStatusService implements ReadStatusService {
         );
 
 
+        ReadStatus readStatus;
+
         // already exist exception
         if (readStatusRepository.existsByUserOrChannel(user,channel))
-            throw new ReadStatusDuplicatedException(
-                    "{} - Read Status with user - {}, channel - {} was already existed",
-                    SERVICE_NAME,
-                    request.userId(),
-                    request.channelId()
-            );
+            readStatus = readStatusRepository.findByUserIdAndChannelId(user.getId(),channel.getId());
+        else
+            readStatus = readStatusRepository.save(new ReadStatus(user, channel, request.lastReadAt()));
 
+        log.debug("[{}] - ReadStatus created. id:{}", SERVICE_NAME, readStatus.getId());
 
-        return entityMapper.toDto(
-                readStatusRepository.save(new ReadStatus(user, channel, request.lastReadAt()))
-        );
+        return entityMapper.toDto(readStatus);
     }
 
 
@@ -85,9 +85,20 @@ public class BasicReadStatusService implements ReadStatusService {
     @Override
     @Transactional
     public ReadStatusDto update(UUID id, ReadStatusUpdateRequest request){
-        ReadStatus readStatus = readStatusRepository.findById(id).stream().findFirst().orElseThrow(
+        // 이 부분이 에러가 났음.
+        // public 채널이면, 읽기 상태가 없으니까 없음 에러가 생긴다?
+        // public. 이면 채널에 들어가는 순간 생기는?
+//        ReadStatus readStatus = readStatusRepository.findById(id).stream().findFirst().orElseThrow(
+//                () -> new ReadStatusNotFoundException(
+//                        "%s - ReadStatus with id - %s was not found",
+//                        SERVICE_NAME,
+//                        id
+//                )
+//        );
+
+        ReadStatus readStatus = readStatusRepository.findById(id).orElseThrow(
                 () -> new ReadStatusNotFoundException(
-                        "{} - ReadStatus with id - {} was not found",
+                        "%s - ReadStatus with id - %s was not found",
                         SERVICE_NAME,
                         id
                 )

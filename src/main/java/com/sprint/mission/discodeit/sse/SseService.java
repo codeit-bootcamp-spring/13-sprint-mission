@@ -88,7 +88,6 @@ public class SseService {
         messageRepository.save(message);
         emitterRepository.findAll()
                 .forEach(emitter -> {
-                    log.debug("[{}] - SSE Emitter message send : {}", NAME, emitter);
                     sendToEmitter(emitter, List.of(message));
                 });
     }
@@ -118,6 +117,7 @@ public class SseService {
     private void sendToEmitter(SseEmitter emitter, List<SseMessage> list) {
         list.forEach( message -> {
             try{
+                log.debug("[{}] - SSE Emitter message send : {}", NAME, emitter);
                 emitter.send(
                         SseEmitter.event()
                                 .id(message.getId().toString())
@@ -125,6 +125,7 @@ public class SseService {
                                 .data(message.getContent())
                 );
             } catch (IOException e){
+                log.warn("[{}] - SSE message send failure : {}", NAME, emitter);
                 throw new RuntimeException(e);
             }
         });

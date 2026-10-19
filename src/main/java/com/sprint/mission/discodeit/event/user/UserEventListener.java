@@ -1,9 +1,11 @@
 package com.sprint.mission.discodeit.event.user;
 
 
+import com.sprint.mission.discodeit.config.cache.CacheConfig;
 import com.sprint.mission.discodeit.sse.SseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -19,6 +21,7 @@ public class UserEventListener {
 
     @Async("notificationExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @CacheEvict(cacheNames = CacheConfig.USER_CACHE, allEntries = true)
     public void on(UserEvent event) {
         sseService.broadcast(event.getName(), event.getData());
     }
