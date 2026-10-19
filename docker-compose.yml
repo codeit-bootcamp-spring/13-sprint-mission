@@ -48,6 +48,7 @@ services:
 
       DISCODEIT_STORAGE_TYPE: local
       DISCODEIT_STORAGE_LOCAL_ROOT_PATH: /app/storage
+      DISCODEIT_KAFKA_WEBSOCKET_GROUP_ID: discodeit-ws-app
 
       JWT_SECRET: ${JWT_SECRET}
       DISCODEIT_JWT_REGISTRY: redis
@@ -68,10 +69,14 @@ services:
   app2:
     extends:
       service: app
+    environment:
+      DISCODEIT_KAFKA_WEBSOCKET_GROUP_ID: discodeit-ws-app2
 
   app3:
     extends:
       service: app
+    environment:
+      DISCODEIT_KAFKA_WEBSOCKET_GROUP_ID: discodeit-ws-app3
 
   nginx:
     image: nginx:1.27-alpine

@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit.controller;
 
 import com.sprint.mission.discodeit.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.dto.request.StompMessageCreateRequest;
-import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.security.ChannelSecurity;
 import com.sprint.mission.discodeit.security.CustomUserDetails;
 import com.sprint.mission.discodeit.service.MessageService;
@@ -11,7 +10,6 @@ import java.security.Principal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -21,7 +19,6 @@ import org.springframework.stereotype.Controller;
 public class StompMessageController {
 
   private final MessageService messageService;
-  private final SimpMessagingTemplate messagingTemplate;
   private final ChannelSecurity channelSecurity;
 
   @MessageMapping("/messages")
@@ -45,8 +42,6 @@ public class StompMessageController {
         userDetails.getUserDto().id()
     );
 
-    MessageDto message = messageService.create(createRequest, null);
-
-    messagingTemplate.convertAndSend("/sub/channels." + request.channelId() + ".messages", message);
+    messageService.create(createRequest, null);
   }
 }
