@@ -8,42 +8,65 @@ import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.exception.userstatus.UserStatusAlreadyExistException;
 import com.sprint.mission.discodeit.exception.userstatus.UserStatusNotFoundException;
+import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.mapper.UserStatusMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.service.SseService;
 import com.sprint.mission.discodeit.service.UserStatusService;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class BasicUserStatusService implements UserStatusService {
+public class BasicUserStatusService
+        implements UserStatusService {
 
     private final UserStatusRepository userStatusRepository;
     private final UserRepository userRepository;
     private final UserStatusMapper userStatusMapper;
+    private final UserMapper userMapper;
+    private final SseService sseService;
 
     @Override
-    public UserStatusResponse create(UserStatusCreateRequest dto) {
+    public UserStatusResponse create(
+            UserStatusCreateRequest dto
+    ) {
         User user = userRepository.findById(dto.userId())
-                .orElseThrow(() -> new UserNotFoundException(dto.userId()));
+                .orElseThrow(
+                        () -> new UserNotFoundException(
+                                dto.userId()
+                        )
+                );
 
-        if (userStatusRepository.existsByUserId(dto.userId())) {
-            throw new UserStatusAlreadyExistException(dto.userId());
+        if (userStatusRepository.existsByUserId(
+                dto.userId()
+        )) {
+            throw new UserStatusAlreadyExistException(
+                    dto.userId()
+            );
         }
 
         UserStatus userStatus = new UserStatus(user);
         user.updateStatus(userStatus);
 
-        UserStatus savedUserStatus = userStatusRepository.save(userStatus);
+        UserStatus savedUserStatus =
+                userStatusRepository.save(userStatus);
 
-        return userStatusMapper.toDto(savedUserStatus);
+        UserStatusResponse response =
+                userStatusMapper.toDto(savedUserStatus);
+
+        sseService.broadcast(
+                "users.updated",
+                userMapper.toDto(user)
+        );
+
+        return response;
     }
 
     @Override
@@ -56,33 +79,92 @@ public class BasicUserStatusService implements UserStatusService {
     @Override
     @Transactional(readOnly = true)
     public List<UserStatusResponse> findAll() {
-        return userStatusRepository.findAll().stream()
+        return userStatusRepository.findAll()
+                .stream()
                 .map(userStatusMapper::toDto)
                 .toList();
     }
 
     @Override
-    public UserStatusResponse update(UUID id, UserStatusUpdateRequest dto) {
-        UserStatus userStatus = userStatusRepository.findById(id)
-                .orElseThrow(() -> new UserStatusNotFoundException("userStatusId", id));
+    public UserStatusResponse update(
+            UUID id,
+            UserStatusUpdateRequest dto
+    ) {
+        UserStatus userStatus =
+                userStatusRepository.findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new UserStatusNotFoundException(
+                                                "userStatusId",
+                                                id
+                                        )
+                        );
 
-        userStatus.updateLastSeenAt(dto.lastSeenAt());
+        userStatus.updateLastSeenAt(
+                dto.lastSeenAt()
+        );
 
-        return userStatusMapper.toDto(userStatus);
+        UserStatusResponse response =
+                userStatusMapper.toDto(userStatus);
+
+        sseService.broadcast(
+                "users.updated",
+                userMapper.toDto(userStatus.getUser())
+        );
+
+        return response;
     }
 
     @Override
-    public UserStatusResponse updateByUserId(UUID userId, UserStatusUpdateRequest dto) {
-        UserStatus userStatus = userStatusRepository.findByUserId(userId)
-                .orElseThrow(() -> new UserStatusNotFoundException("userId", userId));
+    public UserStatusResponse updateByUserId(
+            UUID userId,
+            UserStatusUpdateRequest dto
+    ) {
+        UserStatus userStatus =
+                userStatusRepository.findByUserId(userId)
+                        .orElseThrow(
+                                () ->
+                                        new UserStatusNotFoundException(
+                                                "userId",
+                                                userId
+                                        )
+                        );
 
-        userStatus.updateLastSeenAt(dto.lastSeenAt());
+        userStatus.updateLastSeenAt(
+                dto.lastSeenAt()
+        );
 
-        return userStatusMapper.toDto(userStatus);
+        UserStatusResponse response =
+                userStatusMapper.toDto(userStatus);
+
+        sseService.broadcast(
+                "users.updated",
+                userMapper.toDto(userStatus.getUser())
+        );
+
+        return response;
     }
 
     @Override
     public void delete(UUID id) {
-        userStatusRepository.deleteById(id);
+        UserStatus userStatus =
+                userStatusRepository.findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new UserStatusNotFoundException(
+                                                "userStatusId",
+                                                id
+                                        )
+                        );
+
+        User user = userStatus.getUser();
+        user.updateStatus(null);
+
+        userStatusRepository.delete(userStatus);
+
+        sseService.broadcast(
+                "users.updated",
+                userMapper.toDto(user)
+        );
     }
 }

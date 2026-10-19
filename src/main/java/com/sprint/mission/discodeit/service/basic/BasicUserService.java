@@ -13,6 +13,7 @@ import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.service.SseService;
 import com.sprint.mission.discodeit.service.UserService;
 import java.util.List;
 import java.util.Optional;
@@ -39,6 +40,7 @@ public class BasicUserService implements UserService {
     private final UserMapper userMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final PasswordEncoder passwordEncoder;
+    private final SseService sseService;
 
     @Override
     @CacheEvict(
@@ -104,12 +106,20 @@ public class BasicUserService implements UserService {
         savedUser.updateStatus(userStatus);
         userStatusRepository.save(userStatus);
 
+        UserResponse response =
+                userMapper.toDto(savedUser);
+
+        sseService.broadcast(
+                "users.created",
+                response
+        );
+
         log.info(
                 "사용자 생성 완료: userId={}",
                 savedUser.getId()
         );
 
-        return userMapper.toDto(savedUser);
+        return response;
     }
 
     @Override
@@ -165,12 +175,20 @@ public class BasicUserService implements UserService {
             );
         }
 
+        UserResponse response =
+                userMapper.toDto(user);
+
+        sseService.broadcast(
+                "users.updated",
+                response
+        );
+
         log.info(
                 "사용자 수정 완료: userId={}",
                 id
         );
 
-        return userMapper.toDto(user);
+        return response;
     }
 
     @Override
@@ -189,6 +207,9 @@ public class BasicUserService implements UserService {
                         () -> new UserNotFoundException(id)
                 );
 
+        UserResponse response =
+                userMapper.toDto(user);
+
         userStatusRepository.deleteById(id);
 
         if (user.getProfile() != null) {
@@ -198,6 +219,11 @@ public class BasicUserService implements UserService {
         }
 
         userRepository.delete(user);
+
+        sseService.broadcast(
+                "users.deleted",
+                response
+        );
 
         log.info(
                 "사용자 삭제 완료: userId={}",

@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.exception.notification.NotificationNotFoundE
 import com.sprint.mission.discodeit.mapper.NotificationMapper;
 import com.sprint.mission.discodeit.repository.NotificationRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.service.SseService;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -39,11 +40,14 @@ class BasicNotificationServiceTest {
     @Mock
     private NotificationMapper notificationMapper;
 
+    @Mock
+    private SseService sseService;
+
     @InjectMocks
     private BasicNotificationService notificationService;
 
     @Test
-    void create_알림을_생성한다() {
+    void create_알림을_생성하고_SSE로_전송한다() {
         UUID receiverId = UUID.randomUUID();
         UUID notificationId = UUID.randomUUID();
 
@@ -103,6 +107,14 @@ class BasicNotificationServiceTest {
                 .isEqualTo("권한이 변경되었습니다.");
         assertThat(notification.getContent())
                 .isEqualTo("USER -> CHANNEL_MANAGER");
+
+        then(sseService)
+                .should()
+                .send(
+                        List.of(receiverId),
+                        "notifications.created",
+                        expected
+                );
     }
 
     @Test
