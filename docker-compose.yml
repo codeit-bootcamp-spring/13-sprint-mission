@@ -24,12 +24,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: discodeit-app
-    ports:
-      - "8081:80"
+
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
       DB_USERNAME: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
@@ -52,6 +50,7 @@ services:
       DISCODEIT_STORAGE_LOCAL_ROOT_PATH: /app/storage
 
       JWT_SECRET: ${JWT_SECRET}
+      DISCODEIT_JWT_REGISTRY: redis
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
@@ -65,6 +64,14 @@ services:
         condition: service_started
       broker:
         condition: service_started
+
+  app2:
+    extends:
+      service: app
+
+  app3:
+    extends:
+      service: app
 
   nginx:
     image: nginx:1.27-alpine
