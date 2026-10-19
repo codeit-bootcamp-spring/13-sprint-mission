@@ -32,7 +32,7 @@ spring:
 
   # kafka 설정.
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_URL}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -41,13 +41,15 @@ spring:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      auto-startup: false
 
 
 
 # Server port.
 # set 80 fix in docker container
 server:
-  port: 8080
+  port: ${DISCODEIT_PORT:8080}
 
 
 # Custom setting

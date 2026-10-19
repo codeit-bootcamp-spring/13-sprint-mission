@@ -1,0 +1,11 @@
+services:
+  proxy:
+    image: nginx:alpine
+    hostname: proxy
+    container_name: proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/cert:/etc/nginx/certs:ro

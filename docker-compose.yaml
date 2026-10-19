@@ -1,10 +1,12 @@
 # set project name after build
 name: discodeit
 services:
+
   # database container
   db:
     image: postgres:16
-
+    hostname: db
+    container_name: db
     # set env defined in image
     # user is default
     environment:
@@ -33,6 +35,39 @@ services:
     networks:
       - br
 
+  # kafka
+  broker:
+    image: apache/kafka:latest
+    hostname: kafka
+    container_name: kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker:29093
+      KAFKA_LISTENERS: PLAINTEXT://broker:29092,CONTROLLER://broker:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    networks:
+      - br
+
+  # redis
+  redis:
+    image: redis:7.2-alpine
+    hostname: redis
+    container_name: redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - br
 
   # discodeit
   app:
@@ -40,10 +75,9 @@ services:
       # work dir is current dir
       context: .
       dockerfile: Dockerfile
-
+    hostname: discodeit
+    container_name: discodeit
     # export port for outside of host
-    ports:
-      - "8081:80"
 
     # env for application.yaml and others
     environment:
@@ -60,6 +94,12 @@ services:
       - S3_REGION=${S3_REGION}
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_PRESIGN_TIME=${S3_PRESIGN_TIME}
+      # default setting
+      - DISCODEIT_PORT=${DISCODEIT_PORT}
+      - PROFILE=${PROFILE}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - KAFKA_URL=${KAFKA_URL}
 
     depends_on:
       db:
@@ -74,11 +114,32 @@ services:
     networks:
       - br
 
+  # nginx (reverse proxy)
+  proxy:
+    image: nginx:alpine
+    hostname: proxy
+    container_name: proxy
+    ports:
+      - "443:443"
+      - "3000:80" # 사양지시서 기재 포트
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/cert:/etc/nginx/certs:ro
+      - ./nginx/static:/etc/nginx/static:ro
+    depends_on:
+      - app
+    networks:
+      - br
+
+
 volumes:
   db:
     driver: local # auto bind in host space
   app:
     driver: local
+  redis_data:
+    driver: local
+
 
 networks:
   br:
