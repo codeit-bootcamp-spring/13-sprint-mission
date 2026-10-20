@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -73,7 +74,11 @@ public class ChannelController {
   }
 
   @DeleteMapping("/{channelId}")
-  @PreAuthorize("hasRole('CHANNEL_MANAGER') or @channelSecurity.isPrivate(#id)")
+  @PreAuthorize(
+      "hasRole('CHANNEL_MANAGER') or "
+          + "(@channelSecurity.isPrivate(#id) "
+          + "and @channelSecurity.canAccess(#id, principal.getUserDto().id()))"
+  )
   public ResponseEntity<Void> delete(
       @PathVariable("channelId") UUID id
   ) {
@@ -85,6 +90,7 @@ public class ChannelController {
   }
 
   @GetMapping("/{channelId}")
+  @PostAuthorize("@channelSecurity.canAccess(#id, principal.getUserDto().id())")
   public ResponseEntity<ChannelDto> findById(
       @PathVariable("channelId") UUID id
   ) {
@@ -96,6 +102,7 @@ public class ChannelController {
   }
 
   @GetMapping
+  @PreAuthorize("#userId == principal.getUserDto().id()")
   public ResponseEntity<List<ChannelDto>> findAll(
       @RequestParam("userId") UUID userId
   ) {
