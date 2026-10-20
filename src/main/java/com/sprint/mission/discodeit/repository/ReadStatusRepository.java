@@ -21,4 +21,5 @@ public interface ReadStatusRepository extends JpaRepository<ReadStatus, UUID> {
            UUID channelId
    );
 
+    UUID user(User user);
 }

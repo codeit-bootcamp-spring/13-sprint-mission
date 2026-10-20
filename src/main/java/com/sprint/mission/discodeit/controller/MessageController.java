@@ -41,7 +41,7 @@ public class MessageController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Timed("message.create.async")
     public ResponseEntity<MessageDto> create(@Valid @RequestPart("messageCreateRequest") CreateMessageRequest request,
-                                  @RequestPart(required = false) List<MultipartFile> files) {
+                                             @RequestPart(value = "attachments", required = false) List<MultipartFile> files) {
 
         List<CreateBinaryContentCommand> file =
                 files == null

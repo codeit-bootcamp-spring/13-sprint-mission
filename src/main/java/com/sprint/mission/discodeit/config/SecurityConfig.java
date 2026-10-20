@@ -49,6 +49,7 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/ws", "/ws/**")
                         .csrfTokenRepository(
                                 CookieCsrfTokenRepository.withHttpOnlyFalse()
                         )
@@ -87,6 +88,7 @@ public class SecurityConfig {
                                 "/error"
                         ).permitAll()
 
+                        .requestMatchers("/ws", "/ws/**").permitAll()
                         .anyRequest().authenticated()
                 )
 
