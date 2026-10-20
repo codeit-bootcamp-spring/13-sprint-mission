@@ -1,11 +1,14 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.dto.user.UserDto;
+import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,5 +35,20 @@ public class AuthController {
     return ResponseEntity
         .status(HttpStatus.NON_AUTHORITATIVE_INFORMATION) // 203 응답
         .build();
+  }
+
+  // 세션ID 통해 사용자의 기본 정보 가져오는 API
+  @Operation(summary = "사용자 기본 정보 조회")
+  @ApiResponse(
+      responseCode = "200",
+      description = "사용자의 기본 정보 조회 성공"
+  )
+  @GetMapping("/me")
+  public ResponseEntity<UserDto> getMe(
+      @AuthenticationPrincipal DiscodeitUserDetails userDetails
+  ) {
+    return ResponseEntity
+        .status(HttpStatus.OK)
+        .body(userDetails.getUserDto());
   }
 }
