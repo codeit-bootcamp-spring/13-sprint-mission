@@ -1,11 +1,14 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.command.CreateUserCommand;
 import com.sprint.mission.discodeit.dto.command.UpdateUserCommand;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.exception.GlobalExceptionHandler;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
+import com.sprint.mission.discodeit.security.JwtRegistry;
+import com.sprint.mission.discodeit.security.JwtTokenProvider;
 import com.sprint.mission.discodeit.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,10 +16,13 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,8 +47,17 @@ public class UserControllerTest {
     @MockitoBean
     private UserService userService;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private JwtRegistry jwtRegistry;
+
     @Test
-    @DisplayName("사용자 생성에 성공하면 201과 생성된 사용자를 반환한다.")
+    @DisplayName("사용자 생성에 성공하면 201과 생성된 사용자를 반환한다")
     void create_success() throws Exception {
         // given
         UUID userId = UUID.randomUUID();
@@ -61,13 +76,20 @@ public class UserControllerTest {
                 isNull()
         )).willReturn(response);
 
+        MockMultipartFile requestPart = jsonPart(
+                "userCreateRequest",
+                Map.of(
+                        "username", "홍길동",
+                        "email", "hong12@test.com",
+                        "password", "12345"
+                )
+        );
+
         // when & then
         mockMvc.perform(
                         multipart("/api/users")
+                                .file(requestPart)
                                 .with(csrf())
-                                .param("username", "홍길동")
-                                .param("email", "hong12@test.com")
-                                .param("password", "12345")
                 )
                 .andExpect(status().isCreated())
                 .andExpect(
@@ -89,10 +111,6 @@ public class UserControllerTest {
                 .andExpect(
                         jsonPath("$.online")
                                 .value(false)
-                )
-                .andExpect(
-                        jsonPath("$.role")
-                                .value("USER")
                 );
 
         ArgumentCaptor<CreateUserCommand> commandCaptor =
@@ -120,13 +138,21 @@ public class UserControllerTest {
     @Test
     @DisplayName("사용자 이름이 공백이면 400을 반환한다")
     void create_fail_usernameBlank() throws Exception {
+        // given
+        MockMultipartFile requestPart = jsonPart(
+                "userCreateRequest",
+                Map.of(
+                        "username", " ",
+                        "email", "hong12@test.com",
+                        "password", "12345"
+                )
+        );
+
         // when & then
         mockMvc.perform(
                         multipart("/api/users")
+                                .file(requestPart)
                                 .with(csrf())
-                                .param("username", " ")
-                                .param("email", "hong12@test.com")
-                                .param("password", "12345")
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(
@@ -142,80 +168,27 @@ public class UserControllerTest {
                                 .value("사용자 이름은 필수입니다.")
                 );
 
-        then(userService)
-                .shouldHaveNoInteractions();
-
-    }
-    @Test
-    @DisplayName("이메일이 공백이면 400을 반환한다")
-    void create_fail_emailBlank() throws Exception {
-        // when & then
-        mockMvc.perform(
-                        multipart("/api/users")
-                                .with(csrf())
-                                .param("username", "홍길동")
-                                .param("email", " ")
-                                .param("password", "12345")
-                )
-                .andExpect(status().isBadRequest())
-                .andExpect(
-                        jsonPath("$.code")
-                                .value("INVALID_REQUEST")
-                )
-                .andExpect(
-                        jsonPath("$.status")
-                                .value(400)
-                )
-                .andExpect(
-                        jsonPath("$.details.email")
-                                .exists()
-                );
-
-        then(userService)
-                .shouldHaveNoInteractions();
-
-    }
-
-    @Test
-    @DisplayName("이메일 형식이 올바르지 않으면 400을 반환한다")
-    void create_fail_emailInvalid() throws Exception {
-        // when & then
-        mockMvc.perform(
-                        multipart("/api/users")
-                                .with(csrf())
-                                .param("username", "홍길동")
-                                .param("email", "false-email")
-                                .param("password", "12345")
-                )
-                .andExpect(status().isBadRequest())
-                .andExpect(
-                        jsonPath("$.code")
-                                .value("INVALID_REQUEST")
-                )
-                .andExpect(
-                        jsonPath("$.status")
-                                .value(400)
-                )
-                .andExpect(
-                        jsonPath("$.details.email")
-                                .exists()
-                );
-
-        then(userService)
-                .shouldHaveNoInteractions();
-
+        then(userService).shouldHaveNoInteractions();
     }
 
     @Test
     @DisplayName("비밀번호가 공백이면 400을 반환한다")
     void create_fail_passwordBlank() throws Exception {
+        // given
+        MockMultipartFile requestPart = jsonPart(
+                "userCreateRequest",
+                Map.of(
+                        "username", "홍길동",
+                        "email", "hong12@test.com",
+                        "password", " "
+                )
+        );
+
         // when & then
         mockMvc.perform(
                         multipart("/api/users")
+                                .file(requestPart)
                                 .with(csrf())
-                                .param("username", "홍길동")
-                                .param("email", "hong12@test.com")
-                                .param("password", " ")
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(
@@ -231,8 +204,79 @@ public class UserControllerTest {
                                 .value("비밀번호는 5자 이상 20자 이하여야 합니다.")
                 );
 
-        then(userService)
-                .shouldHaveNoInteractions();
+        then(userService).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("이메일이 공백이면 400을 반환한다")
+    void create_fail_emailBlank() throws Exception {
+        // given
+        MockMultipartFile requestPart = jsonPart(
+                "userCreateRequest",
+                Map.of(
+                        "username", "홍길동",
+                        "email", " ",
+                        "password", "12345"
+                )
+        );
+
+        // when & then
+        mockMvc.perform(
+                        multipart("/api/users")
+                                .file(requestPart)
+                                .with(csrf())
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        jsonPath("$.code")
+                                .value("INVALID_REQUEST")
+                )
+                .andExpect(
+                        jsonPath("$.status")
+                                .value(400)
+                )
+                .andExpect(
+                        jsonPath("$.details.email")
+                                .value("올바른 이메일의 형식이 아닙니다.")
+                );
+
+        then(userService).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("이메일 형식이 올바르지 않으면 400을 반환한다")
+    void create_fail_emailInvalid() throws Exception {
+        // given
+        MockMultipartFile requestPart = jsonPart(
+                "userCreateRequest",
+                Map.of(
+                        "username", "홍길동",
+                        "email", "false-email",
+                        "password", "12345"
+                )
+        );
+
+        // when & then
+        mockMvc.perform(
+                        multipart("/api/users")
+                                .file(requestPart)
+                                .with(csrf())
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        jsonPath("$.code")
+                                .value("INVALID_REQUEST")
+                )
+                .andExpect(
+                        jsonPath("$.status")
+                                .value(400)
+                )
+                .andExpect(
+                        jsonPath("$.details.email")
+                                .exists()
+                );
+
+        then(userService).shouldHaveNoInteractions();
     }
 
     @Test
@@ -256,18 +300,20 @@ public class UserControllerTest {
                 isNull()
         )).willReturn(response);
 
+        MockMultipartFile requestPart = jsonPart(
+                "userUpdateRequest",
+                Map.of("username", "홍감자")
+        );
+
         // when & then
         mockMvc.perform(
-                        multipart(
-                                "/api/users/{userId}",
-                                userId
-                        )
+                        multipart("/api/users/{userId}", userId)
+                                .file(requestPart)
                                 .with(request -> {
                                     request.setMethod("PATCH");
                                     return request;
                                 })
                                 .with(csrf())
-                                .param("username", "홍감자")
                 )
                 .andExpect(status().isOk())
                 .andExpect(
@@ -302,6 +348,7 @@ public class UserControllerTest {
 
         assertThat(command.username())
                 .isEqualTo("홍감자");
+
         assertThat(command.email())
                 .isNull();
 
@@ -330,18 +377,20 @@ public class UserControllerTest {
                 isNull()
         )).willReturn(response);
 
+        MockMultipartFile requestPart = jsonPart(
+                "userUpdateRequest",
+                Map.of("email", "honghong12@test.com")
+        );
+
         // when & then
         mockMvc.perform(
-                        multipart(
-                                "/api/users/{userId}",
-                                userId
-                        )
+                        multipart("/api/users/{userId}", userId)
+                                .file(requestPart)
                                 .with(request -> {
                                     request.setMethod("PATCH");
                                     return request;
                                 })
                                 .with(csrf())
-                                .param("email", "honghong12@test.com")
                 )
                 .andExpect(status().isOk())
                 .andExpect(
@@ -390,22 +439,22 @@ public class UserControllerTest {
                 eq(userId),
                 any(UpdateUserCommand.class),
                 isNull()
-        )).willThrow(
-                new UserNotFoundException(userId)
+        )).willThrow(new UserNotFoundException(userId));
+
+        MockMultipartFile requestPart = jsonPart(
+                "userUpdateRequest",
+                Map.of("username", "홍감자")
         );
 
         // when & then
         mockMvc.perform(
-                        multipart(
-                                "/api/users/{userId}",
-                                userId
-                        )
+                        multipart("/api/users/{userId}", userId)
+                                .file(requestPart)
                                 .with(request -> {
                                     request.setMethod("PATCH");
                                     return request;
                                 })
                                 .with(csrf())
-                                .param("username", "홍감자")
                 )
                 .andExpect(status().isNotFound())
                 .andExpect(
@@ -430,4 +479,18 @@ public class UserControllerTest {
                 );
     }
 
-  }
+    private MockMultipartFile jsonPart(
+            String partName,
+            Map<String, String> data
+    ) throws Exception {
+
+        return new MockMultipartFile(
+                partName,
+                "",
+                MediaType.APPLICATION_JSON_VALUE,
+                objectMapper.writeValueAsBytes(data)
+        );
+    }
+
+
+}
