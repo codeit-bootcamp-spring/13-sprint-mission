@@ -1,4 +1,33 @@
-package com.sprint.mission.discodeit.event;
+
+package com.sprint.mission.discodeit.event.kafka;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.entity.Notification;
+import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.entity.Role;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.MessageCreatedEvent;
+import com.sprint.mission.discodeit.event.NotificationCreatedEvent;
+import com.sprint.mission.discodeit.event.RoleUpdatedEvent;
+import com.sprint.mission.discodeit.mapper.NotificationMapper;
+import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.NotificationRepository;
+import com.sprint.mission.discodeit.repository.ReadStatusRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -6,28 +35,10 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
 
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.Notification;
-import com.sprint.mission.discodeit.entity.ReadStatus;
-import com.sprint.mission.discodeit.entity.Role;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.repository.MessageRepository;
-import com.sprint.mission.discodeit.repository.NotificationRepository;
-import com.sprint.mission.discodeit.repository.ReadStatusRepository;
-import com.sprint.mission.discodeit.repository.UserRepository;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
 @ExtendWith(MockitoExtension.class)
-class NotificationRequiredEventListenerTest {
+class NotificationRequiredTopicListenerTest {
+
+    private ObjectMapper objectMapper;
 
     @Mock
     private MessageRepository messageRepository;
@@ -41,11 +52,32 @@ class NotificationRequiredEventListenerTest {
     @Mock
     private NotificationRepository notificationRepository;
 
-    @InjectMocks
-    private NotificationRequiredEventListener listener;
+    @Mock
+    private NotificationMapper notificationMapper;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+    private NotificationRequiredTopicListener listener;
+
+    @BeforeEach
+    void setUp() {
+        objectMapper = new ObjectMapper();
+
+        listener = new NotificationRequiredTopicListener(
+                objectMapper,
+                messageRepository,
+                readStatusRepository,
+                userRepository,
+                notificationRepository,
+                eventPublisher,
+                notificationMapper
+        );
+    }
 
     @Test
-    void shouldCreateNotificationsForEnabledUsersExceptMessageAuthor() {
+    void shouldCreateNotificationsForEnabledUsersExceptMessageAuthor()
+            throws Exception {
         // given
         UUID messageId = UUID.randomUUID();
         UUID channelId = UUID.randomUUID();
@@ -100,26 +132,29 @@ class NotificationRequiredEventListenerTest {
                         receiverReadStatus
                 ));
 
-        // when
-        listener.on(
+        given(notificationRepository.saveAll(any()))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        String payload = objectMapper.writeValueAsString(
                 new MessageCreatedEvent(messageId)
         );
 
+        // when
+        listener.onMessageCreatedEvent(payload);
+
         // then
+        @SuppressWarnings("unchecked")
         ArgumentCaptor<List<Notification>> captor =
                 ArgumentCaptor.forClass(List.class);
 
         then(notificationRepository).should()
                 .saveAll(captor.capture());
 
-        List<Notification> notifications =
-                captor.getValue();
+        List<Notification> notifications = captor.getValue();
 
-        assertThat(notifications)
-                .hasSize(1);
+        assertThat(notifications).hasSize(1);
 
-        Notification notification =
-                notifications.get(0);
+        Notification notification = notifications.get(0);
 
         assertThat(notification.getReceiver())
                 .isEqualTo(receiver);
@@ -129,10 +164,14 @@ class NotificationRequiredEventListenerTest {
 
         assertThat(notification.getContent())
                 .isEqualTo("테스트 메시지");
+
+        then(eventPublisher).should()
+                .publishEvent(any(NotificationCreatedEvent.class));
     }
 
     @Test
-    void shouldCreateNotificationForUserWhenRoleIsUpdated() {
+    void shouldCreateNotificationForUserWhenRoleIsUpdated()
+            throws Exception {
         // given
         UUID userId = UUID.randomUUID();
 
@@ -141,15 +180,22 @@ class NotificationRequiredEventListenerTest {
         given(userRepository.findById(userId))
                 .willReturn(Optional.of(user));
 
-        RoleUpdatedEvent event =
-                new RoleUpdatedEvent(
-                        userId,
-                        Role.USER,
-                        Role.CHANNEL_MANAGER
-                );
+        given(user.getId())
+                .willReturn(userId);
+
+        given(notificationRepository.save(any(Notification.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        RoleUpdatedEvent event = new RoleUpdatedEvent(
+                userId,
+                Role.USER,
+                Role.CHANNEL_MANAGER
+        );
+
+        String payload = objectMapper.writeValueAsString(event);
 
         // when
-        listener.on(event);
+        listener.onRoleUpdatedEvent(payload);
 
         // then
         ArgumentCaptor<Notification> captor =
@@ -158,8 +204,7 @@ class NotificationRequiredEventListenerTest {
         then(notificationRepository).should()
                 .save(captor.capture());
 
-        Notification notification =
-                captor.getValue();
+        Notification notification = captor.getValue();
 
         assertThat(notification.getReceiver())
                 .isEqualTo(user);
@@ -169,5 +214,8 @@ class NotificationRequiredEventListenerTest {
 
         assertThat(notification.getContent())
                 .isEqualTo("USER -> CHANNEL_MANAGER");
+
+        then(eventPublisher).should()
+                .publishEvent(any(NotificationCreatedEvent.class));
     }
 }

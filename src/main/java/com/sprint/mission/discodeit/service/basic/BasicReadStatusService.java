@@ -83,7 +83,10 @@ public class BasicReadStatusService implements ReadStatusService {
 
         //ReadStatus 업데이트
         readStatusTemp.updateLastReadAt();
-        readStatusTemp.updateNotificationEnabled(request.newNotificationEnabled());
+
+        if (request.newNotificationEnabled() != null) {
+            readStatusTemp.updateNotificationEnabled(request.newNotificationEnabled());
+        }
 
         return readStatusMapper.toDto(readStatusTemp);
     }
