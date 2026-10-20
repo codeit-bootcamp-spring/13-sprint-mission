@@ -6,6 +6,8 @@ import com.sprint.mission.discodeit.exception.NoChangesException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
@@ -43,11 +45,16 @@ public class User extends BaseUpdatableEntity {
   // UserStatus는 User에 완전히 종속적 - ON DELETE CASCADE
   private UserStatus status; // UserStatus 참조
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private Role role;
+
   public User(String username, String email, String password, BinaryContent profile) {
     this.username = username;
     this.email = email;
     this.password = password;
     this.profile = profile;
+    this.role = Role.USER; // 모든 사용자는 기본적으로 USER 권한을 갖도록 설정
   }
 
   // updatedAt은 메소드 내부 수정이 발생했을 때만 현재 시간으로 수정하기 때문에 파라미터로 받지 않는다
