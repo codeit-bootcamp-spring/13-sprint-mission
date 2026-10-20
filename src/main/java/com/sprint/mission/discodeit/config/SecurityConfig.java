@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -31,8 +32,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.io.IOException;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity  // 정확하게 어떤 부분을 건드리나?
@@ -57,7 +62,10 @@ public class SecurityConfig {
                 .csrf( csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new CsrfTokenHandler())
+                        .ignoringRequestMatchers("/ws", "/ws/**")
                 )
+
+                .cors(Customizer.withDefaults())
 
                 .authorizeHttpRequests( auth -> auth
                         // 특정 경로 인증 안함.
@@ -66,7 +74,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login","/api/auth/logout","/api/auth/refresh").permitAll()
                         .requestMatchers("/", "/login.html", "/index.html", "/favicon.ico", "/assets/**").permitAll() // 정적 리소스
                         .requestMatchers("/h2-console/**", "/swagger-doc","/management/**").permitAll() // h2 인메모리 데이터베이스, swagger
-                        .requestMatchers("/ws/**", "/pub/**","/sub/**").permitAll()
+                        .requestMatchers("/ws", "/ws/**", "/pub/**","/sub/**").permitAll()
                         .requestMatchers("/api/sse/**").permitAll()
                         // 권한 기반 페이지 인가
                         .requestMatchers(HttpMethod.PUT, "/api/auth/role").hasRole("ADMIN")
@@ -154,4 +162,22 @@ public class SecurityConfig {
     JwtRegistry jwtRegistry(
             JwtTokenProvider jwtTokenProvider
     ){ return new InMemoryJwtRegistry(1,jwtTokenProvider); }
+
+
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        // 허용할 출처 (운영에서는 실제 프론트 도메인 주소가 들어갑니다.)
+        config.setAllowedOrigins(List.of("http://localhost:8080", "http://localhost:3000"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true); // 자격 증명 (쿠키, 인증 헤더) 허용
+
+        // 위에서 만든 규칙을 모든 URL 경로에 적용하겠다.
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+
+        return source;
+    }
+
 }
