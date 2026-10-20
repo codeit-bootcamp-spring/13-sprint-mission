@@ -53,6 +53,14 @@ public class DiscodeitUserDetailsService implements UserDetailsService {
                             SERVICE_NAME,
                             username)
                     );
+        else if (userRepository.existsByUsername(username))
+            userId = userRepository
+                    .findIdFromUsername(username)
+                    .orElseThrow(() -> new UserNotFoundException(
+                            "{} - 인증 유저 조회 에러 - username = {}",
+                            SERVICE_NAME,
+                            username)
+                    );
         else
             userId = UUID.fromString(username);
 

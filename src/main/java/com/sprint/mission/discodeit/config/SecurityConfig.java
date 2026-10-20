@@ -168,7 +168,8 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         // 허용할 출처 (운영에서는 실제 프론트 도메인 주소가 들어갑니다.)
-        config.setAllowedOrigins(List.of("http://localhost:8080", "http://localhost:3000"));
+//        config.setAllowedOrigins(List.of("http://localhost:8080", "http://localhost:3000"));
+        config.addAllowedOriginPattern("*"); // tmp 전부 허용
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // 자격 증명 (쿠키, 인증 헤더) 허용
