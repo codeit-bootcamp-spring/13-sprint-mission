@@ -26,19 +26,22 @@ public class SseMessageRepository {
         return lastId.map(uuid -> uuid.equals(messageId)).orElse(false);
     }
 
+    public List<SseMessage> findAllById(UUID id, UUID lastIndex) {
+        return eventIdQueue.stream()
+                .skip(getIndex(lastIndex) + 1)
+                .map(messages::get)
+                .filter(m -> (m.getId().equals(id) || m.getId().equals(SseMessage.BROADCAST_ID))
+                ).toList();
+    }
+
     public List<SseMessage> findAll(){
         return eventIdQueue.stream().map(messages::get).toList();
     }
 
-    public List<SseMessage> getFromId(UUID messageId){
-        Integer index = getIndex(messageId);
-        return eventIdQueue.stream().skip(index + 1)
-                .map(messages::get)
-                .toList();
-    }
 
     private Integer getIndex(UUID value){
         int index = 0;
+        if (value == null) return index;
         for (UUID key : eventIdQueue) {
             if (key.equals(value)) return index;
             index++;

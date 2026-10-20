@@ -25,7 +25,8 @@ public class SseEmitterRepository {
     public List<SseEmitter> findByReceiverList(Collection<UUID> receiverIds) {
         List<SseEmitter> result = new ArrayList<>();
         for(UUID id : receiverIds) {
-            result.addAll(data.get(id));
+            if (data.get(id) != null)
+                result.addAll(data.get(id));
         }
         return result;
     }

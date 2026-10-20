@@ -43,7 +43,7 @@ public class DiscodeitInit implements CommandLineRunner {
 
         userRepository.save(admin);
 
-        log.info("init admin account made - email : {}, password : {}", email, password);
+        log.info("init admin account made - id : {}, email : {}, password : {}", admin.getId(), email, password);
     }
 
     private void testUser(){
@@ -61,6 +61,6 @@ public class DiscodeitInit implements CommandLineRunner {
 
         userRepository.save(admin);
 
-        log.info("init test account made - email : {}, password : {}", email, password);
+        log.info("init test account made - id:{} email : {}, password : {}", admin.getId(), email, password);
     }
 }

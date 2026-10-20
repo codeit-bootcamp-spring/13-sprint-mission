@@ -31,7 +31,6 @@ public class NotificationController implements NotificationControllerDoc {
     }
 
     @DeleteMapping("/{notificationId}")
-    @PreAuthorize("hasRole('USER') and principal.getUsername() == #notificationId")
     public ResponseEntity<Object> delete(
             @PathVariable UUID notificationId,
             Authentication authentication

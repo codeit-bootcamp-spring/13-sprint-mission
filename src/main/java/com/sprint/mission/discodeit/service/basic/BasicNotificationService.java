@@ -11,6 +11,7 @@ import com.sprint.mission.discodeit.repository.NotificationRepository;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BasicNotificationService implements NotificationService {
@@ -48,6 +50,8 @@ public class BasicNotificationService implements NotificationService {
 
         Notification noty = notificationRepository.findById(id)
                 .orElseThrow(() -> new DiscodeitException(ExceptionCode.RESOURCE_NOT_FOUNDED));
+
+        log.debug("수신자 : {} , 현재 사용자 : {}",noty.getReceiverId(), userIdFromAuth(authentication));
 
         // !(요청자 == 메세지 수신자) => 403 error
         if (!noty.getReceiverId().equals(userIdFromAuth(authentication)))

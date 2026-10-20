@@ -45,15 +45,7 @@ public class SseService {
             emitterRepository.delete(receiverId,emitter);
         });
 
-
-        // emitter 가 연결되면, 지금까지 생성된, 혹은 유실된 메세지 전송.
-        // last msg 가 있다면, last 에서부터 메세지 반환. -> emitter 가 반환되지 않았는데 반환 가능?
-        // 비동기 방식으로 커넥션이 완성되면 보내야 하나?
-        if (lastEventId != null) {
-            sendToEmitter(emitter, messageRepository.getFromId(lastEventId));
-        } else {
-            sendToEmitter(emitter, messageRepository.findAll());
-        }
+        sendToEmitter(emitter, messageRepository.findAllById(receiverId,lastEventId));
 
         return emitter;
     }
@@ -68,12 +60,20 @@ public class SseService {
                 data
         );
 
-        SseMessage message = new SseMessage(eventName,data);
-        messageRepository.save(message);
-        emitterRepository.findByReceiverList(receiverIds)
-                .forEach(emitter -> {
-                    sendToEmitter(emitter, List.of(message));
-                });
+        // 채팅방에서 본인이 쓴 메세지의 정보도 알림으로 나옴.
+        // message 가
+        // 어떤 에미터가 쓴 것인지? -> receiverId
+
+        receiverIds.forEach(receiverId -> {
+            SseMessage message = new SseMessage(receiverId, eventName,data);
+            messageRepository.save(message);
+            emitterRepository.findByReceiverList(List.of(receiverId))
+                    .forEach(emitter -> {
+                        sendToEmitter(emitter, List.of(message));
+                    });
+        });
+
+
     }
 
     public void broadcast(String eventName, Object data) {
@@ -84,7 +84,7 @@ public class SseService {
                 data
         );
 
-        SseMessage message = new SseMessage(eventName,data);
+        SseMessage message = new SseMessage(SseMessage.BROADCAST_ID, eventName, data);
         messageRepository.save(message);
         emitterRepository.findAll()
                 .forEach(emitter -> {
@@ -117,7 +117,7 @@ public class SseService {
     private void sendToEmitter(SseEmitter emitter, List<SseMessage> list) {
         list.forEach( message -> {
             try{
-                log.debug("[{}] - SSE Emitter message send : {}", NAME, emitter);
+                log.debug("[{}] - SSE Emitter message send", NAME);
                 emitter.send(
                         SseEmitter.event()
                                 .id(message.getId().toString())

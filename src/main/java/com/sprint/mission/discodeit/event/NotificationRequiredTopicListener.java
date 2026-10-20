@@ -50,7 +50,7 @@ public class NotificationRequiredTopicListener {
         try {
             // 카프카에서의 메세지를 읽고, 원래의 이벤트로 변환.
             MessageCreateEvent event = objectMapper.readValue(kafkaEvent, MessageCreateEvent.class);
-            log.debug("[MessageEvent] - 메세지 생성 이벤트 시작. id : {}", event.message().id());
+            log.debug("[MessageEvent] - 메세지 생성 이벤트 시작. 메세지 id : {}", event.message().id());
 
             // 메세지 생성 이후,
 
@@ -64,7 +64,7 @@ public class NotificationRequiredTopicListener {
 
             log.debug("[MessageEvent] - 알림 대상 : {} 건", notifications.size());
 
-//            notificationRepository.saveAll(notifications);
+            notificationRepository.saveAll(notifications);
 
             notifications.forEach(notification ->
                     sseService.send(
@@ -72,23 +72,23 @@ public class NotificationRequiredTopicListener {
                             "notifications.created",
                             entityMapper.toDto(notification)
                     ));
-
-            log.debug("[MessageEvent] - 메세지 생성 알림 생성 완료. - id : {}", event.message().id());
-
         } catch (JsonProcessingException e) {
+            log.warn("[{}] - 메세지 생성 알림 발송 실패","MessageEvent");
             throw new RuntimeException(e);
         }
     }
     private Notification getNotificationFromUser(MessageCreateEvent event, User user){
-        log.debug("[MessageEvent] - 아이디 유저 체크 - 작성자 : {}, 알림 대상 : {}", event.message().author().id(),user.getId());
         if (user.getId().equals(event.message().author().id()))
+            // 작성자 == 유저 라면 알림 생략
             return null;
-        else
+        else{
+            log.debug("[MessageEvent] - 아이디 유저 체크 - 작성자 : {}, 알림 대상 : {}", event.message().author().id(),user.getId());
             return new Notification(
-                    event.message().author().id(),
+                    user.getId(),   // 이 친구가 대상자 인데, 트랜젝션에 의해 값이 사라진다?
                     user.getUsername(),
                     event.message().content()
             );
+        }
     }
 
     @KafkaListener(topics = "discodeit.RoleUpdateEvent")
