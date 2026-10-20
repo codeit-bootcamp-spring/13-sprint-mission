@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,7 +21,9 @@ public class SecurityConfig {
             // 클라이언트에서 쿠키에 저장된 CSRF 토큰을 접근할 수 있도록 httpOnly=false 로 설정
             .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
         )
-        .formLogin(Customizer.withDefaults());
+        .formLogin(login -> login
+            .loginProcessingUrl("/api/auth/login")
+        );
 
     return http.build();
   }
