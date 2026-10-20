@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.entity.BinaryContent.Status;
 import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentUploadException;
 import java.io.InputStream;
 import java.net.URI;
@@ -137,7 +138,8 @@ class S3BinaryContentStorageTest {
         id,
         "test.png",
         100L,
-        "image/png"
+        "image/png",
+        Status.SUCCESS
     );
 
     PresignedGetObjectRequest presignedRequest =
