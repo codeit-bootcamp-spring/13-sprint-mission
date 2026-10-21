@@ -7,6 +7,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.Set;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -15,12 +17,10 @@ public class NotificationSseEventListener {
     private final SseService sseService;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleNotificationCreated(
-            NotificationCreatedEvent event
-    ) {
+    public void handleNotificationCreated(NotificationCreatedEvent event) {
 
         sseService.send(
-                event.receiverId(),
+                Set.of(event.receiverId()),
                 "notifications.created",
                 event.notification()
         );
@@ -30,5 +30,4 @@ public class NotificationSseEventListener {
                 event.receiverId()
         );
     }
-
 }

@@ -16,7 +16,6 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.AuthService;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.sse.UserSseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -108,20 +107,11 @@ public class BasicUserService implements UserService {
 
         UserDto userDto = userMapper.toDto(user, false);
 
-        UserSseDto sseDto = new UserSseDto(
-                user.getId(),
-                user.getUsername()
-        );
-
         eventPublisher.publishEvent(
-                new UserSseEvent(
-                        "users.created",
-                        sseDto
-                )
+                new UserSseEvent("users.created", userDto)
         );
 
-        log.info("사용자 생성 완료. id={}", user.getId());
-        return userMapper.toDto(user, false);
+        return userDto;
     }
 
 
@@ -240,16 +230,8 @@ public class BasicUserService implements UserService {
 
         UserDto userDto = userMapper.toDto(user, online);
 
-        UserSseDto sseDto = new UserSseDto(
-                user.getId(),
-                user.getUsername()
-        );
-
         eventPublisher.publishEvent(
-                new UserSseEvent(
-                        "users.updated",
-                        sseDto
-                )
+                new UserSseEvent("users.updated", userDto)
         );
 
         return userDto;
@@ -271,11 +253,8 @@ public class BasicUserService implements UserService {
         User user = repository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
-        UserSseDto sseDto = new UserSseDto(
-                user.getId(),
-                user.getUsername()
-        );
-
+        boolean online = authService.isOnline(id);
+        UserDto userDto = userMapper.toDto(user, online);
         BinaryContent profile = user.getProfile();
 
         if (profile != null) {
@@ -286,10 +265,7 @@ public class BasicUserService implements UserService {
         repository.delete(user);
 
         eventPublisher.publishEvent(
-                new UserSseEvent(
-                        "users.deleted",
-                        sseDto
-                )
+                new UserSseEvent("users.deleted", userDto)
         );
 
         log.info("사용자 삭제 완료. id={}", id);

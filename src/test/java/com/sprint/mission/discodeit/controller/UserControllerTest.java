@@ -235,10 +235,8 @@ public class UserControllerTest {
                         jsonPath("$.status")
                                 .value(400)
                 )
-                .andExpect(
-                        jsonPath("$.details.email")
-                                .value("올바른 이메일의 형식이 아닙니다.")
-                );
+                .andExpect(jsonPath("$.details.email")
+                        .value("이메일은 필수입니다."));
 
         then(userService).shouldHaveNoInteractions();
     }

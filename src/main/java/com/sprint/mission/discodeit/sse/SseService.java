@@ -1,20 +1,19 @@
+ package com.sprint.mission.discodeit.sse;
 
-package com.sprint.mission.discodeit.sse;
+ import lombok.RequiredArgsConstructor;
+ import lombok.extern.slf4j.Slf4j;
+ import org.springframework.scheduling.annotation.Scheduled;
+ import org.springframework.stereotype.Service;
+ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+ import java.io.IOException;
+ import java.time.Duration;
+ import java.time.Instant;
+ import java.util.Collection;
+ import java.util.Set;
+ import java.util.UUID;
 
-import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
-
-@Slf4j
+ @Slf4j
 @Service
 @RequiredArgsConstructor
 public class SseService {
@@ -25,23 +24,23 @@ public class SseService {
     private final SseEmitterRepository emitterRepository;
     private final SseMessageRepository messageRepository;
 
-    public SseEmitter connect(UUID userId, Long lastEventId) {
+    public SseEmitter connect(UUID receiverId, UUID lastEventId) {
 
         SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MILLIS);
 
-        emitterRepository.save(userId, emitter);
+        emitterRepository.save(receiverId, emitter);
 
         emitter.onCompletion(() ->
-                emitterRepository.delete(userId, emitter)
+                emitterRepository.delete(receiverId, emitter)
         );
 
         emitter.onTimeout(() ->
-                emitterRepository.delete(userId, emitter)
+                emitterRepository.delete(receiverId, emitter)
         );
 
         emitter.onError(error -> {
-            log.warn("SSE 연결 오류. userId={}", userId, error);
-            emitterRepository.delete(userId, emitter);
+            log.warn("SSE 연결 오류. receiverId={}", receiverId, error);
+            emitterRepository.delete(receiverId, emitter);
         });
 
         try {
@@ -52,68 +51,71 @@ public class SseService {
             );
 
             if (lastEventId != null) {
-
                 for (SseMessage message :
-                        messageRepository.findAllByUserIdAndIdGreaterThan(
-                                userId, lastEventId)) {
+                        messageRepository.findAllByUserIdAndIdAfter(
+                                receiverId, lastEventId
+                        )) {
 
                     emitter.send(
                             SseEmitter.event()
-                                    .id(String.valueOf(message.id()))
+                                    .id(message.id().toString())
                                     .name(message.eventName())
                                     .data(message.data())
                     );
                 }
             }
 
-            log.info("SSE 연결 성공. userId={}, lastEventId={}",
-                    userId, lastEventId);
+            log.info("SSE 연결 성공. receiverId={}, lastEventId={}",
+                    receiverId, lastEventId);
 
         } catch (IOException | IllegalStateException e) {
-            emitterRepository.delete(userId, emitter);
+            emitterRepository.delete(receiverId, emitter);
             emitter.completeWithError(e);
 
-            log.warn("SSE 연결 또는 이벤트 복구 실패. userId={}",
-                    userId, e);
+            log.warn("SSE 연결 또는 이벤트 복구 실패. receiverId={}",
+                    receiverId, e);
         }
 
         return emitter;
     }
 
-    private final AtomicLong eventSequence = new AtomicLong();
+    public void send(Collection<UUID> receiverIds, String eventName, Object data)  {
 
-    public void send(UUID receiverId, String eventName, Object data) {
+        for (UUID receiverId : receiverIds) {
 
-        long eventId = eventSequence.incrementAndGet();
+            UUID eventId = UUID.randomUUID();
 
-        SseMessage message = new SseMessage(
-                eventId,
-                receiverId,
-                eventName,
-                data,
-                Instant.now()
-        );
+            SseMessage message = new SseMessage(
+                    eventId,
+                    receiverId,
+                    eventName,
+                    data,
+                    Instant.now()
+            );
 
-        messageRepository.save(message);
+            messageRepository.save(message);
 
-        for (SseEmitter emitter : emitterRepository.findAllByUserId(receiverId)) {
-            try {
-                emitter.send(
-                        SseEmitter.event()
-                                .id(String.valueOf(eventId))
-                                .name(eventName)
-                                .data(data)
-                );
+            for (SseEmitter emitter :
+                    emitterRepository.findAllByUserId(receiverId)) {
 
-            } catch (IOException | IllegalStateException e) {
-                emitterRepository.delete(receiverId, emitter);
+                try {
+                    emitter.send(
+                            SseEmitter.event()
+                                    .id(eventId.toString())
+                                    .name(eventName)
+                                    .data(data)
+                    );
 
-                log.warn(
-                        "SSE 이벤트 전송 실패. receiverId={}, eventId={}",
-                        receiverId,
-                        eventId,
-                        e
-                );
+                } catch (IOException | IllegalStateException e) {
+                    emitterRepository.delete(receiverId, emitter);
+
+                    log.warn(
+                            "SSE 이벤트 전송 실패. receiverId={}, eventId={}",
+                            receiverId,
+                            eventId,
+                            e
+                    );
+                }
             }
         }
     }
@@ -122,9 +124,7 @@ public class SseService {
 
         Set<UUID> receiverIds = emitterRepository.findAllUserIds();
 
-        for (UUID receiverId : receiverIds) {
-            send(receiverId, eventName, data);
-        }
+        send(receiverIds, eventName, data);
 
         log.info(
                 "SSE 전체 이벤트 전송. eventName={}, receiverCount={}",
@@ -149,7 +149,7 @@ public class SseService {
         }
     }
 
-    @Scheduled(fixedDelayString = "PT30M")
+    @Scheduled(fixedDelay = 1000 * 60 * 30)
     public void cleanUp() {
 
         emitterRepository.forEach((userId, emitter) -> {

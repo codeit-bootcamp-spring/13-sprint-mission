@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record SseMessage(
-        long id,
+        UUID id,
         UUID userId,
         String eventName,
         Object data,

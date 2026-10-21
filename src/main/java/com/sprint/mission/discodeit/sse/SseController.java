@@ -22,13 +22,12 @@ public class SseController {
     @GetMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter connect(
             @AuthenticationPrincipal DiscodeitUserDetails userDetails,
-            @RequestHeader(
-                    value = "Last-Event-ID",
-                    required = false
-            ) Long lastEventId
+            @RequestHeader(value = "Last-Event-ID", required = false)
+            UUID lastEventId
     ) {
         UUID userId = userDetails.getUserDto().id();
 
         return sseService.connect(userId, lastEventId);
     }
 }
+

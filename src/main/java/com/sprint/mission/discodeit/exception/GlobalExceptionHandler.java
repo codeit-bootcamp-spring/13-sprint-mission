@@ -104,15 +104,32 @@ public class GlobalExceptionHandler {
     ) {
         ErrorCode errorCode = ErrorCode.INVALID_REQUEST;
 
+
         Map<String, Object> validationErrors = new LinkedHashMap<>();
 
         exception.getBindingResult()
                 .getFieldErrors()
-                .forEach(error -> validationErrors.putIfAbsent(
-                        error.getField(),
-                        Optional.ofNullable(error.getDefaultMessage())
-                                .orElse("잘못된 값입니다.")
-                ));
+                .forEach(error -> {
+
+                    String field = error.getField();
+
+                    String message = Optional
+                            .ofNullable(error.getDefaultMessage())
+                            .orElse("잘못된 값입니다.");
+
+                    // 필수 입력 검증 오류는 우선 적용한다.
+                    if ("NotBlank".equals(error.getCode())
+                            || "NotNull".equals(error.getCode())
+                            || "NotEmpty".equals(error.getCode())) {
+
+                        validationErrors.put(field, message);
+
+                    } else {
+
+                        // 동일 필드의 오류가 이미 있다면 덮어쓰지 않는다.
+                        validationErrors.putIfAbsent(field, message);
+                    }
+                });
 
         ErrorResponse response = new ErrorResponse(
                 Instant.now(),
