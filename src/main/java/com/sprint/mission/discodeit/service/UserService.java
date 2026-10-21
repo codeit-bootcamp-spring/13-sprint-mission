@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service;
 
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
+import com.sprint.mission.discodeit.dto.auth.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
@@ -22,4 +23,6 @@ public interface UserService {
       Optional<BinaryContentCreateRequest> profileCreateRequest); // 식별자인 id가 먼저 오는 것이 흐름상 자연스럽다
 
   void delete(UUID userId);
+
+  UserDto updateRole(UserRoleUpdateRequest request);
 }

@@ -1,24 +1,34 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.dto.auth.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/auth")
 @Tag(name = "Auth", description = "인증 API") // 그룹 묶기
 public class AuthController {
+
+  private final UserService userService;
 
   // CSRF 토큰을 발급하는 API
   @Operation(summary = "CSRF 토큰 발급")
@@ -50,5 +60,19 @@ public class AuthController {
     return ResponseEntity
         .status(HttpStatus.OK)
         .body(userDetails.getUserDto());
+  }
+
+  // 사용자 권한 수정하는 API
+  @Operation(summary = "사용자 권한 수정")
+  @ApiResponse(
+      responseCode = "200",
+      description = "사용자의 권한 수정 성공"
+  )
+  @PutMapping("/role")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<UserDto> updateRole(
+      @Valid @RequestBody UserRoleUpdateRequest request
+  ) {
+    return ResponseEntity.ok(userService.updateRole(request));
   }
 }

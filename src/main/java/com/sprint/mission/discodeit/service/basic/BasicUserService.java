@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
+import com.sprint.mission.discodeit.dto.auth.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserDto;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
@@ -146,5 +147,17 @@ public class BasicUserService implements UserService {
     // user가 삭제되면 영속성 전이된 프로필 또한 삭제
     userRepository.deleteById(userId);
     log.info("사용자 삭제 userId={}", userId);
+  }
+
+  @Transactional
+  @Override
+  public UserDto updateRole(UserRoleUpdateRequest request) {
+    User user = userRepository.findById(request.userId())
+        .orElseThrow(() -> new UserNotFoundException(request.userId()));
+
+    user.updateRole(request.newRole());
+
+    log.info("사용자 권한 수정 - userId={}, newRole={}", request.userId(), request.newRole());
+    return userMapper.toDto(user);
   }
 }
