@@ -21,6 +21,11 @@ logging:
     org.hibernate.orm.jdbc.bind: TRACE
 
 discodeit:
+  admin:
+    enabled: false
+    username: admin
+    email: admin@discodeit.com
+    password: Admin1234!
   storage:
     type: local
     local:
