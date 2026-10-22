@@ -2,12 +2,16 @@ package com.sprint.mission.discodeit.config;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.config.redis.RedisLockProvider;
 import com.sprint.mission.discodeit.filter.JwtAuthenticationFilter;
 import com.sprint.mission.discodeit.security.CsrfTokenHandler;
 import com.sprint.mission.discodeit.security.jwt.*;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -161,7 +165,25 @@ public class SecurityConfig {
     @Bean
     JwtRegistry jwtRegistry(
             JwtTokenProvider jwtTokenProvider
-    ){ return new InMemoryJwtRegistry(1,jwtTokenProvider); }
+    ){
+//        return new InMemoryJwtRegistry(1,jwtTokenProvider);
+        return new RedisJwtRegistry(
+                1,
+                jwtTokenProvider,
+                applicationEventPublisher,
+                redisTemplate,
+                redisLockProvider
+                );
+    }
+
+    @Autowired
+    ApplicationEventPublisher applicationEventPublisher;
+
+    @Autowired
+    RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    RedisLockProvider redisLockProvider;
 
 
     @Bean
@@ -170,7 +192,7 @@ public class SecurityConfig {
         // 허용할 출처 (운영에서는 실제 프론트 도메인 주소가 들어갑니다.)
 //        config.setAllowedOrigins(List.of("http://localhost:8080", "http://localhost:3000"));
         config.addAllowedOriginPattern("*"); // tmp 전부 허용
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE","PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // 자격 증명 (쿠키, 인증 헤더) 허용
 

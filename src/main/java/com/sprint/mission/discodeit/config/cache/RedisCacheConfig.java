@@ -3,7 +3,6 @@ package com.sprint.mission.discodeit.config.cache;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -24,7 +23,7 @@ import java.time.Duration;
         name = "discodeit.cache.type",
         havingValue = "redis"
 )
-public class RedisConfig {
+public class RedisCacheConfig {
 
     @Bean
     public ApplicationRunner cacheReport(CacheManager cacheManager) {

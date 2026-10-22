@@ -57,7 +57,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws");
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")
+                .setAllowedOriginPatterns("*")      // todo - tmp. 추후 사용하는 도메인에 맞추어 수정 가능하도록 변경.
                 .withSockJS();   // legacy 지원용 설정.
         registry.setErrorHandler(errorHandler);
     }

@@ -34,6 +34,7 @@ public class SseController {
             // lastEvent 는 어떻게?
             return ResponseEntity.ok(sseService.connect(dto.id(),lastEventId));
         } else {
+            log.warn("[SSE] 유저 인증 에러 - {}", authentication);
             throw new DiscodeitException(ExceptionCode.INVALID_AUTH_ERROR,"인증 정보가 올바르지 않음");
         }
     }

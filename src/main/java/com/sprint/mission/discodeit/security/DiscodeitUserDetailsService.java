@@ -49,7 +49,7 @@ public class DiscodeitUserDetailsService implements UserDetailsService {
             userId = userRepository
                     .findIdFromEmail(username)
                     .orElseThrow(() -> new UserNotFoundException(
-                            "{} - 인증 유저 조회 에러 - username = {}",
+                            "%s - 인증 유저 조회 에러 - username = %s",
                             SERVICE_NAME,
                             username)
                     );
@@ -57,7 +57,7 @@ public class DiscodeitUserDetailsService implements UserDetailsService {
             userId = userRepository
                     .findIdFromUsername(username)
                     .orElseThrow(() -> new UserNotFoundException(
-                            "{} - 인증 유저 조회 에러 - username = {}",
+                            "%s - 인증 유저 조회 에러 - username = %s",
                             SERVICE_NAME,
                             username)
                     );
@@ -67,7 +67,7 @@ public class DiscodeitUserDetailsService implements UserDetailsService {
         // set UserDetail
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(
-                            "{} - 인증 유저 조회 에러",
+                            "%s - 인증 유저 조회 에러",
                             SERVICE_NAME,
                             userId
                     )

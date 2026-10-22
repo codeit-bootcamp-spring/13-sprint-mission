@@ -65,6 +65,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = resolveToken(request);   // AccessToken(Bearer)
 
         if (token != null) {
+            log.debug("[Filter] 토큰 - {}", token);
+            log.debug("[Filter] 토큰 존재 여부 - {}", jwtRegistry.hasActiveJwtInformationByAccessToken(token));
+            log.debug("[Filter] 토큰 만료 여부 - {}", provider.isExpired(token));
             try {
                 if (
                         jwtRegistry.hasActiveJwtInformationByAccessToken(token)
