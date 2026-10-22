@@ -103,6 +103,7 @@ public class RedisJwtRegistry implements JwtRegistry {
     public boolean hasActiveJwtInformationByUserId(UUID userId) {
         String userKey = getUserKey(userId);
         Long size = redisTemplate.opsForList().size(userKey);
+        log.debug("@@@@@@@@@@@@@@@{}@@@@@@@@\n@@@@@@@{}@@@@@@",userKey,size);
         return size != null && size > 0;
     }
 

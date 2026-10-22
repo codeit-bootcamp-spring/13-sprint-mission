@@ -1,11 +1,10 @@
 package com.sprint.mission.discodeit.config;
 
 import com.sprint.mission.discodeit.handler.WebSocketErrorHandler;
-import com.sprint.mission.discodeit.security.jwt.JwtAuthenticationChannelInterceptor;
+import com.sprint.mission.discodeit.websocket.JwtAuthenticationChannelInterceptor;
 import com.sprint.mission.discodeit.security.role.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessageType;

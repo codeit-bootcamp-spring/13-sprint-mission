@@ -42,7 +42,7 @@ public class NotificationRequiredTopicListener {
 
     private final SseService sseService;
 
-    @KafkaListener(topics = "discodeit.MessageCreatedEvent")
+    @KafkaListener(topics = "discodeit.event.message")
     @CacheEvict(cacheNames = CacheConfig.NOTIFICATION_CACHE, allEntries = true)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onMessageCreatedEvent(String kafkaEvent) {
@@ -53,8 +53,6 @@ public class NotificationRequiredTopicListener {
             log.debug("[MessageEvent] - 메세지 생성 이벤트 시작. 메세지 id : {}", event.message().id());
 
             // 메세지 생성 이후,
-
-
             List<ReadStatus> readStatuses = readStatusRepository.findAllByChannelIdWithStatusOn(event.message().channelId(), true);
 
             List<Notification> notifications = readStatuses.stream()
@@ -72,6 +70,7 @@ public class NotificationRequiredTopicListener {
                             "notifications.created",
                             entityMapper.toDto(notification)
                     ));
+
         } catch (JsonProcessingException e) {
             log.warn("[{}] - 메세지 생성 알림 발송 실패","MessageEvent");
             throw new RuntimeException(e);
@@ -91,7 +90,7 @@ public class NotificationRequiredTopicListener {
         }
     }
 
-    @KafkaListener(topics = "discodeit.RoleUpdateEvent")
+    @KafkaListener(topics = "discodeit.event.role")
     @CacheEvict(cacheNames = CacheConfig.NOTIFICATION_CACHE, allEntries = true)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onRoleUpdatedEvent(String kafkaEvent) {
@@ -116,7 +115,7 @@ public class NotificationRequiredTopicListener {
         }
     }
 
-    @KafkaListener(topics = "discodeit.SystemNotifyEvent")
+    @KafkaListener(topics = "discodeit.event.system")
     @CacheEvict(cacheNames = CacheConfig.NOTIFICATION_CACHE, allEntries = true)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onS3UploadFailedEvent(String kafkaEvent) {

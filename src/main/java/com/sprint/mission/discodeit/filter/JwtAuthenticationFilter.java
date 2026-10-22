@@ -70,7 +70,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.debug("[Filter] 토큰 만료 여부 - {}", provider.isExpired(token));
             try {
                 if (
-                        jwtRegistry.hasActiveJwtInformationByAccessToken(token)
+                        jwtRegistry.hasActiveJwtInformationByAccessToken(token) // todo - 여기에서 false 가 반환되는 문제
                                 && (!provider.isExpired(token))
                 ) {
                     String username = provider.getSubject(token);  // user.id or user.email(login)

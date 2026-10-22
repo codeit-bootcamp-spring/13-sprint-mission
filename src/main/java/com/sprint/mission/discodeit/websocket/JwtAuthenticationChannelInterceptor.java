@@ -1,13 +1,14 @@
-package com.sprint.mission.discodeit.security.jwt;
+package com.sprint.mission.discodeit.websocket;
 
 
 import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.exception.ExceptionCode;
+import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
+import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
@@ -16,7 +17,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Component
@@ -26,25 +29,47 @@ public class JwtAuthenticationChannelInterceptor implements ChannelInterceptor {
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtRegistry jwtRegistry;
     private final UserDetailsService userDetailsService;
+    private final WebSocketRegistry webSocketRegistry;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message,
                 StompHeaderAccessor.class);
-        if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-            /*
-            커넥션연결
-            Authorization:Bearer -> 리프레시 토큰 포함
-             */
-            // Refresh Token
-            String token = accessor.getFirstNativeHeader("Authorization");
 
-            log.debug("[WebSocket] {} 요청",accessor.getCommand());
+        if (accessor == null || accessor.getCommand() == null)
+            return message;
 
-            if (token != null)
-                accessor.setUser(parseToken(token));
+        switch (accessor.getCommand()) {
+            case CONNECT -> authenticate(accessor);
+            case SUBSCRIBE -> subscribe(accessor);
         }
+
         return message;
+    }
+
+
+
+    private void subscribe(StompHeaderAccessor accessor) {
+        Optional.ofNullable(accessor.getDestination())
+                .ifPresent(dst -> register(dst,accessor.getSessionId()));
+    }
+
+    private void register(String dst, String sessionId){
+        Pattern pattern = Pattern.compile("^/sub/channels\\.([0-9a-fA-F-]{36})\\.messages$");
+        Matcher matcher = pattern.matcher(dst);
+        if (matcher.matches()) {
+            String channelId = matcher.group(1);
+            webSocketRegistry.register(sessionId, channelId);
+            log.debug("[WebSocket] {} 채널 구독됨 - session: {}", channelId, sessionId);
+        }
+    }
+
+
+
+    private void authenticate(StompHeaderAccessor accessor) {
+        String token = accessor.getFirstNativeHeader("Authorization");
+        if (token != null)
+            accessor.setUser(parseToken(token));
     }
 
     private UsernamePasswordAuthenticationToken parseToken(String preToken) {

@@ -18,7 +18,7 @@ services:
     # health check
     # postgres:16 has own health check command
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_DB}" ]
+      test: [ "CMD-SHELL", "pg_isready -U discodeit -d ${POSTGRES_DB}" ]
       interval: 10s
       timeout: 3s
       retries: 10
@@ -75,8 +75,15 @@ services:
       # work dir is current dir
       context: .
       dockerfile: Dockerfile
-    hostname: discodeit
-    container_name: discodeit
+    # 컨테이너 레플리카 시에는 등록 안함
+#    hostname: discodeit
+#    container_name: discodeit
+
+    # 분산 서비스를 위한 컨테이너 복제 설정.
+    deploy:
+      replicas: 3
+
+
     # export port for outside of host
 
     # env for application.yaml and others
