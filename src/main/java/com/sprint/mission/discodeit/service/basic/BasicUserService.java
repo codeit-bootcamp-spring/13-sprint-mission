@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.config.cache.CacheConfig;
 import com.sprint.mission.discodeit.dto.request.MultipartFileDto;
 import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
@@ -30,6 +29,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 
+import static com.sprint.mission.discodeit.config.cache.DiscodeItCacheConfig.*;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -49,7 +50,7 @@ public class BasicUserService implements UserService {
 
 
     @Override
-    @CacheEvict(cacheNames = CacheConfig.USER_CACHE, allEntries = true)
+    @CacheEvict(cacheNames = USER_CACHE, key = "'all'")
     @Transactional
     public UserDto create(UserCreateRequest userCreateRequest, Optional<MultipartFileDto> multiFileDto){
         String username = nameCheck(userCreateRequest.username());
@@ -77,7 +78,7 @@ public class BasicUserService implements UserService {
         return dto;
     }
 
-    @Cacheable(CacheConfig.USER_CACHE)
+    @Cacheable(value = USER_CACHE, key = "'all'")
     @Override
     @Transactional
     public List<UserDto> getUserList(){
@@ -90,7 +91,7 @@ public class BasicUserService implements UserService {
 
 
     @Override
-    @CacheEvict(cacheNames = CacheConfig.USER_CACHE, allEntries = true)
+    @CacheEvict(cacheNames = USER_CACHE, key = "'all'")
     @Transactional
     public UserDto update(UUID id, UserUpdateRequest uui, Optional<MultipartFileDto> multiFileDto){
         User user = getUserOrException(id);
@@ -115,7 +116,7 @@ public class BasicUserService implements UserService {
 
 
     @Override
-    @CacheEvict(cacheNames = CacheConfig.USER_CACHE, allEntries = true)
+    @CacheEvict(cacheNames = USER_CACHE, key = "'all'")
     @Transactional
     public void delete(UUID id){
         User user =  getUserOrException(id);

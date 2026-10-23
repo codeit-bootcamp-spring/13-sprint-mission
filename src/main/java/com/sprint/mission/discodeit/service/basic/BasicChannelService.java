@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.config.cache.CacheConfig;
 import com.sprint.mission.discodeit.dto.projection.ChannelProjection;
 import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
@@ -24,6 +23,7 @@ import com.sprint.mission.discodeit.service.ChannelService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
@@ -36,6 +36,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.sprint.mission.discodeit.config.cache.DiscodeItCacheConfig.*;
 
 @Service
 @RequiredArgsConstructor
@@ -56,13 +57,15 @@ public class BasicChannelService implements ChannelService {
 
     private final ApplicationEventPublisher eventPublisher;
 
+    private final CacheManager cacheManager;
+
     /**
      * public 채널 생성
      * @param publicChannelCreate 채널 생성 요청 정보.
      * @return channelDto
      */
     @Override
-    @CacheEvict(cacheNames = CacheConfig.CHANNEL_CACHE, allEntries = true)
+    @CacheEvict(cacheNames = CHANNEL_CACHE, allEntries = true)
     @Transactional
     public ChannelDto createPublicChannel(PublicChannelCreateRequest publicChannelCreate){
         Channel channel = channelRepository.save(
@@ -87,7 +90,7 @@ public class BasicChannelService implements ChannelService {
      * @return channelDto
      */
     @Override
-    @CacheEvict(cacheNames = CacheConfig.CHANNEL_CACHE, allEntries = true)
+    @CacheEvict(cacheNames = CHANNEL_CACHE, allEntries = true)
     @Transactional
     public ChannelDto createPrivateChannel(PrivateChannelCreateRequest publicChannelCreate){
         Channel channel = channelRepository.save(new Channel(null, null, ChannelType.PRIVATE));
@@ -117,8 +120,8 @@ public class BasicChannelService implements ChannelService {
      * @param userId UUID
      * @return channelList List
      */
-    @Cacheable(CacheConfig.CHANNEL_CACHE)
     @Override
+    @Cacheable(value = CHANNEL_CACHE, key = "#userId", unless = "#result.isEmpty()")
     @Transactional
     public List<ChannelDto> findAllByUserID(UUID userId) {
         Map<UUID,ChannelProjection> channelMap = channelRepository.getChannelsFromUserId(userId);
@@ -132,6 +135,7 @@ public class BasicChannelService implements ChannelService {
         // Map<userid, userDto> - set UserDto for construct channelDto
         Map<UUID, UserDto> userDtos = getUserDtoFromUserIdList(userIdList);
 
+        log.debug(userDtos.toString());
 
         // convert channel projection to channelDto
         return channelMap.values().stream()
@@ -152,7 +156,7 @@ public class BasicChannelService implements ChannelService {
      * @return ChannelDto 채널 정보에 대한 반환값.
      */
     @Override
-    @CacheEvict(cacheNames = CacheConfig.CHANNEL_CACHE, allEntries = true)
+    @CacheEvict(cacheNames = CHANNEL_CACHE, allEntries = true)
     @Transactional
     public ChannelDto update(UUID id, PublicChannelUpdateRequest uci, Authentication authentication) {
         Channel channel = getChannelOrException(id);
@@ -180,7 +184,7 @@ public class BasicChannelService implements ChannelService {
      * @param authentication 현재 인증 사용자 인가정보.
      */
     @Override
-    @CacheEvict(cacheNames = CacheConfig.CHANNEL_CACHE, allEntries = true)
+    @CacheEvict(cacheNames = CHANNEL_CACHE, allEntries = true)
     @Transactional
     public void deleteChannel(UUID id,Authentication authentication) {
 

@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.security.jwt;
+package com.sprint.mission.discodeit.security.jwt.registry;
 
 
 import java.time.Duration;
@@ -10,6 +10,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.sprint.mission.discodeit.config.redis.RedisLockProvider;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.event.user.UserEvent;
+import com.sprint.mission.discodeit.security.jwt.JwtInformation;
+import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -18,6 +20,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Scheduled;
+
+import static com.sprint.mission.discodeit.config.cache.DiscodeItCacheConfig.*;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -34,7 +38,7 @@ public class RedisJwtRegistry implements JwtRegistry {
     private final RedisTemplate<String, Object> redisTemplate;
     private final RedisLockProvider redisLockProvider;
 
-    @CacheEvict(value = "users", key = "'all'")
+    @CacheEvict(value = USER_CACHE, key = "'all'")
     @Retryable(retryFor = RedisLockProvider.RedisLockAcquisitionException.class, maxAttempts = 10,
             backoff = @Backoff(delay = 100, multiplier = 2))
     @Override
@@ -59,7 +63,7 @@ public class RedisJwtRegistry implements JwtRegistry {
 
             // 토큰 리스트에 새 인증 토큰 추가.
             redisTemplate.opsForList().rightPush(userKey, jwtInformation);
-            redisTemplate.expire(userKey, DEFAULT_TTL);
+            redisTemplate.expire(userKey, DEFAULT_TTL); // 인증키 수명 세팅
             addTokenIndex(jwtInformation.getAccessToken(), jwtInformation.getRefreshToken());
 
         } finally {
@@ -73,7 +77,7 @@ public class RedisJwtRegistry implements JwtRegistry {
         );
     }
 
-    @CacheEvict(value = "users", key = "'all'")
+    @CacheEvict(value = USER_CACHE, key = "'all'")
     @Override
     public void invalidateJwtInformationByUserId(UUID userId) {
         String userKey = getUserKey(userId);
@@ -103,7 +107,6 @@ public class RedisJwtRegistry implements JwtRegistry {
     public boolean hasActiveJwtInformationByUserId(UUID userId) {
         String userKey = getUserKey(userId);
         Long size = redisTemplate.opsForList().size(userKey);
-        log.debug("@@@@@@@@@@@@@@@{}@@@@@@@@\n@@@@@@@{}@@@@@@",userKey,size);
         return size != null && size > 0;
     }
 
@@ -168,8 +171,8 @@ public class RedisJwtRegistry implements JwtRegistry {
                 for (int i = tokens.size() - 1; i >= 0; i--) {
                     if (tokens.get(i) instanceof JwtInformation jwtInfo) {
                         boolean isExpired =
-                                !jwtTokenProvider.isExpired(jwtInfo.getAccessToken()) ||
-                                        !jwtTokenProvider.isExpired(jwtInfo.getRefreshToken());
+                                jwtTokenProvider.isExpired(jwtInfo.getAccessToken()) ||
+                                        jwtTokenProvider.isExpired(jwtInfo.getRefreshToken());
 
                         if (isExpired) {
                             redisTemplate.opsForList().set(userKey, i, "EXPIRED");

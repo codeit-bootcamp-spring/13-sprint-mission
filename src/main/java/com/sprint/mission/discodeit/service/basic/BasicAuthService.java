@@ -11,7 +11,7 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 
 import com.sprint.mission.discodeit.security.CertificationChecker;
 import com.sprint.mission.discodeit.security.jwt.JwtInformation;
-import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
+import com.sprint.mission.discodeit.security.jwt.registry.JwtRegistry;
 import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.AuthService;

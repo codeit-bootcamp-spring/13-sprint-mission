@@ -73,7 +73,7 @@ public class DiscodeitUserDetailsService implements UserDetailsService {
                     )
                 );
 
-        UserDto dto = entityMapper.toDto(user, certificationChecker.online(userId));
+        UserDto dto = entityMapper.toDto(user, true);
 
         return new DiscodeitUserDetails(dto, user.getPassword());
     }

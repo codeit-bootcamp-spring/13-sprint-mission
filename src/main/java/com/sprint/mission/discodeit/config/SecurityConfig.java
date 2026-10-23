@@ -6,6 +6,8 @@ import com.sprint.mission.discodeit.config.redis.RedisLockProvider;
 import com.sprint.mission.discodeit.filter.JwtAuthenticationFilter;
 import com.sprint.mission.discodeit.security.CsrfTokenHandler;
 import com.sprint.mission.discodeit.security.jwt.*;
+import com.sprint.mission.discodeit.security.jwt.registry.JwtRegistry;
+import com.sprint.mission.discodeit.security.jwt.registry.RedisJwtRegistry;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;

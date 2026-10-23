@@ -44,10 +44,10 @@ public class WebSocketRegistry {
             if (channelList != null && !channelList.isEmpty()){
                 for (Object channelId : channelList){
                     redisTemplate.opsForSet().remove(channelPreFix + channelId, sessionId);
-                    log.debug("[WebSoket] 세션 삭제 - {}",sessionId);
+                    redisTemplate.opsForSet().remove(sessionPreFix + sessionId, channelId);
+                    log.debug("[WebSocket] 세션 삭제 - {}",sessionId);
                 }
             }
-            redisTemplate.opsForSet().remove(sessionPreFix + sessionId);
             localSessionList.remove(sessionId);
         } catch (RedisLockProvider.RedisLockAcquisitionException e) {
             log.error("[WebSocket] 세션 삭제 실패 - Redis lock handle fail");

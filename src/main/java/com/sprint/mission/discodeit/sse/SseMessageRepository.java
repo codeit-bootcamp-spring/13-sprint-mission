@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.sse;
 
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
@@ -9,7 +9,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-@Repository
+@Component
 // 클라이언트에서 ListEventId 를 전송해서 이벤트 유실 복원이 가능해야 함.
 public class SseMessageRepository {
     private final ConcurrentLinkedDeque<UUID> eventIdQueue = new ConcurrentLinkedDeque<>();

@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
 
-import com.sprint.mission.discodeit.config.cache.CacheConfig;
+import com.sprint.mission.discodeit.config.cache.DiscodeItCacheConfig;
 import com.sprint.mission.discodeit.dto.response.NotificationDto;
 import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
@@ -29,7 +29,7 @@ public class BasicNotificationService implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final EntityMapper entityMapper;
 
-    @Cacheable(CacheConfig.NOTIFICATION_CACHE)
+//    @Cacheable(DiscodeItCacheConfig.NOTIFICATION_CACHE)
     @Transactional(readOnly = true)
     @Override
     public List<NotificationDto> getNotifies(Authentication authentication){
@@ -43,7 +43,7 @@ public class BasicNotificationService implements NotificationService {
     }
 
     // 알림을 삭제하면, 현재 알림 목록 캐시를 비운다.
-    @CacheEvict(cacheNames = CacheConfig.NOTIFICATION_CACHE, allEntries = true)
+//    @CacheEvict(cacheNames = DiscodeItCacheConfig.NOTIFICATION_CACHE, allEntries = true)
     @Transactional
     @Override
     public void deleteNotify(UUID id, Authentication authentication){

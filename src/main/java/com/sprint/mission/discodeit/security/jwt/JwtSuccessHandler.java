@@ -2,9 +2,9 @@ package com.sprint.mission.discodeit.security.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.dto.response.JwtDto;
-import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.event.user.UserEvent;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
+import com.sprint.mission.discodeit.security.jwt.registry.JwtRegistry;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -20,7 +20,6 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.UUID;
 
 @Slf4j
 @Component
@@ -113,9 +112,6 @@ public class JwtSuccessHandler implements AuthenticationSuccessHandler {
                         refreshToken
                 )
         );
-
-        // 로그인 시, 유저 현황 새로고침
-        eventPublisher.publishEvent(new UserEvent("users.updated", principal.getUserDto()));
     }
 
     @Override

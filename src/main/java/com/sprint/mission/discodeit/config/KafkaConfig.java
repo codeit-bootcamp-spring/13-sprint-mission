@@ -14,6 +14,15 @@ import org.springframework.kafka.annotation.EnableKafka;
 @Slf4j
 public class KafkaConfig {
 
+    static public final String MESSAGE_EVENT = "discodeit.event.message";
+    static public final String ROLE_EVENT = "discodeit.event.role";
+    static public final String SYSTEM_EVENT = "discodeit.event.system";
+    static public final String USER_EVENT = "discodeit.event.user";
+    static public final String CHANNEL_EVENT = "discodeit.event.channel";
+    static public final String BINARY_EVENT = "discodeit.event.binary";
+    static public final String WEBSOCKET_EVENT = "discodeit.event.websocket";
+
+
     private final KafkaProperties kafkaProperties;
 
     @PostConstruct

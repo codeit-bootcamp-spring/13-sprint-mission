@@ -61,7 +61,7 @@ public class BasicReadStatusService implements ReadStatusService {
         ReadStatus readStatus;
 
         // already exist exception
-        if (readStatusRepository.existsByUserOrChannel(user,channel))
+        if (readStatusRepository.existsByUserAndChannel(user,channel))
             readStatus = readStatusRepository.findByUserIdAndChannelId(user.getId(),channel.getId());
         else
             readStatus = readStatusRepository.save(new ReadStatus(user, channel, request.lastReadAt()));

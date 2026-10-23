@@ -18,7 +18,11 @@ public class MDCLoggingInterceptor implements HandlerInterceptor {
     private static final String REQUEST_ID_HEADER = "Discodeit-Request-ID";
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Object handler
+    ) throws Exception {
         String requestId = UUID.randomUUID().toString().substring(0, 8);
 
         MDC.put(REQUEST_ID, requestId);
@@ -27,11 +31,15 @@ public class MDCLoggingInterceptor implements HandlerInterceptor {
         response.setHeader(REQUEST_ID_HEADER, requestId);
 
         return true;
-
     }
 
     @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, @Nullable Exception ex) throws Exception {
+    public void afterCompletion(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Object handler,
+            @Nullable Exception ex
+    ) throws Exception {
         MDC.clear();
     }
 }

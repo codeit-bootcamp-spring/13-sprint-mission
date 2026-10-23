@@ -2,7 +2,6 @@ package com.sprint.mission.discodeit.event;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sprint.mission.discodeit.config.cache.CacheConfig;
 import com.sprint.mission.discodeit.event.binarycontent.BinaryContentUpdateEvent;
 import com.sprint.mission.discodeit.event.channel.ChannelEvent;
 import com.sprint.mission.discodeit.event.message.MessageCreateEvent;
@@ -11,13 +10,15 @@ import com.sprint.mission.discodeit.event.system.SystemNotifyEvent;
 import com.sprint.mission.discodeit.event.user.UserEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.event.EventListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+
+
+import static com.sprint.mission.discodeit.config.KafkaConfig.*;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -33,8 +34,8 @@ public class KafkaProduceRequiredEventListener {
         log.debug("카프카 - 메세지 생성 이벤트 발행.");
         try {
             String payload = objectMapper.writeValueAsString(event);
-            kafkaTemplate.send("discodeit.event.message", payload);
-            kafkaTemplate.send("discodeit.event.websocket", payload);
+            kafkaTemplate.send(MESSAGE_EVENT, payload);
+            kafkaTemplate.send(WEBSOCKET_EVENT, payload);
         } catch (JsonProcessingException e){
             log.error("json 파싱 에러",e);
         }
@@ -45,7 +46,7 @@ public class KafkaProduceRequiredEventListener {
     public void on(RoleUpdateEvent event) {
         try{
             String payload = objectMapper.writeValueAsString(event);
-            kafkaTemplate.send("discodeit.event.role", payload);
+            kafkaTemplate.send(ROLE_EVENT, payload);
         }catch(JsonProcessingException e){
             log.error("json 파싱 에러",e);
         }
@@ -56,7 +57,7 @@ public class KafkaProduceRequiredEventListener {
     public void on(SystemNotifyEvent event) {
         try{
             String payload = objectMapper.writeValueAsString(event);
-            kafkaTemplate.send("discodeit.event.system", payload);
+            kafkaTemplate.send(SYSTEM_EVENT, payload);
         }catch(JsonProcessingException e){
             log.error("json 파싱 에러",e);
         }
@@ -64,11 +65,10 @@ public class KafkaProduceRequiredEventListener {
 
     @Async("notificationExecutor")
     @EventListener
-//    @CacheEvict(cacheNames = CacheConfig.USER_CACHE, allEntries = true) // 작동을 하나?
     public void on(UserEvent event) {
         try {
-            String payload = objectMapper.writeValueAsString(event.getData());
-            kafkaTemplate.send("discodeit.event.user", payload);
+            String payload = objectMapper.writeValueAsString(event);
+            kafkaTemplate.send(USER_EVENT, payload);
             log.debug("[UserEvent] {} 이벤트 발송- {}({})",
                     event.getName(),
                     event.getData().username(),
@@ -89,7 +89,7 @@ public class KafkaProduceRequiredEventListener {
 
         try {
             String payload = objectMapper.writeValueAsString(event);
-            kafkaTemplate.send("discodeit.event.binary", payload);
+            kafkaTemplate.send(BINARY_EVENT, payload);
             log.debug("[BinaryEvent] {} 이벤트 발송- {}({})",
                     event.getName(),
                     event.getDto().fileName(),
@@ -108,8 +108,8 @@ public class KafkaProduceRequiredEventListener {
     @EventListener
     public void on(ChannelEvent event) {
         try {
-            String payload = objectMapper.writeValueAsString(event.getData());
-            kafkaTemplate.send("discodeit.event.channel", payload);
+            String payload = objectMapper.writeValueAsString(event);
+            kafkaTemplate.send(CHANNEL_EVENT, payload);
             log.debug("[ChannelEvent] {} 이벤트 발송- {}({})",
                     event.getName(),
                     event.getData().id(),

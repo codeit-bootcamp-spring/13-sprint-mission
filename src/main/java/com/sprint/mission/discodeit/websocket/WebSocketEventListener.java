@@ -24,7 +24,7 @@ public class WebSocketEventListener {
                         ,channelId, event.getSessionId()));
 
         webSocketRegistry.unregister(event.getSessionId());
-        log.debug("[WebSocket] {} 세션 연결 끊김", webSocketRegistry);
+        log.debug("[WebSocket] {} 세션 연결 끊김", event.getSessionId());
     }
 
 }
