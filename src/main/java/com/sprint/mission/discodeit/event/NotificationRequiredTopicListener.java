@@ -2,8 +2,9 @@ package com.sprint.mission.discodeit.event;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.dto.response.MessageDto;
+import com.sprint.mission.discodeit.dto.response.NotificationDto;
 import com.sprint.mission.discodeit.entity.Notification;
-import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.event.binarycontent.BinaryContentUpdateEvent;
 import com.sprint.mission.discodeit.event.channel.ChannelEvent;
@@ -12,10 +13,11 @@ import com.sprint.mission.discodeit.event.role.RoleUpdateEvent;
 import com.sprint.mission.discodeit.event.system.SystemNotifyEvent;
 import com.sprint.mission.discodeit.event.user.UserEvent;
 import com.sprint.mission.discodeit.mapper.EntityMapper;
-import com.sprint.mission.discodeit.repository.NotificationRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.security.role.Role;
+import com.sprint.mission.discodeit.service.NotificationService;
+import com.sprint.mission.discodeit.sse.SseEmitterRepository;
 import com.sprint.mission.discodeit.sse.SseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +28,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 import static com.sprint.mission.discodeit.config.KafkaConfig.*;
@@ -41,8 +42,9 @@ import static com.sprint.mission.discodeit.config.cache.DiscodeItCacheConfig.*;
 public class NotificationRequiredTopicListener {
     private final ObjectMapper objectMapper;
     private final ReadStatusRepository readStatusRepository;
-    private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
+    private final SseEmitterRepository sseEmitterRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     private final EntityMapper entityMapper;
@@ -58,46 +60,33 @@ public class NotificationRequiredTopicListener {
             MessageCreateEvent event = objectMapper.readValue(kafkaEvent, MessageCreateEvent.class);
             log.debug("[MessageEvent] - 메세지 생성 이벤트 시작. 메세지 id : {}", event.message().id());
 
-            // 메세지 생성 이후,
-            List<ReadStatus> readStatuses = readStatusRepository.findAllByChannelIdWithStatusOn(event.message().channelId(), true);
+            List<UUID> targetUsers = readStatusRepository
+                    .findAllByChannelIdWithStatusOn(event.message().channelId(), true)
+                    .stream()
+                    .map(rs -> rs.getUser().getId()).toList();
 
-            List<Notification> notifications = readStatuses.stream()
-                    .map(readStatus -> getNotificationFromUser(event,readStatus.getUser()))
-                    .filter(Objects::nonNull)
-                    .toList();
-
-            // todo - 모든 서버에 알림이 생성되는 만큼, 알림이 서버갯수만큼 배수로 생김.
-            //  로직을 이벤트 리스너가 아닌 이벤트 발생쪽에 생성한다.
-
-            log.debug("[MessageEvent] - 알림 대상 : {} 건", notifications.size());
-
-            notificationRepository.saveAll(notifications);
-
-            notifications.forEach(notification ->
-                    sseService.send(
-                            List.of(notification.getReceiverId()),
-                            "notifications.created",
-                            entityMapper.toDto(notification)
-                    ));
-
+            sendMessage(targetUsers, event.message());
         } catch (JsonProcessingException e) {
             log.warn("[{}] - 메세지 생성 알림 발송 실패","MessageEvent");
             throw new RuntimeException(e);
         }
     }
-    private Notification getNotificationFromUser(MessageCreateEvent event, User user){
-        if (user.getId().equals(event.message().author().id()))
-            // 작성자 == 유저 라면 알림 생략
-            return null;
-        else{
-            log.debug("[MessageEvent] - 아이디 유저 체크 - 작성자 : {}, 알림 대상 : {}", event.message().author().id(),user.getId());
-            return new Notification(
-                    user.getId(),   // 이 친구가 대상자 인데, 트랜젝션에 의해 값이 사라진다?
-                    user.getUsername(),
-                    event.message().content()
-            );
+
+    private void sendMessage(List<UUID> targetUsers, MessageDto messageDto) {
+        for (UUID userId : targetUsers) {
+            if (!userId.equals(messageDto.author().id())){
+                NotificationDto noty = notificationService.createNotifies(
+                        userId,
+                        messageDto.author().username(),
+                        messageDto.content());
+                if(sseEmitterRepository.isRegistered(userId))
+                    sseService.send(List.of(userId),"notifications.created",noty);
+            }
         }
+
     }
+
+
 
     @KafkaListener(topics = ROLE_EVENT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)

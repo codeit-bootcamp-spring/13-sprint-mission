@@ -1,19 +1,20 @@
 package com.sprint.mission.discodeit.service.basic;
 
 
-import com.sprint.mission.discodeit.config.cache.DiscodeItCacheConfig;
+import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.NotificationDto;
 import com.sprint.mission.discodeit.entity.Notification;
+import com.sprint.mission.discodeit.entity.ReadStatus;
+import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.exception.ExceptionCode;
 import com.sprint.mission.discodeit.mapper.EntityMapper;
 import com.sprint.mission.discodeit.repository.NotificationRepository;
+import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,10 +27,33 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BasicNotificationService implements NotificationService {
 
+    private final ReadStatusRepository readStatusRepository;
     private final NotificationRepository notificationRepository;
     private final EntityMapper entityMapper;
 
-//    @Cacheable(DiscodeItCacheConfig.NOTIFICATION_CACHE)
+
+    @Transactional
+    @Override
+    public NotificationDto createNotifies(UUID receiver, String title, String content) {
+        Notification noty = notificationRepository.save(new Notification(receiver, title, content));
+        return entityMapper.toDto(noty);
+    }
+
+    private Notification getNotificationFromUser(MessageDto messageDto, User user){
+        if (user.getId().equals(messageDto.author().id()))
+            // 작성자 == 유저 라면 알림 생략
+            return null;
+        else{
+            log.debug("[MessageEvent] - 아이디 유저 체크 - 작성자 : {}, 알림 대상 : {}", messageDto.author().id(),user.getId());
+            return new Notification(
+                    user.getId(),   // 이 친구가 대상자 인데, 트랜젝션에 의해 값이 사라진다?
+                    user.getUsername(),
+                    messageDto.content()
+            );
+        }
+    }
+
+    //    @Cacheable(DiscodeItCacheConfig.NOTIFICATION_CACHE)
     @Transactional(readOnly = true)
     @Override
     public List<NotificationDto> getNotifies(Authentication authentication){

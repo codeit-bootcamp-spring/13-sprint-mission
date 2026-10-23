@@ -31,6 +31,10 @@ public class SseEmitterRepository {
         return result;
     }
 
+    public boolean isRegistered(UUID receiverId) {
+        return data.containsKey(receiverId);
+    }
+
     public List<SseEmitter> findAll(){
         return data.values().stream().flatMap(List::stream).toList();
     }

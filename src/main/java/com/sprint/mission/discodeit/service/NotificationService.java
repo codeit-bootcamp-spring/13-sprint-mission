@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface NotificationService {
+    NotificationDto createNotifies(UUID receiver, String title, String content);
     List<NotificationDto> getNotifies(Authentication authentication);
     void deleteNotify(UUID id, Authentication authentication);
 }
