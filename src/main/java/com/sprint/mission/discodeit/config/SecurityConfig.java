@@ -1,13 +1,21 @@
 package com.sprint.mission.discodeit.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.exception.ErrorCode;
+import com.sprint.mission.discodeit.exception.ErrorResponse;
 import com.sprint.mission.discodeit.security.LoginFailureHandler;
 import com.sprint.mission.discodeit.security.LoginSuccessHandler;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -27,7 +35,8 @@ public class SecurityConfig {
   public SecurityFilterChain filterChain(
       HttpSecurity http,
       LoginSuccessHandler loginSuccessHandler,
-      LoginFailureHandler loginFailureHandler
+      LoginFailureHandler loginFailureHandler,
+      ObjectMapper objectMapper
   ) throws Exception {
     http
         .csrf(csrf -> csrf
@@ -70,6 +79,14 @@ public class SecurityConfig {
             .logoutSuccessHandler(
                 new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT) // 204 반환
             )
+        )
+        .exceptionHandling(ex -> ex
+            .authenticationEntryPoint((request, response, exception) ->
+                writeSecurityError(response, objectMapper, ErrorCode.AUTHENTICATION_REQUIRED,
+                    exception.getClass().getSimpleName())) // 인증되지 않은 사용자 처리
+            .accessDeniedHandler((request, response, exception) ->
+                writeSecurityError(response, objectMapper, ErrorCode.ACCESS_DENIED,
+                    exception.getClass().getSimpleName())) // 인증은 되었지만 권한이 없는 사용자 처리
         );
 
     return http.build();
@@ -78,5 +95,21 @@ public class SecurityConfig {
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder(); // 비밀번호를 단방향 해시로 인코딩 / 검증하는 데 사용되는 PasswordEncoder 빈을 생성
+  }
+
+  private static void writeSecurityError(HttpServletResponse response, ObjectMapper objectMapper,
+      ErrorCode errorCode, String exceptionType) throws IOException {
+    ErrorResponse errorResponse = ErrorResponse.builder()
+        .code(errorCode.name())
+        .message(errorCode.getMessage())
+        .details(Map.of())
+        .exceptionType(exceptionType)
+        .status(errorCode.getStatus().value())
+        .build();
+
+    response.setStatus(errorCode.getStatus().value());
+    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+    objectMapper.writeValue(response.getWriter(), errorResponse);
   }
 }

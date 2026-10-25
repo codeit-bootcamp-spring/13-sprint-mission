@@ -25,6 +25,8 @@ public enum ErrorCode { // 예외 코드명, 메시지 정의
   DUPLICATE_USERSTATUS(HttpStatus.BAD_REQUEST, "사용자 상태가 이미 존재함"),
 
   LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "로그인 실패"),
+  ACCESS_DENIED(HttpStatus.FORBIDDEN, "접근 권한 없음"),
+  AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "인증 필요"),
 
   NO_CHANGES(HttpStatus.BAD_REQUEST, "변경사항 없음"),
 

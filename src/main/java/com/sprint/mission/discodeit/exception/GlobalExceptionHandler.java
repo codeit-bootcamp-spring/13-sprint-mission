@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -82,6 +83,22 @@ public class GlobalExceptionHandler {
                 .details(Map.of())
                 .exceptionType(e.getClass().getSimpleName())
                 .status(ErrorCode.UNKNOWN_ERROR.getStatus().value())
+                .build()
+        );
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex) {
+    log.warn("접근 권한 거부: {}", ex.getMessage());
+    return ResponseEntity
+        .status(ErrorCode.ACCESS_DENIED.getStatus()) // 적절한 권한이 없는 경우 403 Forbidden 상태 코드 반환
+        .body(
+            ErrorResponse.builder()
+                .code(ErrorCode.ACCESS_DENIED.name())
+                .message(ErrorCode.ACCESS_DENIED.getMessage())
+                .details(Map.of())
+                .exceptionType(ex.getClass().getSimpleName())
+                .status(ErrorCode.ACCESS_DENIED.getStatus().value())
                 .build()
         );
   }
