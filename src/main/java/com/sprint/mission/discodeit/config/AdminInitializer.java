@@ -29,7 +29,7 @@ public class AdminInitializer implements ApplicationRunner {
 
   @Transactional
   @Override
-  public void run(ApplicationArguments args) throws Exception {
+  public void run(ApplicationArguments args) {
     boolean isAdmin = userRepository.existsByRole(Role.ADMIN);
 
     // 어드민 계정이 없는 경우에만 초기 관리자 계정 생성
