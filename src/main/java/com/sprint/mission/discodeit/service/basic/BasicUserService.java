@@ -6,6 +6,9 @@ import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
+import com.sprint.mission.discodeit.event.UserCreatedEvent;
+import com.sprint.mission.discodeit.event.UserDeletedEvent;
+import com.sprint.mission.discodeit.event.UserUpdatedEvent;
 import com.sprint.mission.discodeit.exception.file.FileStorageException;
 import com.sprint.mission.discodeit.exception.user.UserEmailAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNameAlreadyExistsException;
@@ -80,7 +83,13 @@ public class BasicUserService implements UserService {
 
         log.info("유저 생성 완료");
 
-        return userMapper.toDto(user, false);
+        UserDto userDto = userMapper.toDto(user, false);
+
+        applicationEventPublisher.publishEvent(
+                new UserCreatedEvent(userDto)
+        );
+
+        return userDto;
     }
 
     @Override
@@ -159,7 +168,14 @@ public class BasicUserService implements UserService {
         log.info("유저 수정 완료");
 
         boolean online = isOnline(userId);
-        return userMapper.toDto(userTemp, online);
+
+        UserDto userDto = userMapper.toDto(userTemp, online);
+
+        applicationEventPublisher.publishEvent(
+                new UserUpdatedEvent(userDto)
+        );
+
+        return userDto;
     }
 
     @Override
@@ -178,6 +194,12 @@ public class BasicUserService implements UserService {
                     log.warn("유저 삭제 실패: 해당 유저는 데이터파일에 존재하지 않습니다.");
                     return new UserNotFoundException(userId);
                 });
+
+        // 삭제 전 유저 정보 저장
+        UserDto userDto = userMapper.toDto(
+                userTemp,
+                isOnline(userId)
+        );
 
         //유저 상태 검색 및 삭제
         //UserStatus는 cascade로 함께 삭제되므로 별도 삭제하지 않음
@@ -198,6 +220,10 @@ public class BasicUserService implements UserService {
         log.info("유저: {}가 삭제됨.", userTemp.getUsername());
 
         log.info("유저 삭제 완료");
+
+        applicationEventPublisher.publishEvent(
+                new UserDeletedEvent(userDto)
+        );
     }
 
     //binaryContent 생성

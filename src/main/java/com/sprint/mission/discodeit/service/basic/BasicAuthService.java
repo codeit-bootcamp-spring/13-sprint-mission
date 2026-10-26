@@ -41,15 +41,20 @@ public class BasicAuthService implements AuthService {
                 .orElseThrow(() -> new UserNotFoundException(request.userId()));
 
         Role oldRole = user.getRole();
+        Role newRole = request.newRole();
 
-        user.updateRole(request.newRole());
+        if (oldRole != newRole) {
+            user.updateRole(newRole);
 
-        applicationEventPublisher.publishEvent(new RoleUpdatedEvent(user.getId(), oldRole, request.newRole()));
+            applicationEventPublisher.publishEvent(new RoleUpdatedEvent(user.getId(), oldRole, newRole));
 
-        // 권한 변경 후 기존 JWT를 전부 무효화
-        jwtRegistry.invalidateJwtInformationByUserId(user.getId());
+            // 권한 변경 후 기존 JWT를 전부 무효화
+            jwtRegistry.invalidateJwtInformationByUserId(user.getId());
+        }
 
-        return userMapper.toDto(user, false);
+        boolean online = jwtRegistry.hasActiveJwtInformationByUserId(user.getId());
+
+        return userMapper.toDto(user, online);
     }
 
     @Override

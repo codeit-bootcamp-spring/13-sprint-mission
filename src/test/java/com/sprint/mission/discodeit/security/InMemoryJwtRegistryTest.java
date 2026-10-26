@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.UUID;
 
@@ -21,6 +22,9 @@ class InMemoryJwtRegistryTest {
     @Mock
     private JwtTokenProvider jwtTokenProvider;
 
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
+
     private InMemoryJwtRegistry jwtRegistry;
 
     private UUID userId;
@@ -29,7 +33,10 @@ class InMemoryJwtRegistryTest {
     @BeforeEach
     void setUp() {
         jwtRegistry =
-                new InMemoryJwtRegistry(jwtTokenProvider);
+                new InMemoryJwtRegistry(
+                        jwtTokenProvider,
+                        applicationEventPublisher
+                );
 
         userId = UUID.randomUUID();
 

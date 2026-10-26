@@ -29,6 +29,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -121,6 +122,22 @@ public class BasicMessageService implements MessageService {
                 .map(messageMapper::toDto);
 
         return pageResponseMapper.fromSlice(messageDtoSlice);
+    }
+
+    // WebSocketRequiredEventListener에서 AFTER_COMMIT 이벤트 처리 시 기존 트랜잭션과 분리된 새 트랜잭션에서 조회하도록
+    @Override
+    @Transactional(
+            readOnly = true,
+            propagation = Propagation.REQUIRES_NEW
+    )
+    public MessageDto getMessage(UUID messageId) {//메시지 검색
+        Message messageTemp = messageRepository.findById(messageId)
+                .orElseThrow(() -> {
+                    log.warn("메시지 조회 실패: 해당 메시지는 데이터파일에 존재하지 않습니다.");
+                    return new MessageNotFoundException(messageId);
+                });
+
+        return messageMapper.toDto(messageTemp);
     }
 
     @Override

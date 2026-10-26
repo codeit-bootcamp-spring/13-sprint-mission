@@ -83,6 +83,9 @@ class BasicAuthServiceTest {
             given(user.getRole())
                     .willReturn(Role.USER);
 
+            given(jwtRegistry.hasActiveJwtInformationByUserId(userId))
+                    .willReturn(false);
+
             given(userMapper.toDto(user, false))
                     .willReturn(expectedResponse);
 
@@ -108,6 +111,9 @@ class BasicAuthServiceTest {
             then(jwtRegistry).should()
                     .invalidateJwtInformationByUserId(userId);
 
+            then(jwtRegistry).should()
+                    .hasActiveJwtInformationByUserId(userId);
+
             ArgumentCaptor<RoleUpdatedEvent> eventCaptor =
                     ArgumentCaptor.forClass(RoleUpdatedEvent.class);
 
@@ -127,6 +133,74 @@ class BasicAuthServiceTest {
 
             then(userMapper).should()
                     .toDto(user, false);
+        }
+
+        @Test
+        @DisplayName("동일한 권한 요청 시 권한 수정, 이벤트 발행, JWT 무효화를 수행하지 않음")
+        void update_same_role() {
+            // given
+            UUID userId = UUID.randomUUID();
+
+            UserRoleUpdateRequest request = new UserRoleUpdateRequest(
+                    userId,
+                    Role.USER
+            );
+
+            User user = mock(User.class);
+
+            UserDto expectedResponse = new UserDto(
+                    userId,
+                    "user1",
+                    "user1@test.com",
+                    null,
+                    true,
+                    Role.USER
+            );
+
+            given(userRepository.findById(userId))
+                    .willReturn(Optional.of(user));
+
+            given(user.getId())
+                    .willReturn(userId);
+
+            given(user.getRole())
+                    .willReturn(Role.USER);
+
+            given(jwtRegistry.hasActiveJwtInformationByUserId(userId))
+                    .willReturn(true);
+
+            given(userMapper.toDto(user, true))
+                    .willReturn(expectedResponse);
+
+            // when
+            UserDto result = authService.updateRole(request);
+
+            // then
+            assertThat(result)
+                    .isEqualTo(expectedResponse);
+
+            assertThat(result.role())
+                    .isEqualTo(Role.USER);
+
+            assertThat(result.online())
+                    .isTrue();
+
+            then(userRepository).should()
+                    .findById(userId);
+
+            then(user).should(never())
+                    .updateRole(any(Role.class));
+
+            then(jwtRegistry).should(never())
+                    .invalidateJwtInformationByUserId(any(UUID.class));
+
+            then(eventPublisher).shouldHaveNoInteractions();
+
+            then(jwtRegistry).should()
+                    .hasActiveJwtInformationByUserId(userId);
+
+            then(userMapper).should()
+                    .toDto(user, true);
         }
 
         @Test

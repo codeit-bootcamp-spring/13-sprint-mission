@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.config;
 
 import com.sprint.mission.discodeit.security.*;
+import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -43,8 +44,13 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
+                        .ignoringRequestMatchers("/ws/**")
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(request ->
+                                request.getDispatcherType() == DispatcherType.ASYNC
+                                        && "/api/sse".equals(request.getServletPath())
+                        ).permitAll()
                         .requestMatchers(
                                 "/api/auth/csrf-token",
                                 "/api/auth/login",
@@ -58,7 +64,8 @@ public class SecurityConfig {
                                 "/assets/**",
                                 "/favicon.ico",
                                 "/swagger-ui/**",
-                                "/actuator/**"
+                                "/actuator/**",
+                                "/ws/**"  // WebSocket 및 SockJS 연결 경로
                         ).permitAll()
                         .anyRequest().authenticated()
 
