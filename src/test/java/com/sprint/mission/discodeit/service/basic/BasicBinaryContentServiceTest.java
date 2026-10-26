@@ -7,6 +7,10 @@ import com.sprint.mission.discodeit.entity.BinaryContentStatus;
 import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
 import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
+import com.sprint.mission.discodeit.service.SseService;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -15,10 +19,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.time.Instant;
-import java.util.Optional;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -37,6 +37,9 @@ class BasicBinaryContentServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private SseService sseService;
+
     @InjectMocks
     private BasicBinaryContentService binaryContentService;
 
@@ -45,38 +48,48 @@ class BasicBinaryContentServiceTest {
         UUID binaryContentId = UUID.randomUUID();
         byte[] bytes = "test-content".getBytes();
 
-        BinaryContentRequest request = new BinaryContentRequest(
-                "test.txt",
-                (long) bytes.length,
-                "text/plain",
-                bytes
-        );
+        BinaryContentRequest request =
+                new BinaryContentRequest(
+                        "test.txt",
+                        (long) bytes.length,
+                        "text/plain",
+                        bytes
+                );
 
-        BinaryContent savedBinaryContent = new BinaryContent(
-                request.fileName(),
-                request.size(),
-                request.contentType()
-        );
+        BinaryContent savedBinaryContent =
+                new BinaryContent(
+                        request.fileName(),
+                        request.size(),
+                        request.contentType()
+                );
+
         ReflectionTestUtils.setField(
                 savedBinaryContent,
                 "id",
                 binaryContentId
         );
 
-        BinaryContentResponse expected = new BinaryContentResponse(
-                binaryContentId,
-                Instant.now(),
-                request.fileName(),
-                request.size(),
-                request.contentType(),
-                BinaryContentStatus.PROCESSING,
-                null
-        );
+        BinaryContentResponse expected =
+                new BinaryContentResponse(
+                        binaryContentId,
+                        Instant.now(),
+                        request.fileName(),
+                        request.size(),
+                        request.contentType(),
+                        BinaryContentStatus.PROCESSING
+                );
 
-        given(binaryContentRepository.save(any(BinaryContent.class)))
-                .willReturn(savedBinaryContent);
-        given(binaryContentMapper.toDto(savedBinaryContent))
-                .willReturn(expected);
+        given(
+                binaryContentRepository.save(
+                        any(BinaryContent.class)
+                )
+        ).willReturn(savedBinaryContent);
+
+        given(
+                binaryContentMapper.toDto(
+                        savedBinaryContent
+                )
+        ).willReturn(expected);
 
         BinaryContentResponse actual =
                 binaryContentService.create(request);
@@ -88,9 +101,12 @@ class BasicBinaryContentServiceTest {
 
         assertThat(actual).isEqualTo(expected);
 
-        then(binaryContentRepository).should()
+        then(binaryContentRepository)
+                .should()
                 .save(any(BinaryContent.class));
-        then(eventPublisher).should()
+
+        then(eventPublisher)
+                .should()
                 .publishEvent(eventCaptor.capture());
 
         BinaryContentCreatedEvent publishedEvent =
@@ -103,17 +119,41 @@ class BasicBinaryContentServiceTest {
     }
 
     @Test
-    void updateStatus_바이너리_콘텐츠의_상태를_변경한다() {
+    void updateStatus_상태를_변경하고_SSE로_전송한다() {
         UUID binaryContentId = UUID.randomUUID();
 
-        BinaryContent binaryContent = new BinaryContent(
-                "test.txt",
-                12L,
-                "text/plain"
+        BinaryContent binaryContent =
+                new BinaryContent(
+                        "test.txt",
+                        12L,
+                        "text/plain"
+                );
+
+        ReflectionTestUtils.setField(
+                binaryContent,
+                "id",
+                binaryContentId
         );
 
-        given(binaryContentRepository.findById(binaryContentId))
-                .willReturn(Optional.of(binaryContent));
+        BinaryContentResponse response =
+                new BinaryContentResponse(
+                        binaryContentId,
+                        Instant.now(),
+                        "test.txt",
+                        12L,
+                        "text/plain",
+                        BinaryContentStatus.SUCCESS
+                );
+
+        given(
+                binaryContentRepository.findById(
+                        binaryContentId
+                )
+        ).willReturn(Optional.of(binaryContent));
+
+        given(
+                binaryContentMapper.toDto(binaryContent)
+        ).willReturn(response);
 
         binaryContentService.updateStatus(
                 binaryContentId,
@@ -122,5 +162,12 @@ class BasicBinaryContentServiceTest {
 
         assertThat(binaryContent.getStatus())
                 .isEqualTo(BinaryContentStatus.SUCCESS);
+
+        then(sseService)
+                .should()
+                .broadcast(
+                        "binaryContents.updated",
+                        response
+                );
     }
 }

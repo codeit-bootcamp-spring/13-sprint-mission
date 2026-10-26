@@ -3,18 +3,19 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.response.NotificationDto;
 import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.exception.notification.NotificationAccessDeniedException;
 import com.sprint.mission.discodeit.exception.notification.NotificationNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.NotificationMapper;
 import com.sprint.mission.discodeit.repository.NotificationRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.NotificationService;
+import com.sprint.mission.discodeit.service.SseService;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,7 @@ public class BasicNotificationService implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final NotificationMapper notificationMapper;
+    private final SseService sseService;
 
     @Override
     @CacheEvict(cacheNames = "notifications", key = "#receiverId")
@@ -48,7 +50,16 @@ public class BasicNotificationService implements NotificationService {
         Notification savedNotification =
                 notificationRepository.save(notification);
 
-        return notificationMapper.toDto(savedNotification);
+        NotificationDto response =
+                notificationMapper.toDto(savedNotification);
+
+        sseService.send(
+                List.of(receiverId),
+                "notifications.created",
+                response
+        );
+
+        return response;
     }
 
     @Override
@@ -81,8 +92,9 @@ public class BasicNotificationService implements NotificationService {
         if (!notification.getReceiver()
                 .getId()
                 .equals(requesterId)) {
-            throw new AccessDeniedException(
-                    "본인의 알림만 확인할 수 있습니다."
+            throw new NotificationAccessDeniedException(
+                    notificationId,
+                    requesterId
             );
         }
 

@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -51,6 +52,7 @@ public class BasicMessageService implements MessageService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
+    @CacheEvict(cacheNames = "channels", allEntries = true)
     public MessageResponse create(
             MessageCreateRequest dto,
             List<BinaryContentRequest> attachmentDtos
@@ -59,6 +61,7 @@ public class BasicMessageService implements MessageService {
                 dto.binaryContentIds() == null
                         ? 0
                         : dto.binaryContentIds().size();
+
         int newAttachmentCount =
                 attachmentDtos == null
                         ? 0
@@ -91,10 +94,14 @@ public class BasicMessageService implements MessageService {
                 author
         );
 
-        addExistingAttachments(message, dto.binaryContentIds());
+        addExistingAttachments(
+                message,
+                dto.binaryContentIds()
+        );
         addNewAttachments(message, attachmentDtos);
 
-        Message savedMessage = messageRepository.save(message);
+        Message savedMessage =
+                messageRepository.save(message);
 
         eventPublisher.publishEvent(
                 new MessageCreatedEvent(savedMessage.getId())
@@ -124,7 +131,9 @@ public class BasicMessageService implements MessageService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<MessageResponse> findAllByChannelId(UUID channelId) {
+    public List<MessageResponse> findAllByChannelId(
+            UUID channelId
+    ) {
         return messageRepository
                 .findAllByChannelId(channelId)
                 .stream()
@@ -141,12 +150,19 @@ public class BasicMessageService implements MessageService {
         Pageable pageable = PageRequest.of(
                 page,
                 MESSAGE_PAGE_SIZE,
-                Sort.by(Sort.Direction.DESC, "createdAt")
+                Sort.by(
+                        Sort.Direction.DESC,
+                        "createdAt"
+                )
         );
 
-        Slice<MessageResponse> messages = messageRepository
-                .findAllByChannelId(channelId, pageable)
-                .map(messageMapper::toDto);
+        Slice<MessageResponse> messages =
+                messageRepository
+                        .findAllByChannelId(
+                                channelId,
+                                pageable
+                        )
+                        .map(messageMapper::toDto);
 
         return pageResponseMapper.toDto(messages);
     }
@@ -181,7 +197,8 @@ public class BasicMessageService implements MessageService {
             Message message,
             List<UUID> binaryContentIds
     ) {
-        if (binaryContentIds == null || binaryContentIds.isEmpty()) {
+        if (binaryContentIds == null
+                || binaryContentIds.isEmpty()) {
             return;
         }
 
@@ -197,21 +214,28 @@ public class BasicMessageService implements MessageService {
             Message message,
             List<BinaryContentRequest> attachmentDtos
     ) {
-        if (attachmentDtos == null || attachmentDtos.isEmpty()) {
+        if (attachmentDtos == null
+                || attachmentDtos.isEmpty()) {
             return;
         }
 
-        for (BinaryContentRequest attachmentDto : attachmentDtos) {
-            BinaryContent attachment = new BinaryContent(
-                    attachmentDto.fileName(),
-                    attachmentDto.size(),
-                    attachmentDto.contentType()
-            );
+        for (BinaryContentRequest attachmentDto
+                : attachmentDtos) {
+            BinaryContent attachment =
+                    new BinaryContent(
+                            attachmentDto.fileName(),
+                            attachmentDto.size(),
+                            attachmentDto.contentType()
+                    );
 
             BinaryContent savedAttachment =
-                    binaryContentRepository.save(attachment);
+                    binaryContentRepository.save(
+                            attachment
+                    );
 
-            message.getAttachments().add(savedAttachment);
+            message.getAttachments().add(
+                    savedAttachment
+            );
 
             eventPublisher.publishEvent(
                     new BinaryContentCreatedEvent(

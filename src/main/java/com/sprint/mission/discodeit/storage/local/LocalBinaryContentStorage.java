@@ -56,17 +56,6 @@ public class LocalBinaryContentStorage
             byte[] bytes
     ) {
         try {
-            Thread.sleep(3000);
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-
-            throw new RuntimeException(
-                    "Thread interrupted while simulating delay",
-                    exception
-            );
-        }
-
-        try {
             Files.write(
                     resolvePath(binaryContentId),
                     bytes,

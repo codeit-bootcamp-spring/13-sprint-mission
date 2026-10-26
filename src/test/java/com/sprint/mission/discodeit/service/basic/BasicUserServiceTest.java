@@ -1,5 +1,12 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
+
 import com.sprint.mission.discodeit.dto.request.BinaryContentRequest;
 import com.sprint.mission.discodeit.dto.request.UserRequest;
 import com.sprint.mission.discodeit.dto.response.UserResponse;
@@ -13,6 +20,9 @@ import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.service.SseService;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -22,16 +32,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class BasicUserServiceTest {
@@ -53,6 +53,9 @@ class BasicUserServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private SseService sseService;
 
     @InjectMocks
     private BasicUserService userService;
@@ -97,6 +100,8 @@ class BasicUserServiceTest {
                 .save(any(UserStatus.class));
         then(binaryContentRepository).should(never()).save(any());
         then(eventPublisher).shouldHaveNoInteractions();
+        then(sseService).should()
+                .broadcast("users.created", expected);
     }
 
     @Test
@@ -163,6 +168,9 @@ class BasicUserServiceTest {
 
         assertThat(event.binaryContentId()).isEqualTo(profileId);
         assertThat(event.bytes()).isEqualTo(profileBytes);
+
+        then(sseService).should()
+                .broadcast("users.created", expected);
     }
 
     @Test
@@ -184,6 +192,7 @@ class BasicUserServiceTest {
         then(userRepository).should(never()).save(any(User.class));
         then(userStatusRepository).shouldHaveNoInteractions();
         then(eventPublisher).shouldHaveNoInteractions();
+        then(sseService).shouldHaveNoInteractions();
     }
 
     @Test
@@ -209,7 +218,8 @@ class BasicUserServiceTest {
 
         given(userRepository.findById(userId))
                 .willReturn(Optional.of(user));
-        given(userMapper.toDto(user)).willReturn(expected);
+        given(userMapper.toDto(user))
+                .willReturn(expected);
 
         UserResponse actual =
                 userService.update(userId, request, null);
@@ -224,6 +234,8 @@ class BasicUserServiceTest {
         then(passwordEncoder).shouldHaveNoInteractions();
         then(userMapper).should().toDto(user);
         then(eventPublisher).shouldHaveNoInteractions();
+        then(sseService).should()
+                .broadcast("users.updated", expected);
     }
 
     @Test
@@ -272,7 +284,8 @@ class BasicUserServiceTest {
                 .willReturn(Optional.of(user));
         given(binaryContentRepository.save(any(BinaryContent.class)))
                 .willReturn(savedProfile);
-        given(userMapper.toDto(user)).willReturn(expected);
+        given(userMapper.toDto(user))
+                .willReturn(expected);
 
         UserResponse actual =
                 userService.update(
@@ -295,6 +308,9 @@ class BasicUserServiceTest {
 
         assertThat(event.binaryContentId()).isEqualTo(profileId);
         assertThat(event.bytes()).isEqualTo(profileBytes);
+
+        then(sseService).should()
+                .broadcast("users.updated", expected);
     }
 
     @Test
@@ -322,7 +338,8 @@ class BasicUserServiceTest {
                 .willReturn(Optional.of(user));
         given(passwordEncoder.encode("new-password"))
                 .willReturn("encoded-new-password");
-        given(userMapper.toDto(user)).willReturn(expected);
+        given(userMapper.toDto(user))
+                .willReturn(expected);
 
         UserResponse actual =
                 userService.update(userId, request, null);
@@ -333,6 +350,8 @@ class BasicUserServiceTest {
 
         then(passwordEncoder).should().encode("new-password");
         then(eventPublisher).shouldHaveNoInteractions();
+        then(sseService).should()
+                .broadcast("users.updated", expected);
     }
 
     @Test
@@ -357,6 +376,7 @@ class BasicUserServiceTest {
         then(passwordEncoder).shouldHaveNoInteractions();
         then(userMapper).shouldHaveNoInteractions();
         then(eventPublisher).shouldHaveNoInteractions();
+        then(sseService).shouldHaveNoInteractions();
     }
 
     @Test
@@ -369,8 +389,15 @@ class BasicUserServiceTest {
                 "encoded-password"
         );
 
+        UserResponse expected = userResponse(
+                "codeit",
+                "codeit@example.com"
+        );
+
         given(userRepository.findById(userId))
                 .willReturn(Optional.of(user));
+        given(userMapper.toDto(user))
+                .willReturn(expected);
 
         userService.delete(userId);
 
@@ -379,6 +406,8 @@ class BasicUserServiceTest {
         then(binaryContentRepository)
                 .should(never())
                 .deleteById(any());
+        then(sseService).should()
+                .broadcast("users.deleted", expected);
     }
 
     @Test
@@ -396,6 +425,7 @@ class BasicUserServiceTest {
         then(userRepository)
                 .should(never())
                 .delete(any(User.class));
+        then(sseService).shouldHaveNoInteractions();
     }
 
     private UserResponse userResponse(

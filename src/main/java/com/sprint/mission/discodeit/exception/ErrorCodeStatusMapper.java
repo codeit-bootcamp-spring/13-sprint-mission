@@ -27,7 +27,8 @@ public class ErrorCodeStatusMapper {
                  INVALID_REFRESH_TOKEN ->
                     HttpStatus.UNAUTHORIZED;
 
-            case ACCESS_DENIED ->
+            case ACCESS_DENIED,
+                 NOTIFICATION_ACCESS_DENIED ->
                     HttpStatus.FORBIDDEN;
 
             case PRIVATE_CHANNEL_UPDATE_NOT_ALLOWED,

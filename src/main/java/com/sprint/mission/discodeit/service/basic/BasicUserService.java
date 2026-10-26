@@ -13,7 +13,11 @@ import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
+import com.sprint.mission.discodeit.service.SseService;
 import com.sprint.mission.discodeit.service.UserService;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -23,10 +27,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -35,13 +35,18 @@ public class BasicUserService implements UserService {
 
     private final UserRepository userRepository;
     private final UserStatusRepository userStatusRepository;
-    private final BinaryContentRepository binaryContentRepository;
+    private final BinaryContentRepository
+            binaryContentRepository;
     private final UserMapper userMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final PasswordEncoder passwordEncoder;
+    private final SseService sseService;
 
     @Override
-    @CacheEvict(cacheNames = "users", allEntries = true)
+    @CacheEvict(
+            cacheNames = "users",
+            allEntries = true
+    )
     public UserResponse create(
             UserRequest dto,
             BinaryContentRequest profileDto
@@ -52,11 +57,14 @@ public class BasicUserService implements UserService {
                 profileDto != null
         );
 
-        if (userRepository.existsByUsername(dto.username())) {
+        if (userRepository.existsByUsername(
+                dto.username()
+        )) {
             log.warn(
                     "사용자 생성 실패 - 중복 username: {}",
                     dto.username()
             );
+
             throw new UserAlreadyExistException(
                     "username",
                     dto.username()
@@ -68,13 +76,15 @@ public class BasicUserService implements UserService {
                     "사용자 생성 실패 - 중복 email: {}",
                     dto.email()
             );
+
             throw new UserAlreadyExistException(
                     "email",
                     dto.email()
             );
         }
 
-        String encodedPassword = passwordEncoder.encode(dto.password());
+        String encodedPassword =
+                passwordEncoder.encode(dto.password());
 
         User user = new User(
                 dto.username(),
@@ -83,18 +93,33 @@ public class BasicUserService implements UserService {
         );
 
         if (hasProfile(profileDto)) {
-            user.updateProfile(createProfile(profileDto));
+            user.updateProfile(
+                    createProfile(profileDto)
+            );
         }
 
         User savedUser = userRepository.save(user);
 
-        UserStatus userStatus = new UserStatus(savedUser);
+        UserStatus userStatus =
+                new UserStatus(savedUser);
+
         savedUser.updateStatus(userStatus);
         userStatusRepository.save(userStatus);
 
-        log.info("사용자 생성 완료: userId={}", savedUser.getId());
+        UserResponse response =
+                userMapper.toDto(savedUser);
 
-        return userMapper.toDto(savedUser);
+        sseService.broadcast(
+                "users.created",
+                response
+        );
+
+        log.info(
+                "사용자 생성 완료: userId={}",
+                savedUser.getId()
+        );
+
+        return response;
     }
 
     @Override
@@ -115,7 +140,10 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    @CacheEvict(cacheNames = "users", allEntries = true)
+    @CacheEvict(
+            cacheNames = {"users", "channels"},
+            allEntries = true
+    )
     public UserResponse update(
             UUID id,
             UserRequest dto,
@@ -128,9 +156,12 @@ public class BasicUserService implements UserService {
         );
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
+                .orElseThrow(
+                        () -> new UserNotFoundException(id)
+                );
 
-        String encodedPassword = encodePasswordIfPresent(dto.password());
+        String encodedPassword =
+                encodePasswordIfPresent(dto.password());
 
         user.update(
                 dto.username(),
@@ -139,21 +170,45 @@ public class BasicUserService implements UserService {
         );
 
         if (hasProfile(profileDto)) {
-            user.updateProfile(createProfile(profileDto));
+            user.updateProfile(
+                    createProfile(profileDto)
+            );
         }
 
-        log.info("사용자 수정 완료: userId={}", id);
+        UserResponse response =
+                userMapper.toDto(user);
 
-        return userMapper.toDto(user);
+        sseService.broadcast(
+                "users.updated",
+                response
+        );
+
+        log.info(
+                "사용자 수정 완료: userId={}",
+                id
+        );
+
+        return response;
     }
 
     @Override
-    @CacheEvict(cacheNames = "users", allEntries = true)
+    @CacheEvict(
+            cacheNames = {"users", "channels"},
+            allEntries = true
+    )
     public void delete(UUID id) {
-        log.debug("사용자 삭제 시작: userId={}", id);
+        log.debug(
+                "사용자 삭제 시작: userId={}",
+                id
+        );
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
+                .orElseThrow(
+                        () -> new UserNotFoundException(id)
+                );
+
+        UserResponse response =
+                userMapper.toDto(user);
 
         userStatusRepository.deleteById(id);
 
@@ -165,17 +220,28 @@ public class BasicUserService implements UserService {
 
         userRepository.delete(user);
 
-        log.info("사용자 삭제 완료: userId={}", id);
+        sseService.broadcast(
+                "users.deleted",
+                response
+        );
+
+        log.info(
+                "사용자 삭제 완료: userId={}",
+                id
+        );
     }
 
-    private BinaryContent createProfile(BinaryContentRequest profileDto) {
+    private BinaryContent createProfile(
+            BinaryContentRequest profileDto
+    ) {
         BinaryContent profile = new BinaryContent(
                 profileDto.fileName(),
                 profileDto.size(),
                 profileDto.contentType()
         );
 
-        BinaryContent savedProfile = binaryContentRepository.save(profile);
+        BinaryContent savedProfile =
+                binaryContentRepository.save(profile);
 
         eventPublisher.publishEvent(
                 new BinaryContentCreatedEvent(
@@ -187,7 +253,9 @@ public class BasicUserService implements UserService {
         return savedProfile;
     }
 
-    private String encodePasswordIfPresent(String password) {
+    private String encodePasswordIfPresent(
+            String password
+    ) {
         if (password == null || password.isBlank()) {
             return null;
         }
@@ -195,7 +263,9 @@ public class BasicUserService implements UserService {
         return passwordEncoder.encode(password);
     }
 
-    private boolean hasProfile(BinaryContentRequest profileDto) {
+    private boolean hasProfile(
+            BinaryContentRequest profileDto
+    ) {
         return profileDto != null
                 && profileDto.fileName() != null
                 && !profileDto.fileName().isBlank();

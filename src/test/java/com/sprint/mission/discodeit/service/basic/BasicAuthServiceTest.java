@@ -1,5 +1,10 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+
 import com.sprint.mission.discodeit.dto.request.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.entity.User;
@@ -8,6 +13,7 @@ import com.sprint.mission.discodeit.event.RoleUpdatedEvent;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import com.sprint.mission.discodeit.service.SseService;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -18,11 +24,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
 
 @ExtendWith(MockitoExtension.class)
 class BasicAuthServiceTest {
@@ -35,6 +36,9 @@ class BasicAuthServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private SseService sseService;
 
     @InjectMocks
     private BasicAuthService authService;
@@ -87,15 +91,18 @@ class BasicAuthServiceTest {
         RoleUpdatedEvent event = eventCaptor.getValue();
 
         assertThat(event.userId()).isEqualTo(userId);
-        assertThat(event.previousRole()).isEqualTo(UserRole.USER);
+        assertThat(event.previousRole())
+                .isEqualTo(UserRole.USER);
         assertThat(event.updatedRole())
                 .isEqualTo(UserRole.CHANNEL_MANAGER);
 
         then(userMapper).should().toDto(user);
+        then(sseService).should()
+                .broadcast("users.updated", expected);
     }
 
     @Test
-    void updateRole_같은_권한이면_이벤트를_발행하지_않는다() {
+    void updateRole_같은_권한이면_권한_이벤트는_발행하지_않는다() {
         UUID userId = UUID.randomUUID();
 
         UserRoleUpdateRequest request =
@@ -110,14 +117,29 @@ class BasicAuthServiceTest {
                 "encoded-password"
         );
 
+        ReflectionTestUtils.setField(user, "id", userId);
+
+        UserResponse expected = new UserResponse(
+                userId,
+                "codeit",
+                "codeit@example.com",
+                false,
+                null,
+                UserRole.USER
+        );
+
         given(userRepository.findById(userId))
                 .willReturn(Optional.of(user));
         given(userMapper.toDto(user))
-                .willReturn(null);
+                .willReturn(expected);
 
-        authService.updateRole(request);
+        UserResponse actual = authService.updateRole(request);
+
+        assertThat(actual).isEqualTo(expected);
 
         then(eventPublisher).shouldHaveNoInteractions();
+        then(sseService).should()
+                .broadcast("users.updated", expected);
     }
 
     @Test
@@ -141,5 +163,6 @@ class BasicAuthServiceTest {
 
         then(userMapper).shouldHaveNoInteractions();
         then(eventPublisher).shouldHaveNoInteractions();
+        then(sseService).shouldHaveNoInteractions();
     }
 }
