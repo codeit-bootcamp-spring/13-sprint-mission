@@ -16,6 +16,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,6 +39,11 @@ public class MessageController {
   private final MessageService messageService;
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PreAuthorize(
+      "#request.authorId() == principal.getUserDto().id() "
+          + "and @channelSecurity.canAccess("
+          + "#request.channelId(), principal.getUserDto().id())"
+  )
   public ResponseEntity<MessageDto> create(
       @RequestPart("messageCreateRequest") @Valid MessageCreateRequest request,
       @RequestPart(value = "attachments", required = false)
@@ -83,6 +89,11 @@ public class MessageController {
   }
 
   @GetMapping("/{messageId}")
+  @PostAuthorize(
+      "@channelSecurity.canAccess("
+          + "returnObject.getBody().channelId(), "
+          + "principal.getUserDto().id())"
+  )
   public ResponseEntity<MessageDto> findById(
       @PathVariable("messageId") UUID id
   ) {
@@ -94,6 +105,7 @@ public class MessageController {
   }
 
   @GetMapping
+  @PreAuthorize("@channelSecurity.canAccess(#channelId, principal.getUserDto().id())")
   public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(
       @RequestParam("channelId") UUID channelId,
       @PageableDefault(

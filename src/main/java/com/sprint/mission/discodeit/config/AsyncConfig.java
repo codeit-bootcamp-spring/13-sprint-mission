@@ -16,35 +16,24 @@ public class AsyncConfig {
 
   @Bean(name = "eventTaskExecutor")
   public ThreadPoolTaskExecutor eventTaskExecutor() {
-    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-
-    executor.setCorePoolSize(2);
-    executor.setMaxPoolSize(4);
-    executor.setQueueCapacity(100);
-    executor.setThreadNamePrefix("event-");
-
-    executor.setTaskDecorator(taskDecorator);
-    executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
-
-    executor.setWaitForTasksToCompleteOnShutdown(true);
-    executor.setAwaitTerminationSeconds(30);
-
-    executor.initialize();
-
-    return executor;
+    return createExecutor("event-");
   }
 
   @Bean(name = "uploadTaskExecutor")
   public ThreadPoolTaskExecutor uploadTaskExecutor() {
+    return createExecutor("upload-");
+  }
+
+  private ThreadPoolTaskExecutor createExecutor(String prefix) {
     ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
 
     executor.setCorePoolSize(2);
     executor.setMaxPoolSize(4);
     executor.setQueueCapacity(100);
-    executor.setThreadNamePrefix("upload-");
+    executor.setThreadNamePrefix(prefix);
 
     executor.setTaskDecorator(taskDecorator);
-    executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+    executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
 
     executor.setWaitForTasksToCompleteOnShutdown(true);
     executor.setAwaitTerminationSeconds(30);

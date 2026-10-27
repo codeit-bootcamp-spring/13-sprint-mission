@@ -5,6 +5,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.entity.BinaryContent.Status;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.UUID;
@@ -109,7 +110,8 @@ public class AWSS3Test {
         binaryContentId,
         "aws-test.txt",
         (long) originalBytes.length,
-        "text/plain"
+        "text/plain",
+        Status.SUCCESS
     );
 
     ResponseEntity<Void> response = storage.download(dto);
