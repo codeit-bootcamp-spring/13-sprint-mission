@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.realtime.RealtimePublisher;
 import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.user.UserResponse;
 import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
@@ -44,6 +45,7 @@ public class BasicUserService implements UserService {
   private final UserMapper userMapper;
   private final PasswordEncoder passwordEncoder;
   private final JwtRegistry jwtRegistry;
+  private final RealtimePublisher realtime;
 
   @Override
   @Transactional
@@ -93,7 +95,7 @@ public class BasicUserService implements UserService {
       eventPublisher.publishEvent(profileCreatedEvent);
     }
     log.info("유저 생성 - {}", user.getUsername());
-    return userMapper.toDto(user);
+    return notifyChange("users.created", user);
   }
 
   @Override
@@ -170,7 +172,7 @@ public class BasicUserService implements UserService {
     repository.save(userToUpdate);
 
     log.info("유저 수정 - {}", userToUpdate.getUsername());
-    return userMapper.toDto(userToUpdate);
+    return notifyChange("users.updated", userToUpdate);
   }
 
   @Override
@@ -183,6 +185,7 @@ public class BasicUserService implements UserService {
     if (user.getProfile() != null && user.getProfile().getId() != null) {
       binaryContentRepository.deleteById(user.getProfile().getId());
     }
+    notifyChange("users.deleted", user);
     repository.deleteById(userId);
 
     log.info("사용자 삭제 완료: userId={}", userId);
@@ -203,9 +206,14 @@ public class BasicUserService implements UserService {
           userId, previousRole, role));
     }
 
-    return userMapper.toDto(user);
+    return notifyChange("users.updated", user);
   }
 
+  private UserResponse notifyChange(String name, User user) {
+    UserResponse dto = userMapper.toDto(user);
+    realtime.sse(null, name, dto);
+    return dto;
+  }
 
   private User getUserOrThrow(UUID id) {
     return repository.findById(id)

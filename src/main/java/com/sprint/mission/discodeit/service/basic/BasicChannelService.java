@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.realtime.RealtimePublisher;
 import com.sprint.mission.discodeit.dto.channel.ChannelResponse;
 import com.sprint.mission.discodeit.dto.channel.ChannelPrivateCreateRequest;
 import com.sprint.mission.discodeit.dto.channel.ChannelPublicCreateRequest;
@@ -42,6 +43,7 @@ public class BasicChannelService implements ChannelService {
   private final MessageRepository messageRepository;
   private final UserRepository userRepository;
   private final ChannelMapper channelMapper;
+  private final RealtimePublisher realtime;
 
   @CacheEvict(cacheNames = "channelsByUser", allEntries = true)
   public void addAllowedUserList(UUID channelId, UUID userId) {
@@ -75,7 +77,7 @@ public class BasicChannelService implements ChannelService {
 
     log.info("{} 채널 생성됨", channel.getName());
 
-    return channelMapper.toDto(channel, List.of(), null);
+    return notifyChange("channels.created", channel, channelMapper.toDto(channel, List.of(), null));
   }
 
   @Override
@@ -99,7 +101,7 @@ public class BasicChannelService implements ChannelService {
     });
 
     log.info("private 채널 생성됨");
-    return toResponse(channel);
+    return notifyChange("channels.created", channel, toResponse(channel));
   }
 
   @Override
@@ -148,7 +150,7 @@ public class BasicChannelService implements ChannelService {
     channel.updateDescription(request.newDescription());
     repository.save(channel);
     log.info("채널 수정 완료: channelId={}", channelId);
-    return toResponse(channel);
+    return notifyChange("channels.updated", channel, toResponse(channel));
   }
 
   @Override
@@ -156,7 +158,8 @@ public class BasicChannelService implements ChannelService {
   @CacheEvict(cacheNames = "channelsByUser", allEntries = true)
   public void deleteChannel(UUID channelId) {
     log.info("채널 삭제 시작: channelId={}", channelId);
-    getChannelOrThrow(channelId);
+    Channel deleted = getChannelOrThrow(channelId);
+    notifyChange("channels.deleted", deleted, toResponse(deleted));
     // 연관 Message 삭제
     messageRepository.findAllByChannelId(channelId)
         .forEach(message -> messageRepository.deleteById(message.getId()));
@@ -167,6 +170,14 @@ public class BasicChannelService implements ChannelService {
 
     repository.deleteById(channelId);
     log.info("채널 삭제 완료: channelId={}", channelId);
+  }
+
+  private ChannelResponse notifyChange(String name, Channel channel, ChannelResponse dto) {
+    realtime.sse(channel.getType() == ChannelType.PRIVATE ? channel.getAllowedUserList()
+        : channel.getType() == ChannelType.MANAGER
+            ? userRepository.findAll().stream().filter(u -> u.getRole() != Role.USER).map(User::getId).toList()
+            : null, name, dto);
+    return dto;
   }
 
   private ChannelResponse toResponse(Channel channel) {

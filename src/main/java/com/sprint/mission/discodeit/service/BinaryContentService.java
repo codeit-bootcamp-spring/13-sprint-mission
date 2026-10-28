@@ -1,5 +1,10 @@
 package com.sprint.mission.discodeit.service;
 
+import com.sprint.mission.discodeit.entity.ChannelType;
+import com.sprint.mission.discodeit.entity.Role;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.realtime.RealtimePublisher;
+import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentResponse;
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.event.binarycontent.BinaryContentCreatedEvent;
@@ -34,6 +39,8 @@ public class BinaryContentService {
   private final BinaryContentStorage binaryContentStorage;
   private final BinaryContentMapper binaryContentMapper;
   private final ApplicationEventPublisher eventPublisher;
+  private final RealtimePublisher realtime;
+  private final UserRepository users;
 
   @Transactional
   public BinaryContentResponse create(BinaryContentCreateRequest request) {
@@ -55,6 +62,20 @@ public class BinaryContentService {
     BinaryContent binaryContent = repository.findById(id)
         .orElseThrow(() -> new BinaryContentNotFoundException(id));
     binaryContent.updateStatus(status);
+    java.util.Collection<UUID> receivers = null;
+    if (binaryContent.getUser() != null) {
+      receivers = List.of(binaryContent.getUser().getId());
+    } else if (binaryContent.getMessage() != null) {
+      var channel = binaryContent.getMessage().getChannel();
+      if (channel.getType() == ChannelType.PRIVATE) {
+        receivers = channel.getAllowedUserList();
+      } else if (channel.getType() == ChannelType.MANAGER) {
+        receivers = users.findAll().stream()
+            .filter(u -> u.getRole() != Role.USER)
+            .map(User::getId).toList();
+      }
+    }
+    realtime.sse(receivers, "binaryContents.updated", binaryContentMapper.toDto(binaryContent));
   }
 
   public BinaryContentResponse findBinaryContentById(UUID id) {

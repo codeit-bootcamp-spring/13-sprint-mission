@@ -10,7 +10,4 @@ public record BinaryContentResponse(
     String contentType,
     BinaryContentStatus status
 ) {
-  public BinaryContentResponse(UUID id, String fileName, Long size, String contentType) {
-    this(id, fileName, size, contentType, BinaryContentStatus.PROCESSING);
-  }
 }

@@ -1,0 +1,10 @@
+services:
+  backend:
+    deploy:
+      replicas: 1
+  backend_weighted:
+    extends:
+      file: compose.realtime.yml
+      service: backend
+    deploy:
+      replicas: 1

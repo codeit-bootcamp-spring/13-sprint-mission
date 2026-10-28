@@ -6,7 +6,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.sprint.mission.discodeit.config.S3Properties;
-import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentResponse;
+import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.BinaryContentStatus;
+import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import java.net.URL;
 import java.time.Duration;
 import java.util.UUID;
@@ -66,8 +68,12 @@ class S3BinaryContentStorageTest {
         .thenReturn(presignedRequest);
     when(presignedRequest.url()).thenReturn(new URL("https://test-bucket.s3.amazonaws.com/" + id));
 
-    var response = storage.download(new BinaryContentResponse(id, "report.pdf", 10L,
-        "application/pdf"));
+    BinaryContent content = org.mockito.Mockito.spy(
+        new BinaryContent("report.pdf", 10L, "application/pdf", null, null));
+    when(content.getId()).thenReturn(id);
+    content.updateStatus(BinaryContentStatus.SUCCESS);
+
+    var response = storage.download(new BinaryContentMapper().toDto(content));
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
     assertThat(response.getHeaders().getLocation()).hasToString(

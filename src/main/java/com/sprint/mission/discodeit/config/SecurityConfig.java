@@ -51,7 +51,7 @@ public class SecurityConfig {
 
     http
         .csrf(csrf -> csrf
-            .ignoringRequestMatchers("/api/notifications/**")
+            .ignoringRequestMatchers("/api/notifications/**", "/ws", "/ws/**")
             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
             .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
         )
@@ -73,6 +73,7 @@ public class SecurityConfig {
         )
 
         .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/ws", "/ws/**").permitAll()
             // ── 공개(permitAll) — 로그인 전에도 되어야 하는 것들 ──
             .requestMatchers(HttpMethod.GET, "/api/auth/csrf-token").permitAll()  // CSRF 토큰 발급
             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()          // 회원가입

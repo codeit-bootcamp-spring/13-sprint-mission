@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.security;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import com.sprint.mission.discodeit.config.JwtProperties;
 import java.util.Map;
 import java.util.Queue;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(
+    name = "discodeit.security.jwt.registry", havingValue = "memory")
 public class InMemoryJwtRegistry implements JwtRegistry {
 
   private final Map<UUID, Queue<JwtInformation>> origin = new ConcurrentHashMap<>();

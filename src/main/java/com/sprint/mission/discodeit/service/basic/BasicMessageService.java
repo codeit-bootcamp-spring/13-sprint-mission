@@ -177,7 +177,7 @@ public class BasicMessageService implements MessageService {
         return false;
       }
     } else if (channel.getType() == ChannelType.MANAGER) {
-      if (user.getRole() != Role.CHANNEL_MANAGER) {
+      if (user.getRole() == Role.USER) {
         System.out.println("매니저 전용 채널 - 생성할 수 없습니다.");
         return false;
       }

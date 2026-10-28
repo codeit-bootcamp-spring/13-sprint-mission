@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -17,6 +18,14 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException exception) {
+    log.warn("요청 권한 부족: {}", exception.getMessage());
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(
+        Instant.now(), "AUTH_403", "이 작업을 수행할 권한이 없습니다.", Map.of(),
+        exception.getClass().getSimpleName(), HttpStatus.FORBIDDEN.value()));
+  }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(

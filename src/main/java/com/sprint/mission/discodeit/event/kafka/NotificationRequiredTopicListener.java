@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.event.kafka;
 
+import com.sprint.mission.discodeit.dto.notification.NotificationDto;
+import com.sprint.mission.discodeit.realtime.RealtimePublisher;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.entity.Notification;
@@ -26,6 +28,7 @@ public class NotificationRequiredTopicListener {
   private final NotificationRepository notificationRepository;
   private final ReadStatusRepository readStatusRepository;
   private final UserRepository userRepository;
+  private final RealtimePublisher realtime;
 
   @KafkaListener(topics = "discodeit.S3UploadFailedEvent")
   @Transactional
@@ -41,7 +44,7 @@ public class NotificationRequiredTopicListener {
     var notifications = userRepository.findAllByRole(Role.ADMIN).stream()
         .map(admin -> new Notification(admin, "S3 바이너리 데이터 저장에 실패했습니다.", content))
         .toList();
-    notificationRepository.saveAll(notifications);
+    notificationRepository.saveAll(notifications).forEach(this::notifyCreated);
   }
 
   @KafkaListener(topics = "discodeit.MessageCreatedEvent")
@@ -62,7 +65,7 @@ public class NotificationRequiredTopicListener {
               event.content() == null ? "첨부파일 메시지" : event.content());
         })
         .toList();
-    notificationRepository.saveAll(notifications);
+    notificationRepository.saveAll(notifications).forEach(this::notifyCreated);
   }
 
   @KafkaListener(topics = "discodeit.RoleUpdatedEvent")
@@ -70,9 +73,16 @@ public class NotificationRequiredTopicListener {
   @CacheEvict(cacheNames = "notificationsByUser", allEntries = true)
   public void onRoleUpdatedEvent(String kafkaEvent) {
     RoleUpdatedEvent event = readEvent(kafkaEvent, RoleUpdatedEvent.class);
-    userRepository.findById(event.userId()).ifPresent(user -> notificationRepository.save(
+    userRepository.findById(event.userId()).ifPresent(user -> notifyCreated(notificationRepository.save(
         new Notification(user, "권한이 변경되었습니다.",
-            event.previousRole() + " -> " + event.newRole())));
+            event.previousRole() + " -> " + event.newRole()))));
+  }
+
+  private void notifyCreated(Notification notification) {
+    var dto = new NotificationDto(
+        notification.getId(), notification.getCreatedAt(), notification.getUser().getId(),
+        notification.getTitle(), notification.getContent());
+    realtime.sse(java.util.List.of(notification.getUser().getId()), "notifications.created", dto);
   }
 
   private <T> T readEvent(String kafkaEvent, Class<T> eventType) {

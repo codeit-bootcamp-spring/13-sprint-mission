@@ -44,6 +44,7 @@ spring:
       max-request-size: 20MB
 
 discodeit:
+  instance-id: ${INSTANCE_ID:${random.uuid}}
   admin:
     username: ${ADMIN_USERNAME}
     email: ${ADMIN_EMAIL}
