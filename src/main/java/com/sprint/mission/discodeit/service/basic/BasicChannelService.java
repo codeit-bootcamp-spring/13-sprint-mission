@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.config.CacheConfig;
 import com.sprint.mission.discodeit.dto.projection.ChannelProjection;
 import com.sprint.mission.discodeit.dto.request.channel.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.dto.request.channel.PublicChannelCreateRequest;
@@ -8,6 +7,7 @@ import com.sprint.mission.discodeit.dto.request.channel.PublicChannelUpdateReque
 import com.sprint.mission.discodeit.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.event.channel.ChannelEvent;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.exception.ExceptionCode;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
@@ -23,8 +23,10 @@ import com.sprint.mission.discodeit.service.ChannelService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -34,6 +36,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.sprint.mission.discodeit.config.cache.DiscodeItCacheConfig.*;
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +55,9 @@ public class BasicChannelService implements ChannelService {
 
     private final RoleHierarchy roleHierarchy;
 
+    private final ApplicationEventPublisher eventPublisher;
+
+    private final CacheManager cacheManager;
 
     /**
      * public 채널 생성
@@ -59,7 +65,7 @@ public class BasicChannelService implements ChannelService {
      * @return channelDto
      */
     @Override
-    @CacheEvict(cacheNames = CacheConfig.CHANNEL_CACHE, allEntries = true)
+    @CacheEvict(cacheNames = CHANNEL_CACHE, allEntries = true)
     @Transactional
     public ChannelDto createPublicChannel(PublicChannelCreateRequest publicChannelCreate){
         Channel channel = channelRepository.save(
@@ -71,7 +77,11 @@ public class BasicChannelService implements ChannelService {
 
         log.debug("ChannelService - public 채널 생성 {}",channel.getId());
 
-        return getChannelDtoFromChannel(channel);
+        ChannelDto dto = getChannelDtoFromChannel(channel);
+
+        eventPublisher.publishEvent(new ChannelEvent("channels.created",dto));
+
+        return dto;
     }
 
     /**
@@ -80,7 +90,7 @@ public class BasicChannelService implements ChannelService {
      * @return channelDto
      */
     @Override
-    @CacheEvict(cacheNames = CacheConfig.CHANNEL_CACHE, allEntries = true)
+    @CacheEvict(cacheNames = CHANNEL_CACHE, allEntries = true)
     @Transactional
     public ChannelDto createPrivateChannel(PrivateChannelCreateRequest publicChannelCreate){
         Channel channel = channelRepository.save(new Channel(null, null, ChannelType.PRIVATE));
@@ -97,7 +107,12 @@ public class BasicChannelService implements ChannelService {
                 }
         );
 
-        return getChannelDtoFromChannel(channel);
+        ChannelDto dto = getChannelDtoFromChannel(channel);
+
+        eventPublisher.publishEvent(new ChannelEvent("channels.created",dto));
+
+        return dto;
+
     }
 
     /**
@@ -105,8 +120,8 @@ public class BasicChannelService implements ChannelService {
      * @param userId UUID
      * @return channelList List
      */
-    @Cacheable(CacheConfig.CHANNEL_CACHE)
     @Override
+    @Cacheable(value = CHANNEL_CACHE, key = "#userId", unless = "#result.isEmpty()")
     @Transactional
     public List<ChannelDto> findAllByUserID(UUID userId) {
         Map<UUID,ChannelProjection> channelMap = channelRepository.getChannelsFromUserId(userId);
@@ -120,6 +135,7 @@ public class BasicChannelService implements ChannelService {
         // Map<userid, userDto> - set UserDto for construct channelDto
         Map<UUID, UserDto> userDtos = getUserDtoFromUserIdList(userIdList);
 
+        log.debug(userDtos.toString());
 
         // convert channel projection to channelDto
         return channelMap.values().stream()
@@ -140,7 +156,7 @@ public class BasicChannelService implements ChannelService {
      * @return ChannelDto 채널 정보에 대한 반환값.
      */
     @Override
-    @CacheEvict(cacheNames = CacheConfig.CHANNEL_CACHE, allEntries = true)
+    @CacheEvict(cacheNames = CHANNEL_CACHE, allEntries = true)
     @Transactional
     public ChannelDto update(UUID id, PublicChannelUpdateRequest uci, Authentication authentication) {
         Channel channel = getChannelOrException(id);
@@ -154,7 +170,12 @@ public class BasicChannelService implements ChannelService {
         );
         channelRepository.save(channel);
 
-        return getChannelDtoFromChannel(channel);
+        ChannelDto dto = getChannelDtoFromChannel(channel);
+
+        eventPublisher.publishEvent(new ChannelEvent("channels.updated",dto));
+
+        return dto;
+
     }
 
     /**
@@ -163,7 +184,7 @@ public class BasicChannelService implements ChannelService {
      * @param authentication 현재 인증 사용자 인가정보.
      */
     @Override
-    @CacheEvict(cacheNames = CacheConfig.CHANNEL_CACHE, allEntries = true)
+    @CacheEvict(cacheNames = CHANNEL_CACHE, allEntries = true)
     @Transactional
     public void deleteChannel(UUID id,Authentication authentication) {
 
@@ -173,9 +194,12 @@ public class BasicChannelService implements ChannelService {
         if(channel.getType().equals(ChannelType.PUBLIC)) checkAuth(authentication);
         // todo - 프라이베이트 라면, 채널 소유자 인지 체크?
 
+        ChannelDto dto = getChannelDtoFromChannel(channel);
 
         // todo - channel 에 속한 message 전부 삭제.
         channelRepository.deleteById(id);
+
+        eventPublisher.publishEvent(new ChannelEvent("channels.deleted",dto));
     }
 
 
@@ -190,7 +214,7 @@ public class BasicChannelService implements ChannelService {
     private void checkUpdatable(Channel channel, Authentication authentication){
         if (channel.getType().equals(ChannelType.PRIVATE)) {
             log.warn("Private channel checked - id : {}, name : {}",channel.getId(), channel.getName());
-            throw new ChannelTypeException("Channel with id - {} was private",channel.getId());
+            throw new ChannelTypeException("Channel with id - %s was private",channel.getId());
         } else
             checkAuth(authentication);
     }
@@ -199,7 +223,7 @@ public class BasicChannelService implements ChannelService {
     private Channel getChannelOrException(UUID id){
         return channelRepository.findById(id)
                 .orElseThrow(() -> new ChannelNotFoundException(
-                        "{} - Channel with id - {} not found",
+                        "%s - Channel with id - %s not found",
                         SERVICE_NAME,
                         id
                 ));

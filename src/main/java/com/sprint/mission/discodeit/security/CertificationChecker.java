@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.security;
 
 
-import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
+import com.sprint.mission.discodeit.security.jwt.registry.JwtRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

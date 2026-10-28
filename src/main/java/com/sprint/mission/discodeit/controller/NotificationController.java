@@ -31,12 +31,12 @@ public class NotificationController implements NotificationControllerDoc {
     }
 
     @DeleteMapping("/{notificationId}")
-    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Object> delete(
             @PathVariable UUID notificationId,
             Authentication authentication
     )
     {
+        notificationService.deleteNotify(notificationId, authentication);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 

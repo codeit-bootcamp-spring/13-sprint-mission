@@ -45,6 +45,7 @@ dependencies {
 
 	// security
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.security:spring-security-messaging'
 
 	// db driver
 	runtimeOnly 'com.h2database:h2'
@@ -87,6 +88,8 @@ dependencies {
 	implementation 'com.github.ben-manes.caffeine:caffeine'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
+	// web socket 의존성
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
 
 }

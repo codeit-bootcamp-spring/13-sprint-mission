@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.role.RoleUpdateEvent;
 import com.sprint.mission.discodeit.exception.DiscodeitException;
 import com.sprint.mission.discodeit.exception.ExceptionCode;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -10,19 +11,22 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 
 import com.sprint.mission.discodeit.security.CertificationChecker;
 import com.sprint.mission.discodeit.security.jwt.JwtInformation;
-import com.sprint.mission.discodeit.security.jwt.JwtRegistry;
+import com.sprint.mission.discodeit.security.jwt.registry.JwtRegistry;
 import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import com.sprint.mission.discodeit.security.role.Role;
 import com.sprint.mission.discodeit.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class BasicAuthService implements AuthService {
 
     private final String SERVICE_NAME = "AuthService";
@@ -35,12 +39,23 @@ public class BasicAuthService implements AuthService {
 
     private final JwtRegistry jwtRegistry;
 
+    private final ApplicationEventPublisher applicationEventPublisher;
+
+
     public UserDto roleUpdate(UUID userId, Role role){
         // update query
-        User user = userRepository.findById(userId)
+        User user = userRepository.findById(userId) // 유저가 없음?
                 .orElseThrow(RuntimeException::new);
 
-        user.updateRole(role);
+        Role before = user.getRole();
+        Role after = role;
+
+        // message event 발행.
+        applicationEventPublisher.publishEvent(
+                new RoleUpdateEvent(user.getId(), before, after)
+        );
+
+        user.updateRole(after);
 
         userRepository.save(user);
 

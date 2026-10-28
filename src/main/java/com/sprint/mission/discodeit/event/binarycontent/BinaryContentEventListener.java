@@ -1,13 +1,11 @@
 package com.sprint.mission.discodeit.event.binarycontent;
 
 
-import com.sprint.mission.discodeit.config.CacheConfig;
 import com.sprint.mission.discodeit.entity.BinaryContentStatus;
 import com.sprint.mission.discodeit.service.BinaryContentService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -23,8 +21,8 @@ public class BinaryContentEventListener {
     private final BinaryContentStorage storage;
     private final BinaryContentService service;
 
-    @Async("noty")
-    @CacheEvict(cacheNames = CacheConfig.NOTIFICATION_CACHE, allEntries = true)
+    // S3 를 사용하게 된다면 별도로 수정할 필요 없음.
+    @Async("contentRelateExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void create(BinaryContentCreatedEvent event){
 
@@ -39,5 +37,7 @@ public class BinaryContentEventListener {
             log.error("[{}] - 데이터 저장 실패 - id : {}", SERVICE_NAME, event.id(), e);
         }
     }
+
+
 
 }

@@ -20,16 +20,31 @@ public class AsyncConfig {
     private final AsyncDecorator asyncDecorator;
 
     @Bean
-    public ThreadPoolTaskExecutor noty(){
+    public ThreadPoolTaskExecutor notificationExecutor() {
 
         // TaskExecuter 의 구현체.
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(2);
         executor.setMaxPoolSize(4);
-        executor.setQueueCapacity(4);
+        executor.setQueueCapacity(50);
         executor.setKeepAliveSeconds(60);
         executor.setAllowCoreThreadTimeOut(false);
-        executor.setThreadNamePrefix("[noty]");
+        executor.setThreadNamePrefix("Noty-");
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy()); // 스레드풀 포화시 정책. 기본 4가지 있다.
+        executor.setTaskDecorator(asyncDecorator);
+        executor.initialize();
+        return executor;
+    }
+
+    @Bean
+    public ThreadPoolTaskExecutor contentRelateExecutor(){
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(50);
+        executor.setKeepAliveSeconds(60);
+        executor.setAllowCoreThreadTimeOut(false);
+        executor.setThreadNamePrefix("Binary-");
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy()); // 스레드풀 포화시 정책. 기본 4가지 있다.
         executor.setTaskDecorator(asyncDecorator);
         executor.initialize();

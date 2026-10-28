@@ -1,17 +1,21 @@
-package com.sprint.mission.discodeit.security.jwt;
+package com.sprint.mission.discodeit.security.jwt.registry;
 
 
+import com.sprint.mission.discodeit.security.jwt.JwtInformation;
+import com.sprint.mission.discodeit.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-@RequiredArgsConstructor
 @Slf4j
-public class InMemoryJwtRegistry implements JwtRegistry{
+@RequiredArgsConstructor
+@ConditionalOnProperty(name = "",havingValue = "caffeine", matchIfMissing = true)
+public class InMemoryJwtRegistry implements JwtRegistry {
 
     private final String SERVICE_NAME = "JwtRegistry";
 

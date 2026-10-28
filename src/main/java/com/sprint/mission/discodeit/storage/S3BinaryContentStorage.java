@@ -79,6 +79,8 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
                 MDC.get("requestId"),
                 e.message()
         ));
+
+        throw new RuntimeException(e);
     }
 
 

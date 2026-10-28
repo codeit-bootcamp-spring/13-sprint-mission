@@ -38,7 +38,7 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
         try{
             return ResponseEntity.status(HttpStatus.OK)
                     .body(
-                            new InputStreamResource(input(binaryContentDto.fileName()))
+                            new InputStreamResource(input(binaryContentDto.id().toString()))
                     );
         } catch (IOException e){
             log.error("LocalBinaryContentStorage - 파일 리소스 응답 생성 에러 - {}",binaryContentDto.fileName());

@@ -20,6 +20,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("select u.id from User u where u.email = :email")
     Optional<UUID> findIdFromEmail(@Param("email") String email);
 
+    @Query("select u.id from User u where u.username = :username")
+    Optional<UUID> findIdFromUsername(@Param("username") String username);
+
     @Override
     @NonNull
     @EntityGraph(attributePaths = {"profile"})
@@ -27,6 +30,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByRole(Role role);
     boolean existsByEmail(String email);
+    boolean existsByUsername(String username);
 
     List<User> findByRole(Role role);
 }
