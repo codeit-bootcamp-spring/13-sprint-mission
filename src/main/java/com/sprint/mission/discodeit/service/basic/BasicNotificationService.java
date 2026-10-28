@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.NotificationDto;
 import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.NotificationCreatedEvent;
 import com.sprint.mission.discodeit.exception.NotificationAccessDeniedException;
 import com.sprint.mission.discodeit.exception.NotificationNotFoundException;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
@@ -15,7 +16,9 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -25,18 +28,27 @@ public class BasicNotificationService implements NotificationService {
 
   private final NotificationRepository notificationRepository;
   private final UserRepository userRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Override
-  @Transactional
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   @CacheEvict(cacheNames = "notificationsByUser", key = "#receiverId")
   public NotificationDto create(UUID receiverId, String title, String content) {
     User receiver = userRepository.findById(receiverId)
-        .orElseThrow(() -> new UserNotFoundException(Map.of("userId", receiverId)));
+        .orElseThrow(() -> new UserNotFoundException(
+            Map.of("userId", receiverId)
+        ));
 
     Notification notification = new Notification(receiver, title, content);
     notificationRepository.save(notification);
 
-    return toDto(notification);
+    NotificationDto notificationDto = toDto(notification);
+
+    eventPublisher.publishEvent(
+        new NotificationCreatedEvent(notificationDto)
+    );
+
+    return notificationDto;
   }
 
   @Override

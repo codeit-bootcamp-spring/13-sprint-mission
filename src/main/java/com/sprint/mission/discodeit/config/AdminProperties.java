@@ -1,17 +1,16 @@
 package com.sprint.mission.discodeit.config;
 
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import org.springframework.validation.annotation.Validated;
 
-@Getter
-@Setter
-@Component
+@Validated
 @ConfigurationProperties(prefix = "discodeit.admin")
-public class AdminProperties {
+public record AdminProperties(
+    @NotBlank @Email String email,
+    @NotBlank String username,
+    @NotBlank String password
+) {
 
-  private String email;
-  private String username;
-  private String password;
 }

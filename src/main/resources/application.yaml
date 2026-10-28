@@ -49,6 +49,9 @@ discodeit:
     secret: ${JWT_SECRET:discodeit-jwt-secret-key-for-sprint10}
     access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600}
     refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800}
+    cookie:
+      secure: ${JWT_COOKIE_SECURE:true}
+      same-site: ${JWT_COOKIE_SAME_SITE:Lax}
   admin:
     email: ${ADMIN_EMAIL:admin@discodeit.com}
     username: ${ADMIN_USERNAME:admin}

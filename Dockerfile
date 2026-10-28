@@ -1,19 +1,23 @@
-FROM amazoncorretto:17
+FROM amazoncorretto:17 AS builder
 
-RUN yum install -y findutils
+RUN yum install -y findutils && yum clean all
 
 WORKDIR /app
 
 COPY . .
 
-RUN chmod +x ./gradlew
+RUN sed -i 's/\r$//' gradlew
+RUN chmod +x gradlew
+RUN ./gradlew --no-daemon clean bootJar -x test
 
-RUN ./gradlew clean bootJar -x test
+FROM amazoncorretto:17
 
-EXPOSE 80
-ENV PROJECT_NAME=discodeit
-ENV PROJECT_VERSION=1.2-M8
+WORKDIR /app
 
-ENV JVM_OPTS=""
+COPY --from=builder /app/build/libs/*.jar app.jar
 
-ENTRYPOINT ["sh", "-c", "java ${JVM_OPTS} -jar $(find build/libs -name '*.jar' ! -name '*-plain.jar')"]
+ENV SERVER_PORT=8080
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

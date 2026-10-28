@@ -37,6 +37,9 @@ public class MdcSecurityContextTaskDecorator implements TaskDecorator {
         runnable.run();
 
       } finally {
+        // 스레드풀은 스레드를 재사용하므로 이번 작업의 컨텍스트를 남기면 안 된다.
+        // 호출 스레드가 직접 실행하는 경우에는 clear만 하면 부모 요청의 컨텍스트도 지워진다.
+        // 따라서 작업 직전의 컨텍스트를 복원한다.
         MDC.clear();
 
         if (previousContextMap != null) {

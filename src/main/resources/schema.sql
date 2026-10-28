@@ -53,11 +53,12 @@ CREATE TABLE notifications
 
 CREATE TABLE user_statuses
 (
-    id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id             UUID PRIMARY KEY                  DEFAULT gen_random_uuid(),
     created_at     TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at     TIMESTAMP WITH TIME ZONE,
     user_id        UUID                     NOT NULL UNIQUE,
     last_active_at TIMESTAMP WITH TIME ZONE,
+    online         BOOLEAN                  NOT NULL DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 

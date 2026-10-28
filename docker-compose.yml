@@ -1,42 +1,137 @@
-version: '3.8'
-
 services:
-  app:
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - frontend
+    restart: unless-stopped
+
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: discodeit-app-dev
-    ports:
-      - "8081:80"
     environment:
-      - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${DB_NAME}
-      - SPRING_DATASOURCE_USERNAME=${DB_USER}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-      - STORAGE_TYPE=s3
-      - AWS_S3_REGION=${AWS_S3_REGION}
-      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8080
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_SQL_INIT_MODE: never
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
+      STORAGE_TYPE: s3
+      AWS_S3_REGION: ${AWS_S3_REGION}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+      AWS_S3_ACCESS_KEY: ${AWS_S3_ACCESS_KEY:-}
+      AWS_S3_SECRET_KEY: ${AWS_S3_SECRET_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:-discodeit-jwt-secret-key-for-sprint10}
+      JWT_COOKIE_SECURE: "false"
     volumes:
       - discodeit-files:/app/uploads
       - ~/.aws:/root/.aws:ro
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      broker:
+        condition: service_healthy
+    networks:
+      - frontend
+      - internal
     restart: unless-stopped
 
   db:
     image: postgres:15
-    container_name: discodeit-db-dev
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "5432:5432"
     volumes:
       - discodeit-db-data:/var/lib/postgresql/data
-      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - internal
     restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    command: [ "redis-server", "--appendonly", "yes" ]
+    volumes:
+      - discodeit-redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+    restart: unless-stopped
+
+  kafka-init:
+    image: apache/kafka:3.9.1
+    user: "0:0"
+    entrypoint: [ "chown", "-R", "1000:1000", "/tmp/kraft-combined-logs" ]
+    volumes:
+      - discodeit-kafka-data:/tmp/kraft-combined-logs
+    network_mode: none
+    restart: "no"
+
+  broker:
+    image: apache/kafka:3.9.1
+    hostname: broker
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:29092,CONTROLLER://:29093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker:29093
+      CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+    volumes:
+      - discodeit-kafka-data:/tmp/kraft-combined-logs
+    healthcheck:
+      test: '/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server broker:29092 > /dev/null 2>&1'
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    networks:
+      - internal
+    restart: unless-stopped
+
+networks:
+  frontend:
+    driver: bridge
+  internal:
+    driver: bridge
+    internal: true
 
 volumes:
   discodeit-files:
   discodeit-db-data:
+  discodeit-redis-data:
+  discodeit-kafka-data:

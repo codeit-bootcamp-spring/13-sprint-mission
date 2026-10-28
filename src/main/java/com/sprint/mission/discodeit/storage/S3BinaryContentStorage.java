@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.storage;
 
+import com.sprint.mission.discodeit.config.RequestIdFilter;
 import com.sprint.mission.discodeit.dto.BinaryContentDto;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
@@ -83,7 +84,7 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
 
   @Recover
   public UUID recover(SdkException e, UUID id, byte[] data) {
-    String requestId = MDC.get("requestId");
+    String requestId = MDC.get(RequestIdFilter.REQUEST_ID_KEY);
 
     if (requestId == null) {
       requestId = "unknown";

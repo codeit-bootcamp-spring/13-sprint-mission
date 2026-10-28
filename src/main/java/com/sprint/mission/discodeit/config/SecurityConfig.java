@@ -24,8 +24,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.HttpStatusAccessDeniedHandler;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
@@ -76,7 +76,7 @@ public class SecurityConfig {
         )
         .addFilterBefore(
             new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService),
-            UsernamePasswordAuthenticationFilter.class
+            LogoutFilter.class
         )
         .logout(logout -> logout
             .logoutUrl("/api/auth/logout")

@@ -18,7 +18,7 @@ public class BinaryContentCreatedEventListener {
   private final BinaryContentStorage binaryContentStorage;
   private final BinaryContentService binaryContentService;
 
-  @Async
+  @Async("fileUploadExecutor")
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void handle(BinaryContentCreatedEvent event) {
     try {

@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
 import com.sprint.mission.discodeit.event.RoleUpdatedEvent;
+import com.sprint.mission.discodeit.event.UserChangedEvent;
 import com.sprint.mission.discodeit.exception.ErrorCode;
 import com.sprint.mission.discodeit.exception.UserAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.UserNotFoundException;
@@ -72,7 +73,7 @@ public class BasicUserService implements UserService {
     userStatusRepository.save(userStatus);
 
     log.info("User 생성 완료 - userId: {}", user.getId());
-    return userMapper.toDto(user);
+    return publishUserEvent("users.created", user);
   }
 
   @Override
@@ -97,7 +98,7 @@ public class BasicUserService implements UserService {
 
   @Override
   @Transactional
-  @CacheEvict(cacheNames = "users", allEntries = true)
+  @CacheEvict(cacheNames = {"users", "channelsByUser"}, allEntries = true)
   public UserDto update(UUID id, String newEmail, String newUsername, String newPassword,
       String statusMessage, FileUploadDto profile) {
     log.debug("User 수정 요청 - userId: {}", id);
@@ -107,7 +108,11 @@ public class BasicUserService implements UserService {
           return new UserNotFoundException(Map.of("userId", id));
         });
 
-    user.update(newEmail, newUsername, newPassword, statusMessage);
+    String encodedPassword = newPassword == null
+        ? user.getPassword()
+        : passwordEncoder.encode(newPassword);
+
+    user.update(newEmail, newUsername, encodedPassword, statusMessage);
 
     if (profile != null && profile.bytes() != null && profile.bytes().length > 0) {
       saveProfileImage(user, profile);
@@ -119,12 +124,12 @@ public class BasicUserService implements UserService {
     }
 
     log.info("User 수정 완료 - userId: {}", id);
-    return userMapper.toDto(user);
+    return publishUserEvent("users.updated", user);
   }
 
   @Override
   @Transactional
-  @CacheEvict(cacheNames = "users", allEntries = true)
+  @CacheEvict(cacheNames = {"users", "channelsByUser"}, allEntries = true)
   public void delete(UUID id) {
     log.debug("User 삭제 요청 - userId: {}", id);
     User user = userRepository.findById(id)
@@ -133,14 +138,21 @@ public class BasicUserService implements UserService {
           return new UserNotFoundException(Map.of("userId", id));
         });
 
+    UserDto userDto = userMapper.toDto(user);
+
     userStatusRepository.deleteByUserId(user.getId());
     userRepository.delete(user);
+
+    eventPublisher.publishEvent(
+        new UserChangedEvent("users.deleted", userDto)
+    );
+
     log.info("User 삭제 완료 - userId: {}", id);
   }
 
   @Override
   @Transactional
-  @CacheEvict(cacheNames = "users", allEntries = true)
+  @CacheEvict(cacheNames = {"users", "channelsByUser"}, allEntries = true)
   @PreAuthorize("hasRole('ADMIN')")
   public UserDto updateRole(UUID userId, Role newRole) {
     log.debug("User 권한 수정 요청 - userId: {}, role: {}", userId, newRole);
@@ -162,7 +174,7 @@ public class BasicUserService implements UserService {
 
     log.info("User 권한 수정 완료 - userId: {}, role: {}", userId, newRole);
 
-    return userMapper.toDto(user);
+    return publishUserEvent("users.updated", user);
   }
 
   private void saveProfileImage(User user, FileUploadDto profile) {
@@ -178,5 +190,15 @@ public class BasicUserService implements UserService {
 
       user.updateProfile(profileImage);
     }
+  }
+
+  private UserDto publishUserEvent(String eventName, User user) {
+    UserDto userDto = userMapper.toDto(user);
+
+    eventPublisher.publishEvent(
+        new UserChangedEvent(eventName, userDto)
+    );
+
+    return userDto;
   }
 }

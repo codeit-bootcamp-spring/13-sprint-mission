@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.FileUploadDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.BinaryContentStatus;
 import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
+import com.sprint.mission.discodeit.event.BinaryContentUpdatedEvent;
 import com.sprint.mission.discodeit.exception.BinaryContentNotFoundException;
 import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -15,6 +16,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -68,7 +70,7 @@ public class BasicBinaryContentService implements BinaryContentService {
   }
 
   @Override
-  @Transactional
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public BinaryContentDto updateStatus(UUID id, BinaryContentStatus status) {
     BinaryContent content = binaryContentRepository.findById(id)
         .orElseThrow(() -> new BinaryContentNotFoundException(
@@ -77,6 +79,12 @@ public class BasicBinaryContentService implements BinaryContentService {
 
     content.updateStatus(status);
 
-    return binaryContentMapper.toDto(content);
+    BinaryContentDto binaryContentDto = binaryContentMapper.toDto(content);
+
+    eventPublisher.publishEvent(
+        new BinaryContentUpdatedEvent(binaryContentDto)
+    );
+
+    return binaryContentDto;
   }
 }

@@ -10,3 +10,7 @@ logging:
   level:
     com.sprint.mission.discodeit: debug
     org.springframework.security: trace
+discodeit:
+  jwt:
+    cookie:
+      secure: ${JWT_COOKIE_SECURE:false}

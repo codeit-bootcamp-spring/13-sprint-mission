@@ -17,7 +17,7 @@ public class NotificationRequiredEventListener {
   private final ReadStatusRepository readStatusRepository;
   private final NotificationService notificationService;
 
-  @Async
+  @Async("notificationExecutor")
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void handleMessageCreated(MessageCreatedEvent event) {
     String title = event.authorName() + "님의 새 메시지 (" + event.channelName() + ")";
@@ -38,7 +38,7 @@ public class NotificationRequiredEventListener {
     }
   }
 
-  @Async
+  @Async("notificationExecutor")
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void handleRoleUpdated(RoleUpdatedEvent event) {
     String title = "사용자 권한 변경";

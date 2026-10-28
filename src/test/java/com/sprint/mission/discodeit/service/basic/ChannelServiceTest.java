@@ -31,6 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -53,6 +54,8 @@ class ChannelServiceTest {
   private ChannelMapper channelMapper;
   @Mock
   private UserMapper userMapper;
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
 
   private void mockConvertToDtoDependencies() {
     given(messageRepository.findByChannelIdOrderByCreatedAtDesc(any(), any(Pageable.class)))
@@ -159,6 +162,7 @@ class ChannelServiceTest {
     given(channelRepository.findById(channelId)).willReturn(Optional.of(channel));
 
     // When
+    mockConvertToDtoDependencies();
     channelService.delete(channelId);
 
     // Then

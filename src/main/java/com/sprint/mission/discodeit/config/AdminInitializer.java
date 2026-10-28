@@ -26,9 +26,9 @@ public class AdminInitializer implements ApplicationRunner {
     }
 
     User admin = new User(
-        adminProperties.getEmail(),
-        adminProperties.getUsername(),
-        passwordEncoder.encode(adminProperties.getPassword())
+        adminProperties.email(),
+        adminProperties.username(),
+        passwordEncoder.encode(adminProperties.password())
     );
 
     admin.updateRole(Role.ADMIN);

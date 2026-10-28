@@ -100,17 +100,20 @@ public class BasicMessageService implements MessageService {
 
     log.info("Message 생성 완료 - messageId: {}", message.getId());
 
+    MessageDto messageDto = messageMapper.toDto(message);
+
     eventPublisher.publishEvent(
         new MessageCreatedEvent(
             channel.getId(),
             author.getId(),
             author.getUsername(),
             channel.getName() != null ? channel.getName() : "개인 채널",
-            message.getContent()
+            message.getContent(),
+            messageDto
         )
     );
 
-    return messageMapper.toDto(message);
+    return messageDto;
   }
 
   @Override

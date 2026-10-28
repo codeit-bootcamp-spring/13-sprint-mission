@@ -5,10 +5,10 @@ import com.sprint.mission.discodeit.dto.JwtRefreshResult;
 import com.sprint.mission.discodeit.dto.UserDto;
 import com.sprint.mission.discodeit.dto.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.security.JwtRefreshService;
+import com.sprint.mission.discodeit.security.RefreshTokenCookieProvider;
 import com.sprint.mission.discodeit.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +33,7 @@ public class AuthController {
 
   private final UserService userService;
   private final JwtRefreshService jwtRefreshService;
+  private final RefreshTokenCookieProvider refreshTokenCookieProvider;
 
   @Operation(summary = "CSRF 토큰 발급")
   @GetMapping("/csrf-token")
@@ -62,18 +63,15 @@ public class AuthController {
   @Operation(summary = "액세스 토큰 재발급")
   @PostMapping("/refresh")
   public ResponseEntity<JwtDto> refresh(
-      @CookieValue(name = "REFRESH_TOKEN", required = false) String refreshToken,
+      @CookieValue(
+          name = RefreshTokenCookieProvider.COOKIE_NAME,
+          required = false
+      ) String refreshToken,
       HttpServletResponse response
   ) {
     JwtRefreshResult result = jwtRefreshService.refresh(refreshToken);
 
-    Cookie refreshTokenCookie =
-        new Cookie("REFRESH_TOKEN", result.refreshToken());
-
-    refreshTokenCookie.setHttpOnly(true);
-    refreshTokenCookie.setPath("/");
-
-    response.addCookie(refreshTokenCookie);
+    refreshTokenCookieProvider.addCookie(response, result.refreshToken());
 
     return ResponseEntity.ok(result.jwtDto());
   }
