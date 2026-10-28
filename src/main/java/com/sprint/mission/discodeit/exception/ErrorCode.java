@@ -24,7 +24,9 @@ public enum ErrorCode { // 예외 코드명, 메시지 정의
   USERSTATUS_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자 상태를 찾을 수 없음"),
   DUPLICATE_USERSTATUS(HttpStatus.BAD_REQUEST, "사용자 상태가 이미 존재함"),
 
-  WRONG_PASSWORD(HttpStatus.BAD_REQUEST, "비밀번호가 일치하지 않음"),
+  LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "로그인 실패"),
+  ACCESS_DENIED(HttpStatus.FORBIDDEN, "접근 권한 없음"),
+  AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "인증 필요"),
 
   NO_CHANGES(HttpStatus.BAD_REQUEST, "변경사항 없음"),
 

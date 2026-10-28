@@ -1,16 +1,12 @@
-.gradle
+.gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
-.kotlin
-.idea
+.kotlin/
 
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -19,13 +15,13 @@ out/
 !**/src/test/**/out/
 
 ### Eclipse ###
-.apt_generated
+.apt_generated/
 .classpath
 .factorypath
 .project
-.settings
+.settings/
 .springBeans
-.sts4-cache
+.sts4-cache/
 bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
@@ -42,3 +38,15 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+.logs/
+
+src/main/resources/static/
+
+.storage/
+.storage-test/
+.discodeit/
+
+.env
+.env.*
+discodeit.env

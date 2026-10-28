@@ -25,6 +25,7 @@ public class UserCreateRequest {
   @Email(message = "이메일 형식을 준수해야 합니다.")
   private String email;
 
+  @ToString.Exclude // @ToString은 기본적으로 비밀번호 필드를 포함할 수 있기 때문에, 보안상 비밀번호 필드를 제외하도록 설정
   @NotBlank(message = "비밀번호는 필수입니다.")
   @Size(min = 8, max = 60, message = "비밀번호는 8자 이상 60자 이하만 가능합니다.")
   @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*]).*$", message = "비밀번호는 최소한 하나의 소문자(a-z), 하나의 대문자(A-Z), 하나의 숫자(0-9), 하나의 특수 문자(!@#$%^&*)를 포함해야 합니다.")

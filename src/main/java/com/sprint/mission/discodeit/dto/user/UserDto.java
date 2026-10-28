@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.dto.user;
 
 import com.sprint.mission.discodeit.dto.binarycontent.BinaryContentDto;
+import com.sprint.mission.discodeit.entity.Role;
 import lombok.Builder;
 import lombok.Getter;
 import java.util.UUID;
@@ -15,4 +16,5 @@ public class UserDto {
   private String email;
   private BinaryContentDto profile;
   private Boolean online; // 엔티티 자체가 아닌 온라인 여부인 필요한 값만 받자
+  private Role role;
 }

@@ -14,9 +14,14 @@ spring:
 
 discodeit:
   storage:
-    type: local
+    type: ${STORAGE_TYPE:local} # local | s3 (기본값: local)
     local:
-      root-path: .storage
+      root-path: ${STORAGE_LOCAL_ROOT_PATH:.discodeit/storage}
+    s3:
+      region: ${AWS_S3_REGION:ap-northeast-2}
+      bucket: ${AWS_S3_BUCKET}
+      presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600} # 기본값 10분
+  
   api:
     version: 1.0.0
 
@@ -49,7 +54,7 @@ info:
     name: Discodeit
     version: 1.7.0
     java-version: 17
-    spring-boot-version: 3.4.0
+    spring-boot-version: 3.5.14
 
   datasource:
     url: ${spring.datasource.url}

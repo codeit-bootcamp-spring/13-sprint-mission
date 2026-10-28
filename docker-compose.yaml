@@ -1,0 +1,63 @@
+services: # 실행할 여러 컨테이너 정의
+  # PostgreSQL 데이터베이스
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks:
+      - app-network
+
+  # 애플리케이션
+  app:
+    build:
+      context: . # 현재 경로에서 빌드
+      dockerfile: Dockerfile # 도커 파일 이름 정의
+    ports:
+      - "8081:80"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@discodeit.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      JVM_OPTS: ${JVM_OPTS:--Xmx400m -Xms200m}
+
+      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      STORAGE_LOCAL_ROOT_PATH: /app/.discodeit/storage
+
+      AWS_S3_REGION: ${AWS_S3_REGION:-ap-northeast-2}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-}
+      AWS_S3_PRESIGNED_URL_EXPIRATION: ${AWS_S3_PRESIGNED_URL_EXPIRATION:-600}
+
+    depends_on:
+      db:
+        condition: service_healthy # db가 health check를 통과할 때까지 대기
+
+    networks:
+      - app-network
+    volumes:
+      - app-storage:/app/.discodeit/storage
+
+# 볼륨 정의
+volumes:
+  app-storage:
+  pgdata:
+    driver: local # 볼륨 데이터를 호스트의 로컬에 저장
+
+# 네트워크 정의
+networks:
+  app-network:
+    driver: bridge

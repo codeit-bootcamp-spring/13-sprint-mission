@@ -112,7 +112,8 @@ public class ChannelServiceTest {
           .profile(null)
           .online(false)
           .build();
-      PrivateChannelCreateRequest request = new PrivateChannelCreateRequest();
+      PrivateChannelCreateRequest request = new PrivateChannelCreateRequest(
+          List.of(user1.getId(), user2.getId()));
       request.setParticipantIds(List.of(user1.getId(), user2.getId()));
       given(channelRepository.save(any(Channel.class))).willAnswer(
           invocation -> invocation.getArgument(0)); // save 메서드 호출될 때 리턴되는 첫 번째 인자값

@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.dto.channel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -13,6 +14,7 @@ import java.util.UUID;
 @Setter
 @Getter
 @ToString
+@AllArgsConstructor
 @Schema(description = "Private Channel 생성 정보")
 public class PrivateChannelCreateRequest {
 

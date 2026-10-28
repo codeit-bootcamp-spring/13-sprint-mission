@@ -204,7 +204,7 @@ public class UserControllerTest {
           .andExpect(status().isNotFound())
           .andExpect(jsonPath("$.code").value("USER_NOT_FOUND"))
           .andExpect(jsonPath("$.details").exists());
-      verify(service).delete(userId); // 검증에서 막히기 때문에 서비스까지 갈 수 없다
+      verify(service).delete(userId);
     }
   }
 

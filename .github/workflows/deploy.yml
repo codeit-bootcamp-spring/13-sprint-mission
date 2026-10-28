@@ -1,0 +1,133 @@
+# 지속적 배포(Continuous Deployment) 워크플로우 설정 파일
+
+name: deploy
+
+on:
+  push:
+    branches: [ "release" ]
+  workflow_dispatch:
+
+# OIDC: 액세스 키를 두지 않고, GitHub Actions가 AWS IAM 역할을 맡아 배포하도록 설정
+permissions:
+  id-token: write # OIDC 토큰 발급에 필수값
+  contents: read # 코드 체크아웃
+
+env:
+  ECS_AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_PUBLIC_REGION: us-east-1
+  ECR_REPOSITORY_URI: ${{ vars.ECR_REPOSITORY_URI }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+  ECS_SERVICE: ${{ vars.ECS_SERVICE }}
+  ECS_TASK_DEFINITION: ${{ vars.ECS_TASK_DEFINITION }}
+  CONTAINER_NAME: discodeit-app # ECS 서비스에서 정의한 컨테이너 이름과 동일해야 한다.
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # GitHub가 제공하는 Ubuntu 러너에서 실행
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v7
+
+      - name: JDK 17 설치
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: 빌드 + 테스트
+        run: |
+          chmod +x gradlew
+          ./gradlew build
+
+  deploy:
+    needs: build # 순서: build job이 성공해야 deploy job이 실행됨
+    runs-on: ubuntu-latest
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v7
+
+      - name: AWS 자격증명 (Public ECR)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }} # GitHub Actions가 맡을 IAM 역할 ARN
+          aws-region: ${{ env.ECR_PUBLIC_REGION }}
+
+      - name: Public ECR 로그인
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+
+      - name: Buildx 준비 (멀티 플랫폼 빌더)
+        uses: docker/setup-buildx-action@v4
+
+      # 이미지 빌드 -> 태그 -> ECR push
+      - name: 이미지 빌드, 태그 및 ECR push (amd64)
+        id: build-image
+        env:
+          IMAGE_TAG: ${{ github.sha }} # 커밋 SHA를 이미지 태그로 사용(어떤 코드인지 추적 가능)
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            -t "$ECR_REPOSITORY_URI:$IMAGE_TAG" \
+            -t "$ECR_REPOSITORY_URI:latest" \
+            --push .
+          
+          # 다음 단계에서 ECS 서비스에 배포할 때, 어떤 이미지 태그를 사용할지 출력 -> GITHUB_OUTPUT에 저장
+          echo "image=$ECR_REPOSITORY_URI:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: AWS 자격증명 (ECS)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }} # GitHub Actions가 맡을 IAM 역할 ARN
+          aws-region: ${{ env.ECS_AWS_REGION }}
+
+      - name: 현재 작업 정의(task definition) 내려받기
+        run: |
+          aws ecs describe-task-definition \
+          --region "$ECS_AWS_REGION" \
+          --task-definition "$ECS_TASK_DEFINITION" \
+          --query "taskDefinition" > task-definition.json
+          
+          # describe 응답에 등록 불가능한 읽기 전용 필드가 섞여 있으므로 제거(jq는 러너에 기본 설치되어 있음)
+          # json 안에 있는 여러가지 property 중에 읽기 전용 프로퍼티는 등록만 해도 에러가 발생하기 때문에 json에서 깔끔하게 제거
+          # -> task-definition-clean.json 으로 저장 -> task-definition.json 파일에 덮어 쓰겠다 
+          
+          jq 'del(
+            .taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .enableFaultInjection
+            )' task-definition.json > task-definition-clean.json
+            mv task-definition-clean.json task-definition.json
+
+      # 작업 정의(task definition)에서 컨테이너 이미지 태그를 새로 빌드한 이미지로 교체
+      - name: 작업 정의에 새 이미지 반영
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      # 프리티어 리소스를 고려해 기존 태스크를 먼저 중단한다.
+      # 이 방식은 비용을 줄이지만 배포 중 일시적인 중단 시간이 발생한다.
+      - name: 기존 ECS 서비스 중단
+        run: |
+          aws ecs update-service \
+            --region "$ECS_AWS_REGION" \
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --desired-count 0
+
+          aws ecs wait services-stable \
+            --region "$ECS_AWS_REGION" \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE"
+
+      # ECS 서비스에 새 작업 정의(task definition) 배포 + 안정화될 때까지 대기
+      - name: ECS 배포
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          desired-count: 1
+          wait-for-service-stability: true # 새 태스크가 안정될 때까지 기다림(성공 확인)
