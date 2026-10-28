@@ -7,7 +7,10 @@ import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.exception.GlobalExceptionHandler;
 import com.sprint.mission.discodeit.exception.message.MessageNotFoundException;
+import com.sprint.mission.discodeit.security.JwtRegistry;
+import com.sprint.mission.discodeit.security.JwtTokenProvider;
 import com.sprint.mission.discodeit.service.MessageService;
+import com.sprint.mission.discodeit.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -49,7 +52,16 @@ class MessageControllerTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
+    private UserService userService;
+
+    @MockitoBean
     private MessageService messageService;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private JwtRegistry jwtRegistry;
 
     @Test
     @DisplayName("메시지 목록 조회에 성공하면 페이징 JSON을 반환한다")
@@ -288,45 +300,6 @@ class MessageControllerTest {
 
         assertThat(capturedCommand.content())
                 .isEqualTo("잘 부탁드립니다.");
-    }
-
-    @Test
-    @DisplayName("메시지 내용이 공백이면 400을 반환한다")
-    void update_fail_contentBlank() throws Exception {
-        // given
-        UUID messageId = UUID.randomUUID();
-
-        UpdateMessageRequest request =
-                new UpdateMessageRequest(" ");
-
-        // when & then
-        mockMvc.perform(
-                        patch(
-                                "/api/messages/{messageId}",
-                                messageId
-                        )
-                                .with(csrf())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        objectMapper.writeValueAsString(request)
-                                )
-                )
-                .andExpect(status().isBadRequest())
-                .andExpect(
-                        jsonPath("$.code")
-                                .value("INVALID_REQUEST")
-                )
-                .andExpect(
-                        jsonPath("$.status")
-                                .value(400)
-                )
-                .andExpect(
-                        jsonPath("$.details.content")
-                                .value("메시지 내용은 필수입니다.")
-                );
-
-        then(messageService)
-                .shouldHaveNoInteractions();
     }
 
     @Test

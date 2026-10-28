@@ -23,3 +23,10 @@ logging:
     com.sprint.mission.discodeit: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.orm.jdbc.bind: TRACE
+
+discodeit:
+  jwt:
+    secret-key: "discodeit-test-only-secret-key-2026"
+    issuer: "discodeit"
+    access-token-validity: 30m
+    refresh-token-validity: 14d

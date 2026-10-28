@@ -7,7 +7,6 @@ public record BinaryContentCreatedEvent(
         UUID binaryContentId,
         byte[] bytes
 ) {
-
     public BinaryContentCreatedEvent{
 
         Objects.requireNonNull(binaryContentId,
@@ -23,4 +22,5 @@ public record BinaryContentCreatedEvent(
     public byte[] bytes() {
         return bytes.clone();
     }
+
 }

@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.event.UserSseEvent;
 import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,7 @@ public class BasicUserService implements UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final AuthService authService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -101,8 +104,14 @@ public class BasicUserService implements UserService {
         }
 
         repository.save(user);
-        log.info("사용자 생성 완료. id={}", user.getId());
-        return userMapper.toDto(user, false);
+
+        UserDto userDto = userMapper.toDto(user, false);
+
+        eventPublisher.publishEvent(
+                new UserSseEvent("users.created", userDto)
+        );
+
+        return userDto;
     }
 
 
@@ -219,8 +228,15 @@ public class BasicUserService implements UserService {
 
         boolean online = authService.isOnline(id);
 
-        return userMapper.toDto(user, online);
+        UserDto userDto = userMapper.toDto(user, online);
+
+        eventPublisher.publishEvent(
+                new UserSseEvent("users.updated", userDto)
+        );
+
+        return userDto;
     }
+
 
     @Override
     @Transactional
@@ -237,15 +253,22 @@ public class BasicUserService implements UserService {
         User user = repository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
+        boolean online = authService.isOnline(id);
+        UserDto userDto = userMapper.toDto(user, online);
         BinaryContent profile = user.getProfile();
 
         if (profile != null) {
             user.updateProfile(null);
             binaryContentRepository.delete(profile);
         }
+
         repository.delete(user);
+
+        eventPublisher.publishEvent(
+                new UserSseEvent("users.deleted", userDto)
+        );
+
         log.info("사용자 삭제 완료. id={}", id);
     }
-
 
 }

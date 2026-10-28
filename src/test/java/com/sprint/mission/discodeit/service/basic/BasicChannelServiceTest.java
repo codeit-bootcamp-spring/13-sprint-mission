@@ -22,6 +22,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 import java.util.Optional;
@@ -53,6 +54,9 @@ public class BasicChannelServiceTest {
 
     @Mock
     private ChannelMapper channelMapper;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @Test
     @DisplayName("공개 채널 샐성 성공")
@@ -256,6 +260,12 @@ public class BasicChannelServiceTest {
             );
 
             ReadStatus readStatus = mock(ReadStatus.class);
+
+            User user = mock(User.class);
+            UUID userId = UUID.randomUUID();
+            given(readStatus.getUser()).willReturn(user);
+            given(user.getId()).willReturn(userId);
+
             List<ReadStatus> readStatuses = List.of(readStatus);
 
             given(channelRepository.findById(channelId))

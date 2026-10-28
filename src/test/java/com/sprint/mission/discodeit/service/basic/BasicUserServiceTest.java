@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -48,6 +49,9 @@ public class BasicUserServiceTest {
     @Mock
     private AuthService authService;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @Test
     @DisplayName("사용자 생성 성공")
     void create_success() {
@@ -56,15 +60,9 @@ public class BasicUserServiceTest {
                 "홍길동",
                 "hong12@test.com",
                 "12345"
-                );
+        );
 
         UserDto expected = mock(UserDto.class);
-
-        given(userRepository.existsByUsername("홍길동"))
-                .willReturn(false);
-
-        given(userRepository.existsByEmail("hong12@test.com"))
-                .willReturn(false);
 
         given(passwordEncoder.encode("12345"))
                 .willReturn("encoded-password");
@@ -82,8 +80,7 @@ public class BasicUserServiceTest {
                 .should()
                 .save(any(User.class));
 
-        then(userMapper)
-                .should()
+        then(userMapper).should()
                 .toDto(any(User.class), eq(false));
     }
 

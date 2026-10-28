@@ -1,3 +1,4 @@
+
 package com.sprint.mission.discodeit.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -13,6 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -20,6 +23,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -52,22 +56,41 @@ class UserApiIntegrationTest {
     @Autowired
     private EntityManager entityManager;
 
+    private MockMultipartFile jsonPart(
+            String partName,
+            Map<String, String> data
+    ) throws Exception {
+
+        return new MockMultipartFile(
+                partName,
+                "",
+                MediaType.APPLICATION_JSON_VALUE,
+                objectMapper.writeValueAsBytes(data)
+        );
+    }
+
     @Test
     @DisplayName("사용자를 생성하면 DB에 저장되고 201을 반환한다")
     void createUser_success() throws Exception {
+
+        // given
+        MockMultipartFile requestPart = jsonPart(
+                "userCreateRequest",
+                Map.of(
+                        "username", "홍길동",
+                        "email", "hong12@test.com",
+                        "password", "12345"
+                )
+        );
+
         // when & then
         mockMvc.perform(
                         multipart("/api/users")
+                                .file(requestPart)
                                 .with(csrf())
-                                .param("username", "홍길동")
-                                .param("email", "hong12@test.com")
-                                .param("password", "12345")
                 )
                 .andExpect(status().isCreated())
-                .andExpect(
-                        jsonPath("$.id")
-                                .exists()
-                )
+                .andExpect(jsonPath("$.id").exists())
                 .andExpect(
                         jsonPath("$.username")
                                 .value("홍길동")
@@ -76,14 +99,16 @@ class UserApiIntegrationTest {
                         jsonPath("$.email")
                                 .value("hong12@test.com")
                 )
-                .andExpect(jsonPath("$.role").value("USER"));
+                .andExpect(
+                        jsonPath("$.role")
+                                .value("USER")
+                );
 
-
+        // 실제 DB에 사용자가 저장되었는지 확인
         Optional<User> savedUser =
                 userRepository.findByEmail("hong12@test.com");
 
-        assertThat(savedUser)
-                .isPresent();
+        assertThat(savedUser).isPresent();
 
         assertThat(savedUser.get().getUsername())
                 .isEqualTo("홍길동");
@@ -98,6 +123,7 @@ class UserApiIntegrationTest {
     @Test
     @DisplayName("사용자를 생성한 후 사용자 목록에서 조회할 수 있다")
     void findAll_success() throws Exception {
+
         // given
         createUserThroughApi(
                 "김철수",
@@ -111,21 +137,18 @@ class UserApiIntegrationTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(
-                        jsonPath("$")
-                                .isArray()
+                        jsonPath("$").isArray()
                 )
                 .andExpect(
                         jsonPath(
                                 "$[?(@.email == 'kim2@test.com')].username"
-                        )
-                                .value(hasItem("김철수"))
+                        ).value(hasItem("김철수"))
                 );
 
         Optional<User> savedUser =
                 userRepository.findByEmail("kim2@test.com");
 
-        assertThat(savedUser)
-                .isPresent();
+        assertThat(savedUser).isPresent();
 
         assertThat(savedUser.get().getUsername())
                 .isEqualTo("김철수");
@@ -134,6 +157,7 @@ class UserApiIntegrationTest {
     @Test
     @DisplayName("사용자 이름을 수정하면 응답과 DB에 반영된다")
     void updateUser_success() throws Exception {
+
         // given
         UUID userId = createUserThroughApi(
                 "홍길동",
@@ -141,16 +165,21 @@ class UserApiIntegrationTest {
                 "12345"
         );
 
+        MockMultipartFile requestPart = jsonPart(
+                "userUpdateRequest",
+                Map.of("username", "홍감자")
+        );
+
         // when & then
         mockMvc.perform(
                         multipart("/api/users/{userId}", userId)
+                                .file(requestPart)
                                 .with(request -> {
                                     request.setMethod("PATCH");
                                     return request;
                                 })
                                 .with(authenticatedAs(userId))
                                 .with(csrf())
-                                .param("username", "홍감자")
                 )
                 .andExpect(status().isOk())
                 .andExpect(
@@ -182,6 +211,7 @@ class UserApiIntegrationTest {
     @Test
     @DisplayName("사용자를 삭제하면 204를 반환하고 DB에서 제거된다")
     void deleteUser_success() throws Exception {
+
         // given
         UUID userId = createUserThroughApi(
                 "병아리",
@@ -207,6 +237,7 @@ class UserApiIntegrationTest {
     @Test
     @DisplayName("존재하지 않는 사용자를 삭제하면 404를 반환한다")
     void deleteUser_fail_userNotFound() throws Exception {
+
         // given
         UUID unknownUserId = UUID.randomUUID();
 
@@ -237,13 +268,22 @@ class UserApiIntegrationTest {
     @Test
     @DisplayName("사용자 이름이 공백이면 생성되지 않고 400을 반환한다")
     void createUser_fail_usernameBlank() throws Exception {
+
+        // given
+        MockMultipartFile requestPart = jsonPart(
+                "userCreateRequest",
+                Map.of(
+                        "username", " ",
+                        "email", "hong12@test.com",
+                        "password", "12345"
+                )
+        );
+
         // when & then
         mockMvc.perform(
                         multipart("/api/users")
+                                .file(requestPart)
                                 .with(csrf())
-                                .param("username", " ")
-                                .param("email", "hong12@test.com")
-                                .param("password", "12345")
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(
@@ -267,13 +307,22 @@ class UserApiIntegrationTest {
     @Test
     @DisplayName("이메일이 공백이면 생성되지 않고 400을 반환한다")
     void createUser_fail_emailBlank() throws Exception {
+
+        // given
+        MockMultipartFile requestPart = jsonPart(
+                "userCreateRequest",
+                Map.of(
+                        "username", "홍길동",
+                        "email", " ",
+                        "password", "12345"
+                )
+        );
+
         // when & then
         mockMvc.perform(
                         multipart("/api/users")
+                                .file(requestPart)
                                 .with(csrf())
-                                .param("username", "홍길동")
-                                .param("email", " ")
-                                .param("password", "12345")
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(
@@ -297,13 +346,22 @@ class UserApiIntegrationTest {
     @Test
     @DisplayName("비밀번호가 공백이면 생성되지 않고 400을 반환한다")
     void createUser_fail_passwordBlank() throws Exception {
+
+        // given
+        MockMultipartFile requestPart = jsonPart(
+                "userCreateRequest",
+                Map.of(
+                        "username", "홍길동",
+                        "email", "hong12@test.com",
+                        "password", " "
+                )
+        );
+
         // when & then
         mockMvc.perform(
                         multipart("/api/users")
+                                .file(requestPart)
                                 .with(csrf())
-                                .param("username", "홍길동")
-                                .param("email", "hong12@test.com")
-                                .param("password", " ")
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(
@@ -324,7 +382,109 @@ class UserApiIntegrationTest {
         ).isEmpty();
     }
 
+    @Test
+    @DisplayName("다른 사용자의 정보는 수정할 수 없다")
+    void updateUser_fail_notOwner() throws Exception {
+
+        // given
+        UUID targetUserId = createUserThroughApi(
+                "수정대상",
+                "target@test.com",
+                "12345"
+        );
+
+        UUID loginUserId = UUID.randomUUID();
+
+        MockMultipartFile requestPart = jsonPart(
+                "userUpdateRequest",
+                Map.of("username", "권한없는수정")
+        );
+
+        // when & then
+        mockMvc.perform(
+                        multipart(
+                                "/api/users/{userId}",
+                                targetUserId
+                        )
+                                .file(requestPart)
+                                .with(request -> {
+                                    request.setMethod("PATCH");
+                                    return request;
+                                })
+                                .with(authenticatedAs(loginUserId))
+                                .with(csrf())
+                )
+                .andExpect(status().isForbidden());
+
+        User targetUser = userRepository.findById(targetUserId)
+                .orElseThrow();
+
+        assertThat(targetUser.getUsername())
+                .isEqualTo("수정대상");
+    }
+
+    @Test
+    @DisplayName("다른 사용자는 삭제할 수 없다")
+    void deleteUser_fail_notOwner() throws Exception {
+
+        // given
+        UUID targetUserId = createUserThroughApi(
+                "삭제대상",
+                "delete_target@test.com",
+                "12345"
+        );
+
+        // when & then
+        mockMvc.perform(
+                        delete(
+                                "/api/users/{userId}",
+                                targetUserId
+                        )
+                                .with(authenticatedAs(UUID.randomUUID()))
+                                .with(csrf())
+                )
+                .andExpect(status().isForbidden());
+
+        assertThat(userRepository.findById(targetUserId))
+                .isPresent();
+    }
+
+    private UUID createUserThroughApi(
+            String username,
+            String email,
+            String password
+    ) throws Exception {
+
+        MockMultipartFile requestPart = jsonPart(
+                "userCreateRequest",
+                Map.of(
+                        "username", username,
+                        "email", email,
+                        "password", password
+                )
+        );
+
+        MvcResult result = mockMvc.perform(
+                        multipart("/api/users")
+                                .file(requestPart)
+                                .with(csrf())
+                )
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String responseBody =
+                result.getResponse().getContentAsString();
+
+        JsonNode responseJson =
+                objectMapper.readTree(responseBody);
+
+        return UUID.fromString(
+                responseJson.get("id").asText()
+        );
+    }
+
     private RequestPostProcessor authenticatedAs(UUID userId) {
+
         UserDto userDto = new UserDto(
                 userId,
                 "test-user",
@@ -339,93 +499,7 @@ class UserApiIntegrationTest {
                         userDto,
                         "12345"
                 );
+
         return user(userDetails);
-    }
-
-    @Test
-    @DisplayName("다른 사용자의 정보는 수정할 수 없다.")
-    void updateUser_fail_notOwner() throws Exception {
-        // given
-        UUID targetUserId = createUserThroughApi(
-                "수정대상",
-        "target@teat.com",
-        "12345"
-        );
-
-        UUID loginUserId = UUID.randomUUID();
-
-        // when & then
-        mockMvc.perform(
-                        multipart(
-                                "/api/users/{userId}",
-                                targetUserId
-                        )
-                        .with(request -> {
-                            request.setMethod("PATCH");
-                            return request;
-                        })
-                        .with(authenticatedAs(loginUserId))
-                        .with(csrf())
-                        .param("username", "권한없는수정")
-                )
-                .andExpect(status().isForbidden());
-
-                User targetUser = userRepository.findById(targetUserId)
-                        .orElseThrow();
-                assertThat(targetUser.getUsername())
-                        .isEqualTo("수정대상");
-    }
-
-    @Test
-    @DisplayName("다른 사용자는 삭제할 수 없다.")
-    void deleteUser_fail_notOwner() throws Exception {
-        // given
-        UUID targetUserId = createUserThroughApi(
-                "삭제대상",
-                "delete_target@test.com",
-                "12345"
-        );
-
-        // when & then
-        mockMvc.perform(
-                delete(
-                        "/api/users/{userId}",
-                        targetUserId
-                )
-                        .with(authenticatedAs(UUID.randomUUID()))
-                        .with(csrf())
-
-                )
-                .andExpect(status().isForbidden());
-
-        assertThat(userRepository.findById(targetUserId))
-                .isPresent();
-
-    }
-
-    private UUID createUserThroughApi(
-            String username,
-            String email,
-            String password
-    ) throws Exception {
-        MvcResult result = mockMvc.perform(
-                        multipart("/api/users")
-                                .with(csrf())
-                                .param("username", username)
-                                .param("email", email)
-                                .param("password", password)
-                )
-                .andExpect(status().isCreated())
-                .andReturn();
-
-        String responseBody =
-                result.getResponse().getContentAsString();
-
-        JsonNode responseJson =
-                objectMapper.readTree(responseBody);
-
-        return UUID.fromString(
-                responseJson.get("id").asText()
-        );
     }
 }
