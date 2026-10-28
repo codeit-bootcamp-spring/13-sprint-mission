@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.security;
 import com.sprint.mission.discodeit.events.UserCacheClearEvent;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Role;
+import com.sprint.mission.discodeit.repository.UserOnlineTrackingRepository;
 import com.sprint.mission.discodeit.exception.jwt.TokenRenewalFailedException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -37,12 +38,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.BDDMockito.given;
 
+/**
+ * 실제 인메모리 레지스트리의 토큰 변경과 사용자별 동시성 처리를 검증한다.
+ * 토큰 검증기와 추적 저장소는 Mock으로 제어하며 원자적 추적 제거의 호출 조건을 확인한다.
+ */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("인메모리 JWT 레지스트리 단위 테스트")
 class InMemoryJwtRegistryTest {
     private static final Instant NOW = Instant.parse("2026-10-11T00:00:00Z");
 
     @Mock ApplicationEventPublisher eventPublisher;
+    @Mock UserOnlineTrackingRepository trackingRepository;
 
 
     @Mock
@@ -52,7 +58,7 @@ class InMemoryJwtRegistryTest {
 
     @BeforeEach
     void setUp() {
-        registry = new InMemoryJwtRegistry(jwtTokenProvider, eventPublisher, Clock.fixed(NOW, ZoneOffset.UTC));
+        registry = new InMemoryJwtRegistry(jwtTokenProvider, eventPublisher, Clock.fixed(NOW, ZoneOffset.UTC), trackingRepository);
         given(jwtTokenProvider.getMaxActiveJwtCount()).willReturn(1);
     }
 

@@ -24,6 +24,10 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * 실제 JPA Repository를 실행해 사용자 조회와 프로필 소유자 조회 쿼리를 검증한다.
+ * 다른 사용자의 프로필을 잘못 반환하지 않는지 실제 저장한 엔티티로 확인한다.
+ */
 @DataJpaTest(showSql = false)
 @Import(value = {QuerydslTestConfig.class, JpaAuditingTestConfig.class, P6SpySqlFormatter.class})
 @DisplayName("UserRepository 슬라이스 테스트")
@@ -38,6 +42,35 @@ class UserRepositoryTest {
 
     @Autowired
     EntityManager em;
+
+    @Test
+    @DisplayName("프로필 파일 ID에 해당하는 소유자 ID만 조회한다")
+    void findUserIdByProfileId_returnsOwnerId() {
+        UserFixture owner = saveUserWithProfile(
+                new UserCreateCommand("owner", "password", "owner@test.local")
+        );
+        saveUserWithProfile(
+                new UserCreateCommand("other", "password", "other@test.local")
+        );
+        em.clear();
+
+        Optional<UUID> result = userRepository.findUserIdByProfileId(owner.profile().getId());
+
+        assertThat(result).contains(owner.user().getId());
+    }
+
+    @Test
+    @DisplayName("프로필 소유자가 없으면 빈 결과를 반환한다")
+    void findUserIdByProfileId_returnsEmptyWhenNoOwner() {
+        saveUserWithProfile(
+                new UserCreateCommand("other", "password", "other@test.local")
+        );
+        BinaryContent unassignedProfile = saveProfile();
+        em.clear();
+
+        assertThat(userRepository.findUserIdByProfileId(unassignedProfile.getId())).isEmpty();
+        assertThat(userRepository.findUserIdByProfileId(UUID.randomUUID())).isEmpty();
+    }
 
     @Test
     @DisplayName("요청한 사용자만 일괄 조회하며 프로필도 함께 로딩한다")

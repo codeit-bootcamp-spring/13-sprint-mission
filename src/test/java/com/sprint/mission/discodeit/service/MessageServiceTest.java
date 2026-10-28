@@ -56,6 +56,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
+/**
+ * 실제 메시지 서비스가 저장 결과의 DTO를 응답과 생성 이벤트에 함께 사용하는지 확인한다.
+ * 협력 Repository·Mapper는 Mock이며 커밋 후 WebSocket 전송 자체는 이 단위 테스트의 범위가 아니다.
+ */
 @ExtendWith(MockitoExtension.class)
 class MessageServiceTest {
 
@@ -1238,17 +1242,19 @@ class MessageServiceTest {
         Channel channel = com.sprint.mission.discodeit.support.NotificationTestFixtures.identified(
                 com.sprint.mission.discodeit.support.NotificationTestFixtures.channel(ChannelType.PUBLIC));
         MessageCreateCommand command = new MessageCreateCommand("event content", author.getId(), channel.getId());
+        MessageDto messageDto = createMessageDto(UUID.randomUUID(), command, List.of());
         given(channelReader.getChannel(channel.getId())).willReturn(channel);
         given(userReader.getUser(author.getId())).willReturn(author);
         given(messageRepository.save(any(Message.class))).willAnswer(invocation -> invocation.getArgument(0));
         given(messageFileService.save(any(Message.class), eq(List.of()))).willReturn(List.of());
+        given(messageMapper.toDto(any(Message.class), eq(List.of()))).willReturn(messageDto);
 
         messageService.save(command, List.of());
 
         ArgumentCaptor<MessageCreatedEvent> event = ArgumentCaptor.forClass(MessageCreatedEvent.class);
         verify(eventPublisher).publishEvent(event.capture());
         assertThat(event.getValue()).isEqualTo(new MessageCreatedEvent(channel.getId(), author.getId(),
-                channel.getName(), author.getUsername(), command.content()));
+                channel.getName(), author.getUsername(), messageDto.content(), messageDto));
     }
 
 }

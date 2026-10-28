@@ -2,8 +2,10 @@ package com.sprint.mission.discodeit.security;
 
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Role;
+import com.sprint.mission.discodeit.repository.impl.InMemoryUserOnlineTrackingRepository;
 import com.sprint.mission.discodeit.security.handler.JwtLogoutHandler;
 import com.sprint.mission.discodeit.service.RefreshTokenCookieManager;
+import com.sprint.mission.discodeit.service.basic.UserReader;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import org.junit.jupiter.api.DisplayName;
@@ -30,6 +32,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
+/**
+ * 실제 로그아웃 핸들러와 인메모리 레지스트리의 경쟁 상황을 재현한다.
+ * 토큰 검증기를 Mock으로 지연시킨 동안 로그인·갱신을 진행해 이전 로그아웃이 새 세션을 지우지 않는지 확인한다.
+ */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("실제 로그아웃 핸들러와 JWT 레지스트리의 동시성 테스트")
 class JwtLogoutConcurrencyTest {
@@ -42,6 +48,9 @@ class JwtLogoutConcurrencyTest {
     @Mock
     JwtTokenProvider jwtTokenProvider;
 
+    @Mock
+    UserReader userReader;
+
     enum TokenReplacement {
         LOGIN, REFRESH
     }
@@ -51,8 +60,10 @@ class JwtLogoutConcurrencyTest {
     @DisplayName("이전 로그아웃의 검증 도중 완료된 새 로그인이나 갱신의 토큰 쌍을 유지한다")
     void logout_preservesTokensReplacedDuringValidation(TokenReplacement replacement) throws Exception {
         // 핸들러와 레지스트리 사이의 동시 실행이 관심사이므로 두 객체 모두 실제 구현을 사용한다.
-        InMemoryJwtRegistry registry = new InMemoryJwtRegistry(jwtTokenProvider, eventPublisher, Clock.systemUTC());
-        JwtLogoutHandler handler = new JwtLogoutHandler(cookieManager, registry, jwtTokenProvider, eventPublisher);
+        InMemoryJwtRegistry registry = new InMemoryJwtRegistry(jwtTokenProvider, eventPublisher, Clock.systemUTC(),
+                new InMemoryUserOnlineTrackingRepository());
+        JwtLogoutHandler handler = new JwtLogoutHandler(
+                cookieManager, registry, jwtTokenProvider, userReader, eventPublisher);
         OffsetDateTime now = OffsetDateTime.parse("2026-09-27T00:00:00Z");
         UserDto user = new UserDto(UUID.randomUUID(), "logout-user", "logout@example.com", null,
                 true, Role.USER, now, now);
@@ -73,6 +84,7 @@ class JwtLogoutConcurrencyTest {
         });
         given(jwtTokenProvider.getTokenType(claims)).willReturn(JwtTokenProvider.TokenType.REFRESH.name());
         given(jwtTokenProvider.getUserId(claims)).willReturn(user.id());
+        given(userReader.findUserDto(user.id())).willReturn(Optional.empty());
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
@@ -92,6 +104,7 @@ class JwtLogoutConcurrencyTest {
             assertThat(registry.hasActiveJwtInformationByRefreshToken(current.refreshToken())).isTrue();
             assertThat(registry.hasActiveJwtInformationByUserId(user.id())).isTrue();
             verify(cookieManager).clearRefreshTokenCookie();
+            verify(userReader).findUserDto(user.id());
         } finally {
             finishValidation.countDown();
             executor.shutdownNow();

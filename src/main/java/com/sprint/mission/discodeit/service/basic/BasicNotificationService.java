@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.dto.command.notification.NotificationCreateC
 import com.sprint.mission.discodeit.dto.response.NotificationDto;
 import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.events.NotificationCacheClearEvent;
+import com.sprint.mission.discodeit.events.NotificationCreatedEvent;
 import com.sprint.mission.discodeit.exception.notification.NotificationNotFoundException;
 import com.sprint.mission.discodeit.mapper.NotificationMapper;
 import com.sprint.mission.discodeit.repository.NotificationRepository;
@@ -52,7 +53,12 @@ public class BasicNotificationService implements NotificationService {
         log.debug("알림 저장 요청을 처리했습니다. notificationCount={}", createdNotifications.size());
 
         createdNotifications
-                .forEach(noti -> eventPublisher.publishEvent(new NotificationCacheClearEvent(noti.getReceiverId())));
+                .forEach(noti -> {
+                    eventPublisher.publishEvent(new NotificationCacheClearEvent(noti.getReceiverId()));
+
+                    // 저장한 알림마다 DTO를 발행한다. SSE 리스너는 커밋 후 해당 알림의 수신자에게만 보낸다.
+                    eventPublisher.publishEvent(new NotificationCreatedEvent(notificationMapper.toDto(noti)));
+                });
     }
 
     @Override

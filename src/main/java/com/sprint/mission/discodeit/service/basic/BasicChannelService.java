@@ -12,7 +12,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.Role;
-import com.sprint.mission.discodeit.events.ChannelCacheClearEvent;
+import com.sprint.mission.discodeit.events.*;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.PrivateChannelUpdateNotAllowedException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -57,7 +57,11 @@ public class BasicChannelService implements ChannelService {
         Channel channel = new Channel(command);
         Channel savedChannel = channelRepository.save(channel);
 
-        return getChannelDto(command, savedChannel);
+        // 참여자 정보가 준비된 생성 DTO를 응답과 SSE 이벤트에 함께 사용한다.
+        ChannelDto channelDto = getChannelDto(command, savedChannel);
+        eventPublisher.publishEvent(ChannelEvent.createEvent(channelDto));
+
+        return channelDto;
     }
 
     @Transactional(readOnly = true)
@@ -108,28 +112,30 @@ public class BasicChannelService implements ChannelService {
         channel.updateInfo(command);
 
         eventPublisher.publishEvent(new ChannelCacheClearEvent(channelId));
-
-        return channelMapper.toDto(
+        ChannelDto channelDto = channelMapper.toDto(
                 channelRepository.save(channel),
                 getLastMessageAt(channelId),
                 readStatusService.findAllByChannelId(channelId)
         );
+
+        // 변경 후 DTO를 발행하고 리스너가 커밋 뒤 공개/비공개 수신 범위를 결정한다.
+        eventPublisher.publishEvent(ChannelEvent.updateEvent(channelDto));
+        return channelDto;
     }
 
     @LogAction(value = "채널 삭제", idName = "channelId", idParamIndex = 0)
     @PreAuthorize("hasRole('CHANNEL_MANAGER')")
     @Override
     public void delete(UUID channelId) {
-
-        if (!channelRepository.existsById(channelId)) throw new ChannelNotFoundException(channelId);
+        // 참여 관계를 지우기 전에 DTO를 만든다. 삭제 후에도 비공개 채널의 기존 참여자에게 알려야 한다.
+        ChannelDto channelDto = channelMapper.toDto( channelReader.getChannel(channelId), readStatusService.findAllByChannelId(channelId));
 
         readStatusService.deleteByChannelId(channelId);
-
         messageService.deleteAllByChannelId(channelId);
-
         channelRepository.deleteById(channelId);
 
         eventPublisher.publishEvent(new ChannelCacheClearEvent(channelId));
+        eventPublisher.publishEvent(ChannelEvent.deleteEvent(channelDto));
 
     }
 

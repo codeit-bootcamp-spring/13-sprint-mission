@@ -51,6 +51,11 @@ dependencies {
 	implementation 'org.flywaydb:flyway-core'
 	implementation 'org.flywaydb:flyway-database-postgresql'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	// STOMP/SockJS 엔드포인트와 서버별 SimpleBroker를 구성한다.
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+	// 메시지 채널의 SecurityContext 전달과 목적지별 인증·인가 인터셉터를 제공한다.
+	implementation 'org.springframework.security:spring-security-messaging'
 	testImplementation 'org.springframework.security:spring-security-test'
 
 	compileOnly 'org.projectlombok:lombok'

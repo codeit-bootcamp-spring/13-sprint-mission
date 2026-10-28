@@ -17,20 +17,24 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * 실제 MapStruct 매퍼로 파일 메타데이터와 각 업로드 상태가 DTO에 반영되는지 확인한다.
+ * 서비스 단위 테스트에서 Mock Mapper가 생략한 실제 필드 매핑을 이 테스트가 담당한다.
+ */
 @DisplayName("바이너리 파일 매퍼 단위 테스트")
 class BinaryContentMapperTest {
     private final BinaryContentMapper mapper = Mappers.getMapper(BinaryContentMapper.class);
 
     @ParameterizedTest
     @EnumSource(BinaryContentStatus.class)
-    @DisplayName("업로드 상태와 무관하게 파일 정보를 기존 응답 형식으로 매핑한다")
+    @DisplayName("파일 정보와 업로드 상태를 DTO로 매핑한다")
     void toDto_mapsMetadata(BinaryContentStatus status) {
         UUID id = UUID.randomUUID();
         BinaryContent content = BinaryContent.createProcessing("image.png", "image/png", 42L);
         ReflectionTestUtils.setField(content, "id", id);
         content.updateStatus(status);
 
-        assertThat(mapper.toDto(content)).isEqualTo(new BinaryContentDto(id, "image.png", 42L, "image/png"));
+        assertThat(mapper.toDto(content)).isEqualTo(new BinaryContentDto(id, "image.png", 42L, "image/png", status));
     }
 
     @Test
@@ -41,7 +45,7 @@ class BinaryContentMapperTest {
 
         DownloadDto dto = mapper.toDownloadDto(content, result);
 
-        assertThat(dto.binaryContent()).isEqualTo(new BinaryContentDto(null, "file.txt", 1L, "text/plain"));
+        assertThat(dto.binaryContent()).isEqualTo(new BinaryContentDto(null, "file.txt", 1L, "text/plain", BinaryContentStatus.PROCESSING));
         assertThat(dto.result()).isSameAs(result);
     }
 }

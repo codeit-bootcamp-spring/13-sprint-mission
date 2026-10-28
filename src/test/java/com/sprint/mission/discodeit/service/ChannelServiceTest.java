@@ -13,6 +13,9 @@ import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.Role;
+import com.sprint.mission.discodeit.events.ChannelCacheClearEvent;
+import com.sprint.mission.discodeit.events.ChannelEvent;
+import com.sprint.mission.discodeit.events.ChannelEventType;
 import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
 import com.sprint.mission.discodeit.exception.channel.PrivateChannelUpdateNotAllowedException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
@@ -25,7 +28,6 @@ import com.sprint.mission.discodeit.service.basic.ReadStatusService;
 import com.sprint.mission.discodeit.service.basic.UserReader;
 import com.sprint.mission.discodeit.utils.RequestTimeZoneUtils;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -57,6 +59,11 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
+/**
+ * 실제 채널 서비스의 분기와 생성·수정·삭제 이벤트에 담기는 DTO를 검증한다.
+ * Repository·Reader·Mapper는 Mock이므로 실제 저장과 필드 매핑을 검증했다고 해석하지 않는다.
+ * 삭제 테스트의 순서 검증은 참여자 스냅샷을 확보하고 자식 관계를 먼저 정리하는 계약에 사용한다.
+ */
 @ExtendWith(MockitoExtension.class)
 class ChannelServiceTest {
     @Mock ApplicationEventPublisher eventPublisher;
@@ -120,7 +127,12 @@ class ChannelServiceTest {
 
             // then
             // 서비스는 mapper가 만든 DTO를 그대로 반환해야 한다.
-            assertThat(result).isEqualTo(publicChannelDto);
+            assertThat(result).isSameAs(publicChannelDto);
+
+            ArgumentCaptor<ChannelEvent> eventCaptor = ArgumentCaptor.forClass(ChannelEvent.class);
+            verify(eventPublisher).publishEvent(eventCaptor.capture());
+            assertThat(eventCaptor.getValue().type()).isEqualTo(ChannelEventType.CREATED);
+            assertThat(eventCaptor.getValue().channel()).isSameAs(result);
 
             // repository.save(...)에 전달된 실제 Channel을 캡처해서 command 값이 반영됐는지 확인한다.
             ArgumentCaptor<Channel> captor = ArgumentCaptor.forClass(Channel.class);
@@ -155,12 +167,17 @@ class ChannelServiceTest {
             ChannelCreatePrivateCommand privateCommand = new ChannelCreatePrivateCommand(participantIds, ChannelType.PRIVATE);
 
             // mapper가 반환할 최종 DTO는 실제 record 객체로 준비한다.
-            ChannelDto privateChannelDto = createPrivateChannelDto(channelId);
+            List<UserDto> participants = List.of(
+                    new UserDto(participantIds.get(0), "first", "first@test.local",
+                            null, false, Role.USER, null, null),
+                    new UserDto(participantIds.get(1), "second", "second@test.local",
+                            null, false, Role.USER, null, null)
+            );
+            ChannelDto privateChannelDto = createPrivateChannelDto(channelId, participants);
 
             // ReadStatus는 이 테스트에서 내부 상태를 검증하지 않고 mapper로 전달만 한다.
             // 따라서 실제 엔티티를 어렵게 구성하지 않고 mock 객체로 충분하다.
-            ReadStatus readStatus = mock(ReadStatus.class);
-            List<ReadStatus> readStatuses = List.of(readStatus);
+            List<ReadStatus> readStatuses = List.of(mock(ReadStatus.class), mock(ReadStatus.class));
 
             // mock repository는 실제 id 생성을 하지 않으므로 저장된 Channel에 channelId를 넣어 반환한다.
             // BasicChannelService.save(...)는 savedChannel.getId()로 ReadStatus를 다시 조회한다.
@@ -179,7 +196,12 @@ class ChannelServiceTest {
 
             // then
             // 서비스는 mapper가 만든 DTO를 그대로 반환해야 한다.
-            assertThat(result).isEqualTo(privateChannelDto);
+            assertThat(result).isSameAs(privateChannelDto);
+
+            ArgumentCaptor<ChannelEvent> eventCaptor = ArgumentCaptor.forClass(ChannelEvent.class);
+            verify(eventPublisher).publishEvent(eventCaptor.capture());
+            assertThat(eventCaptor.getValue().type()).isEqualTo(ChannelEventType.CREATED);
+            assertThat(eventCaptor.getValue().channel()).isSameAs(result);
 
             // 비공개 채널 생성 성공 흐름은 순서가 의미 있다.
             // 1. Channel 저장
@@ -375,7 +397,13 @@ class ChannelServiceTest {
 
             // then
             // 서비스는 mapper가 만들어준 DTO를 그대로 반환해야 한다.
-            assertThat(result).isEqualTo(publicChannelDto);
+            assertThat(result).isSameAs(publicChannelDto);
+
+            ArgumentCaptor<ChannelEvent> eventCaptor = ArgumentCaptor.forClass(ChannelEvent.class);
+            verify(eventPublisher).publishEvent(eventCaptor.capture());
+            assertThat(eventCaptor.getValue().type()).isEqualTo(ChannelEventType.UPDATED);
+            assertThat(eventCaptor.getValue().channel()).isSameAs(result);
+            verify(eventPublisher).publishEvent(new ChannelCacheClearEvent(channelId));
 
             // updateInfo(command)가 실제 엔티티에 반영됐는지 확인한다.
             // 반환 DTO만 검증하면 채널 이름/설명이 정말 수정됐는지 놓칠 수 있다.
@@ -447,7 +475,13 @@ class ChannelServiceTest {
 
             // then
             // 서비스는 mapper가 만들어준 DTO를 그대로 반환해야 한다.
-            assertThat(result).isEqualTo(publicChannelDto);
+            assertThat(result).isSameAs(publicChannelDto);
+
+            ArgumentCaptor<ChannelEvent> eventCaptor = ArgumentCaptor.forClass(ChannelEvent.class);
+            verify(eventPublisher).publishEvent(eventCaptor.capture());
+            assertThat(eventCaptor.getValue().type()).isEqualTo(ChannelEventType.UPDATED);
+            assertThat(eventCaptor.getValue().channel()).isSameAs(result);
+            verify(eventPublisher).publishEvent(new ChannelCacheClearEvent(channelId));
 
             // mapper가 반환한 DTO에도 수정 요청 값과 null lastMessageAt이 반영되어 있는지 확인한다.
             assertThat(result.name()).isEqualTo(updateCommand.channelName());
@@ -496,6 +530,8 @@ class ChannelServiceTest {
             assertThatThrownBy(() -> channelService.update(channelId, updateCommand))
                     .isInstanceOf(ChannelNotFoundException.class);
 
+            verifyNoInteractions(eventPublisher);
+
             // 채널 수정은 기존 채널 조회에서 시작하므로 findById(channelId)가 호출됐는지 확인한다.
             verify(channelRepository).findById(channelId);
 
@@ -543,6 +579,8 @@ class ChannelServiceTest {
             assertThatThrownBy(() -> channelService.update(channelId, updateCommand))
                     .isInstanceOf(PrivateChannelUpdateNotAllowedException.class);
 
+            verifyNoInteractions(eventPublisher);
+
             // 기존 채널 조회까지는 수행되어야 한다.
             verify(channelRepository).findById(channelId);
 
@@ -572,78 +610,74 @@ class ChannelServiceTest {
     @DisplayName("채널 삭제")
     class DeleteChannelTest {
 
-        @Test
-        @DisplayName("채널 삭제 성공")
-        void delete_deletesChannelAndRelatedData_whenChannelExists() {
+        @ParameterizedTest(name = "{0} 채널 삭제")
+        @EnumSource(value = ChannelType.class, names = {"PUBLIC", "PRIVATE"})
+        @DisplayName("삭제 전 채널 정보를 보존하고 삭제 이벤트를 발행한다")
+        void delete_deletesChannelAndRelatedData_whenChannelExists(ChannelType channelType) {
             // given
-            // 삭제할 channelId를 준비한다.
-            // 이 테스트는 삭제 대상 채널이 존재하는 정상 삭제 케이스다.
             UUID channelId = UUID.randomUUID();
-
-            // BasicChannelService.delete(...)는 가장 먼저 existsById(channelId)로 채널 존재 여부를 확인한다.
-            // true를 반환하게 해서 삭제가 가능한 상황을 만든다.
-            given(channelRepository.existsById(channelId)).willReturn(true);
+            List<UserDto> participants = List.of(
+                    new UserDto(UUID.randomUUID(), "first", "first@test.local",
+                            null, false, Role.USER, null, null),
+                    new UserDto(UUID.randomUUID(), "second", "second@test.local",
+                            null, false, Role.USER, null, null)
+            );
+            List<UUID> participantIds = participants.stream().map(UserDto::id).toList();
+            Channel channel = channelType == ChannelType.PUBLIC
+                    ? createPublicChannel(channelId)
+                    : createPrivateChannel(channelId,
+                            new ChannelCreatePrivateCommand(participantIds, ChannelType.PRIVATE));
+            // ReadStatus는 Mapper에 전달만 하므로 Mock을 사용한다.
+            List<ReadStatus> readStatuses = List.of(mock(ReadStatus.class), mock(ReadStatus.class));
+            ChannelDto channelDto = new ChannelDto(
+                    channelId, channelType, channel.getName(), channel.getDescription(), participants, null
+            );
+            given(channelReader.getChannel(channelId)).willReturn(channel);
+            given(readStatusService.findAllByChannelId(channelId)).willReturn(readStatuses);
+            given(channelMapper.toDto(channel, readStatuses)).willReturn(channelDto);
 
             // when
-            // 채널 삭제 로직을 실행한다.
             channelService.delete(channelId);
 
             // then
-            // 삭제 성공 흐름은 순서가 중요하다.
-            // 1. 채널 존재 여부 확인
-            // 2. 채널에 연결된 ReadStatus 삭제
-            // 3. 채널에 연결된 메시지 삭제
-            // 4. 마지막으로 채널 삭제
-            //
-            // 관련 데이터를 먼저 삭제한 뒤 채널을 삭제해야 외래키 제약이나 고아 데이터 문제를 피할 수 있다.
-            // InOrder에는 같은 mock을 중복해서 넣을 필요가 없으므로 channelRepository는 한 번만 넣는다.
-            InOrder inOrder = inOrder(channelRepository, readStatusService, messageService);
-            inOrder.verify(channelRepository).existsById(channelId);
+            verify(channelReader).getChannel(channelId);
+            verify(readStatusService).findAllByChannelId(channelId);
+
+            ArgumentCaptor<ChannelEvent> eventCaptor = ArgumentCaptor.forClass(ChannelEvent.class);
+            verify(eventPublisher).publishEvent(eventCaptor.capture());
+            ChannelEvent deletedEvent = eventCaptor.getValue();
+            assertThat(deletedEvent.type()).isEqualTo(ChannelEventType.DELETED);
+            assertThat(deletedEvent.channel()).isSameAs(channelDto);
+            verify(eventPublisher).publishEvent(new ChannelCacheClearEvent(channelId));
+
+            // 참여자 정보가 사라지기 전에 DTO를 만들고, 자식 데이터와 채널을 삭제한 뒤 이벤트를 발행한다.
+            InOrder inOrder = inOrder(channelMapper, readStatusService, messageService,
+                    channelRepository, eventPublisher);
+            inOrder.verify(channelMapper).toDto(channel, readStatuses);
             inOrder.verify(readStatusService).deleteByChannelId(channelId);
             inOrder.verify(messageService).deleteAllByChannelId(channelId);
             inOrder.verify(channelRepository).deleteById(channelId);
+            inOrder.verify(eventPublisher).publishEvent(deletedEvent);
 
-            // 위에서 검증한 삭제 흐름 외에 추가적인 삭제 관련 호출이 없는지 확인한다.
             verifyNoMoreInteractions(channelRepository, readStatusService, messageService);
-
-            // delete()는 사용자 조회, 최신 메시지 조회, DTO 변환을 하지 않는다.
-            // 따라서 아래 조회/변환용 협력 객체들은 이 흐름에서 호출되면 안 된다.
-            verifyNoInteractions(userReader, messageReader, channelMapper);
+            verifyNoInteractions(userReader, messageReader);
         }
 
         @Test
         @DisplayName("채널 삭제 실패 - 존재하지 않는 채널")
         void delete_throwsChannelNotFoundException_whenChannelDoesNotExist() {
             // given
-            // 삭제할 channelId를 준비한다.
-            // 이 테스트는 channelId에 해당하는 채널이 존재하지 않는 실패 케이스다.
             UUID channelId = UUID.randomUUID();
-
-            // BasicChannelService.delete(...)는 가장 먼저 existsById(channelId)로 채널 존재 여부를 확인한다.
-            // false를 반환하게 해서 "삭제 대상 채널이 없음" 상황을 만든다.
-            given(channelRepository.existsById(channelId)).willReturn(false);
+            given(channelReader.getChannel(channelId)).willThrow(new ChannelNotFoundException(channelId));
 
             // when & then
-            // 삭제 대상 채널이 없으면 ChannelNotFoundException이 발생해야 한다.
-            // 이 예외가 발생하면 ReadStatus 삭제, 메시지 삭제, 채널 삭제는 진행되지 않는다.
             assertThatThrownBy(() -> channelService.delete(channelId))
                     .isInstanceOf(ChannelNotFoundException.class);
 
-            // 삭제 로직은 채널 존재 여부 확인에서 시작하므로 existsById(channelId)가 호출됐는지 확인한다.
-            verify(channelRepository).existsById(channelId);
-
-            // repository에 대해서는 existsById(...) 한 번만 호출되어야 한다.
-            // 채널이 없으므로 channelRepository.deleteById(channelId)가 호출되면 안 된다.
-            verifyNoMoreInteractions(channelRepository);
-
-            // 채널이 존재하지 않으면 관련 데이터 삭제도 진행되면 안 된다.
-            // - readStatusService.deleteByChannelId(...): 채널의 읽음 상태 삭제
-            // - messageService.deleteAllByChannelId(...): 채널의 메시지 삭제
-            verifyNoInteractions(readStatusService, messageService);
-
-            // delete()는 사용자 조회, 최신 메시지 조회, DTO 변환을 하지 않는다.
-            // 실패 흐름에서도 아래 협력 객체들은 호출되면 안 된다.
-            verifyNoInteractions(userReader, messageReader, channelMapper);
+            verify(channelReader).getChannel(channelId);
+            // 채널 조회에 실패하면 DTO 생성, 관련 데이터 삭제, 이벤트 발행 모두 진행하지 않는다.
+            verifyNoInteractions(channelRepository, readStatusService, messageService,
+                    channelMapper, eventPublisher, userReader, messageReader);
         }
     }
 
@@ -679,8 +713,8 @@ class ChannelServiceTest {
         return new ChannelDto(channelId, ChannelType.PUBLIC, command.channelName(), command.channelDescription(), List.of(), lastMessageAt);
     }
 
-    private ChannelDto createPrivateChannelDto(UUID channelId) {
-        return new ChannelDto(channelId, ChannelType.PRIVATE, "", "", List.of(), null);
+    private ChannelDto createPrivateChannelDto(UUID channelId, List<UserDto> participants) {
+        return new ChannelDto(channelId, ChannelType.PRIVATE, "", "", participants, null);
     }
 
     private ChannelDto createChannelDto(ChannelSummary channelSummary) {

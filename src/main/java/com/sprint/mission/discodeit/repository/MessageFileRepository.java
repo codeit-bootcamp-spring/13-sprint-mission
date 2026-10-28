@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.repository;
 
+import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.MessageFile;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface MessageFileRepository extends JpaRepository<MessageFile, UUID> {
@@ -51,4 +53,20 @@ public interface MessageFileRepository extends JpaRepository<MessageFile, UUID> 
     boolean existsByMessage_Channel_Id(UUID channelId);
 
     void deleteAllByIdIn(List<UUID> messageFileIds);
+
+    /**
+     * 파일에서 메시지 연결을 따라 소속 채널을 조회한다.
+     * 현재 파일을 한 채널에 연결하는 업무 흐름을 전제로 Optional 단건을 반환한다.
+     */
+    @Query("""
+        SELECT c
+        FROM Channel c
+        WHERE EXISTS (
+                SELECT mf
+                FROM MessageFile mf
+                WHERE mf.binaryContent.id = :binaryContentId
+                    AND mf.message.channel.id = c.id
+            )
+    """)
+    Optional<Channel> findChannelByBinaryContentId(@Param("binaryContentId") UUID binaryContentId);
 }

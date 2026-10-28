@@ -3,10 +3,12 @@
 -- 동시에 갱신해도 첫 요청만 성공하고, 다음 요청은 기존 토큰을 찾지 못해 실패한다.
 --
 -- KEYS[1]: 사용자별 키(discodeit:jwt:{userId}). 중괄호 부분은 실제 사용자 UUID를 뜻한다.
+-- KEYS[2]: 온라인 추적 사용자 Set의 키.
 -- ARGV[1]: 교체할 기존 Refresh Token 문자열.
 -- ARGV[2]: 새 세션 JSON(accessToken, refreshToken, refreshExpiresAt).
 --          refreshExpiresAt은 Refresh Token의 절대 만료 시각(Unix epoch 밀리초)이다.
 -- ARGV[3]: 동시에 유지할 최대 세션 수를 나타내는 문자열.
+-- ARGV[4]: 갱신할 사용자 UUID 문자열.
 -- 반환값: 1 = 갱신 성공, 0 = 유효한 기존 세션 없음, -1 = 새 Refresh Token 만료.
 --         최대 세션 수가 잘못된 경우 숫자 대신 Redis 오류를 반환한다.
 --
@@ -14,10 +16,12 @@
 -- redis/cjson은 Redis 실행 환경에서, table/math/string은 Lua 표준 라이브러리에서 제공한다.
 -- cjson.decode/encode는 JSON과 Lua table을 서로 변환한다.
 local key = KEYS[1]
+local trackingKey = KEYS[2]
 local oldRefreshToken = ARGV[1]
 local newToken = cjson.decode(ARGV[2])
 -- 문자열을 숫자로 변환한 뒤 양의 정수인지 검사한다. 변환 실패 시 tonumber는 nil이다.
 local maxCount = tonumber(ARGV[3])
+local userId = ARGV[4]
 
 if not maxCount or maxCount < 1 or maxCount ~= math.floor(maxCount) then
     return redis.error_reply('ERR 최대 로그인 개수는 1 이상의 정수여야 합니다.')
@@ -90,5 +94,8 @@ redis.call(
     'PXAT',
     string.format('%.0f', expiresAt)
 )
+
+-- JWT 저장과 같은 실행 안에서 추적을 등록한다. 이후 액세스 토큰 만료를 모니터가 감지한다.
+redis.call('SADD', trackingKey, userId)
 
 return 1

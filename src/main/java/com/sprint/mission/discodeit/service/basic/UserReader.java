@@ -11,7 +11,6 @@ import com.sprint.mission.discodeit.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -84,6 +83,14 @@ public class UserReader {
             throw new UserNotFoundException(userId);
         }
         return userRepository.getReferenceById(userId);
+    }
+
+    /**
+     * 프로필 파일의 소유자 ID만 조회한다.
+     * 해당 프로필을 쓰는 사용자가 없으면 빈 Optional을 반환해 잘못된 개인 방송을 방지한다.
+     */
+    public Optional<UUID> getUserIdFromProfile(UUID profileId) {
+        return userRepository.findUserIdByProfileId(profileId);
     }
 
     private UserDto withOnline(UserDto user, boolean online) {

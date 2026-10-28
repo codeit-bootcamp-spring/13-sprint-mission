@@ -63,13 +63,16 @@ public class BasicMessageService implements MessageService {
         Message savedMessage = messageRepository.save(new Message(author, channel, command));
         List<MessageFile> savedMessageFiles = messageFileService.save(savedMessage, files);
 
-        eventPublisher.publishEvent(getMessageCreatedEvent(channel, author, savedMessage));
+        // 첨부파일까지 반영된 DTO를 한 번 생성해 HTTP 응답과 커밋 후 WebSocket 전송에 재사용한다.
+        MessageDto messageDto = messageMapper.toDto(savedMessage, savedMessageFiles);
+
+        eventPublisher.publishEvent(getMessageCreatedEvent(channel, author, messageDto));
         log.debug("메시지 생성 이벤트를 발행했습니다. messageId={}, channelId={}, authorId={}",
                 savedMessage.getId(), channel.getId(), author.getId());
 
         eventPublisher.publishEvent(new ChannelCacheClearEvent(channel.getId()));
 
-        return messageMapper.toDto(savedMessage, savedMessageFiles);
+        return messageDto;
     }
 
     @Transactional(readOnly = true)
@@ -188,13 +191,14 @@ public class BasicMessageService implements MessageService {
         return messageRepository.findAllByCondition(condition);
     }
 
-    private MessageCreatedEvent getMessageCreatedEvent(Channel channel, User author, Message savedMessage) {
+    private MessageCreatedEvent getMessageCreatedEvent(Channel channel, User author, MessageDto messageDto) {
         return MessageCreatedEvent.of(
                 channel.getId(),
                 author.getId(),
                 channel.getName(),
                 author.getUsername(),
-                savedMessage.getContent()
+                messageDto.content(),
+                messageDto
         );
     }
 

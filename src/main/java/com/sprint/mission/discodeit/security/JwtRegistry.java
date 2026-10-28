@@ -37,4 +37,11 @@ public interface JwtRegistry {
      * 만료되거나 로그아웃한 세션은 온라인 판정에서 제외한다.
      */
     Set<UUID> findUserIdsWithValidAccessToken(Collection<UUID> userIds);
+
+    /**
+     * 유효한 액세스 토큰이 없는지 재확인하고 온라인 추적 항목을 제거한다.
+     * 실제로 제거한 호출만 true를 반환하여 여러 모니터의 중복 상태 발행을 줄인다.
+     * 등록·갱신과 경쟁할 때의 보호 방식은 각 저장소 구현체가 담당한다.
+     */
+    boolean tryRemoveOfflineTracking(UUID userId);
 }

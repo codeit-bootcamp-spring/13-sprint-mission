@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprint.mission.discodeit.exception.jwt.TokenRenewalFailedException;
+import com.sprint.mission.discodeit.redis.UserOnlineRedisKeys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Component;
 
 import java.time.Clock;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Component
 @RequiredArgsConstructor
@@ -46,6 +49,16 @@ public class RedisJwtRegistry implements JwtRegistry{
             Long.class
     );
 
+    private static final RedisScript<Long> INVALIDATE_ALL_SCRIPT = RedisScript.of(
+            new ClassPathResource("redis/invalidate-all-jwt.lua"),
+            Long.class
+    );
+
+    private static final RedisScript<Long> REMOVE_OFFLINE_TRACKING_SCRIPT = RedisScript.of(
+            new ClassPathResource("redis/remove-offline-tracking.lua"),
+            Long.class
+    );
+
     @Override
     public void registerJwtInformation(JwtInformation jwtInformation) {
         UUID userId = jwtInformation.userDto().id();
@@ -54,7 +67,8 @@ public class RedisJwtRegistry implements JwtRegistry{
                 REGISTER_SCRIPT,
                 userId,
                 serializeJwtInformation(jwtInformation),
-                jwtTokenProvider.getMaxActiveJwtCount().toString()
+                jwtTokenProvider.getMaxActiveJwtCount().toString(),
+                userId.toString()
         );
 
         if(result == -1L){
@@ -64,11 +78,20 @@ public class RedisJwtRegistry implements JwtRegistry{
         if(result != 1L){
             throw new IllegalStateException("JWT 등록 결과가 올바르지 않습니다. userId="+userId);
         }
+
     }
 
     @Override
     public void invalidateJwtInformationByUserId(UUID userId) {
-        redisTemplate.delete(jwtKey(userId));
+        long result = executeJwtScript(
+                INVALIDATE_ALL_SCRIPT,
+                userId,
+                userId.toString()
+        );
+
+        if(result != 1L){
+            throw new IllegalStateException("JWT 전체 무효화 결과가 올바르지 않스니다. userId=" + userId);
+        }
     }
 
     @Override
@@ -76,7 +99,8 @@ public class RedisJwtRegistry implements JwtRegistry{
         long result = executeJwtScript(
                 INVALIDATE_SCRIPT,
                 userId,
-                refreshToken
+                refreshToken,
+                userId.toString()
         );
 
         if (result != 0L && result != 1L){
@@ -108,7 +132,8 @@ public class RedisJwtRegistry implements JwtRegistry{
                 userId,
                 refreshToken,
                 serializeJwtInformation(newJwtInformation),
-                jwtTokenProvider.getMaxActiveJwtCount().toString()
+                jwtTokenProvider.getMaxActiveJwtCount().toString(),
+                userId.toString()
         );
 
         if (result == 0L || result == -1L){
@@ -150,6 +175,7 @@ public class RedisJwtRegistry implements JwtRegistry{
     @Override
     public Set<UUID> findUserIdsWithValidAccessToken(Collection<UUID> userIds) {
         if (userIds.isEmpty()) return Set.of();
+        long now = clock.millis();
 
         List<UUID> distinctUserIds = new ArrayList<>(new LinkedHashSet<>(userIds));
         // GET을 파이프라인으로 묶어 사용자마다 Redis 왕복 통신이 발생하지 않도록 한다.
@@ -161,22 +187,50 @@ public class RedisJwtRegistry implements JwtRegistry{
             return null;
         });
 
-        Set<UUID> onlineUserIds = new HashSet<>();
-        long now = clock.millis();
-        for (int i = 0; i < distinctUserIds.size(); i++) {
-            UUID userId = distinctUserIds.get(i);
-            // 없는 키의 null 결과도 위치를 유지하므로 요청 순서대로 연결한다.
-            boolean hasValidAccessToken = deserializeStoredTokens(userId, (String) results.get(i)).stream()
-                    .filter(info -> info.refreshExpiresAt() > now)
-                    .flatMap(info -> jwtTokenProvider.validateToken(info.accessToken()).stream())
-                    .filter(claims -> JwtTokenProvider.TokenType.ACCESS.name()
-                            .equals(jwtTokenProvider.getTokenType(claims)))
-                    .filter(claims -> userId.equals(jwtTokenProvider.getUserId(claims)))
-                    .anyMatch(claims -> claims.getExpiration() != null
-                            && claims.getExpiration().getTime() > now);
-            if (hasValidAccessToken) onlineUserIds.add(userId);
+        return IntStream.rangeClosed(0, distinctUserIds.size() - 1)
+                .filter(i -> hasValidAccessToken(distinctUserIds.get(i), (String) results.get(i), now))
+                .mapToObj(distinctUserIds::get)
+                .collect(Collectors.toUnmodifiableSet());
+
+    }
+
+    /**
+     * 조회한 JWT 스냅샷이 오프라인이면 Lua에서 현재 값과 다시 비교하여 추적을 제거한다.
+     * 조회 후 로그인·갱신으로 값이 바뀌면 제거하지 않아 새 온라인 세션을 보호한다.
+     * 동일 스냅샷을 여러 서버가 처리해도 SREM에 실제 성공한 호출만 true를 받는다.
+     */
+    @Override
+    public boolean tryRemoveOfflineTracking(UUID userId){
+        String json = redisTemplate.opsForValue().get(jwtKey(userId));
+
+        if (hasValidAccessToken(userId, json, clock.millis())){
+            return false;
         }
-        return onlineUserIds;
+
+        // 없던 키에 새 JWT가 생기는 경우도 감지하도록 존재 여부와 JSON 원문을 함께 비교한다.
+        long result = executeJwtScript(REMOVE_OFFLINE_TRACKING_SCRIPT,
+                userId,
+                json == null ? "0" : "1",
+                json == null ? "" : json,
+                userId.toString()
+        );
+
+        if(result != 0L && result != 1L){
+            throw new IllegalStateException("오프라인 사용자 추적 제거 결과가 올바르지 않습니다. userId=" + userId);
+        }
+
+        return result == 1L;
+    }
+
+    private boolean hasValidAccessToken(UUID userId, String json, long now) {
+        return deserializeStoredTokens(userId, json).stream()
+                .filter(info -> info.refreshExpiresAt() > now)
+                .flatMap(info -> jwtTokenProvider.validateToken(info.accessToken()).stream())
+                .filter(claims -> JwtTokenProvider.TokenType.ACCESS.name()
+                        .equals(jwtTokenProvider.getTokenType(claims)))
+                .filter(claims -> userId.equals(jwtTokenProvider.getUserId(claims)))
+                .anyMatch(claims -> claims.getExpiration() != null
+                        && claims.getExpiration().getTime() > now);
     }
 
     private String jwtKey(UUID userId) {
@@ -252,8 +306,16 @@ public class RedisJwtRegistry implements JwtRegistry{
         }
     }
 
+    /**
+     * 사용자 JWT 키와 공통 추적 Set 키를 같은 순서로 Lua에 전달한다.
+     * 각 스크립트는 JWT 변경과 추적 목록 변경을 하나의 Redis 실행 안에서 처리한다.
+     */
     private long executeJwtScript(RedisScript<Long> script, UUID userId, Object... arguments){
-        Long result = redisTemplate.execute(script, List.of(jwtKey(userId)), arguments);
+        Long result = redisTemplate.execute(
+                script,
+                List.of(jwtKey(userId) , UserOnlineRedisKeys.TRACKED_USERS_KEY),
+                arguments
+        );
 
         if(result == null){
             throw new IllegalArgumentException("JWT 처리 결과를 확인할 수 없습니다. userId=" + userId);

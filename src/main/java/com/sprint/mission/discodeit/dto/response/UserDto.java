@@ -34,6 +34,14 @@ public record UserDto(
         return logFields;
     }
 
+    /**
+     * 온라인 여부를 반전하여 만료 모니터의 오프라인 분기에서 사용한다.
+     * online 값이 계산되어 null이 아닌 DTO를 대상으로 호출한다.
+     */
+    public boolean offline(){
+        return !online;
+    }
+
     private void addLogFields(Map<String, Object> logFields, String key, Object value) {
         logFields.put(key, value);
     }

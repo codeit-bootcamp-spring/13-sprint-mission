@@ -23,6 +23,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -44,6 +45,10 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+/**
+ * 실제 토큰 서비스의 검증 분기와 Registry 교체 성공 후 이벤트 발행을 확인한다.
+ * 토큰 Provider·사용자 조회·쿠키·Registry는 Mock으로 두고 실패 뒤 부수 효과가 없는지도 검증한다.
+ */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("TokenServiceImpl 단위 테스트")
 class TokenServiceImplTest {
@@ -64,13 +69,17 @@ class TokenServiceImplTest {
     @Mock
     JwtRegistry jwtRegistry;
 
+    @Mock
+    ApplicationEventPublisher eventPublisher;
+
     TokenServiceImpl service;
     UserDto userDto;
 
     @BeforeEach
     void setUp() {
         SecurityContextHolder.clearContext();
-        service = new TokenServiceImpl(jwtTokenProvider, userDetailsService, cookieManager, jwtRegistry);
+        service = new TokenServiceImpl(
+                jwtTokenProvider, userDetailsService, cookieManager, jwtRegistry, eventPublisher);
         OffsetDateTime now = OffsetDateTime.parse("2026-09-21T00:00:00Z");
         userDto = new UserDto(UUID.randomUUID(), "refresh-user", "refresh@example.com",
                 null, true, Role.CHANNEL_MANAGER, now, now);

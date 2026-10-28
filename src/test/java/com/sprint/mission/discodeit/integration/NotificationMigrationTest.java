@@ -1,7 +1,6 @@
 package com.sprint.mission.discodeit.integration;
 
 import com.sprint.mission.discodeit.dto.command.notification.NotificationCreateCommand;
-import com.sprint.mission.discodeit.events.MessageCreatedEvent;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,8 +11,13 @@ import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.util.UUID;
 
+import static com.sprint.mission.discodeit.support.NotificationTestFixtures.messageCreatedEvent;
 import static org.assertj.core.api.Assertions.*;
 
+/**
+ * 격리한 PostgreSQL에서 실제 마이그레이션과 제약조건을 실행한다.
+ * 메시지 생성 이벤트 픽스처는 새 DTO 계약을 따르며 Mock Repository로 DB 결과를 대체하지 않는다.
+ */
 @DisplayName("알림 PostgreSQL 마이그레이션 테스트")
 class NotificationMigrationTest {
     @Test
@@ -58,7 +62,7 @@ class NotificationMigrationTest {
             UUID notificationId = UUID.randomUUID();
             String source = "a".repeat(251) + "😀" + "한".repeat(10);
             NotificationCreateCommand command = new NotificationCreateCommand(userId,
-                    new MessageCreatedEvent(publicId, userId, "general", "sender", source));
+                    messageCreatedEvent(publicId, userId, "general", "sender", source));
             jdbc.update("INSERT INTO notifications (id, receiver_id, title, content) VALUES (?, ?, ?, ?)",
                     notificationId, userId, command.title(), command.content());
             assertThat(jdbc.queryForObject("SELECT content FROM notifications WHERE id = ?", String.class, notificationId))

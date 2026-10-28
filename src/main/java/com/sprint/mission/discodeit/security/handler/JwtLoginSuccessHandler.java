@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.response.JwtDto;
 import com.sprint.mission.discodeit.dto.response.TokenDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.events.UserCacheClearEvent;
+import com.sprint.mission.discodeit.events.UserEvent;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.security.JwtInformation;
 import com.sprint.mission.discodeit.security.JwtRegistry;
@@ -48,6 +49,8 @@ public class JwtLoginSuccessHandler implements AuthenticationSuccessHandler {
         tokenService.addRefreshTokenCookie(tokenDto.refreshToken());
 
         eventPublisher.publishEvent(new UserCacheClearEvent(body.id()));
+        // 로그인 과정에서 이미 준비한 온라인 DTO를 재사용하여 중복 사용자 조회 없이 상태를 알린다.
+        eventPublisher.publishEvent(UserEvent.updateEvent(body));
 
         response.setStatus(HttpStatus.OK.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

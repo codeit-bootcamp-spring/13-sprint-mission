@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.events.RoleUpdatedEvent;
 import com.sprint.mission.discodeit.events.UserCacheClearEvent;
+import com.sprint.mission.discodeit.events.UserEvent;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -36,6 +37,8 @@ public class UserRoleManager {
         user.updateRole(command);
         jwtRegistry.invalidateJwtInformationByUserId(userId);
         eventPublisher.publishEvent(new UserCacheClearEvent(userId));
+        // 권한 변경과 기존 JWT 무효화를 반영한 사용자 정보를 화면 갱신 이벤트로 전달한다.
+        eventPublisher.publishEvent(UserEvent.updateEvent(userMapper.toDto(user)));
         return userMapper.toDto(user);
     }
 

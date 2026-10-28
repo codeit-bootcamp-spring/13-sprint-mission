@@ -45,13 +45,18 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+/**
+ * 실제 API·Spring 서비스·DB·로컬 파일 저장소를 연결한 업로드 및 삭제 회귀 테스트다.
+ * 실제 커밋 뒤 업로드 결과를 기다리고 파일 내용과 관련 DB 행을 재조회한다.
+ * 채널 삭제 성공 응답뿐 아니라 첨부 연결·메타데이터·실제 파일의 제거까지 확인한다.
+ */
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:binary-upload-api;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH",
         "discodeit.storage.type=local"
 })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@DisplayName("커밋 후 실제 파일 업로드 및 다운로드 API 통합 테스트")
+@DisplayName("커밋 후 실제 파일 업로드·다운로드·삭제 API 통합 테스트")
 class BinaryContentUploadApiIntegrationTest {
     @TempDir static Path uploadRoot;
 
@@ -153,8 +158,8 @@ class BinaryContentUploadApiIntegrationTest {
     }
 
     @Test
-    @DisplayName("공개 채널, 메시지, 첨부 파일 통합 성공 - 메시지 저장 후 목록 조회와 다운로드 가능")
-    void publicChannelMessageAndAttachment_flowPersistsAndDownloadsAttachment() throws Exception {
+    @DisplayName("공개 채널의 첨부 메시지를 저장·조회·다운로드하고 채널 삭제 시 관련 데이터와 파일을 제거한다")
+    void publicChannelMessageAndAttachment_flowPersistsDownloadsAndDeletesChannel() throws Exception {
         // given
         // 실제 사용자와 공개 채널을 API로 만든 뒤, 그 사용자와 채널을 참조하는 메시지를 첨부 파일과 함께 생성한다.
         // 이 흐름은 Controller, Service, Repository, Mapper, Querydsl 목록 조회, 로컬 파일 스토리지를 함께 검증한다.
@@ -278,6 +283,24 @@ class BinaryContentUploadApiIntegrationTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
                 .andExpect(header().longValue("Content-Length", attachmentPart.getSize()))
                 .andExpect(content().bytes(attachmentPart.getBytes()));
+
+        // 업로드와 알림 후처리가 끝난 뒤 채널을 삭제한다.
+        awaitIdle(fileUploadExecutor, notificationExecutor);
+        mockMvc.perform(delete("/api/channels/{channelId}", channelId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + managerAccessToken)
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
+
+        // 요청의 트랜잭션이 커밋된 뒤 별도 트랜잭션에서 삭제 결과를 확인한다.
+        transaction.executeWithoutResult(status -> {
+            assertThat(channelRepository.existsById(channelId)).isFalse();
+            assertThat(messageRepository.existsById(messageId)).isFalse();
+            assertThat(messageFileRepository.findAllByMessage_Id(messageId)).isEmpty();
+            assertThat(binaryContentRepository.existsById(attachmentId)).isFalse();
+        });
+
+        // @AfterEach 정리 전에 커밋 후 실제 파일 삭제까지 완료됐는지 확인한다.
+        assertThat(uploadRoot.resolve(attachmentId.toString())).doesNotExist();
     }
 
     private UUID createUser(String username, String email) throws Exception {

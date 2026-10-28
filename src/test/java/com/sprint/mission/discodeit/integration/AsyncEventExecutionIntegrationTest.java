@@ -3,7 +3,6 @@ package com.sprint.mission.discodeit.integration;
 import com.sprint.mission.discodeit.entity.BinaryContentStatus;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.dto.command.user.UserRoleUpdateCommand;
-import com.sprint.mission.discodeit.events.MessageCreatedEvent;
 import com.sprint.mission.discodeit.events.BinaryContentCreatedEvent;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -38,12 +37,17 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.sprint.mission.discodeit.support.AsyncTestSupport.awaitIdle;
+import static com.sprint.mission.discodeit.support.NotificationTestFixtures.messageCreatedEvent;
 import static org.assertj.core.api.Assertions.*;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+/**
+ * Spring 이벤트·트랜잭션·비동기 실행기를 함께 실행하여 작업 거절과 실패의 영향을 확인한다.
+ * 외부 파일 저장소와 알림 서비스는 대체하고, 업무 DB 커밋과 별도 상태 저장의 결과를 검증한다.
+ */
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:async-events;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH",
         "discodeit.storage.type=local",
@@ -122,7 +126,7 @@ class AsyncEventExecutionIntegrationTest {
         UUID userId = users.saveAndFlush(com.sprint.mission.discodeit.support.NotificationTestFixtures.user()).getId();
         try {
             new TransactionTemplate(transactions).executeWithoutResult(status -> {
-                events.publishEvent(new MessageCreatedEvent(UUID.randomUUID(), userId, "general", "author", "hello"));
+                events.publishEvent(messageCreatedEvent(UUID.randomUUID(), userId, "general", "author", "hello"));
                 roles.updateRole(userId, new UserRoleUpdateCommand(Role.ADMIN));
             });
             verifyNoInteractions(notifications);

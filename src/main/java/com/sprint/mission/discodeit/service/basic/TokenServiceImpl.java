@@ -4,12 +4,14 @@ import com.sprint.mission.discodeit.dto.response.JwtDto;
 import com.sprint.mission.discodeit.dto.response.JwtDtoWithRefresh;
 import com.sprint.mission.discodeit.dto.response.TokenDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.events.UserEvent;
 import com.sprint.mission.discodeit.exception.jwt.TokenRenewalFailedException;
 import com.sprint.mission.discodeit.security.*;
 import com.sprint.mission.discodeit.service.RefreshTokenCookieManager;
 import com.sprint.mission.discodeit.service.TokenService;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +24,7 @@ public class TokenServiceImpl implements TokenService {
     private final DiscodeitUserDetailsService discodeitUserDetailsService;
     private final RefreshTokenCookieManager refreshTokenCookieManager;
     private final JwtRegistry jwtRegistry;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public JwtDtoWithRefresh rotateRefreshToken() {
@@ -45,7 +48,8 @@ public class TokenServiceImpl implements TokenService {
         TokenDto tokenDto = generateToken(userDto);
 
         jwtRegistry.rotateJwtInformation(refreshToken, new JwtInformation(userDto, tokenDto.accessToken(), tokenDto.refreshToken()));
-
+        // 토큰 교체가 성공한 경우에만 갱신된 온라인 사용자 정보를 알린다.
+        eventPublisher.publishEvent(UserEvent.updateEvent(userDto));
         return new JwtDtoWithRefresh(
                 new JwtDto(userDto, tokenDto.accessToken()),
                 tokenDto.refreshToken()

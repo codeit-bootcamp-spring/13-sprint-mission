@@ -12,6 +12,7 @@ import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.MessageDto;
 import com.sprint.mission.discodeit.dto.response.PageResponse;
 import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.BinaryContentStatus;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.service.MessageService;
 import org.junit.jupiter.api.DisplayName;
@@ -49,6 +50,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // 인가 검증은 실제 보안 체인을 실행하는 SecurityAuthorizationIntegrationTest에서 담당한다.
+/**
+ * 실제 MVC 컨트롤러와 Mock 메시지 서비스를 사용해 multipart 요청·응답 계약을 검증한다.
+ * 첨부 DTO에 업로드 상태를 포함하며 실제 파일 업로드와 메시지 영속성은 통합 테스트가 담당한다.
+ */
 @WebMvcTest(controllers = MessageController.class, excludeFilters = @ComponentScan.Filter(
         type = FilterType.ASSIGNABLE_TYPE, classes = JwtAuthenticationFilter.class
 ))
@@ -393,7 +398,7 @@ class MessageControllerTest {
     }
 
     private BinaryContentDto getBinaryContentDto(String fileName, Long size, String contentType) {
-        return new BinaryContentDto(UUID.randomUUID(), fileName, size, contentType);
+        return new BinaryContentDto(UUID.randomUUID(), fileName, size, contentType, BinaryContentStatus.SUCCESS);
     }
 
     private void assertMultipartFile(MultipartFile actual, MockMultipartFile expected) throws Exception {

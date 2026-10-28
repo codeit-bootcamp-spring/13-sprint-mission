@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.entity.BinaryContentStatus;
 import com.sprint.mission.discodeit.exception.storage.FileNotFoundException;
 import com.sprint.mission.discodeit.service.TransactionalStorageAction;
 import com.sprint.mission.discodeit.service.NotificationService;
@@ -54,6 +55,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+/**
+ * 실제 S3 저장소 구현의 SDK 호출과 정리 작업 등록을 검증한다.
+ * S3 클라이언트 등 외부 협력 객체는 Mock이며 상태 필드를 포함한 실제 DTO를 사용한다.
+ */
 @ExtendWith(MockitoExtension.class)
 class S3BinaryContentStorageTest {
     @TempDir Path temporaryDirectory;
@@ -211,7 +216,8 @@ class S3BinaryContentStorageTest {
                 fileId,
                 "download.txt",
                 100L,
-                "text/plain"
+                "text/plain",
+                BinaryContentStatus.SUCCESS
         ));
 
         assertThat(result).isInstanceOf(RedirectDownloadResult.class);

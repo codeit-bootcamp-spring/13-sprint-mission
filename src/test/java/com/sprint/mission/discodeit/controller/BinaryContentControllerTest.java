@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.entity.BinaryContentStatus;
 import com.sprint.mission.discodeit.security.JwtAuthenticationFilter;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.DownloadDto;
@@ -36,6 +37,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // 인가 검증은 실제 보안 체인을 실행하는 SecurityAuthorizationIntegrationTest에서 담당한다.
+/**
+ * 실제 MVC 컨트롤러의 요청 바인딩과 HTTP 응답 계약을 검증한다.
+ * 파일 서비스는 Mock이며 업로드 상태를 포함한 실제 DTO로 응답을 준비한다. 저장소 동작은 검증하지 않는다.
+ */
 @WebMvcTest(controllers = BinaryContentController.class, excludeFilters = @ComponentScan.Filter(
         type = FilterType.ASSIGNABLE_TYPE, classes = JwtAuthenticationFilter.class
 ))
@@ -64,13 +69,15 @@ class BinaryContentControllerTest {
                 firstBinaryContentId,
                 "first-file.png",
                 7L,
-                MediaType.IMAGE_PNG_VALUE
+                MediaType.IMAGE_PNG_VALUE,
+                BinaryContentStatus.SUCCESS
         );
         BinaryContentDto secondBinaryContent = new BinaryContentDto(
                 secondBinaryContentId,
                 "second-file.txt",
                 11L,
-                MediaType.TEXT_PLAIN_VALUE
+                MediaType.TEXT_PLAIN_VALUE,
+                BinaryContentStatus.SUCCESS
         );
 
         // query parameter에서 바인딩된 UUID 목록은 아래 captor로 검증할 것이므로
@@ -116,7 +123,8 @@ class BinaryContentControllerTest {
                 binaryContentId,
                 "profile.png",
                 1024L,
-                MediaType.IMAGE_PNG_VALUE
+                MediaType.IMAGE_PNG_VALUE,
+                BinaryContentStatus.SUCCESS
         );
 
         given(binaryContentService.findById(any(UUID.class))).willReturn(response);
@@ -154,7 +162,8 @@ class BinaryContentControllerTest {
                 binaryContentId,
                 "download.txt",
                 (long) bytes.length,
-                MediaType.TEXT_PLAIN_VALUE
+                MediaType.TEXT_PLAIN_VALUE,
+                BinaryContentStatus.SUCCESS
         );
         DownloadDto download = new DownloadDto(binaryContent, new ResourceDownloadResult(new ByteArrayResource(bytes)));
 
@@ -192,7 +201,8 @@ class BinaryContentControllerTest {
                 binaryContentId,
                 "unknown.bin",
                 (long) bytes.length,
-                null
+                null,
+                BinaryContentStatus.SUCCESS
         );
         DownloadDto download = new DownloadDto(binaryContent, new ResourceDownloadResult(new ByteArrayResource(bytes)));
 

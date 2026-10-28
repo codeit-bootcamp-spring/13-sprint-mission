@@ -17,10 +17,13 @@
         line-height: 1.4;
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-DB4IjbRs.js"></script>
+    <!-- 실시간 통신을 반영한 기존 빌드 결과를 로드한다. 파일명은 배포한 번들과 일치해야 한다. -->
+    <script type="module" crossorigin src="/assets/index-bOSCxVDt.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-kQJbKSsj.css">
   </head>
   <body>
     <div id="root"></div>
+    <!-- 번들의 브라우저 의존 코드가 참조하는 global 이름을 window에 연결한다. -->
+    <script>const global = window;</script>
   </body>
 </html>

@@ -50,10 +50,13 @@ public class MessageFileService {
         List<MessageFile> messageFiles = messageFileRepository.findAllByMessage_Id(messageId);
 
         List<BinaryContent> binaryContents = convertToBinaryContents(messageFiles);
+        messageFileRepository.deleteByMessage_Id(messageId);
+        // 파일을 참조하는 연결 행의 삭제 SQL을 먼저 실행해 파일 삭제 시 외래 키 충돌을 막는다.
+        // flush는 커밋이 아니므로 이후 실패 시 같은 트랜잭션의 DB 변경은 롤백 대상이다.
+        messageFileRepository.flush();
 
         binaryContentService.deleteAll(binaryContents);
 
-        messageFileRepository.deleteByMessage_Id(messageId);
     }
 
     public void deleteAllByChannelId(UUID channelId) {
@@ -63,11 +66,14 @@ public class MessageFileService {
 
         List<BinaryContent> binaryContents = convertToBinaryContents(messageFiles);
 
-        binaryContentService.deleteAll(binaryContents);
-
         List<UUID> messageFileIds = messageFiles.stream().map(MessageFile::getId).toList();
 
         messageFileRepository.deleteAllByIdIn(messageFileIds);
+        // 파일을 참조하는 연결 행의 삭제 SQL을 먼저 실행해 파일 삭제 시 외래 키 충돌을 막는다.
+        // flush는 커밋이 아니므로 이후 실패 시 같은 트랜잭션의 DB 변경은 롤백 대상이다.
+        messageFileRepository.flush();
+
+        binaryContentService.deleteAll(binaryContents);
     }
 
     @Transactional(readOnly = true)

@@ -13,10 +13,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.UUID;
 
+import static com.sprint.mission.discodeit.support.NotificationTestFixtures.messageCreatedEvent;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
+/**
+ * 실제 알림 생성 처리기가 수신자 조회 결과를 알림 생성 요청으로 변환하는지 확인한다.
+ * 조회·저장은 Mock 서비스로 분리하고 채팅 DTO를 포함한 이벤트는 실제 값으로 전달한다.
+ */
 @ExtendWith(MockitoExtension.class)
 class NotificationCreationProcessorTest {
     @Mock ReadStatusService readStatusService;
@@ -25,7 +30,7 @@ class NotificationCreationProcessorTest {
 
     @Test
     void message_createsNotificationsForRecipientsReturnedByReadStatusService() {
-        MessageCreatedEvent event = new MessageCreatedEvent(UUID.randomUUID(), UUID.randomUUID(), "general", "sender", "hello");
+        MessageCreatedEvent event = messageCreatedEvent(UUID.randomUUID(), UUID.randomUUID(), "general", "sender", "hello");
         List<UUID> recipients = List.of(UUID.randomUUID(), UUID.randomUUID());
         given(readStatusService.findNotificationRecipientIds(event.channelId(), event.authorId())).willReturn(recipients);
 
@@ -36,7 +41,7 @@ class NotificationCreationProcessorTest {
 
     @Test
     void message_doesNotCreateNotificationsWhenNobodySubscribed() {
-        MessageCreatedEvent event = new MessageCreatedEvent(UUID.randomUUID(), UUID.randomUUID(), "general", "sender", "hello");
+        MessageCreatedEvent event = messageCreatedEvent(UUID.randomUUID(), UUID.randomUUID(), "general", "sender", "hello");
         given(readStatusService.findNotificationRecipientIds(event.channelId(), event.authorId())).willReturn(List.of());
         listener.handleMessageCreated(event);
         verifyNoInteractions(notificationService);
@@ -52,7 +57,7 @@ class NotificationCreationProcessorTest {
 
     @Test
     void message_propagatesRecipientLookupFailureWithoutCreatingNotifications() {
-        MessageCreatedEvent event = new MessageCreatedEvent(UUID.randomUUID(), UUID.randomUUID(), "general", "sender", "hello");
+        MessageCreatedEvent event = messageCreatedEvent(UUID.randomUUID(), UUID.randomUUID(), "general", "sender", "hello");
         RuntimeException failure = new IllegalStateException("수신자 조회 실패");
         given(readStatusService.findNotificationRecipientIds(event.channelId(), event.authorId())).willThrow(failure);
 
@@ -62,7 +67,7 @@ class NotificationCreationProcessorTest {
 
     @Test
     void message_propagatesNotificationStorageFailure() {
-        MessageCreatedEvent event = new MessageCreatedEvent(UUID.randomUUID(), UUID.randomUUID(), "general", "sender", "hello");
+        MessageCreatedEvent event = messageCreatedEvent(UUID.randomUUID(), UUID.randomUUID(), "general", "sender", "hello");
         List<UUID> recipients = List.of(UUID.randomUUID());
         given(readStatusService.findNotificationRecipientIds(event.channelId(), event.authorId())).willReturn(recipients);
         RuntimeException failure = new IllegalStateException("메시지 알림 저장 실패");

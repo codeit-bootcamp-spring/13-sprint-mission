@@ -46,9 +46,17 @@ public class ReadStatus extends UpdatableEntity {
         this.notificationEnabled = channel.isPrivate();
     }
 
+    /**
+     * 요청에 포함된 필드만 변경한다.
+     * 생략된 null 필드는 유지하며 알림 설정의 false 값은 유효한 변경으로 적용한다.
+     */
     public void updateInfo(ReadStatusUpdateCommand command) {
-        this.lastReadAt = command.readAt();
-        this.notificationEnabled = command.newNotificationEnabled();
+        if (command.readAt() != null){
+            this.lastReadAt = command.readAt();
+        }
+        if (command.newNotificationEnabled() != null){
+            this.notificationEnabled = command.newNotificationEnabled();
+        }
     }
 
     public UUID getUserId() {

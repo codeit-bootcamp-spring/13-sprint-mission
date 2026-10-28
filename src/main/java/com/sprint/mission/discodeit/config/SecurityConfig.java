@@ -8,6 +8,8 @@ import com.sprint.mission.discodeit.security.handler.JwtLoginSuccessHandler;
 import com.sprint.mission.discodeit.security.handler.JwtLogoutHandler;
 import com.sprint.mission.discodeit.security.handler.LoginFailureHandler;
 import com.sprint.mission.discodeit.security.handler.SpaCsrfTokenRequestHandler;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -50,9 +52,25 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
+                        // SockJS 전송 경로의 CSRF 검사를 제외한다. 사용자 인증은 STOMP CONNECT에서 수행한다.
+                        .ignoringRequestMatchers("/ws/**")
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
+                        // 최초 SSE 요청은 아래 일반 API 인증 정책을 따른다.
+                        // 이미 시작된 SSE의 ASYNC 재디스패치만 허용하여 종료 처리가 인증 오류로 바뀌지 않게 한다.
+                        .requestMatchers(request -> request.getDispatcherType()
+                                .equals(DispatcherType.ASYNC) &&
+                                "/api/sse".equals(request.getServletPath()))
+                        .permitAll()
+                        // 컨테이너 오류 처리와 /error INCLUDE가 다시 인가 실패를 일으키지 않도록 허용한다.
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers(request -> request.getDispatcherType()
+                                .equals(DispatcherType.INCLUDE) &&
+                                "/error".equals(request.getAttribute(RequestDispatcher.INCLUDE_SERVLET_PATH)))
+                        .permitAll()
+                        // HTTP 핸드셰이크는 열고 이후 CONNECT 인증과 발행·구독 인가는 메시지 인터셉터에서 검사한다.
+                        .requestMatchers( "/ws/**").permitAll()
                         .requestMatchers(
                                 "/api/auth/csrf-token",
                                 "/api/auth/login",

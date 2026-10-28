@@ -2,9 +2,11 @@
 -- 하나의 스크립트에서 처리하므로 다른 인스턴스의 로그인/갱신/로그아웃과 중간에 섞이지 않는다.
 --
 -- KEYS[1]: 사용자별 키(discodeit:jwt:{userId}). 중괄호 부분은 실제 사용자 UUID를 뜻한다.
+-- KEYS[2]: 온라인 추적 사용자 Set의 키.
 -- ARGV[1]: 새 세션의 JSON. accessToken/refreshToken은 토큰 문자열이며,
 --          refreshExpiresAt은 Refresh Token의 절대 만료 시각(Unix epoch 밀리초)이다.
 -- ARGV[2]: 동시에 유지할 최대 세션 수. Java에서 문자열로 전달한다.
+-- ARGV[3]: 등록할 사용자 UUID 문자열.
 -- 반환값: 1 = 등록 성공, -1 = 저장 전에 새 Refresh Token이 만료됨.
 --         최대 세션 수가 잘못된 경우 숫자 대신 Redis 오류를 반환한다.
 --
@@ -13,9 +15,12 @@
 -- 별도로 table을 선언하지 않아도 table.insert/remove를 사용할 수 있다.
 -- cjson.decode는 JSON을 Lua table로, cjson.encode는 Lua table을 JSON으로 변환한다.
 local key = KEYS[1]
+local trackingKey = KEYS[2]
+
 local newToken = cjson.decode(ARGV[1])
 -- ARGV는 문자열이므로 계산 전에 숫자로 변환한다. 변환할 수 없으면 nil이다.
 local maxCount = tonumber(ARGV[2])
+local userId = ARGV[3]
 
 -- 0/음수/소수는 허용하지 않는다. math.floor와 비교하여 정수 여부를 확인한다.
 if not maxCount or maxCount < 1 or maxCount ~= math.floor(maxCount) then
@@ -81,5 +86,8 @@ redis.call(
     'PXAT',
     string.format('%.0f',expiresAt)
 )
+
+-- JWT 저장과 같은 실행 안에서 추적을 등록한다. 이후 액세스 토큰 만료를 모니터가 감지한다.
+redis.call('SADD', trackingKey, userId)
 
 return 1

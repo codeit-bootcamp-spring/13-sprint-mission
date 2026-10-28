@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.events.UserCacheClearEvent;
+import com.sprint.mission.discodeit.events.UserEvent;
 import com.sprint.mission.discodeit.exception.user.UserEmailDuplicatedException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserUsernameDuplicatedException;
@@ -52,7 +53,10 @@ public class BasicUserService implements UserService {
 
         User savedUser = userRepository.save(new User(withEncodedPassword(command), profile));
 
-        return userMapper.toDto(savedUser);
+        UserDto userDto = userMapper.toDto(savedUser);
+        // 생성 시점의 사용자 DTO를 전달하고 실제 SSE 전송은 커밋 후 진행한다.
+        eventPublisher.publishEvent(UserEvent.createEvent(userDto));
+        return userDto;
     }
 
     @Transactional(readOnly = true)
@@ -93,9 +97,11 @@ public class BasicUserService implements UserService {
             binaryContentService.delete(oldImage);
         }
 
+        UserDto userDto = userMapper.toDto(updatedUser);
         eventPublisher.publishEvent(new UserCacheClearEvent(userId));
-
-        return userMapper.toDto(updatedUser);
+        // 수정 응답과 동일한 DTO를 보내 클라이언트의 사용자 목록도 갱신한다.
+        eventPublisher.publishEvent(UserEvent.updateEvent(userDto));
+        return userDto;
     }
 
 
@@ -114,6 +120,8 @@ public class BasicUserService implements UserService {
             binaryContentService.delete(user.getProfile());
         }
         eventPublisher.publishEvent(new UserCacheClearEvent(userId));
+        // 조회해 둔 사용자로 삭제 DTO를 만든다. 커밋 후 리스너는 삭제된 행을 다시 조회하지 않는다.
+        eventPublisher.publishEvent(UserEvent.deleteEvent(userMapper.toDto(user)));
     }
 
     private void validateCreatableUser(UserCreateCommand command) {

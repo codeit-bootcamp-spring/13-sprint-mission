@@ -22,6 +22,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
+/**
+ * 실제 JPA 저장·조회로 첨부 연결과 소속 채널 조회 쿼리를 검증한다.
+ * 파일 ID에 해당하는 채널만 반환되는지, 미연결 파일은 빈 결과인지 DB에서 확인한다.
+ */
 @DataJpaTest(showSql = false)
 @Import(value = {QuerydslTestConfig.class, JpaAuditingTestConfig.class, P6SpySqlFormatter.class})
 // MessageFileRepository.bulkInsert(...) native query는 PostgreSQL의 gen_random_uuid()를 사용한다.
@@ -48,6 +52,59 @@ class MessageFileRepositoryTest {
 
     @Autowired
     EntityManager em;
+
+    @Test
+    @DisplayName("파일이 첨부된 메시지의 채널만 조회한다")
+    void findChannelByBinaryContentId_returnsOnlyLinkedChannel() {
+        User author = saveAuthor();
+        Channel targetChannel = savePublicChannel("target");
+        Channel otherChannel = savePublicChannel("other");
+
+        Message targetMessage = saveMessage(author, targetChannel, "target");
+        Message otherMessage = saveMessage(author, otherChannel, "other");
+
+        BinaryContent targetFile = saveBinaryContent("target.txt", "text/plain", 1L);
+        BinaryContent otherFile = saveBinaryContent("other.txt", "text/plain", 1L);
+
+        messageFileRepository.bulkInsert(
+                List.of(targetFile.getId()), targetMessage.getId()
+        );
+        messageFileRepository.bulkInsert(
+                List.of(otherFile.getId()), otherMessage.getId()
+        );
+        em.flush();
+        em.clear();
+
+        assertThat(
+                messageFileRepository.findChannelByBinaryContentId(targetFile.getId())
+                        .map(Channel::getId)
+        ).contains(targetChannel.getId());
+    }
+
+    @Test
+    @DisplayName("메시지에 첨부되지 않은 파일은 채널 조회 결과가 없다")
+    void findChannelByBinaryContentId_returnsEmptyWhenNotAttached() {
+        User author = saveAuthor();
+        Channel channel = savePublicChannel("channel");
+        Message message = saveMessage(author, channel, "message");
+
+        BinaryContent attachedFile = saveBinaryContent("attached.txt", "text/plain", 1L);
+        BinaryContent unassignedFile = saveBinaryContent("unassigned.txt", "text/plain", 1L);
+
+        messageFileRepository.bulkInsert(
+                List.of(attachedFile.getId()), message.getId()
+        );
+        em.flush();
+        em.clear();
+
+        assertThat(
+                messageFileRepository.findChannelByBinaryContentId(unassignedFile.getId())
+        ).isEmpty();
+
+        assertThat(
+                messageFileRepository.findChannelByBinaryContentId(UUID.randomUUID())
+        ).isEmpty();
+    }
 
     @Test
     @DisplayName("메시지 기준 첨부 파일 존재 여부 조회 성공 - 메시지에 첨부 파일이 있으면 true 반환")

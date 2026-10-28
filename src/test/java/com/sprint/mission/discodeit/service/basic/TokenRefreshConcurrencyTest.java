@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.dto.response.JwtDtoWithRefresh;
 import com.sprint.mission.discodeit.dto.response.TokenDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.Role;
+import com.sprint.mission.discodeit.repository.impl.InMemoryUserOnlineTrackingRepository;
 import com.sprint.mission.discodeit.exception.jwt.TokenRenewalFailedException;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetails;
 import com.sprint.mission.discodeit.security.DiscodeitUserDetailsService;
@@ -39,6 +40,11 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+/**
+ * 실제 토큰 서비스·Provider·인메모리 Registry를 실행해 동일 토큰의 동시 갱신을 검증한다.
+ * 사용자 조회의 barrier로 두 요청이 사전 검사를 통과하게 만들고 최종 교체는 하나만 성공하는지 확인한다.
+ * 사용자 조회·쿠키·이벤트 전달은 Mock으로 분리한다.
+ */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("실제 토큰 서비스·Provider·Registry 동시 갱신 컴포넌트 테스트")
 class TokenRefreshConcurrencyTest {
@@ -59,8 +65,10 @@ class TokenRefreshConcurrencyTest {
                 1,
                 "concurrency-test-secret-with-at-least-32-bytes", Duration.ofMinutes(10),
                 Duration.ofDays(14), "concurrency-test"), Clock.fixed(now, ZoneOffset.UTC));
-        InMemoryJwtRegistry registry = new InMemoryJwtRegistry(provider, eventPublisher, Clock.fixed(now, ZoneOffset.UTC));
-        TokenServiceImpl service = new TokenServiceImpl(provider, userDetailsService, cookieManager, registry);
+        InMemoryJwtRegistry registry = new InMemoryJwtRegistry(provider, eventPublisher, Clock.fixed(now, ZoneOffset.UTC),
+                new InMemoryUserOnlineTrackingRepository());
+        TokenServiceImpl service = new TokenServiceImpl(
+                provider, userDetailsService, cookieManager, registry, eventPublisher);
         OffsetDateTime dateTime = now.atOffset(ZoneOffset.UTC);
         UserDto user = new UserDto(UUID.randomUUID(), "concurrent-user", "user@example.com",
                 null, true, Role.USER, dateTime, dateTime);

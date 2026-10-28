@@ -7,6 +7,9 @@ import com.sprint.mission.discodeit.dto.response.UserDto;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.events.UserCacheClearEvent;
+import com.sprint.mission.discodeit.events.UserEvent;
+import com.sprint.mission.discodeit.events.UserEventType;
 import com.sprint.mission.discodeit.exception.user.UserEmailDuplicatedException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.exception.user.UserUsernameDuplicatedException;
@@ -48,6 +51,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+/**
+ * 실제 사용자 서비스의 변경 분기와 사용자 이벤트 타입·DTO 전달을 검증한다.
+ * Mapper와 Repository는 Mock으로 두고 상태 변경이 관심사인 엔티티는 실제 객체로 확인한다.
+ * 이벤트 발행 호출 확인은 실제 트랜잭션 커밋이나 SSE 수신을 의미하지 않는다.
+ */
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
     @Mock ApplicationEventPublisher eventPublisher;
@@ -123,7 +131,8 @@ class UserServiceTest {
 
             // then
             // 서비스는 mapper가 만든 DTO를 그대로 반환해야 한다.
-            assertThat(result).isEqualTo(expectedDto);
+            assertThat(result).isSameAs(expectedDto);
+            verifyUserEvent(UserEventType.CREATED, expectedDto);
 
             // 저장 요청으로 만들어진 실제 User 엔티티를 캡처한다.
             // 반환 DTO만 검증하면 command 값이 User 생성자에 올바르게 들어갔는지 확인할 수 없다.
@@ -173,7 +182,7 @@ class UserServiceTest {
             // 이메일 중복 검증에서 예외가 발생했으므로 이후 생성 절차는 실행되면 안 된다.
             verify(binaryContentService, never()).create(any());
             verify(userRepository, never()).save(any(User.class));
-            verifyNoInteractions(passwordEncoder);
+            verifyNoInteractions(passwordEncoder, eventPublisher);
 
         }
 
@@ -203,7 +212,7 @@ class UserServiceTest {
             // 사용자명 중복 검증에서 예외가 발생했으므로 이후 생성 절차는 실행되면 안 된다.
             verify(binaryContentService, never()).create(any());
             verify(userRepository, never()).save(any(User.class));
-            verifyNoInteractions(passwordEncoder);
+            verifyNoInteractions(passwordEncoder, eventPublisher);
         }
 
         @Test
@@ -252,7 +261,8 @@ class UserServiceTest {
 
             // then
             // 서비스는 mapper가 만든 DTO를 그대로 반환해야 한다.
-            assertThat(result).isEqualTo(expectedDto);
+            assertThat(result).isSameAs(expectedDto);
+            verifyUserEvent(UserEventType.CREATED, expectedDto);
 
             // 실제 저장된 User를 캡처해서 command 값과 profile이 반영됐는지 확인한다.
             ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
@@ -365,7 +375,9 @@ class UserServiceTest {
             UserDto updateUserDto = userService.update(userId, updateCommand, null);
 
             // then
-            assertThat(updateUserDto).isEqualTo(expectedDto);
+            assertThat(updateUserDto).isSameAs(expectedDto);
+            verifyUserEvent(UserEventType.UPDATED, expectedDto);
+            verify(eventPublisher).publishEvent(new UserCacheClearEvent(userId));
 
             // 반환 DTO뿐 아니라 실제 User 엔티티 상태도 수정됐는지 확인한다.
             assertThat(user.getUsername()).isEqualTo(updateCommand.username());
@@ -412,6 +424,7 @@ class UserServiceTest {
             verify(binaryContentService, never()).create(any());
             verify(userRepository, never()).save(any(User.class));
             verify(userMapper, never()).toDto(any(User.class));
+            verifyNoInteractions(eventPublisher);
         }
 
         @Test
@@ -449,6 +462,7 @@ class UserServiceTest {
             verify(binaryContentService, never()).create(any());
             verify(userRepository, never()).save(any(User.class));
             verify(userMapper, never()).toDto(any(User.class));
+            verifyNoInteractions(eventPublisher);
         }
 
         @Test
@@ -492,6 +506,7 @@ class UserServiceTest {
             verify(binaryContentService, never()).create(any());
             verify(userRepository, never()).save(any(User.class));
             verify(userMapper, never()).toDto(any(User.class));
+            verifyNoInteractions(eventPublisher);
         }
 
         @Test
@@ -535,7 +550,9 @@ class UserServiceTest {
 
             // then
             // 서비스 반환값이 mapper가 반환한 DTO와 같은지 확인한다.
-            assertThat(resultDto).isEqualTo(expectedDto);
+            assertThat(resultDto).isSameAs(expectedDto);
+            verifyUserEvent(UserEventType.UPDATED, expectedDto);
+            verify(eventPublisher).publishEvent(new UserCacheClearEvent(userId));
 
             // 비밀번호는 인코더가 반환한 해시로 수정되어야 한다.
             assertThat(user.getPassword()).isEqualTo(ENCODED_PASSWORD);
@@ -590,7 +607,9 @@ class UserServiceTest {
             UserDto result = userService.update(userId, updateCommand, null);
 
             // then
-            assertThat(result).isEqualTo(expectedDto);
+            assertThat(result).isSameAs(expectedDto);
+            verifyUserEvent(UserEventType.UPDATED, expectedDto);
+            verify(eventPublisher).publishEvent(new UserCacheClearEvent(userId));
             assertThat(user.getPassword()).isEqualTo(ENCODED_PASSWORD);
             verifyNoInteractions(passwordEncoder);
             verify(userRepository).findById(userId);
@@ -623,7 +642,7 @@ class UserServiceTest {
 
             UserUpdateCommand updateCommand = createUpdateCommand();
 
-            BinaryContentDto newProfile = new BinaryContentDto(newProfileId, newFile.getOriginalFilename(), newFile.getSize(), newFile.getContentType());
+            BinaryContentDto newProfile = new BinaryContentDto(newProfileId, newFile.getOriginalFilename(), newFile.getSize(), newFile.getContentType(), newProfileContent.getStatus());
             UserDto expectedDto = createExpectedDto(userId, updateCommand, false, newProfile);
 
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
@@ -638,7 +657,9 @@ class UserServiceTest {
             UserDto result = userService.update(userId, updateCommand, newFile);
 
             // then
-            assertThat(result).isEqualTo(expectedDto);
+            assertThat(result).isSameAs(expectedDto);
+            verifyUserEvent(UserEventType.UPDATED, expectedDto);
+            verify(eventPublisher).publishEvent(new UserCacheClearEvent(userId));
 
             // 사용자 정보와 프로필이 새 요청 값으로 변경됐는지 확인한다.
             assertThat(user.getUsername()).isEqualTo(updateCommand.username());
@@ -680,7 +701,7 @@ class UserServiceTest {
 
             UserUpdateCommand updateCommand = createUpdateCommand();
 
-            BinaryContentDto profileDto = new BinaryContentDto(profileId, profile.getOriginalFileName(), profile.getSize(), profile.getContentType());
+            BinaryContentDto profileDto = new BinaryContentDto(profileId, profile.getOriginalFileName(), profile.getSize(), profile.getContentType(), profile.getStatus());
             UserDto expectedDto = createExpectedDto(userId, updateCommand, false, profileDto);
 
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
@@ -699,7 +720,9 @@ class UserServiceTest {
             UserDto result = userService.update(userId, updateCommand, null);
 
             // then
-            assertThat(result).isEqualTo(expectedDto);
+            assertThat(result).isSameAs(expectedDto);
+            verifyUserEvent(UserEventType.UPDATED, expectedDto);
+            verify(eventPublisher).publishEvent(new UserCacheClearEvent(userId));
 
             // 새 프로필이 없으므로 기존 프로필이 그대로 유지되어야 한다.
             assertThat(user.getProfile()).isEqualTo(profile);
@@ -758,7 +781,9 @@ class UserServiceTest {
             UserDto result = userService.update(userId, updateCommand, null);
 
             // then
-            assertThat(result).isEqualTo(expectedDto);
+            assertThat(result).isSameAs(expectedDto);
+            verifyUserEvent(UserEventType.UPDATED, expectedDto);
+            verify(eventPublisher).publishEvent(new UserCacheClearEvent(userId));
 
             // 이메일은 변경 요청 값으로 수정되어야 한다.
             assertThat(user.getEmail()).isEqualTo(updateCommand.email());
@@ -819,7 +844,9 @@ class UserServiceTest {
             UserDto result = userService.update(userId, updateCommand, null);
 
             // then
-            assertThat(result).isEqualTo(expectedDto);
+            assertThat(result).isSameAs(expectedDto);
+            verifyUserEvent(UserEventType.UPDATED, expectedDto);
+            verify(eventPublisher).publishEvent(new UserCacheClearEvent(userId));
 
             // 사용자명은 변경 요청 값으로 수정되어야 한다.
             assertThat(user.getUsername()).isEqualTo(updateCommand.username());
@@ -855,8 +882,7 @@ class UserServiceTest {
         void delete_deletesUser_whenUserExists() {
             // given
             // 삭제 대상 userId와 실제 User 엔티티를 준비한다.
-            // delete()는 user.getStatusId(), user.getId(), user.isProfileImageExist()를 사용하므로
-            // User를 mock으로 만들기보다 실제 엔티티에 id를 넣어 사용하는 편이 안전하다.
+            // 프로필 유무 판단에 실제 엔티티를 사용하고, 삭제에 필요한 id를 설정한다.
             UserCreateCommand command = createTestUserCommand();
             UUID userId = UUID.randomUUID();
             User user = new User(command, null);
@@ -864,6 +890,8 @@ class UserServiceTest {
 
             // userId로 조회하면 삭제 대상 사용자가 존재하는 상황을 만든다.
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            UserDto expectedDto = createExpectedDto(userId, command, false);
+            given(userMapper.toDto(user)).willReturn(expectedDto);
 
             // when
             // 사용자 삭제 로직을 실행한다.
@@ -885,8 +913,10 @@ class UserServiceTest {
             // 프로필 이미지가 없는 사용자이므로 파일 삭제는 실행되지 않아야 한다.
             verify(binaryContentService, never()).delete(any(BinaryContent.class));
 
-            // delete()는 DTO를 반환하지 않으므로 mapper를 사용하지 않는다.
-            verifyNoInteractions(userMapper);
+            // 삭제 이벤트에도 mapper가 반환한 사용자 DTO를 전달한다.
+            verify(userMapper).toDto(user);
+            verifyUserEvent(UserEventType.DELETED, expectedDto);
+            verify(eventPublisher).publishEvent(new UserCacheClearEvent(userId));
             verifyNoMoreInteractions(userRepository, readStatusService, messageService, binaryContentService);
         }
 
@@ -911,7 +941,7 @@ class UserServiceTest {
             verifyNoMoreInteractions(userRepository);
 
             // 조회 단계에서 예외가 발생했으므로 연결 데이터 정리, 파일 삭제, DTO 변환은 실행되면 안 된다.
-            verifyNoInteractions( readStatusService, messageService, binaryContentService, userMapper);
+            verifyNoInteractions(readStatusService, messageService, binaryContentService, userMapper, eventPublisher);
         }
 
         @Test
@@ -924,10 +954,18 @@ class UserServiceTest {
             UUID userId = UUID.randomUUID();
 
             BinaryContent profile = BinaryContent.createProcessing("filename", "contentType", 1000L);
+            UUID profileId = UUID.randomUUID();
+            ReflectionTestUtils.setField(profile, "id", profileId);
             User user = new User(command, profile);
             ReflectionTestUtils.setField(user, "id", userId);
 
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
+            BinaryContentDto profileDto = new BinaryContentDto(
+                    profileId, profile.getOriginalFileName(), profile.getSize(),
+                    profile.getContentType(), profile.getStatus()
+            );
+            UserDto expectedDto = createExpectedDto(userId, command, false, profileDto);
+            given(userMapper.toDto(user)).willReturn(expectedDto);
 
             // when
             // 사용자 삭제 로직을 실행한다.
@@ -943,12 +981,23 @@ class UserServiceTest {
             inOrder.verify(userRepository).deleteById(userId);
             inOrder.verify(binaryContentService).delete(profile);
 
-            // delete()는 DTO를 반환하지 않으므로 mapper를 사용하지 않는다.
-            verifyNoInteractions(userMapper);
+            // 프로필을 포함한 사용자 DTO가 삭제 이벤트에 전달되어야 한다.
+            verify(userMapper).toDto(user);
+            verifyUserEvent(UserEventType.DELETED, expectedDto);
+            verify(eventPublisher).publishEvent(new UserCacheClearEvent(userId));
             verifyNoMoreInteractions(userRepository, readStatusService, messageService, binaryContentService);
         }
     }
 
+
+    private void verifyUserEvent(UserEventType expectedType, UserDto expectedDto) {
+        ArgumentCaptor<UserEvent> eventCaptor = ArgumentCaptor.forClass(UserEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+
+        UserEvent event = eventCaptor.getValue();
+        assertThat(event.type()).isEqualTo(expectedType);
+        assertThat(event.user()).isSameAs(expectedDto);
+    }
 
     private UserCreateCommand createTestUserCommand() {
         String s = retrieveShortUUID();
@@ -960,11 +1009,15 @@ class UserServiceTest {
     }
 
     private UserDto createExpectedDto(UUID userId, UserCreateCommand command, boolean isOnline) {
+        return createExpectedDto(userId, command, isOnline, null);
+    }
+
+    private UserDto createExpectedDto(UUID userId, UserCreateCommand command, boolean isOnline, BinaryContentDto profile) {
         return new UserDto(
                 userId,
                 command.username(),
                 command.email(),
-                null,
+                profile,
                 isOnline,
                 Role.USER,
                 OffsetDateTime.now(),

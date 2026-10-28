@@ -10,6 +10,7 @@ import com.sprint.mission.discodeit.dto.request.user.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.user.UserUpdateRequest;
 import com.sprint.mission.discodeit.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.response.UserDto;
+import com.sprint.mission.discodeit.entity.BinaryContentStatus;
 import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.service.UserService;
 import org.junit.jupiter.api.DisplayName;
@@ -40,6 +41,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 // 인가 검증은 실제 보안 체인을 실행하는 SecurityAuthorizationIntegrationTest에서 담당한다.
+/**
+ * 사용자 HTTP 요청 검증과 응답 구조를 MVC 슬라이스에서 확인한다.
+ * 사용자 서비스는 Mock이고 프로필 상태를 포함한 DTO는 실제 값으로 준비한다.
+ */
 @WebMvcTest(controllers = UserController.class, excludeFilters = @ComponentScan.Filter(
         type = FilterType.ASSIGNABLE_TYPE, classes = JwtAuthenticationFilter.class
 ))
@@ -361,7 +366,7 @@ class UserControllerTest {
     }
 
     private BinaryContentDto getProfile(String fileName, Long size, String contentType) {
-        return new BinaryContentDto(UUID.randomUUID(), fileName, size, contentType);
+        return new BinaryContentDto(UUID.randomUUID(), fileName, size, contentType, BinaryContentStatus.SUCCESS);
     }
 
     private MockMultipartFile getMultipartFile() {

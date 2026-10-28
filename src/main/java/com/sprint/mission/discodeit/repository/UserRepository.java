@@ -36,4 +36,14 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("select u.id from User u where u.role = :role")
     List<UUID> findUserIdsByRole(@Param("role") Role role);
 
+    /**
+     * 프로필 업로드 상태의 개인 수신자를 찾기 위해 소유자 ID만 조회한다.
+     */
+    @Query("""
+        SELECT u.id
+        FROM User u
+        WHERE u.profile.id = :profileId
+    """)
+    Optional<UUID> findUserIdByProfileId(@Param("profileId") UUID profileId);
+
 }
